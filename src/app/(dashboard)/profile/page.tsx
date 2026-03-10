@@ -134,6 +134,34 @@ export default function ProfilePage() {
     const supabase = createClient();
     const completePct = calculateCompletion(profile);
 
+    // Ensure user row exists in public.users (trigger may have failed)
+    if (!profileId) {
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", userId)
+        .single();
+
+      if (!userRow) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error: userInsertError } = await supabase
+            .from("users")
+            .insert({
+              id: user.id,
+              email: user.email!,
+              role: (user.user_metadata?.role as string) || "seeker",
+            });
+          if (userInsertError && userInsertError.code !== "23505") {
+            console.error("Failed to create user row:", userInsertError);
+            setMessage({ type: "error", text: "Account setup failed. Please try logging out and back in." });
+            setSaving(false);
+            return;
+          }
+        }
+      }
+    }
+
     const payload = {
       user_id: userId,
       first_name: profile.first_name,
@@ -171,7 +199,16 @@ export default function ProfilePage() {
     }
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to save profile. Please try again." });
+      console.error("Profile save error:", error.message, error.details, error.hint, error.code);
+      let errorText = "Failed to save profile.";
+      if (error.code === "23503") {
+        errorText = "Account setup incomplete. Please log out and sign up again.";
+      } else if (error.code === "42501" || error.message?.includes("policy")) {
+        errorText = "Permission denied. Please log out and log back in.";
+      } else if (error.message) {
+        errorText = `Failed to save profile: ${error.message}`;
+      }
+      setMessage({ type: "error", text: errorText });
     } else {
       setMessage({ type: "success", text: "Profile saved successfully!" });
     }
