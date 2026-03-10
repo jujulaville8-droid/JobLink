@@ -37,7 +37,7 @@ function jobTypeBadgeColor(type: string): string {
     case "full-time":
       return "bg-emerald-50 text-emerald-700 border-emerald-200";
     case "part-time":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-sky-50 text-sky-700 border-sky-200";
     case "contract":
       return "bg-violet-50 text-violet-700 border-violet-200";
     case "seasonal":
@@ -56,14 +56,13 @@ export default function JobCard({ job }: { job: Job }) {
       ? formatSalary(job.salary_min, job.salary_max)
       : "";
 
-  // Deterministic color from company name
   const colors = [
-    "bg-[#0f2b4c]",
-    "bg-[#e85d26]",
-    "bg-emerald-600",
-    "bg-violet-600",
+    "bg-[#0d7377]",
+    "bg-[#e8613d]",
+    "bg-[#2d8a4e]",
+    "bg-[#f0a04b]",
     "bg-rose-600",
-    "bg-cyan-600",
+    "bg-[#14919b]",
   ];
   const colorIndex =
     job.company_name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) %
@@ -74,29 +73,28 @@ export default function JobCard({ job }: { job: Job }) {
   );
 
   return (
-    <div className="group relative bg-white rounded-xl border border-gray-100 hover:border-[#0f2b4c]/20 hover:shadow-lg transition-all p-5">
+    <div className="group relative bg-white rounded-xl border border-[#e8e2d9] hover:border-[#0d7377]/30 hover:shadow-lg transition-all p-5">
       {/* Featured ribbon */}
       {job.is_featured && (
-        <div className="absolute top-3 right-3 bg-[#d4a843] text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wide">
+        <div className="absolute top-3 right-3 bg-[#f0a04b] text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wide">
           Featured
         </div>
       )}
 
       {/* New badge */}
       {isNew(job.created_at) && !job.is_featured && (
-        <div className="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wide">
+        <div className="absolute top-3 right-3 bg-[#2d8a4e] text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wide">
           New
         </div>
       )}
 
       <Link href={`/jobs/${job.id}`} className="block">
         <div className="flex items-start gap-4">
-          {/* Company logo / initial */}
           {job.company_logo ? (
             <img
               src={job.company_logo}
               alt={job.company_name}
-              className="shrink-0 h-12 w-12 rounded-xl object-cover border border-gray-100"
+              className="shrink-0 h-12 w-12 rounded-xl object-cover border border-[#e8e2d9]"
             />
           ) : (
             <div
@@ -107,55 +105,39 @@ export default function JobCard({ job }: { job: Job }) {
           )}
 
           <div className="min-w-0 flex-1">
-            {/* Title */}
-            <h3 className="font-semibold text-gray-900 group-hover:text-[#0f2b4c] transition-colors text-[15px] leading-snug">
+            <h3 className="font-semibold text-[#2c2c2c] group-hover:text-[#0d7377] transition-colors text-[15px] leading-snug">
               {job.title}
             </h3>
+            <p className="text-[#7a7a72] text-sm mt-0.5">{job.company_name}</p>
 
-            {/* Company */}
-            <p className="text-gray-500 text-sm mt-0.5">{job.company_name}</p>
-
-            {/* Location + type */}
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <svg
-                  className="h-3.5 w-3.5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+              <span className="flex items-center gap-1 text-xs text-[#7a7a72]">
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
                 {job.location}
               </span>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full border ${jobTypeBadgeColor(job.job_type)}`}
-              >
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${jobTypeBadgeColor(job.job_type)}`}>
                 {job.job_type}
               </span>
             </div>
 
-            {/* Salary */}
             {salary && (
-              <p className="text-sm font-semibold text-[#0f2b4c] mt-2.5">
+              <p className="text-sm font-semibold text-[#0d7377] mt-2.5">
                 {salary}
-                <span className="text-gray-400 font-normal text-xs ml-1">/month</span>
+                <span className="text-[#a09888] font-normal text-xs ml-1">/month</span>
               </p>
             )}
           </div>
         </div>
       </Link>
 
-      {/* WhatsApp share */}
       <a
         href={`https://wa.me/?text=${whatsappText}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-4 right-4 text-gray-300 hover:text-green-600 transition-colors"
+        className="absolute bottom-4 right-4 text-[#cdc5b8] hover:text-green-600 transition-colors"
         aria-label="Share on WhatsApp"
         onClick={(e) => e.stopPropagation()}
       >

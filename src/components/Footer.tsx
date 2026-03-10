@@ -2,15 +2,15 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#0a1f37] text-white">
+    <footer className="bg-[#095355] text-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          {/* Brand column */}
+          {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
                 <svg
-                  className="h-4.5 w-4.5 text-[#d4a843]"
+                  className="h-4.5 w-4.5 text-[#f0a04b]"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -110,7 +110,7 @@ export default function Footer() {
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-2 rounded-sm bg-[#0072c6]" />
             <span className="w-3 h-2 rounded-sm bg-black" />
-            <span className="w-3 h-2 rounded-sm bg-[#d4a843]" />
+            <span className="w-3 h-2 rounded-sm bg-[#f0a04b]" />
             <span className="w-3 h-2 rounded-sm bg-white" />
             <span className="w-3 h-2 rounded-sm bg-[#ce1126]" />
           </div>

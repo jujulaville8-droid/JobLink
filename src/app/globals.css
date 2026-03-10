@@ -1,30 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #0f2b4c;
-  --color-primary-light: #1a3d6b;
-  --color-accent: #e85d26;
-  --color-accent-hover: #d14e1a;
-  --color-accent-alt: #0ea5e9;
-  --color-accent-alt-hover: #0284c7;
-  --color-gold: #d4a843;
-  --color-bg: #ffffff;
-  --color-bg-warm: #faf8f5;
-  --color-text: #1a1a2e;
-  --color-text-light: #6b7280;
-  --color-border: #e5e7eb;
+  --color-primary: #0d7377;
+  --color-primary-light: #14919b;
+  --color-primary-dark: #095355;
+  --color-accent: #e8613d;
+  --color-accent-hover: #d4532f;
+  --color-sand: #f5ede3;
+  --color-sand-dark: #e8ddd0;
+  --color-palm: #2d8a4e;
+  --color-sunset: #f0a04b;
+  --color-ocean: #0d7377;
+  --color-bg: #fffcf8;
+  --color-text: #2c2c2c;
+  --color-text-light: #7a7a72;
+  --color-border: #e8e2d9;
 }
 
 @theme inline {
   --color-primary: var(--color-primary);
   --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
   --color-accent: var(--color-accent);
   --color-accent-hover: var(--color-accent-hover);
-  --color-accent-alt: var(--color-accent-alt);
-  --color-accent-alt-hover: var(--color-accent-alt-hover);
-  --color-gold: var(--color-gold);
+  --color-sand: var(--color-sand);
+  --color-sand-dark: var(--color-sand-dark);
+  --color-palm: var(--color-palm);
+  --color-sunset: var(--color-sunset);
+  --color-ocean: var(--color-ocean);
   --color-bg: var(--color-bg);
-  --color-bg-warm: var(--color-bg-warm);
   --color-text: var(--color-text);
   --color-text-light: var(--color-text-light);
   --color-border: var(--color-border);
@@ -37,12 +41,10 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -50,9 +52,9 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #cdc5b8;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #b0a898;
 }

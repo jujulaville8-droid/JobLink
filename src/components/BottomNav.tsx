@@ -18,16 +18,15 @@ export default function BottomNav({
 
   const linkClass = (path: string) =>
     `flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 min-w-[56px] ${
-      isActive(path) ? "text-[#e85d26]" : "text-gray-400"
+      isActive(path) ? "text-[#0d7377]" : "text-[#a09888]"
     }`;
 
   const iconClass = (path: string) =>
-    `h-6 w-6 ${isActive(path) ? "text-[#e85d26]" : "text-gray-400"}`;
+    `h-6 w-6 ${isActive(path) ? "text-[#0d7377]" : "text-[#a09888]"}`;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 backdrop-blur-sm md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e8e2d9] bg-[#fffcf8]/95 backdrop-blur-sm md:hidden">
       <div className="flex items-center justify-around py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        {/* Home */}
         <Link href="/" className={linkClass("/")}>
           <svg className={iconClass("/")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -36,7 +35,6 @@ export default function BottomNav({
           <span>Home</span>
         </Link>
 
-        {/* Jobs */}
         <Link href="/jobs" className={linkClass("/jobs")}>
           <svg className={iconClass("/jobs")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
@@ -45,7 +43,6 @@ export default function BottomNav({
           <span>Jobs</span>
         </Link>
 
-        {/* Post — employers only */}
         {isLoggedIn && userRole === "employer" && (
           <Link href="/post-job" className={linkClass("/post-job")}>
             <svg className={iconClass("/post-job")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -57,7 +54,6 @@ export default function BottomNav({
           </Link>
         )}
 
-        {/* Saved */}
         <Link href="/saved" className={linkClass("/saved")}>
           <svg className={iconClass("/saved")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
@@ -65,7 +61,6 @@ export default function BottomNav({
           <span>Saved</span>
         </Link>
 
-        {/* Profile */}
         <Link href="/profile" className={linkClass("/profile")}>
           <svg className={iconClass("/profile")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
