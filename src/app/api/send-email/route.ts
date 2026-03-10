@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM_ADDRESS = 'JobLink <notifications@joblink.ag>'
 
 type EmailType =
@@ -180,6 +178,7 @@ export async function POST(request: NextRequest) {
 
     const emailContent = buildEmailHtml(type as EmailType, data || {})
 
+    const resend = new Resend(process.env.RESEND_API_KEY)
     const { data: emailResult, error: sendError } = await resend.emails.send({
       from: FROM_ADDRESS,
       to: Array.isArray(to) ? to : [to],
