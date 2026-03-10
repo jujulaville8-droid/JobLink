@@ -1,34 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- Sun rays behind -->
-  <circle cx="24" cy="20" r="14" fill="#f0a04b" opacity="0.15"/>
+  <!-- Subtle background circle -->
+  <circle cx="24" cy="24" r="20" fill="#0d7377" opacity="0.08"/>
 
-  <!-- Ocean wave at bottom -->
-  <path d="M4 34 Q10 30 16 34 Q22 38 28 34 Q34 30 40 34 Q44 36 44 36 L44 44 Q44 46 42 46 L6 46 Q4 46 4 44 Z" fill="#0d7377" opacity="0.12"/>
+  <!-- Left hand/arm -->
+  <path d="M8 28 L14 24 L20 24" stroke="#0d7377" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Briefcase body -->
-  <rect x="10" y="18" width="28" height="18" rx="3.5" fill="#0d7377"/>
+  <!-- Right hand/arm -->
+  <path d="M40 28 L34 24 L28 24" stroke="#f0a04b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Briefcase handle -->
-  <path d="M18 18 V14 Q18 11 21 11 L27 11 Q30 11 30 14 V18" stroke="#0d7377" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Handshake clasp -->
+  <path d="M20 24 Q22 20 24 22 Q26 24 28 24" stroke="#0d7377" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Sun rising from briefcase -->
-  <circle cx="24" cy="18" r="6.5" fill="#f0a04b"/>
+  <!-- Thumb detail left -->
+  <path d="M21 24 Q22 27 24 26" stroke="#0d7377" stroke-width="2" stroke-linecap="round" fill="none"/>
 
-  <!-- Sun rays -->
-  <line x1="24" y1="8" x2="24" y2="10" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
-  <line x1="17" y1="11" x2="18.5" y2="12.5" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
-  <line x1="31" y1="11" x2="29.5" y2="12.5" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
-  <line x1="14" y1="16" x2="15.5" y2="17" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
-  <line x1="34" y1="16" x2="32.5" y2="17" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+  <!-- Thumb detail right -->
+  <path d="M27 24 Q26 27 24 26" stroke="#f0a04b" stroke-width="2" stroke-linecap="round" fill="none"/>
 
-  <!-- Briefcase divider line -->
-  <line x1="10" y1="24" x2="38" y2="24" stroke="white" stroke-width="1.5" opacity="0.3"/>
+  <!-- Connection sparks -->
+  <circle cx="24" cy="16" r="1.5" fill="#f0a04b"/>
+  <circle cx="19" cy="17.5" r="1" fill="#0d7377" opacity="0.6"/>
+  <circle cx="29" cy="17.5" r="1" fill="#f0a04b" opacity="0.6"/>
 
-  <!-- Link/connection symbol on briefcase -->
-  <path d="M20 28.5 Q20 26.5 22 26.5 L26 26.5 Q28 26.5 28 28.5 Q28 30.5 26 30.5 L22 30.5 Q20 30.5 20 28.5 Z" stroke="white" stroke-width="1.8" fill="none"/>
-  <circle cx="21" cy="28.5" r="1" fill="white"/>
-  <circle cx="27" cy="28.5" r="1" fill="white"/>
+  <!-- Small upward arrow — opportunity -->
+  <path d="M24 14 L24 10" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+  <path d="M21.5 12 L24 9.5 L26.5 12" stroke="#f0a04b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Small wave accent -->
-  <path d="M14 33 Q17 31 20 33 Q23 35 26 33 Q29 31 32 33" stroke="white" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <!-- Base line -->
+  <path d="M12 34 Q18 31 24 34 Q30 37 36 34" stroke="#0d7377" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.2"/>
 </svg>
