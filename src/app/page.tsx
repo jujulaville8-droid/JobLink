@@ -103,8 +103,8 @@ export default function Home() {
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
-            src="/images/hero-beach.jpg"
-            alt="Caribbean beach in Antigua"
+            src="/images/colorful-buildings.avif"
+            alt="Colorful buildings in St. John's, Antigua"
             fill
             className="object-cover"
             priority
@@ -253,8 +253,8 @@ export default function Home() {
             {/* Image */}
             <div className="relative rounded-3xl overflow-hidden aspect-[4/3]">
               <Image
-                src="/images/team.jpg"
-                alt="Team collaborating in workplace"
+                src="/images/people-sitting.webp"
+                alt="People at a job fair in Antigua"
                 fill
                 className="object-cover"
               />
