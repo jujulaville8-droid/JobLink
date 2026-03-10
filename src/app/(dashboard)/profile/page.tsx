@@ -131,86 +131,40 @@ export default function ProfilePage() {
     setSaving(true);
     setMessage(null);
 
-    const supabase = createClient();
     const completePct = calculateCompletion(profile);
 
-    // Ensure user row exists in public.users (trigger may have failed)
-    if (!profileId) {
-      const { data: userRow } = await supabase
-        .from("users")
-        .select("id")
-        .eq("id", userId)
-        .single();
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_id: profileId,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          location: profile.location,
+          bio: profile.bio,
+          skills: profile.skills,
+          experience_years: profile.experience_years,
+          education: profile.education,
+          cv_url: profile.cv_url,
+          visibility: profile.visibility,
+          profile_complete_pct: completePct,
+        }),
+      });
 
-      if (!userRow) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { error: userInsertError } = await supabase
-            .from("users")
-            .insert({
-              id: user.id,
-              email: user.email!,
-              role: (user.user_metadata?.role as string) || "seeker",
-            });
-          if (userInsertError && userInsertError.code !== "23505") {
-            console.error("Failed to create user row:", userInsertError);
-            setMessage({ type: "error", text: "Account setup failed. Please try logging out and back in." });
-            setSaving(false);
-            return;
-          }
+      const data = await res.json();
+
+      if (!res.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to save profile." });
+      } else {
+        if (data.profile_id && !profileId) {
+          setProfileId(data.profile_id);
         }
+        setMessage({ type: "success", text: "Profile saved successfully!" });
       }
-    }
-
-    const payload = {
-      user_id: userId,
-      first_name: profile.first_name,
-      last_name: profile.last_name,
-      phone: profile.phone,
-      location: profile.location,
-      bio: profile.bio,
-      skills: profile.skills,
-      experience_years: profile.experience_years,
-      education: profile.education,
-      cv_url: profile.cv_url,
-      visibility: profile.visibility,
-      profile_complete_pct: completePct,
-      updated_at: new Date().toISOString(),
-    };
-
-    let error;
-
-    if (profileId) {
-      const result = await supabase
-        .from("seeker_profiles")
-        .update(payload)
-        .eq("id", profileId);
-      error = result.error;
-    } else {
-      const result = await supabase
-        .from("seeker_profiles")
-        .insert(payload)
-        .select("id")
-        .single();
-      error = result.error;
-      if (result.data) {
-        setProfileId(result.data.id);
-      }
-    }
-
-    if (error) {
-      console.error("Profile save error:", error.message, error.details, error.hint, error.code);
-      let errorText = "Failed to save profile.";
-      if (error.code === "23503") {
-        errorText = "Account setup incomplete. Please log out and sign up again.";
-      } else if (error.code === "42501" || error.message?.includes("policy")) {
-        errorText = "Permission denied. Please log out and log back in.";
-      } else if (error.message) {
-        errorText = `Failed to save profile: ${error.message}`;
-      }
-      setMessage({ type: "error", text: errorText });
-    } else {
-      setMessage({ type: "success", text: "Profile saved successfully!" });
+    } catch {
+      setMessage({ type: "error", text: "Network error. Please check your connection." });
     }
 
     setSaving(false);
