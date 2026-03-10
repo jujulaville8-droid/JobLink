@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#0d7377"/>
+
+  <!-- Briefcase body -->
+  <rect x="6" y="13" width="20" height="13" rx="2.5" fill="white" opacity="0.9"/>
+
+  <!-- Briefcase handle -->
+  <path d="M12 13 V10.5 Q12 8.5 14 8.5 L18 8.5 Q20 8.5 20 10.5 V13" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Sun -->
+  <circle cx="16" cy="13" r="4.5" fill="#f0a04b"/>
+
+  <!-- Sun rays -->
+  <line x1="16" y1="6" x2="16" y2="7.5" stroke="#f0a04b" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="11" y1="8.5" x2="12" y2="9.5" stroke="#f0a04b" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="21" y1="8.5" x2="20" y2="9.5" stroke="#f0a04b" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Wave on briefcase -->
+  <path d="M9 23 Q12 21 15 23 Q18 25 21 23" stroke="#0d7377" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.3"/>
+</svg>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -7,21 +8,8 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
-                <svg
-                  className="h-4.5 w-4.5 text-[#f0a04b]"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-                </svg>
-              </div>
+            <Link href="/" className="flex items-center gap-2">
+              <Image src="/logo-white.svg" alt="JobLink" width={34} height={34} className="h-8 w-8" />
               <span className="text-lg font-bold">JobLink</span>
             </Link>
             <p className="mt-3 text-sm text-white/50 leading-relaxed">

@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: "JobLink — Antigua's Job Platform",
   description:
     "The first dedicated job platform for Antigua and Barbuda. Find jobs, post listings, and connect with employers.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

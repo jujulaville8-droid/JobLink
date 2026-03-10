@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 
 interface NavbarProps {
@@ -16,21 +17,8 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-lg bg-[#0d7377] flex items-center justify-center">
-              <svg
-                className="h-5 w-5 text-white"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-              </svg>
-            </div>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.svg" alt="JobLink" width={38} height={38} className="h-9 w-9" />
             <span className="text-xl font-bold text-[#0d7377]">JobLink</span>
           </Link>
 

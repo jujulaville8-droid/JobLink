@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Sun rays behind -->
+  <circle cx="24" cy="20" r="14" fill="#f0a04b" opacity="0.1"/>
+
+  <!-- Ocean wave at bottom -->
+  <path d="M4 34 Q10 30 16 34 Q22 38 28 34 Q34 30 40 34 Q44 36 44 36 L44 44 Q44 46 42 46 L6 46 Q4 46 4 44 Z" fill="white" opacity="0.08"/>
+
+  <!-- Briefcase body -->
+  <rect x="10" y="18" width="28" height="18" rx="3.5" fill="white" opacity="0.9"/>
+
+  <!-- Briefcase handle -->
+  <path d="M18 18 V14 Q18 11 21 11 L27 11 Q30 11 30 14 V18" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- Sun rising from briefcase -->
+  <circle cx="24" cy="18" r="6.5" fill="#f0a04b"/>
+
+  <!-- Sun rays -->
+  <line x1="24" y1="8" x2="24" y2="10" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="17" y1="11" x2="18.5" y2="12.5" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="31" y1="11" x2="29.5" y2="12.5" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="14" y1="16" x2="15.5" y2="17" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+  <line x1="34" y1="16" x2="32.5" y2="17" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Briefcase divider line -->
+  <line x1="10" y1="24" x2="38" y2="24" stroke="#0d7377" stroke-width="1.5" opacity="0.2"/>
+
+  <!-- Link/connection symbol on briefcase -->
+  <path d="M20 28.5 Q20 26.5 22 26.5 L26 26.5 Q28 26.5 28 28.5 Q28 30.5 26 30.5 L22 30.5 Q20 30.5 20 28.5 Z" stroke="#0d7377" stroke-width="1.8" fill="none"/>
+  <circle cx="21" cy="28.5" r="1" fill="#0d7377"/>
+  <circle cx="27" cy="28.5" r="1" fill="#0d7377"/>
+
+  <!-- Small wave accent -->
+  <path d="M14 33 Q17 31 20 33 Q23 35 26 33 Q29 31 32 33" stroke="#0d7377" stroke-width="1.2" fill="none" stroke-linecap="round" opacity="0.3"/>
+</svg>
