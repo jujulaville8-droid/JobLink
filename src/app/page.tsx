@@ -103,8 +103,8 @@ export default function Home() {
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
-            src="https://images.unsplash.com/photo-1580237072617-771c3ecc4a24?w=1920&q=80&auto=format"
-            alt="Antigua coastline"
+            src="/images/hero-beach.jpg"
+            alt="Caribbean beach in Antigua"
             fill
             className="object-cover"
             priority
@@ -253,8 +253,8 @@ export default function Home() {
             {/* Image */}
             <div className="relative rounded-3xl overflow-hidden aspect-[4/3]">
               <Image
-                src="https://images.unsplash.com/photo-1573497491208-6b1acb260507?w=800&q=80&auto=format"
-                alt="Professional working in Antigua"
+                src="/images/team.jpg"
+                alt="Team collaborating in workplace"
                 fill
                 className="object-cover"
               />
@@ -360,8 +360,8 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="relative rounded-3xl overflow-hidden">
             <Image
-              src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&q=80&auto=format"
-              alt="Team collaborating"
+              src="/images/harbor.jpg"
+              alt="Antigua harbor with boats"
               fill
               className="object-cover"
             />
