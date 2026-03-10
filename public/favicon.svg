@@ -2,16 +2,9 @@
   <!-- Background -->
   <rect width="32" height="32" rx="7" fill="#0d7377"/>
 
-  <!-- Left hand/arm -->
-  <path d="M5 20 L9 17 L13.5 17" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
+  <!-- J letter -->
+  <path d="M9 9 L9 19 Q9 24 14 24" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-  <!-- Right hand/arm -->
-  <path d="M27 20 L23 17 L18.5 17" stroke="#f0a04b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-
-  <!-- Handshake clasp -->
-  <path d="M13.5 17 Q15 14 16 15.5 Q17 17 18.5 17" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
-
-  <!-- Upward arrow -->
-  <path d="M16 12 L16 8" stroke="#f0a04b" stroke-width="2" stroke-linecap="round"/>
-  <path d="M14 10 L16 7.5 L18 10" stroke="#f0a04b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- L letter -->
+  <path d="M18 9 L18 24 L26 24" stroke="#f0a04b" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
