@@ -1,11 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --color-primary: #1e3a5f;
-  --color-primary-light: #2a4f7f;
+  --color-primary: #0f2b4c;
+  --color-primary-light: #1a3d6b;
   --color-accent: #e85d26;
   --color-accent-hover: #d14e1a;
+  --color-accent-alt: #0ea5e9;
+  --color-accent-alt-hover: #0284c7;
+  --color-gold: #d4a843;
   --color-bg: #ffffff;
+  --color-bg-warm: #faf8f5;
   --color-text: #1a1a2e;
   --color-text-light: #6b7280;
   --color-border: #e5e7eb;
@@ -16,7 +20,11 @@
   --color-primary-light: var(--color-primary-light);
   --color-accent: var(--color-accent);
   --color-accent-hover: var(--color-accent-hover);
+  --color-accent-alt: var(--color-accent-alt);
+  --color-accent-alt-hover: var(--color-accent-alt-hover);
+  --color-gold: var(--color-gold);
   --color-bg: var(--color-bg);
+  --color-bg-warm: var(--color-bg-warm);
   --color-text: var(--color-text);
   --color-text-light: var(--color-text-light);
   --color-border: var(--color-border);
@@ -27,4 +35,24 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

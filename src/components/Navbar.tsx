@@ -12,67 +12,61 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
   const [profileOpen, setProfileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-border">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <svg
-              className="h-8 w-8 text-primary"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
-              <line x1="12" y1="12" x2="12" y2="16" />
-              <line x1="10" y1="14" x2="14" y2="14" />
-            </svg>
-            <span className="text-xl font-bold text-primary">JobLink</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="h-9 w-9 rounded-lg bg-[#0f2b4c] flex items-center justify-center">
+              <svg
+                className="h-5 w-5 text-[#d4a843]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-[#0f2b4c]">JobLink</span>
           </Link>
 
-          {/* Center nav links — hidden on mobile */}
+          {/* Center nav — just 3 links, clean */}
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/jobs"
-              className="text-sm font-medium text-text-light hover:text-primary transition-colors"
+              className="text-sm font-medium text-text-light hover:text-[#0f2b4c] transition-colors"
             >
               Find Jobs
             </Link>
             <Link
-              href="/employers"
-              className="text-sm font-medium text-text-light hover:text-primary transition-colors"
-            >
-              For Employers
-            </Link>
-            <Link
               href="/about"
-              className="text-sm font-medium text-text-light hover:text-primary transition-colors"
+              className="text-sm font-medium text-text-light hover:text-[#0f2b4c] transition-colors"
             >
               About
             </Link>
             {isLoggedIn && (
               <Link
                 href="/dashboard"
-                className="text-sm font-medium text-text-light hover:text-primary transition-colors"
+                className="text-sm font-medium text-text-light hover:text-[#0f2b4c] transition-colors"
               >
                 Dashboard
               </Link>
             )}
           </div>
 
-          {/* Right side auth / profile */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Right side */}
+          <div className="hidden md:flex items-center gap-3">
             {isLoggedIn ? (
               <div className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-full border border-border p-1 pr-3 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-sm font-medium">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0f2b4c] text-white text-sm font-medium">
                     U
                   </span>
                   <svg
@@ -87,27 +81,18 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-white py-1 shadow-lg">
-                    <Link
-                      href="/dashboard"
-                      className="block px-4 py-2 text-sm text-text hover:bg-gray-50"
-                    >
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-border bg-white py-1 shadow-lg">
+                    <Link href="/dashboard" className="block px-4 py-2.5 text-sm text-text hover:bg-gray-50">
                       Dashboard
                     </Link>
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-2 text-sm text-text hover:bg-gray-50"
-                    >
+                    <Link href="/profile" className="block px-4 py-2.5 text-sm text-text hover:bg-gray-50">
                       Profile
                     </Link>
-                    <Link
-                      href="/settings"
-                      className="block px-4 py-2 text-sm text-text hover:bg-gray-50"
-                    >
+                    <Link href="/settings" className="block px-4 py-2.5 text-sm text-text hover:bg-gray-50">
                       Settings
                     </Link>
                     <hr className="my-1 border-border" />
-                    <button className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50">
+                    <button className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-gray-50">
                       Sign Out
                     </button>
                   </div>
@@ -117,13 +102,13 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
               <>
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-text-light hover:text-primary transition-colors"
+                  className="text-sm font-semibold text-text-light hover:text-[#0f2b4c] transition-colors px-3 py-2"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="/post-job"
-                  className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+                  href="/signup"
+                  className="rounded-lg bg-[#e85d26] hover:bg-[#d14e1a] px-5 py-2.5 text-sm font-semibold text-white transition-colors"
                 >
                   Post a Job
                 </Link>
@@ -131,12 +116,12 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
             )}
           </div>
 
-          {/* Mobile: Post a Job button (nav links handled by BottomNav) */}
+          {/* Mobile: just the CTA */}
           <div className="flex md:hidden items-center gap-3">
             {!isLoggedIn && (
               <Link
-                href="/post-job"
-                className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+                href="/signup"
+                className="rounded-lg bg-[#e85d26] hover:bg-[#d14e1a] px-4 py-2 text-sm font-semibold text-white transition-colors"
               >
                 Post a Job
               </Link>
