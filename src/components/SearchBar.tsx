@@ -30,15 +30,12 @@ export default function SearchBar() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-2xl mx-auto"
-    >
-      <div className="flex flex-col sm:flex-row bg-white rounded-2xl shadow-xl shadow-black/10 overflow-hidden">
+    <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
+      <div className="flex flex-col sm:flex-row bg-white rounded-full shadow-xl shadow-black/10 overflow-hidden border border-white/20">
         {/* Keyword input */}
-        <div className="flex items-center flex-1 px-5 py-4 border-b sm:border-b-0 sm:border-r border-gray-100">
+        <div className="flex items-center flex-1 px-5 py-3.5 sm:py-3.5">
           <svg
-            className="h-5 w-5 text-gray-400 shrink-0 mr-3"
+            className="h-4.5 w-4.5 text-[#a1a1aa] shrink-0 mr-3"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -54,14 +51,17 @@ export default function SearchBar() {
             placeholder="Job title or keyword..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            className="w-full bg-transparent text-gray-900 placeholder:text-gray-400 outline-none text-base"
+            className="w-full bg-transparent text-[#1a1a1a] placeholder:text-[#a1a1aa] outline-none text-[15px]"
           />
         </div>
 
+        {/* Divider */}
+        <div className="hidden sm:block w-px bg-[#e7e5e0] my-2.5" />
+
         {/* Location dropdown */}
-        <div className="flex items-center px-5 py-4 border-b sm:border-b-0 sm:border-r border-gray-100 sm:w-52">
+        <div className="flex items-center px-5 py-3.5 sm:py-3.5 border-t sm:border-t-0 border-[#f0ede8] sm:w-44">
           <svg
-            className="h-5 w-5 text-gray-400 shrink-0 mr-3"
+            className="h-4.5 w-4.5 text-[#a1a1aa] shrink-0 mr-3"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -75,12 +75,10 @@ export default function SearchBar() {
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full bg-transparent text-gray-900 outline-none text-base appearance-none cursor-pointer"
+            className="w-full bg-transparent text-[#1a1a1a] outline-none text-[15px] appearance-none cursor-pointer"
           >
             {parishes.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
+              <option key={p} value={p}>{p}</option>
             ))}
           </select>
         </div>
@@ -88,7 +86,7 @@ export default function SearchBar() {
         {/* Search button */}
         <button
           type="submit"
-          className="bg-[#e85d26] hover:bg-[#d14e1a] text-white font-bold px-7 py-4 transition-colors text-base cursor-pointer"
+          className="bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-6 py-3.5 transition-colors text-[15px] cursor-pointer sm:rounded-r-full"
         >
           Search
         </button>

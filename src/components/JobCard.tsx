@@ -19,15 +19,14 @@ export interface Job {
 function isNew(dateStr: string): boolean {
   const created = new Date(dateStr);
   const now = new Date();
-  const diffMs = now.getTime() - created.getTime();
-  return diffMs < 24 * 60 * 60 * 1000;
+  return now.getTime() - created.getTime() < 24 * 60 * 60 * 1000;
 }
 
 function formatSalary(min?: number | null, max?: number | null): string {
   if (!min && !max) return "";
   const fmt = (n: number) =>
     n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
-  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
   if (min) return `From ${fmt(min)}`;
   return `Up to ${fmt(max!)}`;
 }
@@ -35,17 +34,15 @@ function formatSalary(min?: number | null, max?: number | null): string {
 function jobTypeBadgeColor(type: string): string {
   switch (type.toLowerCase()) {
     case "full-time":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "bg-emerald-50 text-emerald-600";
     case "part-time":
-      return "bg-sky-50 text-sky-700 border-sky-200";
+      return "bg-sky-50 text-sky-600";
     case "contract":
-      return "bg-violet-50 text-violet-700 border-violet-200";
+      return "bg-violet-50 text-violet-600";
     case "seasonal":
-      return "bg-amber-50 text-amber-700 border-amber-200";
-    case "temporary":
-      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      return "bg-amber-50 text-amber-600";
     default:
-      return "bg-gray-50 text-gray-700 border-gray-200";
+      return "bg-zinc-100 text-zinc-600";
   }
 }
 
@@ -58,11 +55,11 @@ export default function JobCard({ job }: { job: Job }) {
 
   const colors = [
     "bg-[#0d7377]",
-    "bg-[#e8613d]",
+    "bg-[#095355]",
     "bg-[#2d8a4e]",
-    "bg-[#f0a04b]",
-    "bg-rose-600",
-    "bg-[#14919b]",
+    "bg-[#6366f1]",
+    "bg-[#0284c7]",
+    "bg-[#7c3aed]",
   ];
   const colorIndex =
     job.company_name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) %
@@ -73,60 +70,58 @@ export default function JobCard({ job }: { job: Job }) {
   );
 
   return (
-    <div className="group relative bg-white rounded-xl border border-[#e8e2d9] hover:border-[#0d7377]/30 hover:shadow-lg transition-all p-5">
-      {/* Featured ribbon */}
+    <div className="group relative bg-white rounded-2xl border border-[#e7e5e0] hover:border-[#0d7377]/20 hover:shadow-md hover:shadow-black/[0.03] transition-all duration-200 p-5">
+      {/* Badges */}
       {job.is_featured && (
-        <div className="absolute top-3 right-3 bg-[#f0a04b] text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wide">
+        <div className="absolute top-4 right-4 bg-[#0d7377] text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
           Featured
         </div>
       )}
-
-      {/* New badge */}
       {isNew(job.created_at) && !job.is_featured && (
-        <div className="absolute top-3 right-3 bg-[#2d8a4e] text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wide">
+        <div className="absolute top-4 right-4 bg-[#1a1a1a] text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
           New
         </div>
       )}
 
       <Link href={`/jobs/${job.id}`} className="block">
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3.5">
           {job.company_logo ? (
             <img
               src={job.company_logo}
               alt={job.company_name}
-              className="shrink-0 h-12 w-12 rounded-xl object-cover border border-[#e8e2d9]"
+              className="shrink-0 h-11 w-11 rounded-xl object-cover border border-[#e7e5e0]"
             />
           ) : (
             <div
-              className={`shrink-0 h-12 w-12 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-lg`}
+              className={`shrink-0 h-11 w-11 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-semibold text-sm`}
             >
               {initial}
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-[#2c2c2c] group-hover:text-[#0d7377] transition-colors text-[15px] leading-snug">
+            <h3 className="font-semibold text-[#1a1a1a] group-hover:text-[#0d7377] transition-colors text-[14px] leading-snug">
               {job.title}
             </h3>
-            <p className="text-[#7a7a72] text-sm mt-0.5">{job.company_name}</p>
+            <p className="text-[#a1a1aa] text-[13px] mt-0.5">{job.company_name}</p>
 
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
-              <span className="flex items-center gap-1 text-xs text-[#7a7a72]">
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <span className="flex items-center gap-1 text-xs text-[#71717a]">
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
                 {job.location}
               </span>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${jobTypeBadgeColor(job.job_type)}`}>
+              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${jobTypeBadgeColor(job.job_type)}`}>
                 {job.job_type}
               </span>
             </div>
 
             {salary && (
-              <p className="text-sm font-semibold text-[#0d7377] mt-2.5">
+              <p className="text-[13px] font-semibold text-[#1a1a1a] mt-2.5">
                 {salary}
-                <span className="text-[#a09888] font-normal text-xs ml-1">/month</span>
+                <span className="text-[#a1a1aa] font-normal text-[11px] ml-1">/mo</span>
               </p>
             )}
           </div>
@@ -137,11 +132,11 @@ export default function JobCard({ job }: { job: Job }) {
         href={`https://wa.me/?text=${whatsappText}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-4 right-4 text-[#cdc5b8] hover:text-green-600 transition-colors"
+        className="absolute bottom-4 right-4 text-[#d4d4d8] hover:text-green-600 transition-colors"
         aria-label="Share on WhatsApp"
         onClick={(e) => e.stopPropagation()}
       >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+        <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
         </svg>
       </a>
