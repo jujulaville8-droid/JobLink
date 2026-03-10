@@ -124,7 +124,7 @@ export default function Home() {
               Opportunity Here
             </h1>
             <p className="mt-5 text-lg text-white/70 max-w-md mx-auto leading-relaxed">
-              Search hundreds of jobs across every parish. Built for Antiguans, by Antiguans.
+              Your next career move starts here.
             </p>
 
             <div className="mt-9">
@@ -222,7 +222,7 @@ export default function Home() {
               Browse by Industry
             </h2>
             <p className="mt-1.5 text-[#71717a]">
-              Find roles in the sectors that drive Antigua&apos;s economy
+              Explore opportunities by sector
             </p>
           </div>
 
@@ -279,7 +279,7 @@ export default function Home() {
                   {
                     num: "02",
                     title: "Browse and apply",
-                    desc: "Search by parish, industry, or job type. Apply with one click using your saved profile.",
+                    desc: "Search by industry, location, or job type. Apply with one click using your saved profile.",
                   },
                   {
                     num: "03",
@@ -394,25 +394,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== PARISHES ===== */}
-      <section className="border-t border-[#e7e5e0] bg-white py-14 sm:py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-xl sm:text-2xl font-bold text-[#1a1a1a] tracking-tight mb-6">
-            Jobs across every parish
-          </h2>
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            {["St. John's", "All Saints", "St. George", "St. Peter", "St. Philip", "St. Paul", "St. Mary", "English Harbour", "Barbuda"].map((parish) => (
-              <Link
-                key={parish}
-                href={`/jobs?location=${encodeURIComponent(parish)}`}
-                className="px-4 py-2 rounded-full border border-[#e7e5e0] text-sm text-[#71717a] hover:border-[#0d7377]/30 hover:text-[#0d7377] transition-colors bg-[#faf9f7]"
-              >
-                {parish}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
     </>
   );
 }
