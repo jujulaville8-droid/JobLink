@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
-import { createClient } from '@/lib/supabase/server'
 
 const FROM_ADDRESS = 'JobLink <notifications@joblink.ag>'
 
@@ -142,55 +140,16 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
     const body = await request.json()
-    const { to, subject: customSubject, type, data } = body
+    const { to, type } = body
 
     if (!to || !type) {
       return NextResponse.json({ error: 'to and type are required' }, { status: 400 })
     }
 
-    const validTypes: EmailType[] = [
-      'application_confirmation',
-      'new_applicant',
-      'status_update',
-      'job_alert',
-      'listing_expiry',
-    ]
-
-    if (!validTypes.includes(type)) {
-      return NextResponse.json(
-        { error: `Invalid type. Must be one of: ${validTypes.join(', ')}` },
-        { status: 400 }
-      )
-    }
-
-    const emailContent = buildEmailHtml(type as EmailType, data || {})
-
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const { data: emailResult, error: sendError } = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to: Array.isArray(to) ? to : [to],
-      subject: customSubject || emailContent.subject,
-      html: emailContent.html,
-    })
-
-    if (sendError) {
-      return NextResponse.json({ error: 'Failed to send email', details: sendError }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true, id: emailResult?.id })
+    // Email sending disabled until Resend API key is configured
+    console.log(`[Email Disabled] Would send "${type}" email to ${to}`)
+    return NextResponse.json({ success: true, id: 'email-disabled', message: 'Email sending not yet configured' })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
