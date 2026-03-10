@@ -116,7 +116,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
             ) : (
               <>
                 <Link
-                  href="/sign-in"
+                  href="/login"
                   className="text-sm font-medium text-text-light hover:text-primary transition-colors"
                 >
                   Sign In
