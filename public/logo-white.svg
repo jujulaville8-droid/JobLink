@@ -1,7 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="m11 17 2 2a1 1 0 1 0 3-3" />
-  <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" />
-  <path d="m21 3 1 11h-2" />
-  <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3" />
-  <path d="M3 4h8" />
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Sun rising behind briefcase -->
+  <circle cx="12" cy="7" r="3" fill="#f0a04b" stroke="none"/>
+  <path d="M12 2v1.5" stroke="#f0a04b" stroke-width="2"/>
+  <path d="m7.64 4.64.7.7" stroke="#f0a04b" stroke-width="2"/>
+  <path d="m15.66 5.34.7-.7" stroke="#f0a04b" stroke-width="2"/>
+  <path d="M5 7h1.5" stroke="#f0a04b" stroke-width="2"/>
+  <path d="M17.5 7h1.5" stroke="#f0a04b" stroke-width="2"/>
+
+  <!-- Briefcase body (white for dark backgrounds) -->
+  <path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9z" stroke="white" stroke-width="2" fill="none"/>
+  <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" stroke-width="2" fill="none"/>
+  <path d="M12 12v.01" stroke="white" stroke-width="2"/>
+  <path d="M3 13a20 20 0 0 0 18 0" stroke="white" stroke-width="2" fill="none"/>
 </svg>
