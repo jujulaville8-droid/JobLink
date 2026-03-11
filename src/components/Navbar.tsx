@@ -57,18 +57,18 @@ export default function Navbar() {
     return pathname === href;
   }
 
-  // Avatar element reused in desktop + mobile
+  // Avatar element reused in desktop
   const avatarElement = (
     <>
       {showAvatar ? (
         <img
           src={avatarUrl}
           alt=""
-          className="h-9 w-9 rounded-full object-cover"
+          className="h-10 w-10 rounded-full object-cover"
           onError={() => setImgError(true)}
         />
       ) : (
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0d7377] text-white text-[13px] font-semibold">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0d7377] text-white text-sm font-semibold">
           {initial}
         </span>
       )}
@@ -116,9 +116,18 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 rounded-full p-0.5 hover:ring-2 hover:ring-[#e5e7eb] transition-all"
+                  className="flex items-center gap-2 rounded-full border border-[#e5e7eb] p-1 pr-3 hover:bg-[#f4f4f5] hover:border-[#d4d4d8] transition-all"
                 >
                   {avatarElement}
+                  <svg
+                    className={`h-3.5 w-3.5 text-[#a1a1aa] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
                 </button>
 
                 {profileOpen && (
