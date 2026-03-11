@@ -3,37 +3,38 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
-  const { isAuthenticated, userRole, user, logout } = useAuth();
-  const router = useRouter();
+  const { isAuthenticated, user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
+    if (!profileOpen) return;
+
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setProfileOpen(false);
       }
     }
-    if (profileOpen) {
-      document.addEventListener("mousedown", handleClick);
-      return () => document.removeEventListener("mousedown", handleClick);
-    }
-  }, [profileOpen]);
 
-  function navigateTo(path: string) {
-    setProfileOpen(false);
-    router.push(path);
-  }
+    // Use a timeout so the current click event that opened the dropdown doesn't immediately close it
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClick);
+    }, 0);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleClick);
+    };
+  }, [profileOpen]);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#e7e5e0]/80">
+    <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-[#e7e5e0]/80">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-[60px] items-center justify-between">
           {/* Logo */}
@@ -80,10 +81,10 @@ export default function Navbar() {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#e7e5e0] bg-white py-1 shadow-lg shadow-black/5 z-50">
-                    <button onClick={() => navigateTo("/dashboard")} className="block w-full px-4 py-2.5 text-left text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</button>
-                    <button onClick={() => navigateTo("/profile")} className="block w-full px-4 py-2.5 text-left text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</button>
-                    <button onClick={() => navigateTo("/settings")} className="block w-full px-4 py-2.5 text-left text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</button>
+                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#e7e5e0] bg-white py-1 shadow-lg shadow-black/5" style={{ zIndex: 9999 }}>
+                    <a href="/dashboard" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</a>
+                    <a href="/profile" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</a>
+                    <a href="/settings" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</a>
                     <hr className="my-1 border-[#e7e5e0]" />
                     <button
                       onClick={() => { setProfileOpen(false); logout(); }}
