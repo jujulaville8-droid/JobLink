@@ -1,21 +1,8 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-
-export default async function AuthLayout({
+export default function AuthLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  // Redirect authenticated users to dashboard
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    redirect("/dashboard");
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -29,5 +16,5 @@ export default async function AuthLayout({
         {children}
       </div>
     </div>
-  );
+  )
 }
