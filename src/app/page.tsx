@@ -114,7 +114,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black/60" />
         </div>
 
-        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-20 sm:py-28 w-full">
+        <div className="relative mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 py-20 sm:py-28 w-full">
           <div className="text-center">
             <p className="text-sm font-semibold tracking-widest uppercase text-white/70 mb-4">
               Antigua &amp; Barbuda&apos;s Job Platform

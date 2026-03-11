@@ -31,7 +31,7 @@ export default function SearchBar() {
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
-      <div className="flex flex-col sm:flex-row bg-white rounded-full shadow-xl shadow-black/10 overflow-hidden border border-white/20">
+      <div className="flex flex-col sm:flex-row bg-white rounded-2xl sm:rounded-full shadow-xl shadow-black/10 overflow-hidden border border-white/20">
         {/* Keyword input */}
         <div className="flex items-center flex-1 px-5 py-3.5 sm:py-3.5">
           <svg
