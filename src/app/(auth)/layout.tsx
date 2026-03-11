@@ -1,3 +1,7 @@
+"use client";
+
+import AuthRedirect from "@/components/AuthRedirect";
+
 export default function AuthLayout({
   children,
 }: {
@@ -13,7 +17,7 @@ export default function AuthLayout({
             </span>
           </a>
         </div>
-        {children}
+        <AuthRedirect>{children}</AuthRedirect>
       </div>
     </div>
   )

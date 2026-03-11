@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import SearchBar from "@/components/SearchBar";
+import { HeroCTAs, GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
 import JobCard, { type Job } from "@/components/JobCard";
 
 const mockJobs: Job[] = [
@@ -131,20 +132,7 @@ export default function Home() {
               <SearchBar />
             </div>
 
-            <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/jobs"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-white text-[#1a1a1a] font-semibold px-8 py-3.5 text-[15px] hover:bg-white/90 transition-all shadow-lg shadow-black/15"
-              >
-                Browse All Jobs
-              </Link>
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-white/25 text-white font-semibold px-8 py-3.5 text-[15px] hover:bg-white/10 backdrop-blur-sm transition-all"
-              >
-                Post a Job — Free
-              </Link>
-            </div>
+            <HeroCTAs />
 
             <div className="mt-8 flex items-center justify-center gap-8 sm:gap-10 text-white/55 text-sm">
               <span><strong className="text-white/90 font-semibold">2,400+</strong> job seekers</span>
@@ -299,14 +287,7 @@ export default function Home() {
                 ))}
               </div>
 
-              <div className="mt-10">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center rounded-full bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-7 py-3 text-sm transition-colors"
-                >
-                  Create Free Account
-                </Link>
-              </div>
+              <GetStartedCTA />
             </div>
           </div>
         </div>
@@ -375,20 +356,7 @@ export default function Home() {
               <p className="mt-3 text-white/70 leading-relaxed">
                 Post your listing and reach thousands of qualified candidates across Antigua and Barbuda. It only takes 5 minutes.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center rounded-full bg-white text-[#0d7377] font-semibold px-7 py-3 text-sm hover:bg-white/90 transition-colors"
-                >
-                  Post a Job — Free
-                </Link>
-                <Link
-                  href="/about"
-                  className="inline-flex items-center justify-center rounded-full border border-white/30 text-white font-semibold px-7 py-3 text-sm hover:bg-white/10 transition-colors"
-                >
-                  Learn More
-                </Link>
-              </div>
+              <EmployerCTAs />
             </div>
           </div>
         </div>
