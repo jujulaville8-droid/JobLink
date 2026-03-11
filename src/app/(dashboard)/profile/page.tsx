@@ -1047,7 +1047,7 @@ function ProfileEditForm({
                 <button
                   type="button"
                   onClick={addSkill}
-                  className="rounded-lg bg-[#0d7377] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#095355] transition-colors"
+                  className="rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#095355] transition-all duration-200"
                 >
                   Add
                 </button>
@@ -1200,7 +1200,7 @@ function ProfileEditForm({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-lg bg-[#0d7377] px-5 py-2 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-colors"
+              className="rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
             >
               {saving ? "Saving..." : "Save"}
             </button>
@@ -1209,7 +1209,7 @@ function ProfileEditForm({
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(4, s + 1))}
-                className="rounded-lg bg-[#14919b] px-5 py-2 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
+                className="rounded-[10px] bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
               >
                 Next
               </button>
@@ -1314,7 +1314,7 @@ export default function ProfilePage() {
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="mt-4 rounded-lg bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-colors"
+          className="mt-4 rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
         >
           Retry
         </button>

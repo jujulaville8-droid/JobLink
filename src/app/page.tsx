@@ -146,7 +146,7 @@ export default function Home() {
       </section>
 
       {/* ===== TRUSTED BY ===== */}
-      <section className="border-b border-[#e7e5e0] bg-white py-7 sm:py-8">
+      <section className="bg-white py-7 sm:py-8 border-b border-[#e7e5e0]">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
             {["Sandals", "APUA", "LIAT", "Jumby Bay", "ABTA", "Epicurean"].map((name) => (
@@ -162,7 +162,8 @@ export default function Home() {
       </section>
 
       {/* ===== FEATURED JOBS ===== */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+      <section className="bg-[#f8fafc] py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-10">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
@@ -200,10 +201,11 @@ export default function Home() {
             </svg>
           </Link>
         </div>
+        </div>
       </section>
 
       {/* ===== BROWSE BY INDUSTRY ===== */}
-      <section className="bg-white py-16 sm:py-20 border-y border-[#e7e5e0]">
+      <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
@@ -235,7 +237,7 @@ export default function Home() {
       </section>
 
       {/* ===== SPLIT SECTION: IMAGE + HOW IT WORKS ===== */}
-      <section className="py-16 sm:py-20">
+      <section className="bg-[#f8fafc] py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Image */}
@@ -294,7 +296,7 @@ export default function Home() {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="py-16 sm:py-20 bg-white border-y border-[#e7e5e0]">
+      <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
@@ -337,7 +339,7 @@ export default function Home() {
       </section>
 
       {/* ===== EMPLOYER CTA ===== */}
-      <section className="py-16 sm:py-20">
+      <section className="bg-[#f8fafc] py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="relative rounded-3xl overflow-hidden">
             <Image

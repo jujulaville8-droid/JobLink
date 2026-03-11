@@ -61,3 +61,74 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1aa;
 }
+
+/* ── Global button polish ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #0d7377;
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 28px;
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background: #095355;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(13, 115, 119, 0.25);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
+  padding: 12px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+.btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-secondary-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: transparent;
+  color: #52525b;
+  font-weight: 500;
+  font-size: 15px;
+  padding: 12px 28px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+.btn-secondary-dark:hover {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+.btn-secondary-dark:active {
+  transform: translateY(0);
+  box-shadow: none;
+}

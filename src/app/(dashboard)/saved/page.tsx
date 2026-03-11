@@ -137,7 +137,7 @@ export default async function SavedJobsPage() {
           </p>
           <Link
             href="/jobs"
-            className="mt-6 inline-flex items-center rounded-lg bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
+            className="mt-6 inline-flex items-center rounded-[10px] bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
           >
             Browse Jobs
           </Link>

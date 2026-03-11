@@ -168,7 +168,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   href="/signup"
-                  className="rounded-full bg-[#0d7377] hover:bg-[#095355] px-5 py-2 text-sm font-semibold text-white transition-colors"
+                  className="rounded-[10px] bg-[#0d7377] hover:bg-[#095355] px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
                 >
                   Post a Job
                 </Link>
@@ -221,10 +221,10 @@ export default function Navbar() {
             ))}
             {!isAuthenticated && !isLoading && (
               <div className="mt-3 pt-3 border-t border-[#f4f4f5] flex gap-2 px-3">
-                <Link href="/login" className="flex-1 text-center text-sm font-medium text-[#52525b] border border-[#e5e7eb] rounded-full py-2.5 hover:bg-[#f4f4f5] transition-colors">
+                <Link href="/login" className="flex-1 text-center text-sm font-medium text-[#52525b] border border-[#e5e7eb] rounded-[10px] py-2.5 hover:bg-[#f4f4f5] transition-all duration-200">
                   Sign In
                 </Link>
-                <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-[#0d7377] rounded-full py-2.5 hover:bg-[#095355] transition-colors">
+                <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-[#0d7377] rounded-[10px] py-2.5 hover:bg-[#095355] transition-all duration-200">
                   Post a Job
                 </Link>
               </div>

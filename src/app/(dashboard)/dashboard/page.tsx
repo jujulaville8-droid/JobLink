@@ -104,7 +104,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
           {completePct < 100 && (
             <Link
               href="/profile"
-              className="rounded-lg bg-[#14919b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
+              className="rounded-[10px] bg-[#14919b] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
             >
               Complete Profile
             </Link>
@@ -180,7 +180,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
             <p className="text-text-light">You haven&apos;t applied to any jobs yet.</p>
             <Link
               href="/jobs"
-              className="mt-3 inline-block rounded-lg bg-[#0d7377] px-4 py-2 text-sm font-semibold text-white hover:bg-[#095355] transition-colors"
+              className="mt-3 inline-block rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
             >
               Browse Jobs
             </Link>
@@ -302,7 +302,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
         </div>
         <Link
           href="/post-job"
-          className="inline-flex items-center justify-center rounded-lg bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
+          className="inline-flex items-center justify-center rounded-[10px] bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
         >
           + Post a Job
         </Link>

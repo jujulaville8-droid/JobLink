@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 
 /**
  * Hero CTA buttons — auth-aware.
- * Logged out: "Browse All Jobs" + "Post a Job — Free" (→ /signup)
+ * Logged out: "Browse All Jobs" + "Post a Job" (→ /signup)
  * Logged in:  "Browse All Jobs" + "Go to Dashboard"
  */
 export function HeroCTAs() {
@@ -15,21 +15,21 @@ export function HeroCTAs() {
     <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
       <Link
         href="/jobs"
-        className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-[#0d7377] text-white font-semibold px-8 py-3.5 text-[15px] hover:bg-[#095355] transition-colors shadow-lg shadow-black/20"
+        className="btn-primary w-full sm:w-auto shadow-lg shadow-black/20"
       >
         Browse Jobs
       </Link>
       {!isLoading && isAuthenticated ? (
         <Link
           href="/dashboard"
-          className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-white/30 text-white font-medium px-8 py-3.5 text-[15px] hover:bg-white/10 transition-colors"
+          className="btn-secondary w-full sm:w-auto"
         >
           Go to Dashboard
         </Link>
       ) : (
         <Link
           href="/signup"
-          className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-white/30 text-white font-medium px-8 py-3.5 text-[15px] hover:bg-white/10 transition-colors"
+          className="btn-secondary w-full sm:w-auto"
         >
           Post a Job
         </Link>
@@ -50,7 +50,7 @@ export function GetStartedCTA() {
       <div className="mt-10">
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center rounded-full bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-7 py-3 text-sm transition-colors"
+          className="btn-primary"
         >
           Go to Dashboard
         </Link>
@@ -62,7 +62,7 @@ export function GetStartedCTA() {
     <div className="mt-10">
       <Link
         href="/signup"
-        className="inline-flex items-center justify-center rounded-full bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-7 py-3 text-sm transition-colors"
+        className="btn-primary"
       >
         Create Free Account
       </Link>
@@ -82,21 +82,21 @@ export function EmployerCTAs() {
       {!isLoading && isAuthenticated ? (
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center rounded-full bg-white text-[#0d7377] font-semibold px-7 py-3 text-sm hover:bg-white/90 transition-colors"
+          className="inline-flex items-center justify-center rounded-[10px] bg-white text-[#0d7377] font-semibold px-7 py-3 text-[15px] hover:bg-white/90 transition-all duration-200 hover:-translate-y-px hover:shadow-lg hover:shadow-black/10"
         >
           Go to Dashboard
         </Link>
       ) : (
         <Link
           href="/signup"
-          className="inline-flex items-center justify-center rounded-full bg-white text-[#0d7377] font-semibold px-7 py-3 text-sm hover:bg-white/90 transition-colors"
+          className="inline-flex items-center justify-center rounded-[10px] bg-white text-[#0d7377] font-semibold px-7 py-3 text-[15px] hover:bg-white/90 transition-all duration-200 hover:-translate-y-px hover:shadow-lg hover:shadow-black/10"
         >
           Post a Job — Free
         </Link>
       )}
       <Link
         href="/about"
-        className="inline-flex items-center justify-center rounded-full border border-white/30 text-white font-semibold px-7 py-3 text-sm hover:bg-white/10 transition-colors"
+        className="btn-secondary"
       >
         Learn More
       </Link>

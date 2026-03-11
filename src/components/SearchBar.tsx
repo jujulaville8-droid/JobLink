@@ -17,8 +17,8 @@ export default function SearchBar() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
-      <div className="flex flex-col sm:flex-row bg-white rounded-2xl sm:rounded-full shadow-xl shadow-black/10 overflow-hidden border border-white/20">
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+      <div className="flex flex-col sm:flex-row bg-white rounded-2xl sm:rounded-[14px] shadow-xl shadow-black/10 overflow-hidden border border-white/20">
         {/* Keyword input */}
         <div className="flex items-center flex-1 px-5 py-3.5 sm:py-3.5">
           <svg
@@ -71,7 +71,7 @@ export default function SearchBar() {
         {/* Search button */}
         <button
           type="submit"
-          className="bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-6 py-3.5 transition-colors text-[15px] cursor-pointer sm:rounded-r-full"
+          className="bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-8 py-3.5 transition-all duration-200 text-[15px] cursor-pointer sm:rounded-r-[14px] hover:shadow-md hover:shadow-[#0d7377]/20"
         >
           Search Jobs
         </button>

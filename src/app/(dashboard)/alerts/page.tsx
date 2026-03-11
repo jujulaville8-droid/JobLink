@@ -177,7 +177,7 @@ export default function AlertsPage() {
         {!showForm && (
           <button
             onClick={() => { resetForm(); setShowForm(true); }}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-colors"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -285,7 +285,7 @@ export default function AlertsPage() {
               <button
                 onClick={handleCreate}
                 disabled={saving}
-                className="rounded-lg bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-colors"
+                className="rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
               >
                 {saving ? "Creating..." : "Create Alert"}
               </button>
@@ -313,7 +313,7 @@ export default function AlertsPage() {
           {!showForm && (
             <button
               onClick={() => { resetForm(); setShowForm(true); }}
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-colors"
+              className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
             >
               Create your first alert
             </button>
