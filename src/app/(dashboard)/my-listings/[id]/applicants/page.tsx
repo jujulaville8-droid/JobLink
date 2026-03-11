@@ -14,10 +14,10 @@ function formatDate(dateStr: string): string {
 
 function StatusBadge({ status }: { status: ApplicationStatus }) {
   const styles: Record<ApplicationStatus, string> = {
-    applied: 'bg-blue-100 text-blue-700',
-    shortlisted: 'bg-green-100 text-green-700',
-    rejected: 'bg-red-100 text-red-700',
-    hired: 'bg-purple-100 text-purple-700',
+    applied: 'bg-primary/10 text-primary',
+    shortlisted: 'bg-emerald-50 text-emerald-700',
+    rejected: 'bg-red-50 text-red-600',
+    hired: 'bg-accent-warm/10 text-amber-700',
   };
   const labels: Record<ApplicationStatus, string> = {
     applied: 'Applied',
@@ -47,9 +47,9 @@ function StatusButton({
 
   const styles: Record<string, string> = {
     shortlisted:
-      'border-green-300 text-green-700 hover:bg-green-50',
-    rejected: 'border-red-300 text-red-700 hover:bg-red-50',
-    hired: 'border-purple-300 text-purple-700 hover:bg-purple-50',
+      'border-emerald-300 text-emerald-700 hover:bg-emerald-50',
+    rejected: 'border-red-300 text-red-600 hover:bg-red-50',
+    hired: 'border-amber-300 text-amber-700 hover:bg-amber-50',
   };
 
   const labels: Record<string, string> = {
@@ -213,7 +213,7 @@ export default async function ApplicantsPage({
         Back to My Listings
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold text-primary sm:text-3xl">
+      <h1 className="mt-4 text-2xl font-bold font-display text-primary sm:text-3xl">
         Applicants
       </h1>
       <p className="mt-1 text-sm text-text-light">
@@ -223,10 +223,10 @@ export default async function ApplicantsPage({
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total', count: applicants.length, color: 'bg-gray-100 text-gray-700' },
-          { label: 'Shortlisted', count: counts.shortlisted ?? 0, color: 'bg-green-100 text-green-700' },
-          { label: 'Hired', count: counts.hired ?? 0, color: 'bg-purple-100 text-purple-700' },
-          { label: 'Rejected', count: counts.rejected ?? 0, color: 'bg-red-100 text-red-700' },
+          { label: 'Total', count: applicants.length, color: 'bg-bg-alt text-text-light' },
+          { label: 'Shortlisted', count: counts.shortlisted ?? 0, color: 'bg-emerald-50 text-emerald-700' },
+          { label: 'Hired', count: counts.hired ?? 0, color: 'bg-accent-warm/10 text-amber-700' },
+          { label: 'Rejected', count: counts.rejected ?? 0, color: 'bg-red-50 text-red-600' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -244,7 +244,7 @@ export default async function ApplicantsPage({
       {applicants.length === 0 ? (
         <div className="mt-12 text-center">
           <svg
-            className="mx-auto h-16 w-16 text-gray-300"
+            className="mx-auto h-16 w-16 text-border"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -275,7 +275,7 @@ export default async function ApplicantsPage({
             return (
               <details
                 key={app.id}
-                className="group rounded-xl border border-border bg-white transition-shadow hover:shadow-sm"
+                className="group rounded-[--radius-card] border border-border bg-white transition-shadow hover:shadow-sm"
               >
                 <summary className="cursor-pointer list-none p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

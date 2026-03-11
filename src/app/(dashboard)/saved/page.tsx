@@ -37,7 +37,7 @@ export default async function SavedJobsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text sm:text-3xl">Saved Jobs</h1>
+      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">Saved Jobs</h1>
       <p className="mt-1 text-text-light">
         Jobs you&apos;ve bookmarked for later.
       </p>
@@ -57,7 +57,7 @@ export default async function SavedJobsPage() {
             return (
               <div
                 key={item.id as string}
-                className="relative rounded-xl border border-border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+                className="relative rounded-[--radius-card] border border-border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
               >
                 {/* Unsave button */}
                 <div className="absolute top-3 right-3">
@@ -83,7 +83,7 @@ export default async function SavedJobsPage() {
                   {/* Tags */}
                   <div className="mt-3 flex flex-wrap gap-2">
                     {(job.location as string) ? (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-text-light">
+                      <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium text-text-light">
                         {job.location as string}
                       </span>
                     ) : null}
@@ -117,7 +117,7 @@ export default async function SavedJobsPage() {
         </div>
       ) : (
         /* Empty state */
-        <div className="mt-12 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-12 text-center">
+        <div className="mt-12 flex flex-col items-center justify-center rounded-[--radius-card] border-2 border-dashed border-border p-12 text-center">
           <svg
             className="h-16 w-16 text-text-light"
             viewBox="0 0 24 24"
@@ -129,7 +129,7 @@ export default async function SavedJobsPage() {
           >
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
-          <h2 className="mt-4 text-lg font-semibold text-text">
+          <h2 className="mt-4 text-lg font-semibold font-display text-text">
             No saved jobs yet
           </h2>
           <p className="mt-1 text-text-light">

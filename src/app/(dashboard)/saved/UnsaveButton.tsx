@@ -24,7 +24,7 @@ export default function UnsaveButton({ savedJobId }: { savedJobId: string }) {
       title="Remove from saved"
     >
       {removing ? (
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-200 border-t-red-500" />
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-red-500" />
       ) : (
         <svg
           className="h-4 w-4"

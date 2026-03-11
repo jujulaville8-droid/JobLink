@@ -149,7 +149,7 @@ export default function AlertsPage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     );
   }
@@ -157,7 +157,7 @@ export default function AlertsPage() {
   if (error && !seekerProfileId) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Job Alerts</h1>
+        <h1 className="text-2xl font-bold font-display text-text mb-6">Job Alerts</h1>
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           {error}
         </div>
@@ -169,8 +169,8 @@ export default function AlertsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Job Alerts</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold font-display text-text">Job Alerts</h1>
+          <p className="mt-1 text-sm text-text-light">
             Get notified when new jobs match your criteria
           </p>
         </div>
@@ -195,13 +195,13 @@ export default function AlertsPage() {
 
       {/* Create Alert Form */}
       {showForm && (
-        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Create a new alert</h2>
+        <div className="mb-6 rounded-lg border border-border bg-white p-6">
+          <h2 className="text-base font-semibold font-display text-text mb-4">Create a new alert</h2>
 
           <div className="space-y-4">
             {/* Keywords */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-text-light mb-1.5">
                 Keywords
               </label>
               <div className="flex gap-2">
@@ -211,12 +211,12 @@ export default function AlertsPage() {
                   onChange={(e) => setKeywordInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="e.g. marketing, chef, IT support"
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
+                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleAddKeyword}
-                  className="rounded-lg border border-gray-300 px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
                 >
                   Add
                 </button>
@@ -226,12 +226,12 @@ export default function AlertsPage() {
                   {keywords.map((kw) => (
                     <span
                       key={kw}
-                      className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
+                      className="inline-flex items-center gap-1 rounded-md bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-light"
                     >
                       {kw}
                       <button
                         onClick={() => setKeywords((prev) => prev.filter((k) => k !== kw))}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-text-muted hover:text-text-light"
                       >
                         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -245,13 +245,13 @@ export default function AlertsPage() {
 
             {/* Industry */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-text-light mb-1.5">
                 Industry
               </label>
               <select
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
               >
                 <option value="">Any industry</option>
                 {INDUSTRIES.map((ind) => (
@@ -262,13 +262,13 @@ export default function AlertsPage() {
 
             {/* Job Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <label className="block text-sm font-medium text-text-light mb-1.5">
                 Job Type
               </label>
               <select
                 value={jobType}
                 onChange={(e) => setJobType(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
               >
                 <option value="">Any type</option>
                 {JOB_TYPES.map((jt) => (
@@ -291,7 +291,7 @@ export default function AlertsPage() {
               </button>
               <button
                 onClick={() => { resetForm(); setShowForm(false); }}
-                className="rounded-lg border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
               >
                 Cancel
               </button>
@@ -302,12 +302,12 @@ export default function AlertsPage() {
 
       {/* Alerts List */}
       {alerts.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-10 text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <div className="rounded-lg border border-border bg-white p-10 text-center">
+          <svg className="mx-auto h-12 w-12 text-border" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
-          <h3 className="mt-4 text-lg font-semibold text-gray-900">No alerts yet</h3>
-          <p className="mt-1 text-sm text-gray-500">
+          <h3 className="mt-4 text-lg font-semibold font-display text-text">No alerts yet</h3>
+          <p className="mt-1 text-sm text-text-light">
             Create an alert to get notified when new jobs match your criteria.
           </p>
           {!showForm && (
@@ -324,7 +324,7 @@ export default function AlertsPage() {
           {alerts.map((alert) => (
             <div
               key={alert.id}
-              className="flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-4"
+              className="flex items-start gap-4 rounded-lg border border-border bg-white p-4"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0d7377]/10 flex-shrink-0">
                 <svg className="h-5 w-5 text-[#0d7377]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -350,14 +350,14 @@ export default function AlertsPage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-1.5 text-xs text-gray-400">
+                <p className="mt-1.5 text-xs text-text-muted">
                   Created {new Date(alert.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </div>
 
               <button
                 onClick={() => handleDelete(alert.id)}
-                className="flex-shrink-0 rounded-lg p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="flex-shrink-0 rounded-lg p-2 text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
                 title="Delete alert"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

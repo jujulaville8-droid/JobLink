@@ -77,9 +77,9 @@ const VISIBILITY_BANNER: Record<VisibilityMode, { bg: string; text: string; icon
     label: "Open to opportunities",
   },
   not_looking: {
-    bg: "bg-gray-50 border-gray-200",
-    text: "text-gray-600",
-    icon: "text-gray-400",
+    bg: "bg-bg-alt border-border",
+    text: "text-text-light",
+    icon: "text-text-muted",
     label: "Your profile is hidden from employers",
   },
 };
@@ -197,7 +197,7 @@ function ProfileAvatar({
         <img
           src={avatarUrl}
           alt="Profile"
-          className={`${sizeClasses} rounded-full object-cover border-2 border-gray-200`}
+          className={`${sizeClasses} rounded-full object-cover border-2 border-border`}
         />
       ) : (
         <div className={`flex items-center justify-center rounded-full bg-[#0d7377] font-bold text-white ${sizeClasses}`}>
@@ -384,31 +384,31 @@ function ProfileView({
     <div className="mx-auto max-w-2xl pb-12">
 
       {/* ── Profile Header Card ── */}
-      <div className="rounded-lg border border-gray-200 bg-white">
+      <div className="rounded-lg border border-border bg-white">
         <div className="p-6">
           <div className="flex items-start justify-between gap-4">
             {/* Left: Name & contact */}
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 sm:text-[28px] leading-tight">
+              <h1 className="text-2xl font-bold font-display text-text sm:text-[28px] leading-tight">
                 {fullName}
               </h1>
 
               <div className="mt-3 flex flex-col gap-1.5">
                 {email && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <IconMail className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  <div className="flex items-center gap-2 text-sm text-text-light">
+                    <IconMail className="h-4 w-4 flex-shrink-0 text-text-muted" />
                     <span className="truncate">{email}</span>
                   </div>
                 )}
                 {profile.phone && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <IconPhone className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  <div className="flex items-center gap-2 text-sm text-text-light">
+                    <IconPhone className="h-4 w-4 flex-shrink-0 text-text-muted" />
                     <span>{profile.phone}</span>
                   </div>
                 )}
                 {profile.location && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <IconMapPin className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                  <div className="flex items-center gap-2 text-sm text-text-light">
+                    <IconMapPin className="h-4 w-4 flex-shrink-0 text-text-muted" />
                     <span>{profile.location}</span>
                   </div>
                 )}
@@ -440,14 +440,14 @@ function ProfileView({
 
         {/* Completion bar — only show if not 100% */}
         {percentage < 100 && (
-          <div className="border-t border-gray-100 px-6 py-3 bg-gray-50/50">
+          <div className="border-t border-border px-6 py-3 bg-bg-alt/50">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-gray-500">Profile {percentage}% complete</span>
+              <span className="font-medium text-text-light">Profile {percentage}% complete</span>
               <button onClick={onEdit} className="font-medium text-[#14919b] hover:underline">
                 Complete profile
               </button>
             </div>
-            <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200">
+            <div className="mt-1.5 h-1.5 w-full rounded-full bg-border">
               <div
                 className="h-1.5 rounded-full bg-[#0d7377] transition-all duration-500"
                 style={{ width: `${percentage}%` }}
@@ -456,7 +456,7 @@ function ProfileView({
             {missing.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {missing.map((item) => (
-                  <span key={item} className="text-[11px] text-gray-400">
+                  <span key={item} className="text-[11px] text-text-muted">
                     {item}{missing.indexOf(item) < missing.length - 1 ? " · " : ""}
                   </span>
                 ))}
@@ -475,12 +475,12 @@ function ProfileView({
           <IconEye className={`h-5 w-5 flex-shrink-0 ${banner.icon}`} />
           <div className="flex-1 text-left">
             <p className={`text-sm font-medium ${banner.text}`}>{banner.label}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-text-light mt-0.5">
               {VISIBILITY_OPTIONS.find((o) => o.value === profile.visibility)?.description}
             </p>
           </div>
           <svg
-            className={`h-4 w-4 text-gray-400 transition-transform ${statusOpen ? "rotate-180" : ""}`}
+            className={`h-4 w-4 text-text-muted transition-transform ${statusOpen ? "rotate-180" : ""}`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -504,19 +504,19 @@ function ProfileView({
                   className={`w-full flex items-start gap-3 rounded-lg border p-4 text-left transition-colors ${
                     isSelected
                       ? "border-[#0d7377] bg-[#0d7377]/5"
-                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                      : "border-border hover:border-border hover:bg-bg-alt"
                   } ${statusSaving ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                    isSelected ? "border-[#0d7377]" : "border-gray-300"
+                    isSelected ? "border-[#0d7377]" : "border-border"
                   }`}>
                     {isSelected && <div className="h-2 w-2 rounded-full bg-[#0d7377]" />}
                   </div>
                   <div>
-                    <p className={`text-sm font-medium ${isSelected ? "text-[#0d7377]" : "text-gray-900"}`}>
+                    <p className={`text-sm font-medium ${isSelected ? "text-[#0d7377]" : "text-text"}`}>
                       {opt.label}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>
+                    <p className="text-xs text-text-light mt-0.5">{opt.description}</p>
                   </div>
                   {isSelected && statusSaving && (
                     <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
@@ -534,17 +534,17 @@ function ProfileView({
       {/* ── Resume / CV Section ── */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Resume</h2>
+          <h2 className="text-lg font-semibold font-display text-text">Resume</h2>
           <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             {profile.cv_url ? "Update" : "Upload"}
           </button>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white">
+        <div className="rounded-lg border border-border bg-white">
           {profile.cv_url ? (
             <button
               onClick={handleResumePreview}
               disabled={resumeLoading}
-              className="flex w-full items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
+              className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
                 {resumeLoading ? (
@@ -554,25 +554,25 @@ function ProfileView({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-text">
                   {profile.first_name ? `${profile.first_name}'s CV` : "My CV"}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-text-light mt-0.5">
                   {resumeLoading ? "Opening preview…" : "PDF document"}
                 </p>
               </div>
-              <IconChevron className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
             </button>
           ) : (
-            <button onClick={onEdit} className="flex w-full items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
-                <IconUpload className="h-5 w-5 text-gray-400" />
+            <button onClick={onEdit} className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-border">
+                <IconUpload className="h-5 w-5 text-text-muted" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-gray-900">Upload your CV</p>
-                <p className="text-xs text-gray-500 mt-0.5">Add a resume to apply faster</p>
+                <p className="text-sm font-medium text-text">Upload your CV</p>
+                <p className="text-xs text-text-light mt-0.5">Add a resume to apply faster</p>
               </div>
-              <IconChevron className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
             </button>
           )}
         </div>
@@ -584,37 +584,37 @@ function ProfileView({
       {/* ── Qualifications Section ── */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Qualifications</h2>
+          <h2 className="text-lg font-semibold font-display text-text">Qualifications</h2>
           <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+        <div className="rounded-lg border border-border bg-white divide-y divide-border">
           {/* Skills */}
           <div className="p-4">
-            <p className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Skills</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-muted mb-2">Skills</p>
             {profile.skills.length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {profile.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700"
+                    className="inline-flex items-center rounded-md bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-light"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No skills added yet</p>
+              <p className="text-sm text-text-muted">No skills added yet</p>
             )}
           </div>
 
           {/* Experience */}
           <div className="flex items-center gap-3 p-4">
-            <IconBriefcase className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            <IconBriefcase className="h-5 w-5 text-text-muted flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Experience</p>
-              <p className="text-sm text-gray-900 mt-0.5">
+              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">Experience</p>
+              <p className="text-sm text-text mt-0.5">
                 {profile.experience_years !== null
                   ? `${profile.experience_years} ${profile.experience_years === 1 ? "year" : "years"}`
                   : "Not specified"}
@@ -624,10 +624,10 @@ function ProfileView({
 
           {/* Education */}
           <div className="flex items-center gap-3 p-4">
-            <IconGrad className="h-5 w-5 text-gray-400 flex-shrink-0" />
+            <IconGrad className="h-5 w-5 text-text-muted flex-shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-400">Education</p>
-              <p className="text-sm text-gray-900 mt-0.5">{profile.education || "Not specified"}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-text-muted">Education</p>
+              <p className="text-sm text-text mt-0.5">{profile.education || "Not specified"}</p>
             </div>
           </div>
         </div>
@@ -636,16 +636,16 @@ function ProfileView({
       {/* ── About / Bio Section ── */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">About</h2>
+          <h2 className="text-lg font-semibold font-display text-text">About</h2>
           <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="rounded-lg border border-border bg-white p-4">
           {profile.bio ? (
-            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{profile.bio}</p>
+            <p className="text-sm text-text-light leading-relaxed whitespace-pre-line">{profile.bio}</p>
           ) : (
-            <p className="text-sm text-gray-400">Tell employers about yourself, your experience, and what you're looking for.</p>
+            <p className="text-sm text-text-muted">Tell employers about yourself, your experience, and what you're looking for.</p>
           )}
         </div>
       </div>
@@ -653,36 +653,36 @@ function ProfileView({
       {/* ── Contact & Settings Section ── */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-900">Contact Information</h2>
+          <h2 className="text-lg font-semibold font-display text-text">Contact Information</h2>
           <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+        <div className="rounded-lg border border-border bg-white divide-y divide-border">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <IconMail className="h-4 w-4 text-gray-400" />
+              <IconMail className="h-4 w-4 text-text-muted" />
               <div>
-                <p className="text-xs text-gray-400">Email</p>
-                <p className="text-sm text-gray-900">{email || "Not set"}</p>
+                <p className="text-xs text-text-muted">Email</p>
+                <p className="text-sm text-text">{email || "Not set"}</p>
               </div>
             </div>
           </div>
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <IconPhone className="h-4 w-4 text-gray-400" />
+              <IconPhone className="h-4 w-4 text-text-muted" />
               <div>
-                <p className="text-xs text-gray-400">Phone</p>
-                <p className="text-sm text-gray-900">{profile.phone || "Not set"}</p>
+                <p className="text-xs text-text-muted">Phone</p>
+                <p className="text-sm text-text">{profile.phone || "Not set"}</p>
               </div>
             </div>
           </div>
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <IconMapPin className="h-4 w-4 text-gray-400" />
+              <IconMapPin className="h-4 w-4 text-text-muted" />
               <div>
-                <p className="text-xs text-gray-400">Location</p>
-                <p className="text-sm text-gray-900">{profile.location || "Not set"}</p>
+                <p className="text-xs text-text-muted">Location</p>
+                <p className="text-sm text-text">{profile.location || "Not set"}</p>
               </div>
             </div>
           </div>
@@ -846,10 +846,10 @@ function ProfileEditForm({
     <div className="mx-auto max-w-2xl pb-12">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold font-display text-text">
             {isNewProfile ? "Create Profile" : "Edit Profile"}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-text-light">
             {isNewProfile
               ? "Complete your profile to stand out to employers."
               : "Update your profile information."}
@@ -858,7 +858,7 @@ function ProfileEditForm({
         {!isNewProfile && (
           <button
             onClick={onCancel}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
           >
             Cancel
           </button>
@@ -866,19 +866,19 @@ function ProfileEditForm({
       </div>
 
       {/* Progress */}
-      <div className="mt-5 rounded-lg border border-gray-200 bg-white p-4">
+      <div className="mt-5 rounded-lg border border-border bg-white p-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-gray-700">Profile Completion</span>
+          <span className="font-medium text-text-light">Profile Completion</span>
           <span className={`font-semibold ${completePct === 100 ? "text-green-600" : "text-[#0d7377]"}`}>{completePct}%</span>
         </div>
-        <div className="mt-2 h-2 w-full rounded-full bg-gray-100">
+        <div className="mt-2 h-2 w-full rounded-full bg-bg-alt">
           <div
             className={`h-2 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#0d7377]"}`}
             style={{ width: `${completePct}%` }}
           />
         </div>
         {missing.length > 0 && (
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="mt-2 text-xs text-text-muted">
             Missing: {missing.join(" · ")}
           </p>
         )}
@@ -895,13 +895,13 @@ function ProfileEditForm({
                 ? "bg-[#0d7377] text-white"
                 : s < step
                   ? "bg-green-100 text-green-700"
-                  : "bg-gray-100 text-gray-400"
+                  : "bg-bg-alt text-text-muted"
             }`}
           >
             {s}
           </button>
         ))}
-        <span className="ml-2 text-sm text-gray-400">
+        <span className="ml-2 text-sm text-text-muted">
           Step {step} of 4
         </span>
       </div>
@@ -920,11 +920,11 @@ function ProfileEditForm({
       )}
 
       {/* Step Content */}
-      <div className="mt-5 rounded-lg border border-gray-200 bg-white p-6">
+      <div className="mt-5 rounded-lg border border-border bg-white p-6">
         {/* Step 1: Personal Info */}
         {step === 1 && (
           <div className="space-y-5">
-            <h2 className="text-base font-semibold text-gray-900">Personal Information</h2>
+            <h2 className="text-base font-semibold font-display text-text">Personal Information</h2>
 
             {/* Profile Photo */}
             <div className="flex items-center gap-4">
@@ -962,51 +962,51 @@ function ProfileEditForm({
                 uploading={uploading}
               />
               <div>
-                <p className="text-sm font-medium text-gray-700">Profile photo</p>
-                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG or WebP. Max 2MB.</p>
+                <p className="text-sm font-medium text-text-light">Profile photo</p>
+                <p className="text-xs text-text-muted mt-0.5">JPG, PNG or WebP. Max 2MB.</p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                <label className="block text-sm font-medium text-text-light mb-1">First Name *</label>
                 <input
                   type="text"
                   value={profile.first_name}
                   onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                   placeholder="John"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                <label className="block text-sm font-medium text-text-light mb-1">Last Name *</label>
                 <input
                   type="text"
                   value={profile.last_name}
                   onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                   placeholder="Doe"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <label className="block text-sm font-medium text-text-light mb-1">Phone</label>
               <input
                 type="tel"
                 value={profile.phone}
                 onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="+1 (268) 555-0123"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Location (Parish)</label>
+              <label className="block text-sm font-medium text-text-light mb-1">Location (Parish)</label>
               <select
                 value={profile.location}
                 onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
               >
                 <option value="">Select a parish</option>
                 {ANTIGUA_PARISHES.map((parish) => (
@@ -1016,12 +1016,12 @@ function ProfileEditForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+              <label className="block text-sm font-medium text-text-light mb-1">Bio</label>
               <textarea
                 value={profile.bio}
                 onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
                 rows={4}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377] resize-none"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377] resize-none"
                 placeholder="Tell employers a bit about yourself..."
               />
             </div>
@@ -1031,17 +1031,17 @@ function ProfileEditForm({
         {/* Step 2: Skills & Experience */}
         {step === 2 && (
           <div className="space-y-5">
-            <h2 className="text-base font-semibold text-gray-900">Skills & Experience</h2>
+            <h2 className="text-base font-semibold font-display text-text">Skills & Experience</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Skills</label>
+              <label className="block text-sm font-medium text-text-light mb-1">Skills</label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
-                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                   placeholder="Type a skill and press Enter"
                 />
                 <button
@@ -1055,9 +1055,9 @@ function ProfileEditForm({
               {profile.skills.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {profile.skills.map((skill) => (
-                    <span key={skill} className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                    <span key={skill} className="inline-flex items-center gap-1 rounded-md bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-light">
                       {skill}
-                      <button type="button" onClick={() => removeSkill(skill)} className="ml-0.5 text-gray-400 hover:text-gray-700">
+                      <button type="button" onClick={() => removeSkill(skill)} className="ml-0.5 text-text-muted hover:text-text-light">
                         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
@@ -1069,25 +1069,25 @@ function ProfileEditForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
+              <label className="block text-sm font-medium text-text-light mb-1">Years of Experience</label>
               <input
                 type="number"
                 min="0"
                 max="50"
                 value={profile.experience_years ?? ""}
                 onChange={(e) => setProfile((p) => ({ ...p, experience_years: e.target.value ? parseInt(e.target.value) : null }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="e.g. 5"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Education</label>
+              <label className="block text-sm font-medium text-text-light mb-1">Education</label>
               <input
                 type="text"
                 value={profile.education}
                 onChange={(e) => setProfile((p) => ({ ...p, education: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="e.g. BSc in Computer Science, UWI"
               />
             </div>
@@ -1097,11 +1097,11 @@ function ProfileEditForm({
         {/* Step 3: CV Upload */}
         {step === 3 && (
           <div className="space-y-5">
-            <h2 className="text-base font-semibold text-gray-900">Resume / CV</h2>
-            <p className="text-sm text-gray-500">Upload your CV as a PDF (max 5MB).</p>
+            <h2 className="text-base font-semibold font-display text-text">Resume / CV</h2>
+            <p className="text-sm text-text-light">Upload your CV as a PDF (max 5MB).</p>
 
             {profile.cv_url && (
-              <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center gap-3 rounded-lg border border-border p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
                   {resumePreviewLoading ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
@@ -1110,7 +1110,7 @@ function ProfileEditForm({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900">CV uploaded</p>
+                  <p className="text-sm font-medium text-text">CV uploaded</p>
                   <button
                     onClick={handleResumePreviewInForm}
                     disabled={resumePreviewLoading}
@@ -1126,16 +1126,16 @@ function ProfileEditForm({
             )}
 
             <label className="block cursor-pointer">
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-8 hover:border-[#0d7377] hover:bg-gray-50/50 transition-colors">
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 hover:border-[#0d7377] hover:bg-bg-alt/50 transition-colors">
                 {uploading ? (
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-[#0d7377]" />
                 ) : (
                   <>
-                    <IconUpload className="h-8 w-8 text-gray-400" />
-                    <p className="mt-2 text-sm font-medium text-gray-700">
+                    <IconUpload className="h-8 w-8 text-text-muted" />
+                    <p className="mt-2 text-sm font-medium text-text-light">
                       {profile.cv_url ? "Upload a new CV" : "Click to upload your CV"}
                     </p>
-                    <p className="mt-1 text-xs text-gray-400">PDF up to 5MB</p>
+                    <p className="mt-1 text-xs text-text-muted">PDF up to 5MB</p>
                   </>
                 )}
               </div>
@@ -1153,8 +1153,8 @@ function ProfileEditForm({
         {/* Step 4: Visibility */}
         {step === 4 && (
           <div className="space-y-5">
-            <h2 className="text-base font-semibold text-gray-900">Profile Visibility</h2>
-            <p className="text-sm text-gray-500">Control who can see your profile.</p>
+            <h2 className="text-base font-semibold font-display text-text">Profile Visibility</h2>
+            <p className="text-sm text-text-light">Control who can see your profile.</p>
 
             <div className="space-y-2.5">
               {VISIBILITY_OPTIONS.map((opt) => (
@@ -1163,7 +1163,7 @@ function ProfileEditForm({
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                     profile.visibility === opt.value
                       ? "border-[#0d7377] bg-blue-50/50"
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-border hover:border-border"
                   }`}
                 >
                   <input
@@ -1175,8 +1175,8 @@ function ProfileEditForm({
                     className="mt-0.5 h-4 w-4 accent-[#0d7377]"
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{opt.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>
+                    <p className="text-sm font-medium text-text">{opt.label}</p>
+                    <p className="text-xs text-text-light mt-0.5">{opt.description}</p>
                   </div>
                 </label>
               ))}
@@ -1185,12 +1185,12 @@ function ProfileEditForm({
         )}
 
         {/* Navigation & Save */}
-        <div className="mt-6 flex items-center justify-between border-t border-gray-100 pt-5">
+        <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
           <button
             type="button"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
             disabled={step === 1}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:bg-bg-alt disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Previous
           </button>
@@ -1301,7 +1301,7 @@ export default function ProfilePage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-[#0d7377]" />
       </div>
     );
   }

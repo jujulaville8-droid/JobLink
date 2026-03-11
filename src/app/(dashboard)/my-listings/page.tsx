@@ -6,9 +6,9 @@ import { JOB_TYPE_LABELS, type JobListing, type JobStatus, type JobType } from '
 
 function StatusBadge({ status }: { status: JobStatus }) {
   const styles: Record<JobStatus, string> = {
-    active: 'bg-green-100 text-green-700',
-    pending_approval: 'bg-yellow-100 text-yellow-700',
-    closed: 'bg-gray-100 text-gray-600',
+    active: 'bg-emerald-50 text-emerald-700',
+    pending_approval: 'bg-accent-warm/10 text-amber-700',
+    closed: 'bg-bg-alt text-text-light',
   };
   const labels: Record<JobStatus, string> = {
     active: 'Active',
@@ -102,7 +102,7 @@ export default async function MyListingsPage({
     <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-primary sm:text-3xl">
+          <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
             My Job Listings
           </h1>
           <p className="mt-1 text-sm text-text-light">
@@ -118,7 +118,7 @@ export default async function MyListingsPage({
       </div>
 
       {/* Tabs */}
-      <div className="mt-6 flex gap-1 overflow-x-auto rounded-lg border border-border bg-gray-50 p-1">
+      <div className="mt-6 flex gap-1 overflow-x-auto rounded-lg border border-border bg-bg-alt p-1">
         {tabs.map((tab) => (
           <Link
             key={tab.key}
@@ -138,7 +138,7 @@ export default async function MyListingsPage({
       {listings.length === 0 ? (
         <div className="mt-12 text-center">
           <svg
-            className="mx-auto h-16 w-16 text-gray-300"
+            className="mx-auto h-16 w-16 text-border"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -164,7 +164,7 @@ export default async function MyListingsPage({
           {listings.map((listing) => (
             <div
               key={listing.id}
-              className="rounded-xl border border-border bg-white p-5 transition-shadow hover:shadow-sm"
+              className="rounded-[--radius-card] border border-border bg-white p-5 transition-shadow hover:shadow-sm"
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
@@ -202,7 +202,7 @@ export default async function MyListingsPage({
                 <div className="flex items-center gap-2 text-sm">
                   <Link
                     href={`/my-listings/${listing.id}/applicants`}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-medium text-text transition-colors hover:bg-gray-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-medium text-text transition-colors hover:bg-bg-alt"
                   >
                     <svg
                       className="h-4 w-4"

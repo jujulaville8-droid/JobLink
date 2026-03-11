@@ -62,23 +62,19 @@ async function JobResults({
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 
-  // Keyword search on title and description
   if (searchParams.q) {
     const keyword = `%${searchParams.q}%`;
     query = query.or(`title.ilike.${keyword},description.ilike.${keyword}`);
   }
 
-  // Location filter
   if (searchParams.location) {
     query = query.eq("location", searchParams.location);
   }
 
-  // Category filter
   if (searchParams.category) {
     query = query.eq("category", searchParams.category);
   }
 
-  // Job type filter (can be multiple)
   if (searchParams.job_type) {
     const types = Array.isArray(searchParams.job_type)
       ? searchParams.job_type
@@ -88,7 +84,6 @@ async function JobResults({
     }
   }
 
-  // Work permit filter
   if (searchParams.work_permit === "true") {
     query = query.eq("requires_work_permit", true);
   }
@@ -97,7 +92,7 @@ async function JobResults({
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+      <div className="rounded-[--radius-card] border border-red-200 bg-red-50 p-6 text-center">
         <p className="text-red-600 font-medium">
           Something went wrong loading jobs.
         </p>
@@ -108,9 +103,9 @@ async function JobResults({
 
   if (!jobs || jobs.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-white p-10 text-center">
+      <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
         <svg
-          className="mx-auto h-12 w-12 text-text-light/50"
+          className="mx-auto h-12 w-12 text-text-muted/50"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -121,7 +116,7 @@ async function JobResults({
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <h3 className="mt-4 text-lg font-semibold text-text">No jobs found</h3>
+        <h3 className="mt-4 font-display text-lg text-text">No jobs found</h3>
         <p className="mt-1 text-sm text-text-light">
           Try adjusting your filters or search terms to find more opportunities.
         </p>
@@ -129,7 +124,6 @@ async function JobResults({
     );
   }
 
-  // Map to the Job interface expected by JobCard
   const mappedJobs: Job[] = jobs.map((job) => {
     const company = job.company as unknown as {
       id: string;
@@ -156,12 +150,12 @@ async function JobResults({
   });
 
   return (
-    <div>
+    <div className="animate-fade-up">
       <p className="mb-4 text-sm text-text-light">
         <span className="font-semibold text-text">{mappedJobs.length}</span>{" "}
         {mappedJobs.length === 1 ? "job" : "jobs"} found
       </p>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 stagger-children">
         {mappedJobs.map((job) => (
           <JobCard key={job.id} job={job} />
         ))}
@@ -177,7 +171,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-text">
+        <h1 className="font-display text-2xl sm:text-3xl text-text">
           Browse Jobs
         </h1>
         <p className="mt-1 text-sm text-text-light">
@@ -211,14 +205,14 @@ export default async function JobsPage({ searchParams }: PageProps) {
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="animate-pulse rounded-xl border border-border bg-white p-5"
+                    className="rounded-[--radius-card] border border-border bg-white p-5"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-lg bg-gray-200" />
+                      <div className="h-12 w-12 rounded-lg skeleton" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 w-3/4 rounded bg-gray-200" />
-                        <div className="h-3 w-1/2 rounded bg-gray-200" />
-                        <div className="h-3 w-1/3 rounded bg-gray-200" />
+                        <div className="h-4 w-3/4 skeleton" />
+                        <div className="h-3 w-1/2 skeleton" />
+                        <div className="h-3 w-1/3 skeleton" />
                       </div>
                     </div>
                   </div>

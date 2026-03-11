@@ -164,7 +164,7 @@ export default async function DashboardBrowseJobsPage({ searchParams }: PageProp
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text">Browse Jobs</h1>
+        <h1 className="text-2xl font-bold font-display text-text">Browse Jobs</h1>
         <p className="mt-1 text-sm text-text-light">
           Discover opportunities across Antigua and Barbuda
         </p>
@@ -196,11 +196,11 @@ export default async function DashboardBrowseJobsPage({ searchParams }: PageProp
                     className="animate-pulse rounded-xl border border-border bg-white p-5"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-lg bg-gray-200" />
+                      <div className="h-12 w-12 rounded-lg skeleton" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 w-3/4 rounded bg-gray-200" />
-                        <div className="h-3 w-1/2 rounded bg-gray-200" />
-                        <div className="h-3 w-1/3 rounded bg-gray-200" />
+                        <div className="h-4 w-3/4 rounded skeleton" />
+                        <div className="h-3 w-1/2 rounded skeleton" />
+                        <div className="h-3 w-1/3 rounded skeleton" />
                       </div>
                     </div>
                   </div>

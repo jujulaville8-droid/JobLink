@@ -34,14 +34,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-      <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">
+    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8">
+      <h1 className="font-display text-2xl text-text text-center mb-6">
         Sign in to JobLink
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
             {error}
           </div>
         )}
@@ -49,7 +49,7 @@ export default function LoginPage() {
         <div>
           <label
             htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1.5"
+            className="block text-sm font-medium text-text-light mb-1.5"
           >
             Email address
           </label>
@@ -60,7 +60,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
+            className="input-base"
           />
         </div>
 
@@ -68,13 +68,13 @@ export default function LoginPage() {
           <div className="flex items-center justify-between mb-1.5">
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-text-light"
             >
               Password
             </label>
             <a
               href="#"
-              className="text-sm text-[#0d7377] hover:text-[#095355] transition"
+              className="text-sm text-primary hover:text-primary-dark transition"
             >
               Forgot password?
             </a>
@@ -86,14 +86,14 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
+            className="input-base"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0d7377] text-white font-semibold rounded-[10px] px-4 py-3 hover:bg-[#095355] focus:ring-2 focus:ring-[#0d7377]/40 focus:outline-none transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          className="w-full btn-primary disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
@@ -124,11 +124,11 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-600">
+      <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
           href="/signup"
-          className="font-medium text-[#0d7377] hover:text-[#095355] transition"
+          className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one
         </Link>

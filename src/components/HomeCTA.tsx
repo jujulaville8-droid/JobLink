@@ -3,11 +3,6 @@
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 
-/**
- * Hero CTA buttons — auth-aware.
- * Logged out: "Browse All Jobs" + "Post a Job" (→ /signup)
- * Logged in:  "Browse All Jobs" + "Go to Dashboard"
- */
 export function HeroCTAs() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -38,10 +33,6 @@ export function HeroCTAs() {
   );
 }
 
-/**
- * "Create Free Account" CTA in the How It Works section.
- * Logged in: shows "Go to Dashboard" instead.
- */
 export function GetStartedCTA() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -62,7 +53,7 @@ export function GetStartedCTA() {
     <div className="mt-10">
       <Link
         href="/signup"
-        className="btn-primary"
+        className="btn-warm"
       >
         Create Free Account
       </Link>
@@ -70,10 +61,6 @@ export function GetStartedCTA() {
   );
 }
 
-/**
- * Employer CTA section buttons.
- * Logged in: "Go to Dashboard" instead of "Post a Job — Free"
- */
 export function EmployerCTAs() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -82,14 +69,14 @@ export function EmployerCTAs() {
       {!isLoading && isAuthenticated ? (
         <Link
           href="/dashboard"
-          className="inline-flex items-center justify-center rounded-[10px] bg-white text-[#0d7377] font-semibold px-7 py-3 text-[15px] hover:bg-white/90 transition-all duration-200 hover:-translate-y-px hover:shadow-lg hover:shadow-black/10"
+          className="btn-warm"
         >
           Go to Dashboard
         </Link>
       ) : (
         <Link
           href="/signup"
-          className="inline-flex items-center justify-center rounded-[10px] bg-white text-[#0d7377] font-semibold px-7 py-3 text-[15px] hover:bg-white/90 transition-all duration-200 hover:-translate-y-px hover:shadow-lg hover:shadow-black/10"
+          className="btn-warm"
         >
           Post a Job — Free
         </Link>

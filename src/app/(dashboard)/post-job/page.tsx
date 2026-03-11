@@ -167,7 +167,7 @@ export default function PostJobPage() {
   if (success) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <div className="rounded-xl border border-green-200 bg-green-50 p-8">
+        <div className="rounded-[--radius-card] border border-green-200 bg-green-50 p-8">
           <svg
             className="mx-auto h-16 w-16 text-green-500"
             fill="none"
@@ -181,7 +181,7 @@ export default function PostJobPage() {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h2 className="mt-4 text-xl font-bold text-green-800">
+          <h2 className="mt-4 text-xl font-bold font-display text-green-800">
             Job Submitted Successfully!
           </h2>
           <p className="mt-2 text-green-700">
@@ -195,7 +195,7 @@ export default function PostJobPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
-      <h1 className="text-2xl font-bold text-primary sm:text-3xl">
+      <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
         Post a Job
       </h1>
       <p className="mt-2 text-text-light">
@@ -478,7 +478,7 @@ export default function PostJobPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-text-light">
               Preview
             </h2>
-            <div className="mt-3 rounded-xl border border-border bg-white p-5 shadow-sm">
+            <div className="mt-3 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
               <h3 className="text-lg font-semibold text-text">
                 {form.title || 'Job Title'}
               </h3>
@@ -502,7 +502,7 @@ export default function PostJobPage() {
                   {JOB_TYPE_LABELS[form.job_type]}
                 </span>
                 {form.category && (
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                  <span className="rounded-full bg-bg-alt px-2 py-0.5 text-xs font-medium text-text-light">
                     {form.category}
                   </span>
                 )}

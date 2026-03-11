@@ -34,15 +34,15 @@ function formatSalary(min?: number | null, max?: number | null): string {
 function jobTypeBadgeColor(type: string): string {
   switch (type.toLowerCase()) {
     case "full-time":
-      return "bg-emerald-50 text-emerald-600";
+      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
     case "part-time":
-      return "bg-sky-50 text-sky-600";
+      return "bg-primary/5 text-primary border border-primary/20";
     case "contract":
-      return "bg-violet-50 text-violet-600";
+      return "bg-accent-warm/10 text-amber-700 border border-accent-warm/20";
     case "seasonal":
-      return "bg-amber-50 text-amber-600";
+      return "bg-coral/10 text-orange-700 border border-coral/20";
     default:
-      return "bg-zinc-100 text-zinc-600";
+      return "bg-bg-alt text-text-light border border-border";
   }
 }
 
@@ -54,12 +54,12 @@ export default function JobCard({ job }: { job: Job }) {
       : "";
 
   const colors = [
-    "bg-[#0d7377]",
-    "bg-[#095355]",
-    "bg-[#2d8a4e]",
-    "bg-[#6366f1]",
-    "bg-[#0284c7]",
-    "bg-[#7c3aed]",
+    "bg-primary",
+    "bg-primary-dark",
+    "bg-emerald-600",
+    "bg-violet-600",
+    "bg-sky-600",
+    "bg-purple-600",
   ];
   const colorIndex =
     job.company_name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) %
@@ -70,15 +70,15 @@ export default function JobCard({ job }: { job: Job }) {
   );
 
   return (
-    <div className="group relative bg-white rounded-2xl border border-[#e7e5e0] hover:border-[#0d7377]/20 hover:shadow-md hover:shadow-black/[0.03] transition-all duration-200 p-5">
+    <div className="group relative bg-white rounded-[--radius-card] border border-border hover:border-primary/20 transition-all duration-300 p-5 hover-lift">
       {/* Badges */}
       {job.is_featured && (
-        <div className="absolute top-4 right-4 bg-[#0d7377] text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+        <div className="absolute top-4 right-4 bg-accent-warm text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
           Featured
         </div>
       )}
       {isNew(job.created_at) && !job.is_featured && (
-        <div className="absolute top-4 right-4 bg-[#1a1a1a] text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+        <div className="absolute top-4 right-4 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
           New
         </div>
       )}
@@ -89,7 +89,7 @@ export default function JobCard({ job }: { job: Job }) {
             <img
               src={job.company_logo}
               alt={job.company_name}
-              className="shrink-0 h-11 w-11 rounded-xl object-cover border border-[#e7e5e0]"
+              className="shrink-0 h-11 w-11 rounded-xl object-cover border border-border"
             />
           ) : (
             <div
@@ -100,13 +100,13 @@ export default function JobCard({ job }: { job: Job }) {
           )}
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-[#1a1a1a] group-hover:text-[#0d7377] transition-colors text-[14px] leading-snug">
+            <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug">
               {job.title}
             </h3>
-            <p className="text-[#a1a1aa] text-[13px] mt-0.5">{job.company_name}</p>
+            <p className="text-text-muted text-[13px] mt-0.5">{job.company_name}</p>
 
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
-              <span className="flex items-center gap-1 text-xs text-[#71717a]">
+              <span className="flex items-center gap-1 text-xs text-text-light">
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
@@ -119,9 +119,9 @@ export default function JobCard({ job }: { job: Job }) {
             </div>
 
             {salary && (
-              <p className="text-[13px] font-semibold text-[#1a1a1a] mt-2.5">
+              <p className="text-[13px] font-semibold text-text mt-2.5">
                 {salary}
-                <span className="text-[#a1a1aa] font-normal text-[11px] ml-1">/mo</span>
+                <span className="text-text-muted font-normal text-[11px] ml-1">/mo</span>
               </p>
             )}
           </div>
@@ -132,7 +132,7 @@ export default function JobCard({ job }: { job: Job }) {
         href={`https://wa.me/?text=${whatsappText}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute bottom-4 right-4 text-[#d4d4d8] hover:text-green-600 transition-colors"
+        className="absolute bottom-4 right-4 text-border hover:text-green-600 transition-colors"
         aria-label="Share on WhatsApp"
         onClick={(e) => e.stopPropagation()}
       >

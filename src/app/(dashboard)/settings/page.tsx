@@ -161,14 +161,14 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-[#0d7377]" />
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold text-text sm:text-3xl">Settings</h1>
+      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">Settings</h1>
       <p className="mt-1 text-text-light">
         Manage your account preferences.
       </p>
@@ -187,8 +187,8 @@ export default function SettingsPage() {
       )}
 
       {/* Email Preferences */}
-      <section className="mt-8 rounded-xl border border-border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-text">
+      <section className="mt-8 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold font-display text-text">
           Email Notifications
         </h2>
         <p className="mt-1 text-sm text-text-light">
@@ -244,8 +244,8 @@ export default function SettingsPage() {
 
       {/* Visibility (seekers only) */}
       {role === "seeker" && (
-        <section className="mt-6 rounded-xl border border-border bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-text">
+        <section className="mt-6 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold font-display text-text">
             Profile Visibility
           </h2>
           <p className="mt-1 text-sm text-text-light">
@@ -259,7 +259,7 @@ export default function SettingsPage() {
                 className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                   visibility === opt.value
                     ? "border-[#0d7377] bg-blue-50"
-                    : "border-border hover:border-gray-300"
+                    : "border-border hover:border-border"
                 }`}
               >
                 <input
@@ -281,8 +281,8 @@ export default function SettingsPage() {
       )}
 
       {/* Change Password */}
-      <section className="mt-6 rounded-xl border border-border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-text">Change Password</h2>
+      <section className="mt-6 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold font-display text-text">Change Password</h2>
         <p className="mt-1 text-sm text-text-light">
           Update your account password.
         </p>
@@ -340,7 +340,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Delete Account */}
-      <section className="mt-6 mb-12 rounded-xl border border-red-200 bg-red-50 p-6">
+      <section className="mt-6 mb-12 rounded-[--radius-card] border border-red-200 bg-red-50 p-6">
         <h2 className="text-lg font-semibold text-red-800">
           Delete Account
         </h2>
@@ -371,7 +371,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:bg-gray-50 transition-colors"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
               >
                 Cancel
               </button>

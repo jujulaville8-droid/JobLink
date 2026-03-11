@@ -4,10 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus } from "@/lib/types";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  applied: "bg-blue-100 text-blue-800",
-  shortlisted: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
-  hired: "bg-purple-100 text-purple-800",
+  applied: "bg-primary/10 text-primary",
+  shortlisted: "bg-emerald-50 text-emerald-700",
+  rejected: "bg-red-50 text-red-600",
+  hired: "bg-accent-warm/10 text-amber-700",
 };
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
@@ -51,7 +51,7 @@ export default async function ApplicationsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text sm:text-3xl">
+      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">
         My Applications
       </h1>
       <p className="mt-1 text-text-light">
@@ -62,7 +62,7 @@ export default async function ApplicationsPage() {
         <>
           {/* Summary */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-text-light">
+            <span className="inline-flex items-center rounded-full bg-bg-alt px-3 py-1 text-sm font-medium text-text-light">
               {apps.length} total
             </span>
             {(["applied", "shortlisted", "rejected", "hired"] as ApplicationStatus[]).map(
@@ -93,7 +93,7 @@ export default async function ApplicationsPage() {
               return (
                 <div
                   key={app.id as string}
-                  className="rounded-xl border border-border bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="rounded-[--radius-card] border border-border bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -153,7 +153,7 @@ export default async function ApplicationsPage() {
         </>
       ) : (
         /* Empty state */
-        <div className="mt-12 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border p-12 text-center">
+        <div className="mt-12 flex flex-col items-center justify-center rounded-[--radius-card] border-2 border-dashed border-border p-12 text-center">
           <svg
             className="h-16 w-16 text-text-light"
             viewBox="0 0 24 24"
@@ -168,7 +168,7 @@ export default async function ApplicationsPage() {
             <line x1="16" y1="13" x2="8" y2="13" />
             <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
-          <h2 className="mt-4 text-lg font-semibold text-text">
+          <h2 className="mt-4 text-lg font-semibold font-display text-text">
             No applications yet
           </h2>
           <p className="mt-1 text-text-light">

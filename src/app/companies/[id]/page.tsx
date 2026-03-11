@@ -53,7 +53,7 @@ export default async function CompanyPage({ params }: PageProps) {
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
-        <h1 className="mt-4 text-2xl font-bold text-text">
+        <h1 className="mt-4 text-2xl font-bold font-display text-text">
           Company Not Found
         </h1>
         <p className="mt-2 text-text-light">
@@ -132,7 +132,7 @@ export default async function CompanyPage({ params }: PageProps) {
       </Link>
 
       {/* Company header card */}
-      <div className="rounded-xl border border-border bg-white p-6 sm:p-8 mb-8">
+      <div className="rounded-[--radius-card] border border-border bg-white p-6 sm:p-8 mb-8">
         <div className="flex flex-col sm:flex-row items-start gap-5">
           {/* Logo / initial */}
           <div
@@ -144,7 +144,7 @@ export default async function CompanyPage({ params }: PageProps) {
           <div className="flex-1 min-w-0">
             {/* Name + verified badge */}
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-text">
+              <h1 className="text-2xl sm:text-3xl font-bold font-display text-text">
                 {company.company_name}
               </h1>
               {company.is_verified && (
@@ -234,7 +234,7 @@ export default async function CompanyPage({ params }: PageProps) {
 
       {/* Active job listings */}
       <div>
-        <h2 className="text-xl font-bold text-text mb-4">
+        <h2 className="text-xl font-bold font-display text-text mb-4">
           Open Positions
           {mappedJobs.length > 0 && (
             <span className="ml-2 text-base font-normal text-text-light">
@@ -244,7 +244,7 @@ export default async function CompanyPage({ params }: PageProps) {
         </h2>
 
         {mappedJobs.length === 0 ? (
-          <div className="rounded-xl border border-border bg-white p-10 text-center">
+          <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
             <svg
               className="mx-auto h-12 w-12 text-text-light/50"
               viewBox="0 0 24 24"

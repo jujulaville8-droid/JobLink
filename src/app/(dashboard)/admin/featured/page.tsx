@@ -51,7 +51,7 @@ export default async function AdminFeaturedPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-primary mb-2">Featured Listings</h1>
+      <h1 className="text-2xl font-bold font-display text-primary mb-2">Featured Listings</h1>
       <p className="text-text-light text-sm mb-8">
         Toggle listings to feature them at the top of search results.
       </p>
@@ -66,7 +66,7 @@ export default async function AdminFeaturedPage() {
             {featuredListings.map((listing) => (
               <div
                 key={listing.id}
-                className="flex items-center gap-4 bg-accent/5 border border-accent/20 rounded-xl p-4"
+                className="flex items-center gap-4 bg-accent/5 border border-accent/20 rounded-[--radius-card] p-4"
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text text-sm">{listing.title}</h3>
@@ -103,7 +103,7 @@ export default async function AdminFeaturedPage() {
             {regularListings.map((listing) => (
               <div
                 key={listing.id}
-                className="flex items-center gap-4 bg-white border border-border rounded-xl p-4 hover:border-primary/30 transition-colors"
+                className="flex items-center gap-4 bg-white border border-border rounded-[--radius-card] p-4 hover:border-primary/30 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text text-sm">{listing.title}</h3>

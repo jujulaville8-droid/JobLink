@@ -68,7 +68,7 @@ export default function Navbar() {
           onError={() => setImgError(true)}
         />
       ) : (
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0d7377] text-white text-sm font-semibold">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white text-sm font-semibold">
           {initial}
         </span>
       )}
@@ -76,15 +76,15 @@ export default function Navbar() {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb]">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
         <div className="relative flex h-[68px] items-center justify-between">
 
           {/* ── Left: Logo ── */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
             <JobLinkLogo size={34} />
-            <span className="text-xl font-semibold tracking-[-0.02em] text-[#1a1a1a]">
-              Job<span className="text-[#0d7377]">Link</span>
+            <span className="text-xl font-display tracking-[-0.02em] text-text">
+              Job<span className="text-primary">Link</span>
             </span>
           </Link>
 
@@ -94,15 +94,15 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-4 py-2 text-[15px] font-medium rounded-lg transition-colors ${
+                className={`relative px-4 py-2 text-[15px] font-medium rounded-lg transition-colors link-animated ${
                   isActive(link.href)
-                    ? "text-[#0d7377]"
-                    : "text-[#52525b] hover:text-[#0d7377] hover:bg-[#f4f4f5]"
+                    ? "text-primary"
+                    : "text-text-light hover:text-primary hover:bg-bg-alt"
                 }`}
               >
                 {link.label}
                 {isActive(link.href) && (
-                  <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[#0d7377] rounded-full" />
+                  <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />
                 )}
               </Link>
             ))}
@@ -116,11 +116,11 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 rounded-full border border-[#e5e7eb] p-1 pr-3 hover:bg-[#f4f4f5] hover:border-[#d4d4d8] transition-all"
+                  className="flex items-center gap-2 rounded-full border border-border p-1 pr-3 hover:bg-bg-alt hover:border-primary/20 transition-all"
                 >
                   {avatarElement}
                   <svg
-                    className={`h-3.5 w-3.5 text-[#a1a1aa] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+                    className={`h-3.5 w-3.5 text-text-muted transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -131,23 +131,23 @@ export default function Navbar() {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2.5 w-56 rounded-xl border border-[#e5e7eb] bg-white py-1.5 shadow-lg shadow-black/[0.08] z-50">
-                    <div className="px-4 py-2.5 border-b border-[#f4f4f5] mb-1">
-                      <p className="text-[13px] font-medium text-[#1a1a1a] truncate">{user?.email}</p>
+                  <div className="animate-scale-in absolute right-0 mt-2.5 w-56 rounded-xl border border-border bg-white py-1.5 shadow-lg shadow-primary/[0.06] z-50">
+                    <div className="px-4 py-2.5 border-b border-bg-alt mb-1">
+                      <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
                     </div>
-                    <button onClick={() => navigateTo("/dashboard")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[#3f3f46] hover:bg-[#f4f4f5] transition-colors">
-                      <svg className="h-4 w-4 text-[#a1a1aa]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <button onClick={() => navigateTo("/dashboard")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light hover:bg-bg-alt hover:text-primary transition-colors">
+                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                       Dashboard
                     </button>
-                    <button onClick={() => navigateTo("/profile")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[#3f3f46] hover:bg-[#f4f4f5] transition-colors">
-                      <svg className="h-4 w-4 text-[#a1a1aa]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <button onClick={() => navigateTo("/profile")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light hover:bg-bg-alt hover:text-primary transition-colors">
+                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                       Profile
                     </button>
-                    <button onClick={() => navigateTo("/settings")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-[#3f3f46] hover:bg-[#f4f4f5] transition-colors">
-                      <svg className="h-4 w-4 text-[#a1a1aa]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    <button onClick={() => navigateTo("/settings")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light hover:bg-bg-alt hover:text-primary transition-colors">
+                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                       Settings
                     </button>
-                    <div className="my-1.5 border-t border-[#f4f4f5]" />
+                    <div className="my-1.5 border-t border-border" />
                     <button
                       onClick={() => { setProfileOpen(false); logout(); }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -162,13 +162,13 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="text-[15px] font-medium text-[#52525b] hover:text-[#0d7377] transition-colors px-3 py-2"
+                  className="text-[15px] font-medium text-text-light hover:text-primary transition-colors px-3 py-2 link-animated"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/signup"
-                  className="rounded-[10px] bg-[#0d7377] hover:bg-[#095355] px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+                  className="btn-warm"
                 >
                   Post a Job
                 </Link>
@@ -183,7 +183,7 @@ export default function Navbar() {
                 {showAvatar ? (
                   <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setImgError(true)} />
                 ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0d7377] text-white text-[12px] font-semibold">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-[12px] font-semibold">
                     {initial}
                   </span>
                 )}
@@ -191,13 +191,13 @@ export default function Navbar() {
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[#f4f4f5] transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-bg-alt transition-colors"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
-                <svg className="h-5 w-5 text-[#1a1a1a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg className="h-5 w-5 text-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               ) : (
-                <svg className="h-5 w-5 text-[#3f3f46]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+                <svg className="h-5 w-5 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
               )}
             </button>
           </div>
@@ -205,26 +205,26 @@ export default function Navbar() {
 
         {/* ── Mobile menu ── */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-[#f4f4f5] py-2 pb-4">
+          <div className="md:hidden border-t border-border py-2 pb-4 animate-fade-in">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`block px-3 py-2.5 text-[15px] font-medium rounded-lg transition-colors ${
                   isActive(link.href)
-                    ? "text-[#0d7377] bg-[#0d7377]/[0.05]"
-                    : "text-[#52525b] hover:text-[#0d7377] hover:bg-[#f4f4f5]"
+                    ? "text-primary bg-primary/[0.05]"
+                    : "text-text-light hover:text-primary hover:bg-bg-alt"
                 }`}
               >
                 {link.label}
               </Link>
             ))}
             {!isAuthenticated && !isLoading && (
-              <div className="mt-3 pt-3 border-t border-[#f4f4f5] flex gap-2 px-3">
-                <Link href="/login" className="flex-1 text-center text-sm font-medium text-[#52525b] border border-[#e5e7eb] rounded-[10px] py-2.5 hover:bg-[#f4f4f5] transition-all duration-200">
+              <div className="mt-3 pt-3 border-t border-border flex gap-2 px-3">
+                <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-bg-alt transition-all duration-200">
                   Sign In
                 </Link>
-                <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-[#0d7377] rounded-[10px] py-2.5 hover:bg-[#095355] transition-all duration-200">
+                <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
                   Post a Job
                 </Link>
               </div>

@@ -227,7 +227,7 @@ export default function CompanyProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
-      <h1 className="text-2xl font-bold text-primary sm:text-3xl">
+      <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
         Company Profile
       </h1>
       <p className="mt-2 text-sm text-text-light">
@@ -264,7 +264,7 @@ export default function CompanyProfilePage() {
             Verified Company
           </div>
         )}
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-500">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-bg-alt px-3 py-1 text-sm font-medium text-text-muted">
           <svg
             className="h-4 w-4"
             viewBox="0 0 24 24"
@@ -275,7 +275,7 @@ export default function CompanyProfilePage() {
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
           Pro
-          <span className="ml-1 rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold uppercase">
+          <span className="ml-1 rounded bg-border px-1.5 py-0.5 text-[10px] font-bold uppercase">
             Coming Soon
           </span>
         </div>
@@ -295,7 +295,7 @@ export default function CompanyProfilePage() {
                 className="h-16 w-16 rounded-lg border border-border object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border bg-gray-50 text-text-light">
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border bg-bg-alt text-text-light">
                 <svg
                   className="h-8 w-8"
                   viewBox="0 0 24 24"
@@ -314,7 +314,7 @@ export default function CompanyProfilePage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-bg-alt disabled:opacity-50"
               >
                 {uploading ? 'Uploading...' : 'Upload Logo'}
               </button>

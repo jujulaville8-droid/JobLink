@@ -11,7 +11,7 @@ export default function AboutPage() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#095355] to-[#0d7377] text-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">
+          <h1 className="text-3xl md:text-5xl font-bold font-display mb-4">
             Made in Antigua, for Antigua
           </h1>
           <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
@@ -25,7 +25,7 @@ export default function AboutPage() {
       {/* Mission */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold font-display text-[#0d7377] mb-6">
             Why JobLink?
           </h2>
           <div className="space-y-4 text-[#71717a] text-lg leading-relaxed">
@@ -53,7 +53,7 @@ export default function AboutPage() {
       {/* How It Works */}
       <section className="py-16 px-4 bg-[#faf9f7]">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-10 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold font-display text-[#0d7377] mb-10 text-center">
             How It Works
           </h2>
           <div className="grid md:grid-cols-2 gap-12">
@@ -126,7 +126,7 @@ export default function AboutPage() {
       {/* Contact */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold font-display text-[#0d7377] mb-4">
             Get in Touch
           </h2>
           <p className="text-[#71717a] mb-8 max-w-lg mx-auto">
@@ -155,7 +155,7 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="bg-[#0d7377] text-white py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold font-display mb-4">
             Ready to get started?
           </h2>
           <p className="text-white/70 mb-8">

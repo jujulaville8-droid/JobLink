@@ -58,10 +58,10 @@ export default async function AdminApprovalsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-primary mb-6">Pending Approvals</h1>
+      <h1 className="text-2xl font-bold font-display text-primary mb-6">Pending Approvals</h1>
 
       {pendingListings.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-10 text-center">
+        <div className="bg-white rounded-[--radius-card] border border-border p-10 text-center">
           <div className="text-4xl mb-3">&#10003;</div>
           <p className="text-text-light text-lg">No pending approvals</p>
           <p className="text-text-light text-sm mt-1">All job listings have been reviewed.</p>
@@ -71,7 +71,7 @@ export default async function AdminApprovalsPage() {
           {pendingListings.map((listing) => (
             <details
               key={listing.id}
-              className="group bg-white rounded-xl border border-border overflow-hidden hover:border-primary/30 transition-colors"
+              className="group bg-white rounded-[--radius-card] border border-border overflow-hidden hover:border-primary/30 transition-colors"
             >
               <summary className="cursor-pointer p-5 list-none">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -88,7 +88,7 @@ export default async function AdminApprovalsPage() {
                         </svg>
                         {listing.location}
                       </span>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                         {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
                       </span>
                       <span className="text-xs text-text-light">

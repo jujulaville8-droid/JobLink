@@ -10,15 +10,19 @@ export default function BottomNav() {
   const isActive = (path: string) => pathname === path;
 
   const linkClass = (path: string) =>
-    `flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 min-w-[56px] ${
+    `flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 min-w-[56px] relative ${
       isActive(path) ? "text-primary" : "text-text-muted"
     }`;
 
   const iconClass = (path: string) =>
     `h-5.5 w-5.5 ${isActive(path) ? "text-primary" : "text-text-muted"}`;
 
+  const activeDot = (
+    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+  );
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e7e5e0]/80 bg-white/90 backdrop-blur-xl md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-white/90 backdrop-blur-xl md:hidden">
       <div className="flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <Link href="/" className={linkClass("/")}>
           <svg className={iconClass("/")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -26,6 +30,7 @@ export default function BottomNav() {
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
           <span>Home</span>
+          {isActive("/") && activeDot}
         </Link>
 
         <Link href="/jobs" className={linkClass("/jobs")}>
@@ -34,6 +39,7 @@ export default function BottomNav() {
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <span>Jobs</span>
+          {isActive("/jobs") && activeDot}
         </Link>
 
         {isAuthenticated && userRole === "employer" && (
@@ -44,6 +50,7 @@ export default function BottomNav() {
               <line x1="8" y1="12" x2="16" y2="12" />
             </svg>
             <span>Post</span>
+            {isActive("/post-job") && activeDot}
           </Link>
         )}
 
@@ -52,6 +59,7 @@ export default function BottomNav() {
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
           <span>Saved</span>
+          {isActive("/saved") && activeDot}
         </Link>
 
         {isAuthenticated ? (
@@ -62,6 +70,7 @@ export default function BottomNav() {
                 <circle cx="12" cy="7" r="4" />
               </svg>
               <span>Profile</span>
+              {isActive("/profile") && activeDot}
             </Link>
             <Link href="/dashboard" className={linkClass("/dashboard")}>
               <svg className={iconClass("/dashboard")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -71,6 +80,7 @@ export default function BottomNav() {
                 <rect x="3" y="14" width="7" height="7" />
               </svg>
               <span>Dashboard</span>
+              {isActive("/dashboard") && activeDot}
             </Link>
           </>
         ) : (
@@ -80,6 +90,7 @@ export default function BottomNav() {
               <circle cx="12" cy="7" r="4" />
             </svg>
             <span>Sign In</span>
+            {isActive("/login") && activeDot}
           </Link>
         )}
       </div>

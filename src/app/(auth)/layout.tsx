@@ -8,12 +8,16 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-mesh-teal flex flex-col items-center justify-center px-4 py-12 relative">
+      {/* Decorative geometric element */}
+      <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-20 left-10 w-48 h-48 rounded-full bg-accent-warm/5 blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md relative">
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
-            <span className="text-3xl font-bold text-[#0d7377]">
-              Job<span className="text-[#14919b]">Link</span>
+            <span className="text-3xl font-display text-primary">
+              Job<span className="text-primary-light">Link</span>
             </span>
           </a>
         </div>

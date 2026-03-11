@@ -88,7 +88,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
         <svg
-          className="mx-auto h-16 w-16 text-text-light/40"
+          className="mx-auto h-16 w-16 text-text-muted/40"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -100,13 +100,13 @@ export default async function JobDetailPage({ params }: PageProps) {
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        <h1 className="mt-4 text-2xl font-bold text-text">Job Not Found</h1>
+        <h1 className="mt-4 font-display text-2xl text-text">Job Not Found</h1>
         <p className="mt-2 text-text-light">
           This listing may have been removed or is no longer active.
         </p>
         <Link
           href="/jobs"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-light transition-colors"
+          className="mt-6 inline-flex items-center gap-2 btn-primary text-sm"
         >
           <svg
             className="h-4 w-4"
@@ -166,11 +166,11 @@ export default async function JobDetailPage({ params }: PageProps) {
     : 0;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-up">
       {/* Back link */}
       <Link
         href="/jobs"
-        className="inline-flex items-center gap-1.5 text-sm text-text-light hover:text-primary transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-text-light hover:text-primary transition-colors mb-6 link-animated"
       >
         <svg
           className="h-4 w-4"
@@ -187,21 +187,21 @@ export default async function JobDetailPage({ params }: PageProps) {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          <div className="rounded-xl border border-border bg-white p-6 sm:p-8">
+          <div className="rounded-[--radius-card] border border-border bg-white p-6 sm:p-8">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               {job.is_featured && (
-                <span className="inline-flex items-center rounded-full bg-accent text-white px-2.5 py-0.5 text-xs font-bold uppercase">
+                <span className="inline-flex items-center rounded-full bg-accent-warm text-white px-2.5 py-0.5 text-xs font-bold uppercase">
                   Featured
                 </span>
               )}
               {isNew && (
-                <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-bold uppercase">
+                <span className="inline-flex items-center rounded-full bg-coral text-white px-2.5 py-0.5 text-xs font-bold uppercase">
                   New
                 </span>
               )}
               {job.requires_work_permit && (
-                <span className="inline-flex items-center rounded-full bg-yellow-100 text-yellow-700 px-2.5 py-0.5 text-xs font-semibold">
+                <span className="inline-flex items-center rounded-full bg-accent-warm/10 text-amber-700 px-2.5 py-0.5 text-xs font-semibold">
                   Work Permit Required
                 </span>
               )}
@@ -241,13 +241,12 @@ export default async function JobDetailPage({ params }: PageProps) {
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl sm:text-3xl font-bold text-text">
+            <h1 className="font-display text-2xl sm:text-3xl text-text">
               {job.title}
             </h1>
 
             {/* Meta info */}
             <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-text-light">
-              {/* Location */}
               <span className="inline-flex items-center gap-1">
                 <svg
                   className="h-4 w-4"
@@ -264,12 +263,10 @@ export default async function JobDetailPage({ params }: PageProps) {
                 {job.location}
               </span>
 
-              {/* Job type badge */}
               <span className="inline-flex items-center rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary">
                 {jobTypeLabel}
               </span>
 
-              {/* Salary */}
               {salary && (
                 <span className="font-semibold text-primary">{salary}</span>
               )}
@@ -290,12 +287,11 @@ export default async function JobDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            {/* Divider */}
             <hr className="my-6 border-border" />
 
             {/* Description */}
             <div className="prose prose-sm max-w-none">
-              <h2 className="text-lg font-semibold text-text mb-3">
+              <h2 className="font-display text-lg text-text mb-3">
                 Job Description
               </h2>
               <div className="text-text-light whitespace-pre-wrap leading-relaxed text-sm">
@@ -303,7 +299,6 @@ export default async function JobDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Divider */}
             <hr className="my-6 border-border" />
 
             {/* Share + Report */}
@@ -312,7 +307,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 href={`https://wa.me/?text=${whatsappText}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 transition-colors"
+                className="inline-flex items-center gap-2 rounded-[--radius-button] bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 transition-colors"
               >
                 <svg
                   className="h-5 w-5"
@@ -338,13 +333,13 @@ export default async function JobDetailPage({ params }: PageProps) {
         <div className="hidden lg:block w-80 shrink-0">
           <div className="sticky top-20 space-y-4">
             {/* Apply card */}
-            <div className="rounded-xl border border-border bg-white p-6">
-              <h2 className="text-lg font-semibold text-text mb-4">
+            <div className="rounded-[--radius-card] border border-border bg-white p-6">
+              <h2 className="font-display text-lg text-text mb-4">
                 Interested in this role?
               </h2>
               <Link
                 href={`/jobs/${job.id}/apply`}
-                className="flex w-full items-center justify-center rounded-lg bg-accent px-6 py-3 text-base font-semibold text-white hover:bg-accent-hover transition-colors"
+                className="flex w-full items-center justify-center btn-warm text-base"
               >
                 Apply Now
               </Link>
@@ -357,7 +352,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
             {/* Company card */}
             {company && (
-              <div className="rounded-xl border border-border bg-white p-6">
+              <div className="rounded-[--radius-card] border border-border bg-white p-6">
                 <h2 className="text-sm font-semibold text-text-light uppercase tracking-wider mb-3">
                   About the Company
                 </h2>
@@ -407,7 +402,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 )}
                 <Link
                   href={`/companies/${company.id}`}
-                  className="mt-3 block text-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-colors"
+                  className="mt-3 block text-center rounded-[--radius-button] border border-border px-4 py-2 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-colors"
                 >
                   View company profile
                 </Link>
@@ -421,7 +416,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       <div className="fixed bottom-16 left-0 right-0 z-40 border-t border-border bg-white p-3 lg:hidden">
         <Link
           href={`/jobs/${job.id}/apply`}
-          className="flex w-full items-center justify-center rounded-lg bg-accent px-6 py-3 text-base font-semibold text-white hover:bg-accent-hover transition-colors"
+          className="flex w-full items-center justify-center btn-warm text-base"
         >
           Apply Now
         </Link>

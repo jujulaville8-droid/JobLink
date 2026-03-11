@@ -7,17 +7,17 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white py-16 px-4">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#0d7377] mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold font-display text-[#0d7377] mb-2">
           Privacy Policy
         </h1>
-        <p className="text-gray-500 mb-10">Last updated: March 2026</p>
+        <p className="text-text-light mb-10">Last updated: March 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
           <section>
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               1. Information We Collect
             </h2>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-text-light leading-relaxed">
               When you create an account on JobLink, we collect your email
               address and the information you provide in your profile, including
               your name, phone number, location, skills, work experience,
@@ -31,7 +31,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               2. How We Use Your Information
             </h2>
-            <ul className="list-disc pl-5 text-gray-700 space-y-2">
+            <ul className="list-disc pl-5 text-text-light space-y-2">
               <li>To create and manage your account</li>
               <li>To display your profile to employers when you apply for jobs</li>
               <li>To match you with relevant job opportunities</li>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               3. Profile Visibility
             </h2>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-text-light leading-relaxed">
               Job seekers have full control over their profile visibility. You
               can choose to be &quot;Actively Looking&quot; (visible to all
               employers), &quot;Open to Opportunities&quot; (visible only when
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               4. Data Storage and Security
             </h2>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-text-light leading-relaxed">
               Your data is stored securely using Supabase, a managed database
               platform with encryption at rest and in transit. Uploaded files
               (CVs, cover letters, logos) are stored in secure cloud storage.
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               5. Data Sharing
             </h2>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-text-light leading-relaxed">
               We do not sell your personal data to third parties. Your profile
               information is shared with employers only in accordance with your
               visibility settings and when you apply to their job listings. We
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               6. Cookies
             </h2>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-text-light leading-relaxed">
               We use essential cookies to maintain your login session and
               remember your preferences. We do not use third-party tracking
               cookies or advertising cookies.
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               7. Your Rights
             </h2>
-            <ul className="list-disc pl-5 text-gray-700 space-y-2">
+            <ul className="list-disc pl-5 text-text-light space-y-2">
               <li>Access and download your personal data</li>
               <li>Update or correct your information at any time</li>
               <li>Delete your account and all associated data</li>
@@ -109,7 +109,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
               8. Contact Us
             </h2>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-text-light leading-relaxed">
               If you have questions about this privacy policy or your data,
               contact us at{' '}
               <a

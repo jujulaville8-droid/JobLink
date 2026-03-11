@@ -81,7 +81,7 @@ export default async function AdminUsersPage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-primary mb-6">User Management</h1>
+      <h1 className="text-2xl font-bold font-display text-primary mb-6">User Management</h1>
 
       {/* Filters */}
       <form method="GET" className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -111,10 +111,10 @@ export default async function AdminUsersPage({
       </form>
 
       {/* Users Table */}
-      <div className="overflow-x-auto bg-white rounded-xl border border-border">
+      <div className="overflow-x-auto bg-white rounded-[--radius-card] border border-border">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-gray-50">
+            <tr className="border-b border-border bg-bg-alt">
               <th className="text-left px-4 py-3 font-semibold text-text">Email</th>
               <th className="text-left px-4 py-3 font-semibold text-text">Name / Company</th>
               <th className="text-left px-4 py-3 font-semibold text-text">Role</th>
@@ -133,17 +133,17 @@ export default async function AdminUsersPage({
               </tr>
             ) : (
               typedUsers.map((user) => (
-                <tr key={user.id} className="border-b border-border last:border-0 hover:bg-gray-50">
+                <tr key={user.id} className="border-b border-border last:border-0 hover:bg-bg-alt">
                   <td className="px-4 py-3 text-text">{user.email}</td>
                   <td className="px-4 py-3 text-text-light">{getDisplayName(user)}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
                         user.role === 'admin'
-                          ? 'bg-purple-100 text-purple-700'
+                          ? 'bg-accent-warm/10 text-amber-700'
                           : user.role === 'employer'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-green-100 text-green-700'
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-emerald-50 text-emerald-700'
                       }`}
                     >
                       {user.role}
@@ -175,8 +175,8 @@ export default async function AdminUsersPage({
                           type="submit"
                           className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${
                             user.is_banned
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              : 'bg-red-50 text-red-600 hover:bg-red-100'
                           }`}
                         >
                           {user.is_banned ? 'Unban' : 'Ban'}
@@ -189,8 +189,8 @@ export default async function AdminUsersPage({
                           type="submit"
                           className={`text-xs font-medium px-3 py-1 rounded-lg transition-colors ${
                             user.email_verified
-                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                              ? 'bg-accent-warm/10 text-amber-700 hover:bg-amber-100'
+                              : 'bg-primary/10 text-primary hover:bg-primary/20'
                           }`}
                         >
                           {user.email_verified ? 'Unverify' : 'Verify'}

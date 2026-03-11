@@ -100,7 +100,7 @@ export default function Home() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden flex items-center">
+      <section className="relative overflow-hidden flex items-center grain-overlay">
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
@@ -110,12 +110,12 @@ export default function Home() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a2e2f]/80 via-black/60 to-[#0a2e2f]/75" />
         </div>
 
         <div className="relative mx-auto max-w-3xl px-6 sm:px-8 py-24 sm:py-32 lg:py-36 w-full">
           <div className="text-center">
-            <h1 className="text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] font-bold text-white leading-[1.12] tracking-tight">
+            <h1 className="animate-fade-up font-display text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] text-white leading-[1.12] tracking-tight">
               Find Opportunities.
               <br />
               Connect With Employers.
@@ -123,19 +123,21 @@ export default function Home() {
               Get Hired.
             </h1>
 
-            <p className="mt-6 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
+            <p className="animate-fade-up mt-6 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: "100ms" }}>
               Connecting job seekers with employers across Antigua and Barbuda.
               <br className="hidden sm:block" />
               Browse opportunities and apply in minutes.
             </p>
 
-            <div className="mt-8">
+            <div className="animate-fade-up mt-8" style={{ animationDelay: "200ms" }}>
               <SearchBar />
             </div>
 
-            <HeroCTAs />
+            <div className="animate-fade-up" style={{ animationDelay: "300ms" }}>
+              <HeroCTAs />
+            </div>
 
-            <div className="mt-10 flex items-center justify-center gap-6 sm:gap-8 text-white/50 text-sm">
+            <div className="animate-fade-up mt-10 flex items-center justify-center gap-6 sm:gap-8 text-white/50 text-sm" style={{ animationDelay: "400ms" }}>
               <span><strong className="text-white/85 font-semibold">2,400+</strong> job seekers</span>
               <span className="w-px h-3 bg-white/20" />
               <span><strong className="text-white/85 font-semibold">180</strong> active listings</span>
@@ -144,16 +146,23 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Wave divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="var(--color-bg)" />
+          </svg>
+        </div>
       </section>
 
       {/* ===== TRUSTED BY ===== */}
-      <section className="bg-white py-7 sm:py-8 border-b border-[#e7e5e0]">
+      <section className="bg-white py-7 sm:py-8 border-b border-border">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
             {["Sandals", "APUA", "LIAT", "Jumby Bay", "ABTA", "Epicurean"].map((name) => (
               <span
                 key={name}
-                className="text-[#c4c0b8]/80 font-bold text-xs uppercase tracking-[0.15em]"
+                className="text-border font-bold text-xs uppercase tracking-[0.15em]"
               >
                 {name}
               </span>
@@ -163,20 +172,20 @@ export default function Home() {
       </section>
 
       {/* ===== FEATURED JOBS ===== */}
-      <section className="bg-[#f8fafc] py-20 sm:py-24">
+      <section className="bg-bg-alt py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
+            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
               Latest Opportunities
             </h2>
-            <p className="mt-1.5 text-[#71717a]">
+            <p className="mt-1.5 text-text-light">
               Fresh openings from employers across the island
             </p>
           </div>
           <Link
             href="/jobs"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-[#0d7377] hover:text-[#095355] transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark transition-colors link-animated"
           >
             View all
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -185,7 +194,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
           {mockJobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
@@ -194,7 +203,7 @@ export default function Home() {
         <div className="mt-8 text-center sm:hidden">
           <Link
             href="/jobs"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0d7377]"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary link-animated"
           >
             View all jobs
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -209,28 +218,28 @@ export default function Home() {
       <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
+            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
               Browse by Industry
             </h2>
-            <p className="mt-1.5 text-[#71717a]">
+            <p className="mt-1.5 text-text-light">
               Explore opportunities by sector
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
             {industries.map((ind) => (
               <Link
                 key={ind.name}
                 href={`/jobs?category=${encodeURIComponent(ind.name)}`}
-                className="group rounded-2xl border border-[#e7e5e0] p-5 text-center hover:border-[#0d7377]/25 hover:shadow-md hover:shadow-black/[0.04] transition-all bg-[#faf9f7]"
+                className="group rounded-[--radius-card] border border-border p-5 text-center hover:border-primary/25 hover:shadow-md hover:shadow-primary/[0.04] transition-all bg-bg hover-lift"
               >
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-[#0d7377]/8 text-[#0d7377] mb-3 group-hover:bg-[#0d7377] group-hover:text-white transition-all duration-200">
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-primary/8 text-primary mb-3 group-hover:bg-accent-warm group-hover:text-white transition-all duration-300">
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d={ind.icon} />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-[#1a1a1a] text-[13px] leading-tight">{ind.name}</h3>
-                <p className="text-xs text-[#a1a1aa] mt-1">{ind.count} jobs</p>
+                <h3 className="font-semibold text-text text-[13px] leading-tight">{ind.name}</h3>
+                <p className="text-xs text-text-muted mt-1">{ind.count} jobs</p>
               </Link>
             ))}
           </div>
@@ -238,11 +247,11 @@ export default function Home() {
       </section>
 
       {/* ===== SPLIT SECTION: IMAGE + HOW IT WORKS ===== */}
-      <section className="bg-[#f8fafc] py-20 sm:py-24">
+      <section className="bg-bg-alt py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Image */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+            <div className="relative rounded-[--radius-card] overflow-hidden aspect-[4/3]">
               <Image
                 src="/images/people-sitting.webp"
                 alt="People at a job fair in Antigua"
@@ -253,10 +262,10 @@ export default function Home() {
 
             {/* Steps */}
             <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
+              <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
                 Get started in minutes
               </h2>
-              <p className="mt-2 text-[#71717a] mb-10">
+              <p className="mt-2 text-text-light mb-10">
                 Whether you&apos;re looking for work or looking to hire, we keep it simple.
               </p>
 
@@ -277,14 +286,19 @@ export default function Home() {
                     title: "Get hired",
                     desc: "Track applications in real time. Get notified the moment an employer responds.",
                   },
-                ].map((step) => (
+                ].map((step, i) => (
                   <div key={step.num} className="flex gap-5">
-                    <span className="text-[#0d7377]/80 font-mono text-xs font-bold mt-0.5 shrink-0">
-                      {step.num}
-                    </span>
+                    <div className="relative shrink-0">
+                      <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-mono text-xs font-bold">
+                        {step.num}
+                      </span>
+                      {i < 2 && (
+                        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-border" />
+                      )}
+                    </div>
                     <div>
-                      <h3 className="font-semibold text-[#1a1a1a] text-[15px] mb-1">{step.title}</h3>
-                      <p className="text-sm text-[#71717a] leading-relaxed">{step.desc}</p>
+                      <h3 className="font-semibold text-text text-[15px] mb-1">{step.title}</h3>
+                      <p className="text-sm text-text-light leading-relaxed">{step.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -300,38 +314,40 @@ export default function Home() {
       <section className="bg-white py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#1a1a1a] tracking-tight">
+            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
               What people are saying
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="rounded-2xl border border-[#e7e5e0] p-7 sm:p-8 bg-[#faf9f7] hover:shadow-sm hover:shadow-black/[0.03] transition-shadow">
-              <p className="text-[#1a1a1a] leading-relaxed text-[15px]">
-                &ldquo;I uploaded my CV on a Monday and had three interview calls by Thursday. JobLink connected me to opportunities I never would have found scrolling through Facebook groups.&rdquo;
+            <div className="rounded-[--radius-card] border border-border p-7 sm:p-8 bg-bg hover-lift transition-all">
+              <div className="text-accent-warm/30 text-4xl font-display leading-none mb-2">&ldquo;</div>
+              <p className="text-text leading-relaxed text-[15px]">
+                I uploaded my CV on a Monday and had three interview calls by Thursday. JobLink connected me to opportunities I never would have found scrolling through Facebook groups.
               </p>
-              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-[#e7e5e0]">
-                <div className="h-10 w-10 rounded-full bg-[#0d7377] flex items-center justify-center text-white font-semibold text-sm">
+              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
+                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
                   KM
                 </div>
                 <div>
-                  <p className="font-semibold text-[#1a1a1a] text-sm">Keisha M.</p>
-                  <p className="text-xs text-[#a1a1aa]">Hired as Admin Assistant, St. John&apos;s</p>
+                  <p className="font-semibold text-text text-sm">Keisha M.</p>
+                  <p className="text-xs text-text-muted">Hired as Admin Assistant, St. John&apos;s</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#e7e5e0] p-7 sm:p-8 bg-[#faf9f7] hover:shadow-sm hover:shadow-black/[0.03] transition-shadow">
-              <p className="text-[#1a1a1a] leading-relaxed text-[15px]">
-                &ldquo;We posted a listing for a kitchen manager and had 15 qualified applicants within a week. Way better than the newspaper ads we used to run.&rdquo;
+            <div className="rounded-[--radius-card] border border-border p-7 sm:p-8 bg-bg hover-lift transition-all">
+              <div className="text-accent-warm/30 text-4xl font-display leading-none mb-2">&ldquo;</div>
+              <p className="text-text leading-relaxed text-[15px]">
+                We posted a listing for a kitchen manager and had 15 qualified applicants within a week. Way better than the newspaper ads we used to run.
               </p>
-              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-[#e7e5e0]">
-                <div className="h-10 w-10 rounded-full bg-[#095355] flex items-center justify-center text-white font-semibold text-sm">
+              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
+                <div className="h-10 w-10 rounded-full bg-primary-dark flex items-center justify-center text-white font-semibold text-sm">
                   RJ
                 </div>
                 <div>
-                  <p className="font-semibold text-[#1a1a1a] text-sm">Richard J.</p>
-                  <p className="text-xs text-[#a1a1aa]">Restaurant Owner, English Harbour</p>
+                  <p className="font-semibold text-text text-sm">Richard J.</p>
+                  <p className="text-xs text-text-muted">Restaurant Owner, English Harbour</p>
                 </div>
               </div>
             </div>
@@ -340,18 +356,18 @@ export default function Home() {
       </section>
 
       {/* ===== EMPLOYER CTA ===== */}
-      <section className="bg-[#f8fafc] py-20 sm:py-24">
+      <section className="bg-bg-alt py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl overflow-hidden">
+          <div className="relative rounded-3xl overflow-hidden grain-overlay">
             <Image
               src="/images/harbor.jpg"
               alt="Antigua harbor with boats"
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#095355]/90 via-[#0d7377]/85 to-[#0d7377]/75" />
+            <div className="absolute inset-0 bg-gradient-to-r from-bg-dark/90 via-primary-dark/85 to-primary/75" />
             <div className="relative px-8 sm:px-14 py-14 sm:py-20 max-w-xl">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              <h2 className="font-display text-2xl sm:text-3xl text-white tracking-tight">
                 Ready to find your
                 <br />
                 next great hire?

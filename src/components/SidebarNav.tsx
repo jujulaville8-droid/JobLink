@@ -99,8 +99,8 @@ export default function SidebarNav({ links }: { links: NavLink[] }) {
             href={link.href}
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
               isActive
-                ? "bg-[#0d7377]/[0.08] text-[#0d7377]"
-                : "text-text-light hover:bg-gray-50 hover:text-primary"
+                ? "bg-primary/[0.08] text-primary border-l-2 border-primary"
+                : "text-text-light hover:bg-bg-alt hover:text-primary"
             }`}
           >
             <SidebarIcon icon={link.icon} />
