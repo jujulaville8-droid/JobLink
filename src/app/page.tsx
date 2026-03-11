@@ -110,7 +110,7 @@ export default function Home() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/65" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black/70" />
         </div>
 
         <div className="relative mx-auto max-w-3xl px-6 sm:px-8 py-24 sm:py-32 lg:py-36 w-full">
@@ -123,9 +123,10 @@ export default function Home() {
               Get Hired.
             </h1>
 
-            <p className="mt-6 text-base sm:text-lg text-white/65 max-w-xl mx-auto leading-relaxed">
-              JobLink connects job seekers with employers across the Caribbean.
-              Browse opportunities, apply instantly, and take the next step in your career.
+            <p className="mt-6 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed">
+              Connecting job seekers with employers across Antigua and Barbuda.
+              <br className="hidden sm:block" />
+              Browse opportunities and apply in minutes.
             </p>
 
             <div className="mt-8">
