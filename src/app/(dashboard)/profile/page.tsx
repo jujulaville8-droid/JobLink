@@ -232,6 +232,7 @@ function ProfileView({
   userId,
   onEdit,
   onAvatarChange,
+  onVisibilityChange,
 }: {
   profile: ProfileData;
   profileId: string;
@@ -239,6 +240,7 @@ function ProfileView({
   userId: string;
   onEdit: () => void;
   onAvatarChange: (url: string) => void;
+  onVisibilityChange: (value: VisibilityMode) => void;
 }) {
   const { percentage, missing } = getCompletion(profile);
   const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Your Name";
@@ -248,6 +250,49 @@ function ProfileView({
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  const handleStatusChange = async (newValue: VisibilityMode) => {
+    if (newValue === profile.visibility) {
+      setStatusOpen(false);
+      return;
+    }
+    setStatusSaving(true);
+    setStatusMsg(null);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_id: profileId,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          phone: profile.phone,
+          location: profile.location,
+          bio: profile.bio,
+          skills: profile.skills,
+          experience_years: profile.experience_years,
+          education: profile.education,
+          cv_url: profile.cv_url,
+          avatar_url: profile.avatar_url,
+          visibility: newValue,
+          profile_complete_pct: percentage,
+        }),
+      });
+      if (res.ok) {
+        onVisibilityChange(newValue);
+        setStatusOpen(false);
+      } else {
+        const data = await res.json();
+        setStatusMsg(data.error || "Failed to update status.");
+      }
+    } catch {
+      setStatusMsg("Network error. Please try again.");
+    }
+    setStatusSaving(false);
+  };
 
   const handleResumePreview = async () => {
     if (!profile.cv_url) return;
@@ -411,18 +456,69 @@ function ProfileView({
         )}
       </div>
 
-      {/* ── Status Banner ── */}
-      <div className={`mt-4 flex items-center gap-3 rounded-lg border px-4 py-3 ${banner.bg}`}>
-        <IconEye className={`h-5 w-5 flex-shrink-0 ${banner.icon}`} />
-        <div className="flex-1">
-          <p className={`text-sm font-medium ${banner.text}`}>{banner.label}</p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {VISIBILITY_OPTIONS.find((o) => o.value === profile.visibility)?.description}
-          </p>
-        </div>
-        <button onClick={onEdit} className="flex-shrink-0">
-          <IconChevron className="h-4 w-4 text-gray-400" />
+      {/* ── Status Selector ── */}
+      <div className="mt-4">
+        <button
+          onClick={() => setStatusOpen(!statusOpen)}
+          className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${banner.bg}`}
+        >
+          <IconEye className={`h-5 w-5 flex-shrink-0 ${banner.icon}`} />
+          <div className="flex-1 text-left">
+            <p className={`text-sm font-medium ${banner.text}`}>{banner.label}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {VISIBILITY_OPTIONS.find((o) => o.value === profile.visibility)?.description}
+            </p>
+          </div>
+          <svg
+            className={`h-4 w-4 text-gray-400 transition-transform ${statusOpen ? "rotate-180" : ""}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
         </button>
+
+        {statusOpen && (
+          <div className="mt-2 space-y-2">
+            {VISIBILITY_OPTIONS.map((opt) => {
+              const isSelected = profile.visibility === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => handleStatusChange(opt.value)}
+                  disabled={statusSaving}
+                  className={`w-full flex items-start gap-3 rounded-lg border p-4 text-left transition-colors ${
+                    isSelected
+                      ? "border-[#0d7377] bg-[#0d7377]/5"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                  } ${statusSaving ? "opacity-60 cursor-not-allowed" : ""}`}
+                >
+                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                    isSelected ? "border-[#0d7377]" : "border-gray-300"
+                  }`}>
+                    {isSelected && <div className="h-2 w-2 rounded-full bg-[#0d7377]" />}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${isSelected ? "text-[#0d7377]" : "text-gray-900"}`}>
+                      {opt.label}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">{opt.description}</p>
+                  </div>
+                  {isSelected && statusSaving && (
+                    <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {statusMsg && (
+          <p className="mt-2 text-sm text-red-600">{statusMsg}</p>
+        )}
       </div>
 
       {/* ── Resume / CV Section ── */}
@@ -1218,6 +1314,7 @@ export default function ProfilePage() {
         userId={userId!}
         onEdit={() => setMode("edit")}
         onAvatarChange={(url) => setProfile((p) => ({ ...p, avatar_url: url }))}
+        onVisibilityChange={(v) => setProfile((p) => ({ ...p, visibility: v }))}
       />
     );
   }
