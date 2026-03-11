@@ -1072,29 +1072,26 @@ export default function ProfilePage() {
   const [mode, setMode] = useState<"view" | "edit">("edit");
 
   useEffect(() => {
-    // Wait for AuthProvider to finish loading before fetching profile
+    // Wait for AuthProvider to finish loading
     if (authLoading) return;
 
-    async function load() {
+    // AuthProvider already validated the session — use its user directly
+    if (!authUser) {
+      setLoadError("Session expired. Please sign in again.");
+      setLoading(false);
+      return;
+    }
+
+    setUserId(authUser.id);
+    setEmail(authUser.email ?? "");
+
+    async function loadProfile() {
       const supabase = createClient();
-
-      // Use getUser() which validates the JWT with the Supabase server,
-      // ensuring we have a valid, non-expired session for database queries.
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        setLoadError("Session expired. Please sign in again.");
-        setLoading(false);
-        return;
-      }
-
-      setUserId(user.id);
-      setEmail(user.email ?? "");
 
       const { data: existing, error } = await supabase
         .from("seeker_profiles")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", authUser!.id)
         .maybeSingle();
 
       if (error) {
@@ -1127,8 +1124,8 @@ export default function ProfilePage() {
       setLoading(false);
     }
 
-    load();
-  }, [authLoading]);
+    loadProfile();
+  }, [authLoading, authUser]);
 
   if (loading) {
     return (

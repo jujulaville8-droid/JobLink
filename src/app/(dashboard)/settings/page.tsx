@@ -63,28 +63,24 @@ export default function SettingsPage() {
   useEffect(() => {
     if (authLoading) return;
 
+    if (!authUser) {
+      setLoading(false);
+      return;
+    }
+
     async function load() {
       const supabase = createClient();
-
-      // Use getUser() which validates the JWT with Supabase server,
-      // ensuring we have a valid session for database queries.
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        setLoading(false);
-        return;
-      }
 
       // Get role
       const { data: userData } = await supabase
         .from("users")
         .select("role")
-        .eq("id", user.id)
+        .eq("id", authUser!.id)
         .maybeSingle();
 
       const userRole =
         (userData?.role as string) ??
-        (user.user_metadata?.role as string) ??
+        (authUser!.user_metadata?.role as string) ??
         "seeker";
       setRole(userRole);
 
@@ -93,7 +89,7 @@ export default function SettingsPage() {
         const { data: profile } = await supabase
           .from("seeker_profiles")
           .select("visibility")
-          .eq("user_id", user.id)
+          .eq("user_id", authUser!.id)
           .maybeSingle();
 
         if (profile?.visibility) {
@@ -105,21 +101,19 @@ export default function SettingsPage() {
     }
 
     load();
-  }, [authLoading]);
+  }, [authLoading, authUser]);
 
   const handleVisibilityChange = async (mode: VisibilityMode) => {
     setVisibility(mode);
     setMessage(null);
 
+    if (!authUser) return;
+
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return;
-
     const { error } = await supabase
       .from("seeker_profiles")
       .update({ visibility: mode, updated_at: new Date().toISOString() })
-      .eq("user_id", user.id);
+      .eq("user_id", authUser.id);
 
     if (error) {
       setMessage({ type: "error", text: "Failed to update visibility." });
