@@ -198,7 +198,7 @@ function ProfileAvatar({
           className={`${sizeClasses} rounded-full object-cover border-2 border-gray-200`}
         />
       ) : (
-        <div className={`flex items-center justify-center rounded-full bg-[#1e3a5f] font-bold text-white ${sizeClasses}`}>
+        <div className={`flex items-center justify-center rounded-full bg-[#0d7377] font-bold text-white ${sizeClasses}`}>
           {initials}
         </div>
       )}
@@ -354,7 +354,7 @@ function ProfileView({
               />
               <button
                 onClick={onEdit}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f] hover:text-[#2a4f7f] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0d7377] hover:text-[#095355] transition-colors"
               >
                 <IconPen className="h-3.5 w-3.5" />
                 Edit
@@ -371,13 +371,13 @@ function ProfileView({
           <div className="border-t border-gray-100 px-6 py-3 bg-gray-50/50">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-gray-500">Profile {percentage}% complete</span>
-              <button onClick={onEdit} className="font-medium text-[#e85d26] hover:underline">
+              <button onClick={onEdit} className="font-medium text-[#14919b] hover:underline">
                 Complete profile
               </button>
             </div>
             <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200">
               <div
-                className="h-1.5 rounded-full bg-[#1e3a5f] transition-all duration-500"
+                className="h-1.5 rounded-full bg-[#0d7377] transition-all duration-500"
                 style={{ width: `${percentage}%` }}
               />
             </div>
@@ -412,7 +412,7 @@ function ProfileView({
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Resume</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#1e3a5f] hover:underline">
+          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             {profile.cv_url ? "Update" : "Upload"}
           </button>
         </div>
@@ -425,7 +425,7 @@ function ProfileView({
               className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
-                <IconFile className="h-6 w-6 text-[#1e3a5f]" />
+                <IconFile className="h-6 w-6 text-[#0d7377]" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900">
@@ -454,7 +454,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Qualifications</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#1e3a5f] hover:underline">
+          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
@@ -506,7 +506,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">About</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#1e3a5f] hover:underline">
+          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
@@ -523,7 +523,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold text-gray-900">Contact Information</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#1e3a5f] hover:underline">
+          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
@@ -717,11 +717,11 @@ function ProfileEditForm({
       <div className="mt-5 rounded-lg border border-gray-200 bg-white p-4">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-gray-700">Profile Completion</span>
-          <span className={`font-semibold ${completePct === 100 ? "text-green-600" : "text-[#1e3a5f]"}`}>{completePct}%</span>
+          <span className={`font-semibold ${completePct === 100 ? "text-green-600" : "text-[#0d7377]"}`}>{completePct}%</span>
         </div>
         <div className="mt-2 h-2 w-full rounded-full bg-gray-100">
           <div
-            className={`h-2 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#1e3a5f]"}`}
+            className={`h-2 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#0d7377]"}`}
             style={{ width: `${completePct}%` }}
           />
         </div>
@@ -740,7 +740,7 @@ function ProfileEditForm({
             onClick={() => setStep(s)}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
               s === step
-                ? "bg-[#1e3a5f] text-white"
+                ? "bg-[#0d7377] text-white"
                 : s < step
                   ? "bg-green-100 text-green-700"
                   : "bg-gray-100 text-gray-400"
@@ -822,7 +822,7 @@ function ProfileEditForm({
                   type="text"
                   value={profile.first_name}
                   onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                   placeholder="John"
                 />
               </div>
@@ -832,7 +832,7 @@ function ProfileEditForm({
                   type="text"
                   value={profile.last_name}
                   onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                   placeholder="Doe"
                 />
               </div>
@@ -844,7 +844,7 @@ function ProfileEditForm({
                 type="tel"
                 value={profile.phone}
                 onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="+1 (268) 555-0123"
               />
             </div>
@@ -854,7 +854,7 @@ function ProfileEditForm({
               <select
                 value={profile.location}
                 onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
               >
                 <option value="">Select a parish</option>
                 {ANTIGUA_PARISHES.map((parish) => (
@@ -869,7 +869,7 @@ function ProfileEditForm({
                 value={profile.bio}
                 onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
                 rows={4}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] resize-none"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377] resize-none"
                 placeholder="Tell employers a bit about yourself..."
               />
             </div>
@@ -889,13 +889,13 @@ function ProfileEditForm({
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
-                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                   placeholder="Type a skill and press Enter"
                 />
                 <button
                   type="button"
                   onClick={addSkill}
-                  className="rounded-lg bg-[#1e3a5f] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#2a4f7f] transition-colors"
+                  className="rounded-lg bg-[#0d7377] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#095355] transition-colors"
                 >
                   Add
                 </button>
@@ -924,7 +924,7 @@ function ProfileEditForm({
                 max="50"
                 value={profile.experience_years ?? ""}
                 onChange={(e) => setProfile((p) => ({ ...p, experience_years: e.target.value ? parseInt(e.target.value) : null }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="e.g. 5"
               />
             </div>
@@ -935,7 +935,7 @@ function ProfileEditForm({
                 type="text"
                 value={profile.education}
                 onChange={(e) => setProfile((p) => ({ ...p, education: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="e.g. BSc in Computer Science, UWI"
               />
             </div>
@@ -951,11 +951,11 @@ function ProfileEditForm({
             {profile.cv_url && (
               <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                  <IconFile className="h-5 w-5 text-[#1e3a5f]" />
+                  <IconFile className="h-5 w-5 text-[#0d7377]" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900">CV uploaded</p>
-                  <a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#1e3a5f] hover:underline truncate block">
+                  <a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#0d7377] hover:underline truncate block">
                     View current CV
                   </a>
                 </div>
@@ -963,9 +963,9 @@ function ProfileEditForm({
             )}
 
             <label className="block cursor-pointer">
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-8 hover:border-[#1e3a5f] hover:bg-gray-50/50 transition-colors">
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 p-8 hover:border-[#0d7377] hover:bg-gray-50/50 transition-colors">
                 {uploading ? (
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#1e3a5f]" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
                 ) : (
                   <>
                     <IconUpload className="h-8 w-8 text-gray-400" />
@@ -999,7 +999,7 @@ function ProfileEditForm({
                   key={opt.value}
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                     profile.visibility === opt.value
-                      ? "border-[#1e3a5f] bg-blue-50/50"
+                      ? "border-[#0d7377] bg-blue-50/50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -1009,7 +1009,7 @@ function ProfileEditForm({
                     value={opt.value}
                     checked={profile.visibility === opt.value}
                     onChange={() => setProfile((p) => ({ ...p, visibility: opt.value }))}
-                    className="mt-0.5 h-4 w-4 accent-[#1e3a5f]"
+                    className="mt-0.5 h-4 w-4 accent-[#0d7377]"
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">{opt.label}</p>
@@ -1037,7 +1037,7 @@ function ProfileEditForm({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-lg bg-[#1e3a5f] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2a4f7f] disabled:opacity-60 transition-colors"
+              className="rounded-lg bg-[#0d7377] px-5 py-2 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-colors"
             >
               {saving ? "Saving..." : "Save"}
             </button>
@@ -1046,7 +1046,7 @@ function ProfileEditForm({
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(4, s + 1))}
-                className="rounded-lg bg-[#e85d26] px-5 py-2 text-sm font-semibold text-white hover:bg-[#d14e1a] transition-colors"
+                className="rounded-lg bg-[#14919b] px-5 py-2 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
               >
                 Next
               </button>
@@ -1126,7 +1126,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#1e3a5f]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
       </div>
     );
   }
@@ -1139,7 +1139,7 @@ export default function ProfilePage() {
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="mt-4 rounded-lg bg-[#1e3a5f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2a4f7f] transition-colors"
+          className="mt-4 rounded-lg bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-colors"
         >
           Retry
         </button>

@@ -9,7 +9,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="bg-[#1e3a5f] text-white py-16 md:py-24">
+      <section className="bg-[#0d7377] text-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">
             Made in Antigua, for Antigua
@@ -25,7 +25,7 @@ export default function AboutPage() {
       {/* Mission */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-6">
             Why JobLink?
           </h2>
           <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
@@ -53,35 +53,35 @@ export default function AboutPage() {
       {/* How It Works */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-10 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-10 text-center">
             How It Works
           </h2>
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h3 className="text-xl font-semibold text-[#1e3a5f] mb-4">
+              <h3 className="text-xl font-semibold text-[#0d7377] mb-4">
                 For Job Seekers
               </h3>
               <ol className="space-y-4 text-gray-700">
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#e85d26] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#14919b] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     1
                   </span>
                   <span>Create your free profile with your skills and experience</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#e85d26] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#14919b] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     2
                   </span>
                   <span>Browse jobs filtered by industry, location, and type</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#e85d26] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#14919b] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     3
                   </span>
                   <span>Apply with one click using your saved profile and CV</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#e85d26] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#14919b] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     4
                   </span>
                   <span>Track your applications and get notified of updates</span>
@@ -89,30 +89,30 @@ export default function AboutPage() {
               </ol>
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-[#1e3a5f] mb-4">
+              <h3 className="text-xl font-semibold text-[#0d7377] mb-4">
                 For Employers
               </h3>
               <ol className="space-y-4 text-gray-700">
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#0d7377] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     1
                   </span>
                   <span>Create your company profile</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#0d7377] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     2
                   </span>
                   <span>Post job listings with all the details candidates need</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#0d7377] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     3
                   </span>
                   <span>Review applicants, view profiles, and download CVs</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-8 h-8 bg-[#1e3a5f] text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <span className="flex-shrink-0 w-8 h-8 bg-[#0d7377] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     4
                   </span>
                   <span>Shortlist, reject, or hire — candidates are notified instantly</span>
@@ -126,7 +126,7 @@ export default function AboutPage() {
       {/* Contact */}
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#1e3a5f] mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-4">
             Get in Touch
           </h2>
           <p className="text-gray-600 mb-8 max-w-lg mx-auto">
@@ -135,17 +135,17 @@ export default function AboutPage() {
           </p>
           <a
             href="mailto:hello@joblink.ag"
-            className="inline-block bg-[#e85d26] hover:bg-[#d14e1a] text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+            className="inline-block bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-lg transition-colors"
           >
             Contact Us
           </a>
           <div className="mt-12 grid sm:grid-cols-2 gap-6 max-w-md mx-auto text-left">
             <div>
-              <h4 className="font-semibold text-[#1e3a5f] mb-1">Email</h4>
+              <h4 className="font-semibold text-[#0d7377] mb-1">Email</h4>
               <p className="text-gray-600">hello@joblink.ag</p>
             </div>
             <div>
-              <h4 className="font-semibold text-[#1e3a5f] mb-1">Location</h4>
+              <h4 className="font-semibold text-[#0d7377] mb-1">Location</h4>
               <p className="text-gray-600">St. John&apos;s, Antigua</p>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-[#1e3a5f] text-white py-16 px-4">
+      <section className="bg-[#0d7377] text-white py-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Ready to get started?
@@ -164,13 +164,13 @@ export default function AboutPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
-              className="bg-[#e85d26] hover:bg-[#d14e1a] text-white font-semibold px-8 py-3 rounded-lg transition-colors text-center"
+              className="bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-lg transition-colors text-center"
             >
               Find a Job
             </Link>
             <Link
               href="/signup"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#1e3a5f] font-semibold px-8 py-3 rounded-lg transition-colors text-center"
+              className="border-2 border-white text-white hover:bg-white hover:text-[#0d7377] font-semibold px-8 py-3 rounded-lg transition-colors text-center"
             >
               Post a Job
             </Link>

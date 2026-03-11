@@ -8,8 +8,8 @@ export default function AuthLayout({
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
-            <span className="text-3xl font-bold text-[#1e3a5f]">
-              Job<span className="text-[#e85d26]">Link</span>
+            <span className="text-3xl font-bold text-[#0d7377]">
+              Job<span className="text-[#14919b]">Link</span>
             </span>
           </a>
         </div>

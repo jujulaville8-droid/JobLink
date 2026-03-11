@@ -164,7 +164,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#1e3a5f]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
       </div>
     );
   }
@@ -234,7 +234,7 @@ export default function SettingsPage() {
                     [pref.key]: e.target.checked,
                   }))
                 }
-                className="mt-0.5 h-4 w-4 rounded accent-[#1e3a5f]"
+                className="mt-0.5 h-4 w-4 rounded accent-[#0d7377]"
               />
               <div>
                 <p className="text-sm font-medium text-text">{pref.label}</p>
@@ -261,7 +261,7 @@ export default function SettingsPage() {
                 key={opt.value}
                 className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                   visibility === opt.value
-                    ? "border-[#1e3a5f] bg-blue-50"
+                    ? "border-[#0d7377] bg-blue-50"
                     : "border-border hover:border-gray-300"
                 }`}
               >
@@ -271,7 +271,7 @@ export default function SettingsPage() {
                   value={opt.value}
                   checked={visibility === opt.value}
                   onChange={() => handleVisibilityChange(opt.value)}
-                  className="mt-0.5 h-4 w-4 accent-[#1e3a5f]"
+                  className="mt-0.5 h-4 w-4 accent-[#0d7377]"
                 />
                 <div>
                   <p className="text-sm font-medium text-text">{opt.label}</p>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setPasswords((p) => ({ ...p, current: e.target.value }))
               }
-              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
             />
           </div>
           <div>
@@ -314,7 +314,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setPasswords((p) => ({ ...p, new: e.target.value }))
               }
-              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
               placeholder="Min. 8 characters"
             />
           </div>
@@ -328,14 +328,14 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setPasswords((p) => ({ ...p, confirm: e.target.value }))
               }
-              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
             />
           </div>
           <button
             type="button"
             onClick={handleChangePassword}
             disabled={changingPassword || !passwords.new || !passwords.confirm}
-            className="rounded-lg bg-[#1e3a5f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2a4f7f] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {changingPassword ? "Updating..." : "Update Password"}
           </button>

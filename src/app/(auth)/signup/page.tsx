@@ -82,7 +82,7 @@ export default function SignupPage() {
         </p>
         <a
           href="/login"
-          className="text-sm font-medium text-[#e85d26] hover:text-[#d14d1a] transition"
+          className="text-sm font-medium text-[#0d7377] hover:text-[#095355] transition"
         >
           Back to sign in
         </a>
@@ -114,13 +114,13 @@ export default function SignupPage() {
               onClick={() => setRole('seeker')}
               className={`relative rounded-lg border-2 p-4 text-center transition cursor-pointer ${
                 role === 'seeker'
-                  ? 'border-[#1e3a5f] bg-[#1e3a5f]/5'
+                  ? 'border-[#0d7377] bg-[#0d7377]/5'
                   : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
               <div className="text-2xl mb-1.5">
                 <svg
-                  className={`w-8 h-8 mx-auto ${role === 'seeker' ? 'text-[#1e3a5f]' : 'text-gray-400'}`}
+                  className={`w-8 h-8 mx-auto ${role === 'seeker' ? 'text-[#0d7377]' : 'text-gray-400'}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -134,14 +134,14 @@ export default function SignupPage() {
                 </svg>
               </div>
               <span
-                className={`text-sm font-medium ${role === 'seeker' ? 'text-[#1e3a5f]' : 'text-gray-700'}`}
+                className={`text-sm font-medium ${role === 'seeker' ? 'text-[#0d7377]' : 'text-gray-700'}`}
               >
                 I&apos;m looking for a job
               </span>
               {role === 'seeker' && (
                 <div className="absolute top-2 right-2">
                   <svg
-                    className="w-5 h-5 text-[#1e3a5f]"
+                    className="w-5 h-5 text-[#0d7377]"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -160,13 +160,13 @@ export default function SignupPage() {
               onClick={() => setRole('employer')}
               className={`relative rounded-lg border-2 p-4 text-center transition cursor-pointer ${
                 role === 'employer'
-                  ? 'border-[#1e3a5f] bg-[#1e3a5f]/5'
+                  ? 'border-[#0d7377] bg-[#0d7377]/5'
                   : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
             >
               <div className="text-2xl mb-1.5">
                 <svg
-                  className={`w-8 h-8 mx-auto ${role === 'employer' ? 'text-[#1e3a5f]' : 'text-gray-400'}`}
+                  className={`w-8 h-8 mx-auto ${role === 'employer' ? 'text-[#0d7377]' : 'text-gray-400'}`}
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="1.5"
@@ -180,14 +180,14 @@ export default function SignupPage() {
                 </svg>
               </div>
               <span
-                className={`text-sm font-medium ${role === 'employer' ? 'text-[#1e3a5f]' : 'text-gray-700'}`}
+                className={`text-sm font-medium ${role === 'employer' ? 'text-[#0d7377]' : 'text-gray-700'}`}
               >
                 I&apos;m hiring
               </span>
               {role === 'employer' && (
                 <div className="absolute top-2 right-2">
                   <svg
-                    className="w-5 h-5 text-[#1e3a5f]"
+                    className="w-5 h-5 text-[#0d7377]"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -217,7 +217,7 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:outline-none transition"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
           />
         </div>
 
@@ -235,7 +235,7 @@ export default function SignupPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 6 characters"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:outline-none transition"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
           />
         </div>
 
@@ -253,14 +253,14 @@ export default function SignupPage() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Re-enter your password"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:outline-none transition"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#1e3a5f] text-white font-semibold rounded-lg px-4 py-2.5 hover:bg-[#162d4a] focus:ring-2 focus:ring-[#1e3a5f]/40 focus:outline-none transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-[#0d7377] text-white font-semibold rounded-lg px-4 py-2.5 hover:bg-[#095355] focus:ring-2 focus:ring-[#0d7377]/40 focus:outline-none transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
@@ -295,7 +295,7 @@ export default function SignupPage() {
         Already have an account?{' '}
         <a
           href="/login"
-          className="font-medium text-[#e85d26] hover:text-[#d14d1a] transition"
+          className="font-medium text-[#0d7377] hover:text-[#095355] transition"
         >
           Sign in
         </a>

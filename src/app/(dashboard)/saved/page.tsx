@@ -65,7 +65,7 @@ export default async function SavedJobsPage() {
                 </div>
 
                 <Link href={`/jobs/${job.id}`} className="block">
-                  <h3 className="pr-8 font-semibold text-text hover:text-[#1e3a5f]">
+                  <h3 className="pr-8 font-semibold text-text hover:text-[#0d7377]">
                     {job.title as string}
                   </h3>
                   <p className="mt-1 text-sm text-text-light">
@@ -137,7 +137,7 @@ export default async function SavedJobsPage() {
           </p>
           <Link
             href="/jobs"
-            className="mt-6 inline-flex items-center rounded-lg bg-[#e85d26] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#d14e1a] transition-colors"
+            className="mt-6 inline-flex items-center rounded-lg bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
           >
             Browse Jobs
           </Link>

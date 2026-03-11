@@ -28,8 +28,8 @@ function StatCard({
   color?: string;
 }) {
   const colors: Record<string, string> = {
-    primary: "bg-[#1e3a5f]",
-    accent: "bg-[#e85d26]",
+    primary: "bg-[#0d7377]",
+    accent: "bg-[#14919b]",
     green: "bg-green-600",
     purple: "bg-purple-600",
   };
@@ -104,7 +104,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
           {completePct < 100 && (
             <Link
               href="/profile"
-              className="rounded-lg bg-[#e85d26] px-4 py-2 text-sm font-semibold text-white hover:bg-[#d14e1a] transition-colors"
+              className="rounded-lg bg-[#14919b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
             >
               Complete Profile
             </Link>
@@ -112,7 +112,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
         </div>
         <div className="mt-3 h-3 w-full rounded-full bg-gray-100">
           <div
-            className={`h-3 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#1e3a5f]"}`}
+            className={`h-3 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#0d7377]"}`}
             style={{ width: `${completePct}%` }}
           />
         </div>
@@ -137,7 +137,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Recent Applications</h2>
-          <Link href="/applications" className="text-sm font-medium text-[#1e3a5f] hover:underline">
+          <Link href="/applications" className="text-sm font-medium text-[#0d7377] hover:underline">
             View all
           </Link>
         </div>
@@ -157,7 +157,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/jobs/${job?.id ?? ""}`}
-                      className="font-medium text-text hover:text-[#1e3a5f] hover:underline truncate block"
+                      className="font-medium text-text hover:text-[#0d7377] hover:underline truncate block"
                     >
                       {(job?.title as string) ?? "Untitled"}
                     </Link>
@@ -180,7 +180,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
             <p className="text-text-light">You haven&apos;t applied to any jobs yet.</p>
             <Link
               href="/jobs"
-              className="mt-3 inline-block rounded-lg bg-[#1e3a5f] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2a4f7f] transition-colors"
+              className="mt-3 inline-block rounded-lg bg-[#0d7377] px-4 py-2 text-sm font-semibold text-white hover:bg-[#095355] transition-colors"
             >
               Browse Jobs
             </Link>
@@ -302,7 +302,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
         </div>
         <Link
           href="/post-job"
-          className="inline-flex items-center justify-center rounded-lg bg-[#e85d26] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#d14e1a] transition-colors"
+          className="inline-flex items-center justify-center rounded-lg bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
         >
           + Post a Job
         </Link>
@@ -439,7 +439,7 @@ async function AdminDashboard() {
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-text">Pending Job Approvals</h2>
-          <Link href="/admin/approvals" className="text-sm font-medium text-[#1e3a5f] hover:underline">
+          <Link href="/admin/approvals" className="text-sm font-medium text-[#0d7377] hover:underline">
             View all
           </Link>
         </div>

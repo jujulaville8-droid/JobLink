@@ -59,7 +59,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:outline-none transition"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
           />
         </div>
 
@@ -73,7 +73,7 @@ export default function LoginPage() {
             </label>
             <a
               href="#"
-              className="text-sm text-[#e85d26] hover:text-[#d14d1a] transition"
+              className="text-sm text-[#0d7377] hover:text-[#095355] transition"
             >
               Forgot password?
             </a>
@@ -85,14 +85,14 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#1e3a5f] focus:ring-2 focus:ring-[#1e3a5f]/20 focus:outline-none transition"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 placeholder:text-gray-400 focus:border-[#0d7377] focus:ring-2 focus:ring-[#0d7377]/20 focus:outline-none transition"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#1e3a5f] text-white font-semibold rounded-lg px-4 py-2.5 hover:bg-[#162d4a] focus:ring-2 focus:ring-[#1e3a5f]/40 focus:outline-none transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full bg-[#0d7377] text-white font-semibold rounded-lg px-4 py-2.5 hover:bg-[#095355] focus:ring-2 focus:ring-[#0d7377]/40 focus:outline-none transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
@@ -127,7 +127,7 @@ export default function LoginPage() {
         Don&apos;t have an account?{' '}
         <a
           href="/signup"
-          className="font-medium text-[#e85d26] hover:text-[#d14d1a] transition"
+          className="font-medium text-[#0d7377] hover:text-[#095355] transition"
         >
           Create one
         </a>

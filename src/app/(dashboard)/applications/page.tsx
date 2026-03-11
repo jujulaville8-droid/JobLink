@@ -99,7 +99,7 @@ export default async function ApplicationsPage() {
                     <div className="min-w-0 flex-1">
                       <Link
                         href={`/jobs/${job?.id ?? ""}`}
-                        className="text-base font-semibold text-text hover:text-[#1e3a5f] hover:underline"
+                        className="text-base font-semibold text-text hover:text-[#0d7377] hover:underline"
                       >
                         {(job?.title as string) ?? "Untitled Position"}
                       </Link>
@@ -141,7 +141,7 @@ export default async function ApplicationsPage() {
                     </span>
                     <Link
                       href={`/jobs/${job?.id ?? ""}`}
-                      className="font-medium text-[#1e3a5f] hover:underline"
+                      className="font-medium text-[#0d7377] hover:underline"
                     >
                       View Job
                     </Link>
@@ -177,7 +177,7 @@ export default async function ApplicationsPage() {
           </p>
           <Link
             href="/jobs"
-            className="mt-6 inline-flex items-center rounded-lg bg-[#e85d26] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#d14e1a] transition-colors"
+            className="mt-6 inline-flex items-center rounded-lg bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-colors"
           >
             Browse Jobs
           </Link>
