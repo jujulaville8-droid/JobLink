@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { ApplicationStatus } from "@/lib/types";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -64,7 +65,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
     redirect("/profile");
   }
 
-  const completePct = profile.profile_complete_pct ?? 0;
+  const { percentage: completePct, missing } = calculateProfileCompletion(profile);
   const firstName = profile.first_name || "there";
 
   // Fetch recent applications (last 5) with job and company info
@@ -111,10 +112,25 @@ async function SeekerDashboard({ userId }: { userId: string }) {
         </div>
         <div className="mt-3 h-3 w-full rounded-full bg-gray-100">
           <div
-            className="h-3 rounded-full bg-[#1e3a5f] transition-all duration-500"
+            className={`h-3 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#1e3a5f]"}`}
             style={{ width: `${completePct}%` }}
           />
         </div>
+        {missing.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-medium text-text-light">Missing:</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {missing.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Recent Applications */}
