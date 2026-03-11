@@ -3,14 +3,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, user, logout, isLoading } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [pathname]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -23,6 +31,14 @@ export default function Navbar() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [profileOpen]);
+
+  // Navigate from dropdown — uses router.push from Navbar (always mounted)
+  // instead of <Link> inside the dropdown (which unmounts when dropdown closes,
+  // cancelling the pending navigation transition in React 19)
+  function navigateTo(href: string) {
+    setProfileOpen(false);
+    router.push(href);
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#e7e5e0]/80">
@@ -75,9 +91,9 @@ export default function Navbar() {
 
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#e7e5e0] bg-white py-1 shadow-lg shadow-black/5 z-50">
-                    <Link href="/dashboard" onClick={() => setProfileOpen(false)} className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</Link>
-                    <Link href="/profile" onClick={() => setProfileOpen(false)} className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</Link>
-                    <Link href="/settings" onClick={() => setProfileOpen(false)} className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</Link>
+                    <button onClick={() => navigateTo("/dashboard")} className="block w-full px-4 py-2.5 text-left text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</button>
+                    <button onClick={() => navigateTo("/profile")} className="block w-full px-4 py-2.5 text-left text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</button>
+                    <button onClick={() => navigateTo("/settings")} className="block w-full px-4 py-2.5 text-left text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</button>
                     <hr className="my-1 border-[#e7e5e0]" />
                     <button
                       onClick={() => { setProfileOpen(false); logout(); }}

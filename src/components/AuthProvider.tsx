@@ -34,14 +34,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     await supabase.auth.signOut();
     setUser(null);
     setUserRole(null);
-    // Full page navigation to ensure cookies are cleared
-    // and all server components re-evaluate auth state
     window.location.href = "/login";
   }, []);
 
   useEffect(() => {
     const supabase = createClient();
     let mounted = true;
+    let initialized = false;
 
     // Fetch role in the background — never blocks isLoading
     async function fetchRoleInBackground(u: User) {
@@ -52,30 +51,31 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           .eq("id", u.id)
           .maybeSingle();
         if (!mounted) return;
-        const role = (data?.role as string) ?? (u.user_metadata?.role as string) ?? "seeker";
-        setUserRole(role);
+        setUserRole((data?.role as string) ?? (u.user_metadata?.role as string) ?? "seeker");
       } catch {
         if (!mounted) return;
-        // Fallback to metadata role if DB query fails
         setUserRole((u.user_metadata?.role as string) ?? "seeker");
       }
     }
 
-    // Single source of truth: onAuthStateChange handles ALL auth events
-    // including INITIAL_SESSION which fires once on first load.
-    // No separate getSession() call needed — eliminates race conditions.
+    function handleSession(session: { user: User } | null) {
+      if (!mounted || initialized) return;
+      initialized = true;
+
+      if (session?.user) {
+        setUser(session.user);
+        fetchRoleInBackground(session.user);
+      }
+      setIsLoading(false);
+    }
+
+    // Primary: onAuthStateChange with INITIAL_SESSION
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!mounted) return;
 
         if (event === "INITIAL_SESSION") {
-          // First load — set user immediately, mark loading done,
-          // then fetch role in the background
-          if (session?.user) {
-            setUser(session.user);
-            fetchRoleInBackground(session.user);
-          }
-          setIsLoading(false);
+          handleSession(session);
         } else if (event === "SIGNED_IN" && session?.user) {
           setUser(session.user);
           setIsLoading(false);
@@ -90,8 +90,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     );
 
+    // Safety net: if INITIAL_SESSION hasn't fired within 2 seconds,
+    // fall back to getSession(). Handles edge cases in certain
+    // Supabase SSR versions where INITIAL_SESSION may not fire reliably.
+    const fallbackTimer = setTimeout(() => {
+      if (!initialized && mounted) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          handleSession(session);
+        });
+      }
+    }, 2000);
+
     return () => {
       mounted = false;
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, []);

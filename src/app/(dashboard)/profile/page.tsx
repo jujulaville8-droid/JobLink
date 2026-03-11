@@ -1082,8 +1082,13 @@ export default function ProfilePage() {
       return;
     }
 
+    // Reset error state in case we're re-running after auth resolved
+    setLoadError(null);
+    setLoading(true);
     setUserId(authUser.id);
     setEmail(authUser.email ?? "");
+
+    let cancelled = false;
 
     async function loadProfile() {
       const supabase = createClient();
@@ -1093,6 +1098,8 @@ export default function ProfilePage() {
         .select("*")
         .eq("user_id", authUser!.id)
         .maybeSingle();
+
+      if (cancelled) return;
 
       if (error) {
         console.error("Failed to load profile:", error);
@@ -1125,9 +1132,11 @@ export default function ProfilePage() {
     }
 
     loadProfile();
+
+    return () => { cancelled = true; };
   }, [authLoading, authUser]);
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#0d7377]" />
