@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ANTIGUA_PARISHES } from "@/lib/types";
+import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { VisibilityMode } from "@/lib/types";
 
 interface ProfileData {
@@ -32,20 +33,8 @@ const INITIAL_PROFILE: ProfileData = {
   visibility: "actively_looking",
 };
 
-function calculateCompletion(p: ProfileData): number {
-  let filled = 0;
-  const total = 8;
-
-  if (p.first_name?.trim()) filled++;
-  if (p.last_name?.trim()) filled++;
-  if (p.phone?.trim()) filled++;
-  if (p.location?.trim()) filled++;
-  if (p.bio?.trim()) filled++;
-  if (p.skills?.length > 0) filled++;
-  if (p.experience_years !== null && p.experience_years >= 0) filled++;
-  if (p.education?.trim()) filled++;
-
-  return Math.round((filled / total) * 100);
+function getCompletion(p: ProfileData) {
+  return calculateProfileCompletion(p);
 }
 
 const VISIBILITY_OPTIONS: {
@@ -82,13 +71,13 @@ function getVisibilityDescription(value: VisibilityMode): string {
 // ─── Profile View (read-only) ───────────────────────────────────
 function ProfileView({
   profile,
-  completePct,
   onEdit,
 }: {
   profile: ProfileData;
-  completePct: number;
   onEdit: () => void;
 }) {
+  const { percentage, missing } = getCompletion(profile);
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="flex items-center justify-between">
@@ -110,14 +99,29 @@ function ProfileView({
       <div className="mt-4 rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-text">Profile Completion</span>
-          <span className="font-semibold text-[#1e3a5f]">{completePct}%</span>
+          <span className="font-semibold text-[#1e3a5f]">{percentage}%</span>
         </div>
         <div className="mt-2 h-2.5 w-full rounded-full bg-gray-100">
           <div
-            className="h-2.5 rounded-full bg-[#1e3a5f] transition-all duration-500"
-            style={{ width: `${completePct}%` }}
+            className={`h-2.5 rounded-full transition-all duration-500 ${percentage === 100 ? "bg-green-500" : "bg-[#1e3a5f]"}`}
+            style={{ width: `${percentage}%` }}
           />
         </div>
+        {missing.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-medium text-text-light">Missing:</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {missing.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Personal Information */}
@@ -251,14 +255,14 @@ function ProfileEditForm({
   const [skillInput, setSkillInput] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const completePct = calculateCompletion(profile);
+  const { percentage: completePct, missing } = getCompletion(profile);
 
   const handleSave = useCallback(async () => {
     if (!userId) return;
     setSaving(true);
     setMessage(null);
 
-    const pct = calculateCompletion(profile);
+    const { percentage: pct } = getCompletion(profile);
 
     try {
       const res = await fetch("/api/profile", {
@@ -387,10 +391,25 @@ function ProfileEditForm({
         </div>
         <div className="mt-2 h-2.5 w-full rounded-full bg-gray-100">
           <div
-            className="h-2.5 rounded-full bg-[#1e3a5f] transition-all duration-500"
+            className={`h-2.5 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#1e3a5f]"}`}
             style={{ width: `${completePct}%` }}
           />
         </div>
+        {missing.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-medium text-text-light">Missing:</p>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {missing.map((item) => (
+                <span
+                  key={item}
+                  className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Step Indicator */}
@@ -839,14 +858,12 @@ export default function ProfilePage() {
     );
   }
 
-  const completePct = calculateCompletion(profile);
   const isNewProfile = !profileId;
 
   if (mode === "view" && !isNewProfile) {
     return (
       <ProfileView
         profile={profile}
-        completePct={completePct}
         onEdit={() => setMode("edit")}
       />
     );
