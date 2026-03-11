@@ -81,9 +81,9 @@ export default function Navbar() {
         <div className="flex h-[68px] items-center justify-between">
 
           {/* ── Left: Logo ── */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <JobLinkLogo size={26} />
-            <span className="text-[17px] font-semibold tracking-[-0.02em] text-[#1a1a1a]">
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+            <JobLinkLogo size={34} />
+            <span className="text-xl font-semibold tracking-[-0.02em] text-[#1a1a1a]">
               Job<span className="text-[#0d7377]">Link</span>
             </span>
           </Link>
