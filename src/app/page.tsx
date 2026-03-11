@@ -110,20 +110,20 @@ export default function Home() {
             priority
           />
           {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black/60" />
         </div>
 
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-20 sm:py-28 w-full">
           <div className="text-center">
-            <p className="text-sm font-medium tracking-widest uppercase text-white/60 mb-4">
+            <p className="text-sm font-semibold tracking-widest uppercase text-white/70 mb-4">
               Antigua &amp; Barbuda&apos;s Job Platform
             </p>
-            <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold text-white leading-[1.08] tracking-tight">
+            <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.5rem] font-bold text-white leading-[1.08] tracking-tight drop-shadow-sm">
               Find Your Next
               <br />
               Opportunity Here
             </h1>
-            <p className="mt-5 text-lg text-white/70 max-w-md mx-auto leading-relaxed">
+            <p className="mt-5 text-[17px] text-white/60 font-light max-w-md mx-auto leading-relaxed">
               Your next career move starts here.
             </p>
 
@@ -134,19 +134,19 @@ export default function Home() {
             <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/jobs"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-white text-[#1a1a1a] font-semibold px-8 py-3.5 text-[15px] hover:bg-white/90 transition-colors shadow-lg"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full bg-white text-[#1a1a1a] font-semibold px-8 py-3.5 text-[15px] hover:bg-white/90 transition-all shadow-lg shadow-black/15"
               >
                 Browse All Jobs
               </Link>
               <Link
                 href="/signup"
-                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-white/30 text-white font-semibold px-8 py-3.5 text-[15px] hover:bg-white/10 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-full border border-white/25 text-white font-semibold px-8 py-3.5 text-[15px] hover:bg-white/10 backdrop-blur-sm transition-all"
               >
                 Post a Job — Free
               </Link>
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-6 sm:gap-8 text-white/50 text-sm">
+            <div className="mt-8 flex items-center justify-center gap-8 sm:gap-10 text-white/55 text-sm">
               <span><strong className="text-white/90 font-semibold">2,400+</strong> job seekers</span>
               <span className="w-px h-3 bg-white/20" />
               <span><strong className="text-white/90 font-semibold">180</strong> active listings</span>
@@ -164,7 +164,7 @@ export default function Home() {
             {["Sandals", "APUA", "LIAT", "Jumby Bay", "ABTA", "Epicurean"].map((name) => (
               <span
                 key={name}
-                className="text-[#c4c0b8] font-bold text-sm tracking-wide"
+                className="text-[#c4c0b8]/80 font-bold text-xs uppercase tracking-[0.15em]"
               >
                 {name}
               </span>
@@ -195,7 +195,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {mockJobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
@@ -231,7 +231,7 @@ export default function Home() {
               <Link
                 key={ind.name}
                 href={`/jobs?category=${encodeURIComponent(ind.name)}`}
-                className="group rounded-2xl border border-[#e7e5e0] p-5 text-center hover:border-[#0d7377]/25 hover:shadow-sm transition-all bg-[#faf9f7]"
+                className="group rounded-2xl border border-[#e7e5e0] p-5 text-center hover:border-[#0d7377]/25 hover:shadow-md hover:shadow-black/[0.04] transition-all bg-[#faf9f7]"
               >
                 <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-[#0d7377]/8 text-[#0d7377] mb-3 group-hover:bg-[#0d7377] group-hover:text-white transition-all duration-200">
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -251,7 +251,7 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Image */}
-            <div className="relative rounded-3xl overflow-hidden aspect-[4/3]">
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
               <Image
                 src="/images/people-sitting.webp"
                 alt="People at a job fair in Antigua"
@@ -288,7 +288,7 @@ export default function Home() {
                   },
                 ].map((step) => (
                   <div key={step.num} className="flex gap-5">
-                    <span className="text-[#0d7377] font-mono text-sm font-bold mt-0.5 shrink-0">
+                    <span className="text-[#0d7377]/80 font-mono text-xs font-bold mt-0.5 shrink-0">
                       {step.num}
                     </span>
                     <div>
@@ -322,7 +322,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="rounded-2xl border border-[#e7e5e0] p-7 sm:p-8 bg-[#faf9f7]">
+            <div className="rounded-2xl border border-[#e7e5e0] p-7 sm:p-8 bg-[#faf9f7] hover:shadow-sm hover:shadow-black/[0.03] transition-shadow">
               <p className="text-[#1a1a1a] leading-relaxed text-[15px]">
                 &ldquo;I uploaded my CV on a Monday and had three interview calls by Thursday. JobLink connected me to opportunities I never would have found scrolling through Facebook groups.&rdquo;
               </p>
@@ -337,7 +337,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#e7e5e0] p-7 sm:p-8 bg-[#faf9f7]">
+            <div className="rounded-2xl border border-[#e7e5e0] p-7 sm:p-8 bg-[#faf9f7] hover:shadow-sm hover:shadow-black/[0.03] transition-shadow">
               <p className="text-[#1a1a1a] leading-relaxed text-[15px]">
                 &ldquo;We posted a listing for a kitchen manager and had 15 qualified applicants within a week. Way better than the newspaper ads we used to run.&rdquo;
               </p>

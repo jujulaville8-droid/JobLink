@@ -9,12 +9,12 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="bg-[#0d7377] text-white py-16 md:py-24">
+      <section className="bg-gradient-to-br from-[#095355] to-[#0d7377] text-white py-16 md:py-24">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">
             Made in Antigua, for Antigua
           </h1>
-          <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
             JobLink is the first dedicated job platform built specifically for
             Antigua and Barbuda. We&apos;re here to connect job seekers with
             employers across every industry on the island.
@@ -28,7 +28,7 @@ export default function AboutPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-6">
             Why JobLink?
           </h2>
-          <div className="space-y-4 text-gray-700 text-lg leading-relaxed">
+          <div className="space-y-4 text-[#71717a] text-lg leading-relaxed">
             <p>
               For years, Antiguans have relied on Facebook groups and word of
               mouth to find jobs. While platforms like Indeed and LinkedIn serve
@@ -51,7 +51,7 @@ export default function AboutPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 px-4 bg-gray-50">
+      <section className="py-16 px-4 bg-[#faf9f7]">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-10 text-center">
             How It Works
@@ -61,7 +61,7 @@ export default function AboutPage() {
               <h3 className="text-xl font-semibold text-[#0d7377] mb-4">
                 For Job Seekers
               </h3>
-              <ol className="space-y-4 text-gray-700">
+              <ol className="space-y-4 text-[#71717a]">
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 w-8 h-8 bg-[#14919b] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     1
@@ -92,7 +92,7 @@ export default function AboutPage() {
               <h3 className="text-xl font-semibold text-[#0d7377] mb-4">
                 For Employers
               </h3>
-              <ol className="space-y-4 text-gray-700">
+              <ol className="space-y-4 text-[#71717a]">
                 <li className="flex gap-3">
                   <span className="flex-shrink-0 w-8 h-8 bg-[#0d7377] text-white rounded-full flex items-center justify-center font-bold text-sm">
                     1
@@ -129,24 +129,24 @@ export default function AboutPage() {
           <h2 className="text-2xl md:text-3xl font-bold text-[#0d7377] mb-4">
             Get in Touch
           </h2>
-          <p className="text-gray-600 mb-8 max-w-lg mx-auto">
+          <p className="text-[#71717a] mb-8 max-w-lg mx-auto">
             Have questions, feedback, or partnership enquiries? We&apos;d love
             to hear from you.
           </p>
           <a
             href="mailto:hello@joblink.ag"
-            className="inline-block bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+            className="inline-block bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-full transition-colors"
           >
             Contact Us
           </a>
           <div className="mt-12 grid sm:grid-cols-2 gap-6 max-w-md mx-auto text-left">
             <div>
               <h4 className="font-semibold text-[#0d7377] mb-1">Email</h4>
-              <p className="text-gray-600">hello@joblink.ag</p>
+              <p className="text-[#71717a]">hello@joblink.ag</p>
             </div>
             <div>
               <h4 className="font-semibold text-[#0d7377] mb-1">Location</h4>
-              <p className="text-gray-600">St. John&apos;s, Antigua</p>
+              <p className="text-[#71717a]">St. John&apos;s, Antigua</p>
             </div>
           </div>
         </div>
@@ -158,19 +158,19 @@ export default function AboutPage() {
           <h2 className="text-2xl md:text-3xl font-bold mb-4">
             Ready to get started?
           </h2>
-          <p className="text-blue-100 mb-8">
+          <p className="text-white/70 mb-8">
             Join hundreds of Antiguans already using JobLink.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
-              className="bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-lg transition-colors text-center"
+              className="bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-full transition-colors text-center"
             >
               Find a Job
             </Link>
             <Link
               href="/signup"
-              className="border-2 border-white text-white hover:bg-white hover:text-[#0d7377] font-semibold px-8 py-3 rounded-lg transition-colors text-center"
+              className="border border-white/30 text-white hover:bg-white hover:text-[#0d7377] font-semibold px-8 py-3 rounded-full transition-colors text-center"
             >
               Post a Job
             </Link>

@@ -11,11 +11,11 @@ export default function BottomNav() {
 
   const linkClass = (path: string) =>
     `flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 min-w-[56px] ${
-      isActive(path) ? "text-[#0d7377]" : "text-[#a1a1aa]"
+      isActive(path) ? "text-primary" : "text-text-muted"
     }`;
 
   const iconClass = (path: string) =>
-    `h-5.5 w-5.5 ${isActive(path) ? "text-[#0d7377]" : "text-[#a1a1aa]"}`;
+    `h-5.5 w-5.5 ${isActive(path) ? "text-primary" : "text-text-muted"}`;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e7e5e0]/80 bg-white/90 backdrop-blur-xl md:hidden">

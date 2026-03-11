@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+import JobLinkLogo from "@/components/JobLinkLogo";
 
 export default function Footer() {
   return (
@@ -8,9 +8,11 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo.png" alt="JobLink" width={28} height={28} className="h-7 w-7 brightness-0 invert" />
-              <span className="text-base font-bold">JobLink</span>
+            <Link href="/" className="flex items-center gap-2.5">
+              <JobLinkLogo size={24} variant="white" />
+              <span className="text-base font-semibold tracking-[-0.02em]">
+                Job<span className="text-white/70">Link</span>
+              </span>
             </Link>
             <p className="mt-3 text-sm text-white/40 leading-relaxed max-w-[220px]">
               Connecting talent with opportunity across Antigua &amp; Barbuda.
