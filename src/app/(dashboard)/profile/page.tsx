@@ -1072,15 +1072,21 @@ export default function ProfilePage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/login");
+      // Use getSession() — reads from cookie storage, doesn't make a network call.
+      // The dashboard layout already verified auth server-side, so if we're here
+      // the user IS authenticated. getUser() can race/fail on cold load.
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        // This should rarely happen since the dashboard layout guards this route.
+        // But handle it gracefully rather than leaving the spinner forever.
+        setLoadError("Session expired. Please sign in again.");
+        setLoading(false);
         return;
       }
 
+      const user = session.user;
       setUserId(user.id);
       setEmail(user.email ?? "");
 
@@ -1121,7 +1127,7 @@ export default function ProfilePage() {
     }
 
     load();
-  }, [router]);
+  }, []);
 
   if (loading) {
     return (

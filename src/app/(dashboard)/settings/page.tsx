@@ -61,21 +61,24 @@ export default function SettingsPage() {
   useEffect(() => {
     async function load() {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.push("/login");
+      // Use getSession() — reads from cookie storage, no network call.
+      // Dashboard layout already verified auth server-side.
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        setLoading(false);
         return;
       }
+
+      const user = session.user;
 
       // Get role
       const { data: userData } = await supabase
         .from("users")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       const userRole =
         (userData?.role as string) ??
@@ -89,7 +92,7 @@ export default function SettingsPage() {
           .from("seeker_profiles")
           .select("visibility")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         if (profile?.visibility) {
           setVisibility(profile.visibility as VisibilityMode);
@@ -100,7 +103,7 @@ export default function SettingsPage() {
     }
 
     load();
-  }, [router]);
+  }, []);
 
   const handleVisibilityChange = async (mode: VisibilityMode) => {
     setVisibility(mode);
@@ -108,15 +111,15 @@ export default function SettingsPage() {
 
     const supabase = createClient();
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!user) return;
+    if (!session?.user) return;
 
     const { error } = await supabase
       .from("seeker_profiles")
       .update({ visibility: mode, updated_at: new Date().toISOString() })
-      .eq("user_id", user.id);
+      .eq("user_id", session.user.id);
 
     if (error) {
       setMessage({ type: "error", text: "Failed to update visibility." });
