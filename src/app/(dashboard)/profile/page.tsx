@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { ANTIGUA_PARISHES } from "@/lib/types";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
+import { getResumePreviewUrl } from "@/lib/resume-url";
 import type { VisibilityMode } from "@/lib/types";
 
 interface ProfileData {
@@ -245,6 +246,21 @@ function ProfileView({
   const banner = VISIBILITY_BANNER[profile.visibility];
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
+
+  const handleResumePreview = async () => {
+    if (!profile.cv_url) return;
+    setResumeLoading(true);
+    setResumeError(null);
+    const result = await getResumePreviewUrl(profile.cv_url);
+    setResumeLoading(false);
+    if ("error" in result) {
+      setResumeError(result.error);
+    } else {
+      window.open(result.url, "_blank", "noopener,noreferrer");
+    }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -419,23 +435,28 @@ function ProfileView({
         </div>
         <div className="rounded-lg border border-gray-200 bg-white">
           {profile.cv_url ? (
-            <a
-              href={profile.cv_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
+            <button
+              onClick={handleResumePreview}
+              disabled={resumeLoading}
+              className="flex w-full items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
-                <IconFile className="h-6 w-6 text-[#0d7377]" />
+                {resumeLoading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
+                ) : (
+                  <IconFile className="h-6 w-6 text-[#0d7377]" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-gray-900">
                   {profile.first_name ? `${profile.first_name}'s CV` : "My CV"}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">PDF document</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {resumeLoading ? "Opening preview…" : "PDF document"}
+                </p>
               </div>
               <IconChevron className="h-4 w-4 text-gray-400 flex-shrink-0" />
-            </a>
+            </button>
           ) : (
             <button onClick={onEdit} className="flex w-full items-center gap-4 p-4 hover:bg-gray-50 transition-colors text-left">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-gray-300">
@@ -449,6 +470,9 @@ function ProfileView({
             </button>
           )}
         </div>
+        {resumeError && (
+          <p className="mt-2 text-sm text-red-600">{resumeError}</p>
+        )}
       </div>
 
       {/* ── Qualifications Section ── */}
@@ -585,6 +609,21 @@ function ProfileEditForm({
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [skillInput, setSkillInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [resumePreviewLoading, setResumePreviewLoading] = useState(false);
+  const [resumePreviewError, setResumePreviewError] = useState<string | null>(null);
+
+  const handleResumePreviewInForm = async () => {
+    if (!profile.cv_url) return;
+    setResumePreviewLoading(true);
+    setResumePreviewError(null);
+    const result = await getResumePreviewUrl(profile.cv_url);
+    setResumePreviewLoading(false);
+    if ("error" in result) {
+      setResumePreviewError(result.error);
+    } else {
+      window.open(result.url, "_blank", "noopener,noreferrer");
+    }
+  };
 
   const { percentage: completePct, missing } = getCompletion(profile);
 
@@ -667,11 +706,8 @@ function ProfileEditForm({
       return;
     }
 
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("cvs").getPublicUrl(fileName);
-
-    setProfile((prev) => ({ ...prev, cv_url: publicUrl }));
+    // Store the storage path, not a public URL — the preview generates a signed URL at runtime
+    setProfile((prev) => ({ ...prev, cv_url: fileName }));
     setMessage({ type: "success", text: "CV uploaded successfully!" });
     setUploading(false);
   };
@@ -952,13 +988,24 @@ function ProfileEditForm({
             {profile.cv_url && (
               <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                  <IconFile className="h-5 w-5 text-[#0d7377]" />
+                  {resumePreviewLoading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
+                  ) : (
+                    <IconFile className="h-5 w-5 text-[#0d7377]" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900">CV uploaded</p>
-                  <a href={profile.cv_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#0d7377] hover:underline truncate block">
-                    View current CV
-                  </a>
+                  <button
+                    onClick={handleResumePreviewInForm}
+                    disabled={resumePreviewLoading}
+                    className="text-xs text-[#0d7377] hover:underline truncate block"
+                  >
+                    {resumePreviewLoading ? "Opening…" : "View current CV"}
+                  </button>
+                  {resumePreviewError && (
+                    <p className="text-xs text-red-600 mt-1">{resumePreviewError}</p>
+                  )}
                 </div>
               </div>
             )}
