@@ -3,29 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const parishes = [
-  "All Locations",
-  "St. John's",
-  "All Saints",
-  "St. George",
-  "St. Peter",
-  "St. Philip",
-  "St. Paul",
-  "St. Mary",
-  "English Harbour",
-  "Barbuda",
-];
-
 export default function SearchBar() {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
-  const [location, setLocation] = useState("All Locations");
+  const [location, setLocation] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("q", keyword.trim());
-    if (location !== "All Locations") params.set("location", location);
+    if (location.trim()) params.set("location", location.trim());
     router.push(`/jobs?${params.toString()}`);
   };
 
@@ -48,7 +35,7 @@ export default function SearchBar() {
           </svg>
           <input
             type="text"
-            placeholder="Job title or keyword..."
+            placeholder="Job title, skill, or company"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             className="w-full bg-transparent text-[#1a1a1a] placeholder:text-[#a1a1aa] outline-none text-[15px]"
@@ -58,8 +45,8 @@ export default function SearchBar() {
         {/* Divider */}
         <div className="hidden sm:block w-px bg-[#e7e5e0] my-2.5" />
 
-        {/* Location dropdown */}
-        <div className="flex items-center px-5 py-3.5 sm:py-3.5 border-t sm:border-t-0 border-[#f0ede8] sm:w-44">
+        {/* Location input */}
+        <div className="flex items-center flex-1 px-5 py-3.5 sm:py-3.5 border-t sm:border-t-0 border-[#f0ede8]">
           <svg
             className="h-4.5 w-4.5 text-[#a1a1aa] shrink-0 mr-3"
             viewBox="0 0 24 24"
@@ -72,15 +59,13 @@ export default function SearchBar() {
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
             <circle cx="12" cy="10" r="3" />
           </svg>
-          <select
+          <input
+            type="text"
+            placeholder="City or country"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full bg-transparent text-[#1a1a1a] outline-none text-[15px] appearance-none cursor-pointer"
-          >
-            {parishes.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
+            className="w-full bg-transparent text-[#1a1a1a] placeholder:text-[#a1a1aa] outline-none text-[15px]"
+          />
         </div>
 
         {/* Search button */}
@@ -88,7 +73,7 @@ export default function SearchBar() {
           type="submit"
           className="bg-[#0d7377] hover:bg-[#095355] text-white font-semibold px-6 py-3.5 transition-colors text-[15px] cursor-pointer sm:rounded-r-full"
         >
-          Search
+          Search Jobs
         </button>
       </div>
     </form>

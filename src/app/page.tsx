@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import SearchBar from "@/components/SearchBar";
 import { HeroCTAs, GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
 import JobCard, { type Job } from "@/components/JobCard";
 
@@ -126,6 +127,10 @@ export default function Home() {
               JobLink connects job seekers with employers across the Caribbean.
               Browse opportunities, apply instantly, and take the next step in your career.
             </p>
+
+            <div className="mt-8">
+              <SearchBar />
+            </div>
 
             <HeroCTAs />
 
