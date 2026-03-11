@@ -296,14 +296,24 @@ function ProfileView({
 
   const handleResumePreview = async () => {
     if (!profile.cv_url) return;
+    // Open blank tab synchronously within user gesture to avoid popup blocker
+    const newTab = window.open("", "_blank");
+    if (!newTab) {
+      setResumeError("Popup blocked. Please allow popups for this site.");
+      return;
+    }
+    newTab.document.write(
+      '<html><head><title>Loading resume…</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#555"><p>Loading resume preview…</p></body></html>'
+    );
     setResumeLoading(true);
     setResumeError(null);
     const result = await getResumePreviewUrl(profile.cv_url);
     setResumeLoading(false);
     if ("error" in result) {
+      newTab.close();
       setResumeError(result.error);
     } else {
-      window.open(result.url, "_blank", "noopener,noreferrer");
+      newTab.location.href = result.url;
     }
   };
 
@@ -710,14 +720,23 @@ function ProfileEditForm({
 
   const handleResumePreviewInForm = async () => {
     if (!profile.cv_url) return;
+    const newTab = window.open("", "_blank");
+    if (!newTab) {
+      setResumePreviewError("Popup blocked. Please allow popups for this site.");
+      return;
+    }
+    newTab.document.write(
+      '<html><head><title>Loading resume…</title></head><body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#555"><p>Loading resume preview…</p></body></html>'
+    );
     setResumePreviewLoading(true);
     setResumePreviewError(null);
     const result = await getResumePreviewUrl(profile.cv_url);
     setResumePreviewLoading(false);
     if ("error" in result) {
+      newTab.close();
       setResumePreviewError(result.error);
     } else {
-      window.open(result.url, "_blank", "noopener,noreferrer");
+      newTab.location.href = result.url;
     }
   };
 
