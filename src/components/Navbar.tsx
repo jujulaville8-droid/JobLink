@@ -2,39 +2,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!profileOpen) return;
-
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
-    }
-
-    // Use a timeout so the current click event that opened the dropdown doesn't immediately close it
-    const timer = setTimeout(() => {
-      document.addEventListener("click", handleClick);
-    }, 0);
-
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("click", handleClick);
-    };
-  }, [profileOpen]);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
-    <header className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-[#e7e5e0]/80">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#e7e5e0]/80">
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-[60px] items-center justify-between">
           {/* Logo */}
@@ -60,8 +38,10 @@ export default function Navbar() {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
-            {isAuthenticated ? (
-              <div className="relative" ref={dropdownRef}>
+            {isLoading ? (
+              <div className="h-7 w-20" />
+            ) : isAuthenticated ? (
+              <div className="relative">
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-full border border-[#e7e5e0] p-1 pr-3 hover:bg-[#faf9f7] transition-colors"
@@ -81,18 +61,22 @@ export default function Navbar() {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#e7e5e0] bg-white py-1 shadow-lg shadow-black/5" style={{ zIndex: 9999 }}>
-                    <a href="/dashboard" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</a>
-                    <a href="/profile" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</a>
-                    <a href="/settings" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</a>
-                    <hr className="my-1 border-[#e7e5e0]" />
-                    <button
-                      onClick={() => { setProfileOpen(false); logout(); }}
-                      className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-[#faf9f7]"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
+                  <>
+                    {/* Invisible overlay to catch outside clicks */}
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#e7e5e0] bg-white py-1 shadow-lg shadow-black/5 z-50">
+                      <a href="/dashboard" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</a>
+                      <a href="/profile" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</a>
+                      <a href="/settings" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</a>
+                      <hr className="my-1 border-[#e7e5e0]" />
+                      <button
+                        onClick={() => { setProfileOpen(false); logout(); }}
+                        className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-[#faf9f7]"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             ) : (
@@ -122,14 +106,14 @@ export default function Navbar() {
               >
                 {initial}
               </Link>
-            ) : (
+            ) : !isLoading ? (
               <Link
                 href="/signup"
                 className="rounded-full bg-[#0d7377] hover:bg-[#095355] px-4 py-2 text-[13px] font-semibold text-white transition-colors"
               >
                 Post a Job
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </nav>

@@ -1,21 +1,13 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-type UserRole = "seeker" | "employer" | "admin" | null;
-
 interface AuthState {
   user: User | null;
-  userRole: UserRole;
+  userRole: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
@@ -33,25 +25,11 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-export default function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [userRole, setUserRole] = useState<UserRole>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const fetchRole = useCallback(async (userId: string, metadata?: Record<string, unknown>) => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
-    return (data?.role as UserRole) ?? (metadata?.role as UserRole) ?? "seeker";
-  }, []);
 
   const logout = useCallback(async () => {
     const supabase = createClient();
@@ -65,52 +43,33 @@ export default function AuthProvider({
   useEffect(() => {
     const supabase = createClient();
 
-    // Initial auth check
-    async function init() {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      if (currentUser) {
-        setUser(currentUser);
-        const role = await fetchRole(currentUser.id, currentUser.user_metadata);
-        setUserRole(role);
+    supabase.auth.getUser().then(async ({ data: { user: u } }) => {
+      if (u) {
+        setUser(u);
+        const { data } = await supabase.from("users").select("role").eq("id", u.id).maybeSingle();
+        setUserRole((data?.role as string) ?? (u.user_metadata?.role as string) ?? "seeker");
       }
       setIsLoading(false);
-    }
+    });
 
-    init();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {
         setUser(session.user);
-        const role = await fetchRole(session.user.id, session.user.user_metadata);
-        setUserRole(role);
-        router.refresh();
+        const { data } = await supabase.from("users").select("role").eq("id", session.user.id).maybeSingle();
+        setUserRole((data?.role as string) ?? (session.user.user_metadata?.role as string) ?? "seeker");
       } else if (event === "SIGNED_OUT") {
         setUser(null);
         setUserRole(null);
-        router.refresh();
       } else if (event === "TOKEN_REFRESHED" && session?.user) {
         setUser(session.user);
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [router, fetchRole]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userRole,
-        isAuthenticated: !!user,
-        isLoading,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, userRole, isAuthenticated: !!user, isLoading, logout }}>
       {children}
     </AuthContext.Provider>
   );
