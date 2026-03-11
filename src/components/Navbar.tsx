@@ -78,7 +78,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-[#e5e7eb]">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
-        <div className="flex h-[68px] items-center justify-between">
+        <div className="relative flex h-[68px] items-center justify-between">
 
           {/* ── Left: Logo ── */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -88,8 +88,8 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* ── Center: Nav links (desktop) ── */}
-          <nav className="hidden md:flex items-center gap-1">
+          {/* ── Center: Nav links (desktop) — absolutely centered ── */}
+          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
