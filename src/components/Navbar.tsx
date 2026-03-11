@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import JobLinkLogo from "@/components/JobLinkLogo";
 
 export default function Navbar() {
   const router = useRouter();
@@ -81,9 +80,8 @@ export default function Navbar() {
         <div className="relative flex h-[68px] items-center justify-between">
 
           {/* ── Left: Logo ── */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <JobLinkLogo size={34} />
-            <span className="text-xl font-display tracking-[-0.02em] text-text">
+          <Link href="/" className="flex items-center shrink-0">
+            <span className="text-2xl font-display font-bold tracking-[-0.02em] text-text">
               Job<span className="text-primary">Link</span>
             </span>
           </Link>
