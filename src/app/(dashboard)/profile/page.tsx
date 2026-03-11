@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import { ANTIGUA_PARISHES } from "@/lib/types";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { VisibilityMode } from "@/lib/types";
@@ -1061,6 +1062,7 @@ function ProfileEditForm({
 // ─── Main Page Component ────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter();
+  const { user: authUser, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -1070,23 +1072,22 @@ export default function ProfilePage() {
   const [mode, setMode] = useState<"view" | "edit">("edit");
 
   useEffect(() => {
+    // Wait for AuthProvider to finish loading before fetching profile
+    if (authLoading) return;
+
     async function load() {
       const supabase = createClient();
 
-      // Use getSession() — reads from cookie storage, doesn't make a network call.
-      // The dashboard layout already verified auth server-side, so if we're here
-      // the user IS authenticated. getUser() can race/fail on cold load.
-      const { data: { session } } = await supabase.auth.getSession();
+      // Use getUser() which validates the JWT with the Supabase server,
+      // ensuring we have a valid, non-expired session for database queries.
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (!session?.user) {
-        // This should rarely happen since the dashboard layout guards this route.
-        // But handle it gracefully rather than leaving the spinner forever.
+      if (authError || !user) {
         setLoadError("Session expired. Please sign in again.");
         setLoading(false);
         return;
       }
 
-      const user = session.user;
       setUserId(user.id);
       setEmail(user.email ?? "");
 
@@ -1127,7 +1128,7 @@ export default function ProfilePage() {
     }
 
     load();
-  }, []);
+  }, [authLoading]);
 
   if (loading) {
     return (

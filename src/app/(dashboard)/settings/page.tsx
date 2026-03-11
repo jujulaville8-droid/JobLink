@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import type { VisibilityMode } from "@/lib/types";
 
 const VISIBILITY_OPTIONS: {
@@ -29,6 +30,7 @@ const VISIBILITY_OPTIONS: {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user: authUser, isLoading: authLoading } = useAuth();
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{
@@ -59,19 +61,19 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+
     async function load() {
       const supabase = createClient();
 
-      // Use getSession() — reads from cookie storage, no network call.
-      // Dashboard layout already verified auth server-side.
-      const { data: { session } } = await supabase.auth.getSession();
+      // Use getUser() which validates the JWT with Supabase server,
+      // ensuring we have a valid session for database queries.
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (!session?.user) {
+      if (authError || !user) {
         setLoading(false);
         return;
       }
-
-      const user = session.user;
 
       // Get role
       const { data: userData } = await supabase
@@ -103,23 +105,21 @@ export default function SettingsPage() {
     }
 
     load();
-  }, []);
+  }, [authLoading]);
 
   const handleVisibilityChange = async (mode: VisibilityMode) => {
     setVisibility(mode);
     setMessage(null);
 
     const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session?.user) return;
+    if (!user) return;
 
     const { error } = await supabase
       .from("seeker_profiles")
       .update({ visibility: mode, updated_at: new Date().toISOString() })
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
     if (error) {
       setMessage({ type: "error", text: "Failed to update visibility." });
