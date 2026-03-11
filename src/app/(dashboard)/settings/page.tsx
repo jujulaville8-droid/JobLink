@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import type { VisibilityMode } from "@/lib/types";
 
 const VISIBILITY_OPTIONS: {
@@ -29,6 +30,7 @@ const VISIBILITY_OPTIONS: {
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user: authUser, userRole: authRole, isAuthenticated } = useAuth();
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{
@@ -59,48 +61,37 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated || !authUser) return;
+
     async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const supabase = createClient();
 
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+        const userRole = authRole ?? "seeker";
+        setRole(userRole);
 
-      // Get role
-      const { data: userData } = await supabase
-        .from("users")
-        .select("role")
-        .eq("id", user.id)
-        .single();
+        // Get visibility for seekers
+        if (userRole === "seeker") {
+          const { data: profile } = await supabase
+            .from("seeker_profiles")
+            .select("visibility")
+            .eq("user_id", authUser!.id)
+            .maybeSingle();
 
-      const userRole =
-        (userData?.role as string) ??
-        (user.user_metadata?.role as string) ??
-        "seeker";
-      setRole(userRole);
-
-      // Get visibility for seekers
-      if (userRole === "seeker") {
-        const { data: profile } = await supabase
-          .from("seeker_profiles")
-          .select("visibility")
-          .eq("user_id", user.id)
-          .single();
-
-        if (profile?.visibility) {
-          setVisibility(profile.visibility as VisibilityMode);
+          if (profile?.visibility) {
+            setVisibility(profile.visibility as VisibilityMode);
+          }
         }
-      }
 
-      setLoading(false);
+        setLoading(false);
+      } catch (err) {
+        console.error("Settings load error:", err);
+        setLoading(false);
+      }
     }
 
     load();
-  }, [router]);
+  }, [authUser, isAuthenticated, authRole]);
 
   const handleVisibilityChange = async (mode: VisibilityMode) => {
     setVisibility(mode);

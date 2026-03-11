@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
 import { ANTIGUA_PARISHES } from "@/lib/types";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { VisibilityMode } from "@/lib/types";
@@ -1061,6 +1062,7 @@ function ProfileEditForm({
 // ─── Main Page Component ────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter();
+  const { user: authUser, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -1070,58 +1072,59 @@ export default function ProfilePage() {
   const [mode, setMode] = useState<"view" | "edit">("edit");
 
   useEffect(() => {
+    // Wait for auth context to be ready
+    if (!isAuthenticated || !authUser) return;
+
     async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const supabase = createClient();
 
-      if (!user) {
-        router.push("/login");
-        return;
-      }
+        setUserId(authUser!.id);
+        setEmail(authUser!.email ?? "");
 
-      setUserId(user.id);
-      setEmail(user.email ?? "");
+        const { data: existing, error } = await supabase
+          .from("seeker_profiles")
+          .select("*")
+          .eq("user_id", authUser!.id)
+          .maybeSingle();
 
-      const { data: existing, error } = await supabase
-        .from("seeker_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+        if (error) {
+          console.error("Failed to load profile:", error);
+          setLoadError("Failed to load profile. Please try refreshing the page.");
+          setLoading(false);
+          return;
+        }
 
-      if (error) {
-        console.error("Failed to load profile:", error);
-        setLoadError("Failed to load profile. Please try refreshing the page.");
+        if (existing) {
+          setProfileId(existing.id);
+          setProfile({
+            first_name: existing.first_name ?? "",
+            last_name: existing.last_name ?? "",
+            phone: existing.phone ?? "",
+            location: existing.location ?? "",
+            bio: existing.bio ?? "",
+            skills: existing.skills ?? [],
+            experience_years: existing.experience_years,
+            education: existing.education ?? "",
+            cv_url: existing.cv_url ?? "",
+            avatar_url: existing.avatar_url ?? "",
+            visibility: existing.visibility ?? "actively_looking",
+          });
+          setMode("view");
+        } else {
+          setMode("edit");
+        }
+
         setLoading(false);
-        return;
+      } catch (err) {
+        console.error("Profile load error:", err);
+        setLoadError("Something went wrong loading your profile.");
+        setLoading(false);
       }
-
-      if (existing) {
-        setProfileId(existing.id);
-        setProfile({
-          first_name: existing.first_name ?? "",
-          last_name: existing.last_name ?? "",
-          phone: existing.phone ?? "",
-          location: existing.location ?? "",
-          bio: existing.bio ?? "",
-          skills: existing.skills ?? [],
-          experience_years: existing.experience_years,
-          education: existing.education ?? "",
-          cv_url: existing.cv_url ?? "",
-          avatar_url: existing.avatar_url ?? "",
-          visibility: existing.visibility ?? "actively_looking",
-        });
-        setMode("view");
-      } else {
-        setMode("edit");
-      }
-
-      setLoading(false);
     }
 
     load();
-  }, [router]);
+  }, [authUser, isAuthenticated]);
 
   if (loading) {
     return (
