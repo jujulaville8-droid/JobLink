@@ -27,6 +27,7 @@ CREATE TABLE public.seeker_profiles (
   experience_years INTEGER,
   education TEXT,
   cv_url TEXT,
+  avatar_url TEXT,
   visibility visibility_mode NOT NULL DEFAULT 'actively_looking',
   profile_complete_pct INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

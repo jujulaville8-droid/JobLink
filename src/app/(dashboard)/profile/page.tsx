@@ -17,6 +17,7 @@ interface ProfileData {
   experience_years: number | null;
   education: string;
   cv_url: string;
+  avatar_url: string;
   visibility: VisibilityMode;
 }
 
@@ -30,6 +31,7 @@ const INITIAL_PROFILE: ProfileData = {
   experience_years: null,
   education: "",
   cv_url: "",
+  avatar_url: "",
   visibility: "actively_looking",
 };
 
@@ -161,20 +163,150 @@ function IconUpload({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
+function IconCamera({ className = "h-4 w-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
+// ─── Avatar Component ───────────────────────────────────────────
+function ProfileAvatar({
+  avatarUrl,
+  initials,
+  size = "lg",
+  onUpload,
+  uploading,
+}: {
+  avatarUrl: string;
+  initials: string;
+  size?: "lg" | "sm";
+  onUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  uploading?: boolean;
+}) {
+  const sizeClasses = size === "lg"
+    ? "h-16 w-16 sm:h-20 sm:w-20 text-xl sm:text-2xl"
+    : "h-14 w-14 text-lg";
+
+  return (
+    <div className="relative group">
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt="Profile"
+          className={`${sizeClasses} rounded-full object-cover border-2 border-gray-200`}
+        />
+      ) : (
+        <div className={`flex items-center justify-center rounded-full bg-[#1e3a5f] font-bold text-white ${sizeClasses}`}>
+          {initials}
+        </div>
+      )}
+      {onUpload && (
+        <label className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/0 group-hover:bg-black/40 transition-colors">
+          {uploading ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <IconCamera className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={onUpload}
+            className="hidden"
+            disabled={uploading}
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
 // ─── Profile View (Indeed-inspired) ─────────────────────────────
 function ProfileView({
   profile,
+  profileId,
   email,
+  userId,
   onEdit,
+  onAvatarChange,
 }: {
   profile: ProfileData;
+  profileId: string;
   email: string;
+  userId: string;
   onEdit: () => void;
+  onAvatarChange: (url: string) => void;
 }) {
   const { percentage, missing } = getCompletion(profile);
   const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Your Name";
   const initials = [profile.first_name?.[0], profile.last_name?.[0]].filter(Boolean).join("").toUpperCase() || "?";
   const banner = VISIBILITY_BANNER[profile.visibility];
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarMsg("Please upload an image file (JPG, PNG, or WebP).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarMsg("Image must be less than 2MB.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarMsg(null);
+
+    const supabase = createClient();
+    const ext = file.name.split(".").pop() || "jpg";
+    const fileName = `${userId}/avatar-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      setAvatarMsg("Failed to upload photo. Please try again.");
+      setAvatarUploading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
+
+    // Save to profile
+    const res = await fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile_id: profileId,
+        avatar_url: publicUrl,
+        // send existing data to avoid overwriting
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        phone: profile.phone,
+        location: profile.location,
+        bio: profile.bio,
+        skills: profile.skills,
+        experience_years: profile.experience_years,
+        education: profile.education,
+        cv_url: profile.cv_url,
+        visibility: profile.visibility,
+        profile_complete_pct: percentage,
+      }),
+    });
+
+    if (res.ok) {
+      onAvatarChange(publicUrl);
+    } else {
+      setAvatarMsg("Photo uploaded but failed to save to profile.");
+    }
+
+    setAvatarUploading(false);
+  };
 
   return (
     <div className="mx-auto max-w-2xl pb-12">
@@ -213,9 +345,13 @@ function ProfileView({
 
             {/* Right: Avatar + Edit */}
             <div className="flex flex-col items-center gap-3">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#1e3a5f] text-xl font-bold text-white sm:h-20 sm:w-20 sm:text-2xl">
-                {initials}
-              </div>
+              <ProfileAvatar
+                avatarUrl={profile.avatar_url}
+                initials={initials}
+                size="lg"
+                onUpload={handleAvatarUpload}
+                uploading={avatarUploading}
+              />
               <button
                 onClick={onEdit}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[#1e3a5f] hover:text-[#2a4f7f] transition-colors"
@@ -225,6 +361,9 @@ function ProfileView({
               </button>
             </div>
           </div>
+          {avatarMsg && (
+            <p className="mt-3 text-xs text-red-600">{avatarMsg}</p>
+          )}
         </div>
 
         {/* Completion bar — only show if not 100% */}
@@ -470,6 +609,7 @@ function ProfileEditForm({
           experience_years: profile.experience_years,
           education: profile.education,
           cv_url: profile.cv_url,
+          avatar_url: profile.avatar_url,
           visibility: profile.visibility,
           profile_complete_pct: pct,
         }),
@@ -633,6 +773,47 @@ function ProfileEditForm({
         {step === 1 && (
           <div className="space-y-5">
             <h2 className="text-base font-semibold text-gray-900">Personal Information</h2>
+
+            {/* Profile Photo */}
+            <div className="flex items-center gap-4">
+              <ProfileAvatar
+                avatarUrl={profile.avatar_url}
+                initials={[profile.first_name?.[0], profile.last_name?.[0]].filter(Boolean).join("").toUpperCase() || "?"}
+                size="sm"
+                onUpload={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !userId) return;
+                  if (!file.type.startsWith("image/")) {
+                    setMessage({ type: "error", text: "Please upload an image file." });
+                    return;
+                  }
+                  if (file.size > 2 * 1024 * 1024) {
+                    setMessage({ type: "error", text: "Image must be less than 2MB." });
+                    return;
+                  }
+                  setUploading(true);
+                  setMessage(null);
+                  const supabase = createClient();
+                  const ext = file.name.split(".").pop() || "jpg";
+                  const fileName = `${userId}/avatar-${Date.now()}.${ext}`;
+                  const { error: err } = await supabase.storage.from("avatars").upload(fileName, file, { upsert: true });
+                  if (err) {
+                    setMessage({ type: "error", text: "Failed to upload photo." });
+                    setUploading(false);
+                    return;
+                  }
+                  const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
+                  setProfile((p) => ({ ...p, avatar_url: publicUrl }));
+                  setMessage({ type: "success", text: "Photo uploaded! Remember to save." });
+                  setUploading(false);
+                }}
+                uploading={uploading}
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-700">Profile photo</p>
+                <p className="text-xs text-gray-400 mt-0.5">JPG, PNG or WebP. Max 2MB.</p>
+              </div>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -928,6 +1109,7 @@ export default function ProfilePage() {
           experience_years: existing.experience_years,
           education: existing.education ?? "",
           cv_url: existing.cv_url ?? "",
+          avatar_url: existing.avatar_url ?? "",
           visibility: existing.visibility ?? "actively_looking",
         });
         setMode("view");
@@ -971,8 +1153,11 @@ export default function ProfilePage() {
     return (
       <ProfileView
         profile={profile}
+        profileId={profileId!}
         email={email}
+        userId={userId!}
         onEdit={() => setMode("edit")}
+        onAvatarChange={(url) => setProfile((p) => ({ ...p, avatar_url: url }))}
       />
     );
   }

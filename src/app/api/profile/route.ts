@@ -53,6 +53,7 @@ export async function POST(request: NextRequest) {
       experience_years: profileData.experience_years,
       education: profileData.education,
       cv_url: profileData.cv_url,
+      avatar_url: profileData.avatar_url,
       visibility: profileData.visibility,
       profile_complete_pct: profileData.profile_complete_pct,
       updated_at: new Date().toISOString(),
