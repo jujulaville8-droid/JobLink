@@ -147,6 +147,12 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Wave divider */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="var(--color-bg-alt)" />
+          </svg>
+        </div>
       </section>
 
       {/* ===== TRUSTED BY — sits flush between hero and featured ===== */}
