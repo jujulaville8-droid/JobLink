@@ -102,7 +102,7 @@ export default function ProfilePage() {
         .from("seeker_profiles")
         .select("*")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         setProfileId(existing.id);

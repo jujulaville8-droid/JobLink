@@ -49,13 +49,18 @@ async function SeekerDashboard({ userId }: { userId: string }) {
   const supabase = await createClient();
 
   // Fetch seeker profile
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("seeker_profiles")
     .select("*")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
+
+  if (!profile && !profileError) {
+    redirect("/profile");
+  }
 
   if (!profile) {
+    // RLS or query error — show empty state rather than redirect loop
     redirect("/profile");
   }
 
@@ -66,7 +71,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
   const { data: applications } = await supabase
     .from("applications")
     .select("id, status, applied_at, job_listings(id, title, companies(company_name))")
-    .eq("seeker_id", userId)
+    .eq("seeker_id", profile.id)
     .order("applied_at", { ascending: false })
     .limit(5);
 
