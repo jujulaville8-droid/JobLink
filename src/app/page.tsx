@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import SearchBar from "@/components/SearchBar";
 import { HeroCTAs, GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
 import JobCard, { type Job } from "@/components/JobCard";
 
@@ -100,7 +99,7 @@ export default function Home() {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden min-h-[580px] sm:min-h-[640px] flex items-center">
+      <section className="relative overflow-hidden flex items-center">
         {/* Background image */}
         <div className="absolute inset-0">
           <Image
@@ -110,36 +109,32 @@ export default function Home() {
             className="object-cover"
             priority
           />
-          {/* Dark overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/45 to-black/60" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black/65" />
         </div>
 
-        <div className="relative mx-auto max-w-4xl px-6 sm:px-6 lg:px-8 py-20 sm:py-28 w-full">
+        <div className="relative mx-auto max-w-3xl px-6 sm:px-8 py-24 sm:py-32 lg:py-36 w-full">
           <div className="text-center">
-            <p className="text-sm font-semibold tracking-widest uppercase text-white/70 mb-4">
-              Antigua &amp; Barbuda&apos;s Job Platform
-            </p>
-            <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.5rem] font-bold text-white leading-[1.08] tracking-tight drop-shadow-sm">
-              Find Your Next
+            <h1 className="text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] font-bold text-white leading-[1.12] tracking-tight">
+              Find Opportunities.
               <br />
-              Opportunity Here
+              Connect With Employers.
+              <br />
+              Get Hired.
             </h1>
-            <p className="mt-5 text-[17px] text-white/60 font-light max-w-md mx-auto leading-relaxed">
-              Your next career move starts here.
-            </p>
 
-            <div className="mt-9">
-              <SearchBar />
-            </div>
+            <p className="mt-6 text-base sm:text-lg text-white/65 max-w-xl mx-auto leading-relaxed">
+              JobLink connects job seekers with employers across the Caribbean.
+              Browse opportunities, apply instantly, and take the next step in your career.
+            </p>
 
             <HeroCTAs />
 
-            <div className="mt-8 flex items-center justify-center gap-8 sm:gap-10 text-white/55 text-sm">
-              <span><strong className="text-white/90 font-semibold">2,400+</strong> job seekers</span>
+            <div className="mt-10 flex items-center justify-center gap-6 sm:gap-8 text-white/50 text-sm">
+              <span><strong className="text-white/85 font-semibold">2,400+</strong> job seekers</span>
               <span className="w-px h-3 bg-white/20" />
-              <span><strong className="text-white/90 font-semibold">180</strong> active listings</span>
+              <span><strong className="text-white/85 font-semibold">180</strong> active listings</span>
               <span className="hidden sm:block w-px h-3 bg-white/20" />
-              <span className="hidden sm:block"><strong className="text-white/90 font-semibold">85</strong> companies</span>
+              <span className="hidden sm:block"><strong className="text-white/85 font-semibold">85</strong> companies</span>
             </div>
           </div>
         </div>
