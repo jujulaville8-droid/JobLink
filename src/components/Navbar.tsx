@@ -2,15 +2,28 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/components/AuthProvider";
 
-interface NavbarProps {
-  isLoggedIn?: boolean;
-  userRole?: "jobseeker" | "employer";
-}
-
-export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
+export default function Navbar() {
+  const { isAuthenticated, userRole, user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    }
+    if (profileOpen) {
+      document.addEventListener("mousedown", handleClick);
+      return () => document.removeEventListener("mousedown", handleClick);
+    }
+  }, [profileOpen]);
+
+  const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[#e7e5e0]/80">
@@ -30,7 +43,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
             <Link href="/about" className="text-[13px] font-medium text-[#71717a] hover:text-[#1a1a1a] transition-colors">
               About
             </Link>
-            {isLoggedIn && (
+            {isAuthenticated && (
               <Link href="/dashboard" className="text-[13px] font-medium text-[#71717a] hover:text-[#1a1a1a] transition-colors">
                 Dashboard
               </Link>
@@ -39,14 +52,14 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-2">
-            {isLoggedIn ? (
-              <div className="relative">
+            {isAuthenticated ? (
+              <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-full border border-[#e7e5e0] p-1 pr-3 hover:bg-[#faf9f7] transition-colors"
                 >
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0d7377] text-white text-xs font-medium">
-                    U
+                    {initial}
                   </span>
                   <svg
                     className={`h-3.5 w-3.5 text-[#a1a1aa] transition-transform ${profileOpen ? "rotate-180" : ""}`}
@@ -61,11 +74,16 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
 
                 {profileOpen && (
                   <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#e7e5e0] bg-white py-1 shadow-lg shadow-black/5">
-                    <Link href="/dashboard" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Dashboard</Link>
-                    <Link href="/profile" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Profile</Link>
-                    <Link href="/settings" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]">Settings</Link>
+                    <Link href="/dashboard" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]" onClick={() => setProfileOpen(false)}>Dashboard</Link>
+                    <Link href="/profile" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]" onClick={() => setProfileOpen(false)}>Profile</Link>
+                    <Link href="/settings" className="block px-4 py-2.5 text-sm text-[#1a1a1a] hover:bg-[#faf9f7]" onClick={() => setProfileOpen(false)}>Settings</Link>
                     <hr className="my-1 border-[#e7e5e0]" />
-                    <button className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-[#faf9f7]">Sign Out</button>
+                    <button
+                      onClick={() => { setProfileOpen(false); logout(); }}
+                      className="block w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-[#faf9f7]"
+                    >
+                      Sign Out
+                    </button>
                   </div>
                 )}
               </div>
@@ -89,7 +107,14 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
 
           {/* Mobile */}
           <div className="flex md:hidden items-center gap-3">
-            {!isLoggedIn && (
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0d7377] text-white text-xs font-medium"
+              >
+                {initial}
+              </Link>
+            ) : (
               <Link
                 href="/signup"
                 className="rounded-full bg-[#0d7377] hover:bg-[#095355] px-4 py-2 text-[13px] font-semibold text-white transition-colors"

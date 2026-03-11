@@ -2,16 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
-interface BottomNavProps {
-  isLoggedIn?: boolean;
-  userRole?: "jobseeker" | "employer";
-}
-
-export default function BottomNav({
-  isLoggedIn = false,
-  userRole,
-}: BottomNavProps) {
+export default function BottomNav() {
+  const { isAuthenticated, userRole } = useAuth();
   const pathname = usePathname();
   const isActive = (path: string) => pathname === path;
 
@@ -42,7 +36,7 @@ export default function BottomNav({
           <span>Jobs</span>
         </Link>
 
-        {isLoggedIn && userRole === "employer" && (
+        {isAuthenticated && userRole === "employer" && (
           <Link href="/post-job" className={linkClass("/post-job")}>
             <svg className={iconClass("/post-job")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -53,20 +47,30 @@ export default function BottomNav({
           </Link>
         )}
 
-        <Link href="/saved" className={linkClass("/saved")}>
+        <Link href={isAuthenticated ? "/saved" : "/login"} className={linkClass("/saved")}>
           <svg className={iconClass("/saved")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
           <span>Saved</span>
         </Link>
 
-        <Link href="/profile" className={linkClass("/profile")}>
-          <svg className={iconClass("/profile")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <span>Profile</span>
-        </Link>
+        {isAuthenticated ? (
+          <Link href="/dashboard" className={linkClass("/dashboard")}>
+            <svg className={iconClass("/dashboard")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span>Dashboard</span>
+          </Link>
+        ) : (
+          <Link href="/login" className={linkClass("/login")}>
+            <svg className={iconClass("/login")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>Sign In</span>
+          </Link>
+        )}
       </div>
     </nav>
   );
