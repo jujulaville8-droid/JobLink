@@ -150,19 +150,19 @@ export default function Home() {
         {/* Wave divider */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
-            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="var(--color-bg)" />
+            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="white" />
           </svg>
         </div>
       </section>
 
       {/* ===== TRUSTED BY ===== */}
-      <section className="bg-white py-7 sm:py-8 border-b border-border">
+      <section className="bg-white pt-[30px] pb-7 sm:pb-8">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
             {["Sandals", "APUA", "LIAT", "Jumby Bay", "ABTA", "Epicurean"].map((name) => (
               <span
                 key={name}
-                className="text-border font-bold text-xs uppercase tracking-[0.15em]"
+                className="text-text-muted/70 font-bold text-xs uppercase tracking-[0.15em]"
               >
                 {name}
               </span>
