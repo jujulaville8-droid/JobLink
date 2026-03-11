@@ -18,7 +18,7 @@ export default function Navbar({ isLoggedIn = false, userRole }: NavbarProps) {
         <div className="flex h-[60px] items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="JobLink" width={32} height={32} className="h-8 w-8" />
+            <Image src="/logo.png" alt="JobLink" width={32} height={32} className="h-8 w-8" />
             <span className="text-lg font-bold text-[#1a1a1a]">JobLink</span>
           </Link>
 

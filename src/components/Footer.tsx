@@ -9,7 +9,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo-white.svg" alt="JobLink" width={28} height={28} className="h-7 w-7" />
+              <Image src="/logo.png" alt="JobLink" width={28} height={28} className="h-7 w-7 brightness-0 invert" />
               <span className="text-base font-bold">JobLink</span>
             </Link>
             <p className="mt-3 text-sm text-white/40 leading-relaxed max-w-[220px]">
