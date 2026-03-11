@@ -54,13 +54,34 @@ export default function BottomNav() {
           <span>Saved</span>
         </Link>
 
-        <Link href={isAuthenticated ? "/dashboard" : "/login"} className={linkClass(isAuthenticated ? "/dashboard" : "/login")}>
-          <svg className={iconClass(isAuthenticated ? "/dashboard" : "/login")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-          <span>{isAuthenticated ? "Dashboard" : "Profile"}</span>
-        </Link>
+        {isAuthenticated ? (
+          <>
+            <Link href="/profile" className={linkClass("/profile")}>
+              <svg className={iconClass("/profile")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span>Profile</span>
+            </Link>
+            <Link href="/dashboard" className={linkClass("/dashboard")}>
+              <svg className={iconClass("/dashboard")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              <span>Dashboard</span>
+            </Link>
+          </>
+        ) : (
+          <Link href="/login" className={linkClass("/login")}>
+            <svg className={iconClass("/login")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>Sign In</span>
+          </Link>
+        )}
       </div>
     </nav>
   );
