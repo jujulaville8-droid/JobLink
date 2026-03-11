@@ -9,12 +9,19 @@ import JobLinkLogo from "@/components/JobLinkLogo";
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, logout, isLoading } = useAuth();
+  const { isAuthenticated, user, avatarUrl, logout, isLoading } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
+  const showAvatar = avatarUrl && !imgError;
+
+  // Reset error when avatar URL changes (e.g. user uploads new photo)
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
 
   const navLinks = [
     { href: "/jobs", label: "Find Jobs" },
@@ -92,9 +99,18 @@ export default function Navbar() {
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-2 rounded-full border border-[#e7e5e0] p-1.5 pr-3.5 hover:bg-[#faf9f7] hover:border-[#d4d2cd] transition-all"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0d7377] text-white text-[13px] font-semibold">
-                    {initial}
-                  </span>
+                  {showAvatar ? (
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="h-8 w-8 rounded-full object-cover"
+                      onError={() => setImgError(true)}
+                    />
+                  ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0d7377] text-white text-[13px] font-semibold">
+                      {initial}
+                    </span>
+                  )}
                   <svg
                     className={`h-3.5 w-3.5 text-[#a1a1aa] transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
                     viewBox="0 0 24 24"
@@ -155,11 +171,19 @@ export default function Navbar() {
           {/* Mobile right side */}
           <div className="flex md:hidden items-center gap-2">
             {isAuthenticated && (
-              <Link
-                href="/dashboard"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0d7377] text-white text-[13px] font-semibold"
-              >
-                {initial}
+              <Link href="/dashboard" className="flex h-8 w-8 items-center justify-center rounded-full overflow-hidden">
+                {showAvatar ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    className="h-8 w-8 rounded-full object-cover"
+                    onError={() => setImgError(true)}
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#0d7377] text-white text-[13px] font-semibold">
+                    {initial}
+                  </span>
+                )}
               </Link>
             )}
             {/* Hamburger */}

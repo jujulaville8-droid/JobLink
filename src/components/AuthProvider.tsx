@@ -7,17 +7,21 @@ import type { User } from "@supabase/supabase-js";
 interface AuthState {
   user: User | null;
   userRole: string | null;
+  avatarUrl: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   logout: () => Promise<void>;
+  setAvatarUrl: (url: string | null) => void;
 }
 
 const AuthContext = createContext<AuthState>({
   user: null,
   userRole: null,
+  avatarUrl: null,
   isAuthenticated: false,
   isLoading: true,
   logout: async () => {},
+  setAvatarUrl: () => {},
 });
 
 export function useAuth() {
@@ -27,6 +31,7 @@ export function useAuth() {
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const logout = useCallback(async () => {
@@ -34,6 +39,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     await supabase.auth.signOut();
     setUser(null);
     setUserRole(null);
+    setAvatarUrl(null);
     window.location.href = "/login";
   }, []);
 
@@ -42,7 +48,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     let mounted = true;
     let initialized = false;
 
-    // Fetch role in the background — never blocks isLoading
+    // Fetch role and avatar in the background — never blocks isLoading
     async function fetchRoleInBackground(u: User) {
       try {
         const { data } = await supabase
@@ -55,6 +61,21 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       } catch {
         if (!mounted) return;
         setUserRole((u.user_metadata?.role as string) ?? "seeker");
+      }
+
+      // Fetch avatar from seeker_profiles
+      try {
+        const { data: profile } = await supabase
+          .from("seeker_profiles")
+          .select("avatar_url")
+          .eq("user_id", u.id)
+          .maybeSingle();
+        if (!mounted) return;
+        if (profile?.avatar_url) {
+          setAvatarUrl(profile.avatar_url as string);
+        }
+      } catch {
+        // Non-critical — avatar stays null
       }
     }
 
@@ -83,6 +104,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         } else if (event === "SIGNED_OUT") {
           setUser(null);
           setUserRole(null);
+          setAvatarUrl(null);
           setIsLoading(false);
         } else if (event === "TOKEN_REFRESHED" && session?.user) {
           setUser(session.user);
@@ -109,7 +131,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userRole, isAuthenticated: !!user, isLoading, logout }}>
+    <AuthContext.Provider value={{ user, userRole, avatarUrl, isAuthenticated: !!user, isLoading, logout, setAvatarUrl }}>
       {children}
     </AuthContext.Provider>
   );

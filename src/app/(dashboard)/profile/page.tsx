@@ -1224,7 +1224,7 @@ function ProfileEditForm({
 // ─── Main Page Component ────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter();
-  const { user: authUser, isLoading: authLoading } = useAuth();
+  const { user: authUser, isLoading: authLoading, setAvatarUrl: setGlobalAvatarUrl } = useAuth();
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -1332,7 +1332,10 @@ export default function ProfilePage() {
         email={email}
         userId={userId!}
         onEdit={() => setMode("edit")}
-        onAvatarChange={(url) => setProfile((p) => ({ ...p, avatar_url: url }))}
+        onAvatarChange={(url) => {
+          setProfile((p) => ({ ...p, avatar_url: url }));
+          setGlobalAvatarUrl(url);
+        }}
         onVisibilityChange={(v) => setProfile((p) => ({ ...p, visibility: v }))}
       />
     );
@@ -1347,6 +1350,7 @@ export default function ProfilePage() {
       onSaved={(savedProfile, savedId) => {
         setProfile(savedProfile);
         setProfileId(savedId);
+        setGlobalAvatarUrl(savedProfile.avatar_url || null);
         setMode("view");
       }}
       onCancel={() => setMode("view")}
