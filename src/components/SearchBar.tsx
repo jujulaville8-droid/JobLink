@@ -36,7 +36,7 @@ export default function SearchBar() {
             placeholder="Search jobs, skills, or companies"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            className="w-full bg-transparent text-text placeholder:text-text-muted outline-none text-[15px]"
+            className="w-full bg-transparent text-text placeholder:text-text-muted outline-none !outline-none focus:!outline-none focus-visible:!outline-none text-[15px]"
           />
         </div>
 
