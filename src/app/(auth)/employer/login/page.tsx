@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+export default function EmployerLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,7 +20,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?role=employer`,
       },
     })
     if (error) {
@@ -52,9 +52,12 @@ export default function LoginPage() {
 
   return (
     <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8">
-      <h1 className="font-display text-2xl text-text text-center mb-6">
-        Welcome back
+      <h1 className="font-display text-2xl text-text text-center mb-2">
+        Employer Sign In
       </h1>
+      <p className="text-center text-sm text-text-light mb-6">
+        Manage your listings and find great candidates
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
@@ -76,7 +79,7 @@ export default function LoginPage() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="you@company.com"
             className="input-base"
           />
         </div>
@@ -175,7 +178,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
-          href="/signup"
+          href="/employer/signup"
           className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one
@@ -183,12 +186,12 @@ export default function LoginPage() {
       </p>
 
       <p className="mt-3 text-center text-sm text-text-muted">
-        Hiring?{' '}
+        Looking for a job?{' '}
         <Link
-          href="/employer/login"
+          href="/login"
           className="font-medium text-primary hover:text-primary-dark transition"
         >
-          Sign in as employer &rarr;
+          Sign in here &rarr;
         </Link>
       </p>
     </div>

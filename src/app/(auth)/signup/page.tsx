@@ -352,6 +352,16 @@ export default function SignupPage() {
           Sign in
         </a>
       </p>
+
+      <p className="mt-3 text-center text-sm text-text-muted">
+        Hiring?{' '}
+        <a
+          href="/employer/signup"
+          className="font-medium text-primary hover:text-primary-dark transition"
+        >
+          Sign up as employer &rarr;
+        </a>
+      </p>
     </div>
   )
 }
