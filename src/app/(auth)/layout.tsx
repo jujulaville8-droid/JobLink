@@ -20,8 +20,8 @@ export default function AuthLayout({
             <Image
               src="/company-logo.png"
               alt="JobLink — Antigua's Career Network"
-              width={320}
-              height={110}
+              width={240}
+              height={240}
               className="h-24 w-auto"
             />
           </a>

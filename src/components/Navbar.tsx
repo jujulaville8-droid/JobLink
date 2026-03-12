@@ -67,9 +67,9 @@ export default function Navbar() {
             <Image
               src="/company-logo.png"
               alt="JobLink — Antigua's Career Network"
-              width={320}
-              height={110}
-              className="h-20 w-auto sm:h-24"
+              width={200}
+              height={200}
+              className="h-16 w-auto sm:h-20 -my-2"
               priority
             />
           </Link>
