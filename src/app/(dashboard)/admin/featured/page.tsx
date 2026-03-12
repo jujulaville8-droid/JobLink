@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
@@ -12,6 +13,8 @@ async function toggleFeatured(formData: FormData) {
     .from('job_listings')
     .update({ is_featured: !currentlyFeatured })
     .eq('id', jobId)
+
+  revalidatePath('/admin/featured')
 }
 
 interface ListingRow {

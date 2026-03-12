@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { User } from '@/lib/types'
@@ -12,6 +13,8 @@ async function toggleBan(formData: FormData) {
     .from('users')
     .update({ is_banned: !currentlyBanned })
     .eq('id', userId)
+
+  revalidatePath('/admin/users')
 }
 
 async function toggleVerify(formData: FormData) {
@@ -24,6 +27,8 @@ async function toggleVerify(formData: FormData) {
     .from('users')
     .update({ email_verified: !currentlyVerified })
     .eq('id', userId)
+
+  revalidatePath('/admin/users')
 }
 
 interface UserWithProfile extends User {

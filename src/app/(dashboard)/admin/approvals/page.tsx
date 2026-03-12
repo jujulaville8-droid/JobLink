@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
@@ -11,6 +12,8 @@ async function approveJob(formData: FormData) {
     .from('job_listings')
     .update({ status: 'active' })
     .eq('id', jobId)
+
+  revalidatePath('/admin/approvals')
 }
 
 async function rejectJob(formData: FormData) {
@@ -22,6 +25,8 @@ async function rejectJob(formData: FormData) {
     .from('job_listings')
     .update({ status: 'closed' })
     .eq('id', jobId)
+
+  revalidatePath('/admin/approvals')
 }
 
 interface PendingListing {
