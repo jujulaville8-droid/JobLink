@@ -63,18 +63,15 @@ export default function Navbar() {
         <div className="relative flex h-[68px] items-center justify-between">
 
           {/* ── Left: Logo ── */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
+          <Link href="/" className="flex items-center shrink-0">
             <Image
               src="/joblink-logo.png"
-              alt="JobLink Logo"
-              width={36}
-              height={36}
-              className="rounded-md"
+              alt="JobLink"
+              width={160}
+              height={44}
+              className="h-11 w-auto"
               priority
             />
-            <span className="text-2xl font-display font-bold tracking-[-0.02em] text-text">
-              Job<span className="text-primary">Link</span>
-            </span>
           </Link>
 
           {/* ── Center: Nav links (desktop) — absolutely centered ── */}
