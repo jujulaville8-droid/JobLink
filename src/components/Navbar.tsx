@@ -5,7 +5,8 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
-import { LayoutGrid, User, Settings, LogOut } from "lucide-react";
+import { FloatingNav } from "@/components/ui/floating-navbar";
+import { LayoutGrid, User, Settings, LogOut, Briefcase, Search, Info } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -201,6 +202,49 @@ export default function Navbar() {
           </div>
         )}
       </div>
+
+      {/* ── Floating nav: appears on scroll ── */}
+      <FloatingNav
+        navItems={[
+          {
+            name: "Home",
+            link: "/",
+            icon: <Briefcase className="h-4 w-4" />,
+            active: pathname === "/",
+          },
+          ...navLinks.map((link) => ({
+            name: link.label,
+            link: link.href,
+            icon: link.href === "/jobs" ? (
+              <Search className="h-4 w-4" />
+            ) : link.href === "/about" ? (
+              <Info className="h-4 w-4" />
+            ) : (
+              <LayoutGrid className="h-4 w-4" />
+            ),
+            active: isActive(link.href),
+          })),
+        ]}
+        rightContent={
+          !isLoading && !isAuthenticated ? (
+            <Link
+              href="/login"
+              className="border text-sm font-medium relative border-primary/20 text-primary px-4 py-2 rounded-full hover:bg-primary/5 transition-colors"
+            >
+              <span>Sign In</span>
+              <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-primary to-transparent h-px" />
+            </Link>
+          ) : isAuthenticated ? (
+            <Link
+              href="/dashboard"
+              className="border text-sm font-medium relative border-primary/20 text-primary px-4 py-2 rounded-full hover:bg-primary/5 transition-colors"
+            >
+              <span>Dashboard</span>
+              <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-primary to-transparent h-px" />
+            </Link>
+          ) : undefined
+        }
+      />
     </header>
   );
 }
