@@ -12,6 +12,7 @@ interface AuthState {
   isLoading: boolean;
   logout: () => Promise<void>;
   setAvatarUrl: (url: string | null) => void;
+  setUserRole: (role: string | null) => void;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthState>({
   isLoading: true,
   logout: async () => {},
   setAvatarUrl: () => {},
+  setUserRole: () => {},
 });
 
 export function useAuth() {
@@ -131,7 +133,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userRole, avatarUrl, isAuthenticated: !!user, isLoading, logout, setAvatarUrl }}>
+    <AuthContext.Provider value={{ user, userRole, avatarUrl, isAuthenticated: !!user, isLoading, logout, setAvatarUrl, setUserRole }}>
       {children}
     </AuthContext.Provider>
   );

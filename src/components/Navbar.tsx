@@ -6,12 +6,13 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, ArrowLeftRight } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, userRole, avatarUrl, logout, isLoading } = useAuth();
+  const { isAuthenticated, user, userRole, avatarUrl, logout, setUserRole, isLoading } = useAuth();
+  const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [floatingVisible, setFloatingVisible] = useState(false);
@@ -61,6 +62,26 @@ export default function Navbar() {
   const handleFloatingVisibility = useCallback((visible: boolean) => {
     setFloatingVisible(visible);
   }, []);
+
+  async function handleSwitchRole() {
+    if (switching) return;
+    setSwitching(true);
+    const newRole = isEmployer ? "seeker" : "employer";
+    try {
+      const res = await fetch("/api/switch-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (res.ok) {
+        setUserRole(newRole);
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   const avatarElement = (
     <>
@@ -131,7 +152,7 @@ export default function Navbar() {
                   header={
                     <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
                   }
-                  dividerAfter={[2]}
+                  dividerAfter={[3]}
                   options={[
                     {
                       label: "Dashboard",
@@ -147,6 +168,16 @@ export default function Navbar() {
                       label: "Settings",
                       onClick: () => router.push("/settings"),
                       Icon: <Settings className="h-4 w-4 text-text-muted" />,
+                    },
+                    {
+                      label: switching
+                        ? "Switching..."
+                        : isEmployer
+                          ? "Switch to Job Seeker"
+                          : "Switch to Employer",
+                      onClick: handleSwitchRole,
+                      Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
+                      className: "text-primary hover:bg-primary/5",
                     },
                     {
                       label: "Sign Out",
