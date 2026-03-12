@@ -1,18 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
+import { LayoutGrid, User, Settings, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user, avatarUrl, logout, isLoading } = useAuth();
-  const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
   const showAvatar = avatarUrl && !imgError;
@@ -29,26 +29,8 @@ export default function Navbar() {
 
   // Close menus on route change
   useEffect(() => {
-    setProfileOpen(false);
     setMobileMenuOpen(false);
   }, [pathname]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!profileOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setProfileOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [profileOpen]);
-
-  function navigateTo(href: string) {
-    setProfileOpen(false);
-    router.push(href);
-  }
 
   function isActive(href: string) {
     if (href === "/jobs") return pathname.startsWith("/jobs") || pathname.startsWith("/browse-jobs");
@@ -111,51 +93,37 @@ export default function Navbar() {
             {isLoading ? (
               <div className="h-9 w-9" />
             ) : isAuthenticated ? (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 rounded-full border border-border p-1 pr-3 hover:bg-bg-alt hover:border-primary/20 transition-all"
-                >
-                  {avatarElement}
-                  <svg
-                    className={`h-3.5 w-3.5 text-text-muted transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <path d="M6 9l6 6 6-6" />
-                  </svg>
-                </button>
-
-                {profileOpen && (
-                  <div className="animate-scale-in absolute right-0 mt-2.5 w-56 rounded-xl border border-border bg-white py-1.5 shadow-lg shadow-primary/[0.06] z-50">
-                    <div className="px-4 py-2.5 border-b border-bg-alt mb-1">
-                      <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
-                    </div>
-                    <button onClick={() => navigateTo("/dashboard")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light hover:bg-bg-alt hover:text-primary transition-colors">
-                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                      Dashboard
-                    </button>
-                    <button onClick={() => navigateTo("/profile")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light hover:bg-bg-alt hover:text-primary transition-colors">
-                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      Profile
-                    </button>
-                    <button onClick={() => navigateTo("/settings")} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light hover:bg-bg-alt hover:text-primary transition-colors">
-                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                      Settings
-                    </button>
-                    <div className="my-1.5 border-t border-border" />
-                    <button
-                      onClick={() => { setProfileOpen(false); logout(); }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
+              <DropdownMenu
+                header={
+                  <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
+                }
+                dividerAfter={[2]}
+                options={[
+                  {
+                    label: "Dashboard",
+                    onClick: () => router.push("/dashboard"),
+                    Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+                  },
+                  {
+                    label: "Profile",
+                    onClick: () => router.push("/profile"),
+                    Icon: <User className="h-4 w-4 text-text-muted" />,
+                  },
+                  {
+                    label: "Settings",
+                    onClick: () => router.push("/settings"),
+                    Icon: <Settings className="h-4 w-4 text-text-muted" />,
+                  },
+                  {
+                    label: "Sign Out",
+                    onClick: () => logout(),
+                    Icon: <LogOut className="h-4 w-4" />,
+                    className: "text-red-600 hover:bg-red-50",
+                  },
+                ]}
+              >
+                {avatarElement}
+              </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
                 <Link
