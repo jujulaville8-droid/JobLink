@@ -60,16 +60,16 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
-        <div className="relative flex h-[80px] items-center justify-between">
+        <div className="relative flex h-16 items-center justify-between">
 
           {/* ── Left: Logo ── */}
           <Link href="/" className="flex items-center shrink-0">
             <Image
               src="/joblink-logo.png"
               alt="JobLink"
-              width={220}
-              height={60}
-              className="h-16 w-auto"
+              width={40}
+              height={40}
+              className="h-10 w-10"
               priority
             />
           </Link>
