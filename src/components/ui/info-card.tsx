@@ -40,8 +40,8 @@ export default function CandidateProfileCard({
     name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length
 
   return (
-    <Link href={`/candidates/${id}`} className="block">
-      <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.08),-8px_-8px_16px_rgba(255,255,255,0.9)] transition-all duration-500 hover:shadow-[12px_12px_24px_rgba(0,0,0,0.12),-12px_-12px_24px_rgba(255,255,255,1)] hover:scale-[1.02] hover:-translate-y-1">
+    <Link href={`/candidates/${id}`} className="block h-full">
+      <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.08),-8px_-8px_16px_rgba(255,255,255,0.9)] transition-all duration-500 hover:shadow-[12px_12px_24px_rgba(0,0,0,0.12),-12px_-12px_24px_rgba(255,255,255,1)] hover:scale-[1.02] hover:-translate-y-1 h-[340px] flex flex-col">
         {/* Status indicator */}
         <div className="absolute right-4 top-4 z-10">
           <div className="relative">
@@ -85,23 +85,21 @@ export default function CandidateProfileCard({
 
         {/* Profile Info */}
         <div className="text-center relative z-10 transition-transform duration-300 group-hover:-translate-y-1">
-          <h3 className="text-base font-semibold text-text transition-colors duration-300 group-hover:text-primary">
+          <h3 className="text-base font-semibold text-text transition-colors duration-300 group-hover:text-primary truncate">
             {name}
           </h3>
 
           {/* Location + experience */}
-          <div className="mt-1.5 flex items-center justify-center gap-3 text-sm text-text-light">
-            {location && (
-              <span className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" />
-                {location}
-              </span>
-            )}
-            {experienceYears != null && (
-              <span>
-                {experienceYears} {experienceYears === 1 ? "yr" : "yrs"} exp
-              </span>
-            )}
+          <div className="mt-1.5 flex items-center justify-center gap-3 text-sm text-text-light min-h-[20px]">
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5" />
+              {location || "—"}
+            </span>
+            <span>
+              {experienceYears != null
+                ? `${experienceYears} ${experienceYears === 1 ? "yr" : "yrs"} exp`
+                : "—"}
+            </span>
           </div>
 
           {/* Status label */}
@@ -111,21 +109,22 @@ export default function CandidateProfileCard({
         </div>
 
         {/* Skill Tags */}
-        {tags.length > 0 && (
-          <div className="mt-4 flex justify-center flex-wrap gap-1.5 relative z-10">
-            {tags.map((tag, i) => (
-              <span
-                key={i}
-                className="inline-block rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-light shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] transition-all duration-300 group-hover:scale-105"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="mt-4 flex justify-center flex-wrap gap-1.5 relative z-10 min-h-[28px]">
+          {tags.length > 0
+            ? tags.map((tag, i) => (
+                <span
+                  key={i}
+                  className="inline-block rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-light shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] transition-all duration-300 group-hover:scale-105 truncate max-w-[120px]"
+                >
+                  {tag}
+                </span>
+              ))
+            : <span className="text-[11px] text-text-muted">—</span>
+          }
+        </div>
 
         {/* Action Buttons */}
-        <div className="mt-5 flex gap-2 relative z-10">
+        <div className="mt-auto pt-4 flex gap-2 relative z-10">
           <span className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-primary shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:bg-primary/5 group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]">
             <UserPlus className="h-4 w-4 mr-1.5" />
             <span className="text-xs">View Profile</span>
