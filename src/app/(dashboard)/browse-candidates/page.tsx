@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import CandidateFilters from "@/components/CandidateFilters";
+import CandidateProfileCard from "@/components/ui/info-card";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -115,96 +116,25 @@ async function CandidateResults({
         <span className="font-semibold text-text">{filtered.length}</span>{" "}
         {filtered.length === 1 ? "candidate" : "candidates"} found
       </p>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {filtered.map((profile) => {
-          const initial =
-            (profile.first_name?.charAt(0) || "?").toUpperCase();
           const fullName = [profile.first_name, profile.last_name]
             .filter(Boolean)
             .join(" ") || "Unnamed";
-          const skills = profile.skills || [];
-          const visibleSkills = skills.slice(0, 4);
-          const extraSkills = skills.length - 4;
+          const skills = (profile.skills || []).slice(0, 4);
 
           return (
-            <Link
+            <CandidateProfileCard
               key={profile.id}
-              href={`/candidates/${profile.id}`}
-              className="block rounded-xl border border-border bg-white p-5 hover:border-primary/30 hover:shadow-md transition-all"
-            >
-              <div className="flex items-start gap-4">
-                {/* Avatar */}
-                {profile.avatar_url ? (
-                  <img
-                    src={profile.avatar_url}
-                    alt=""
-                    className="h-12 w-12 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white text-sm font-semibold shrink-0">
-                    {initial}
-                  </span>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  {/* Name + badges */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-text truncate">
-                      {fullName}
-                    </h3>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        profile.visibility === "actively_looking"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-blue-50 text-blue-700"
-                      }`}
-                    >
-                      {profile.visibility === "actively_looking"
-                        ? "Actively Looking"
-                        : "Open"}
-                    </span>
-                  </div>
-
-                  {/* Location + experience */}
-                  <div className="mt-1 flex items-center gap-3 text-sm text-text-light">
-                    {profile.location && (
-                      <span className="flex items-center gap-1">
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                          <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        {profile.location}
-                      </span>
-                    )}
-                    {profile.experience_years != null && (
-                      <span>
-                        {profile.experience_years}{" "}
-                        {profile.experience_years === 1 ? "yr" : "yrs"} exp
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Skills */}
-                  {visibleSkills.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {visibleSkills.map((skill: string) => (
-                        <span
-                          key={skill}
-                          className="inline-block rounded-full bg-bg-alt px-2.5 py-0.5 text-[11px] font-medium text-text-light"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                      {extraSkills > 0 && (
-                        <span className="inline-block rounded-full bg-bg-alt px-2.5 py-0.5 text-[11px] font-medium text-text-muted">
-                          +{extraSkills} more
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Link>
+              id={profile.id}
+              name={fullName}
+              role={profile.bio?.slice(0, 50) || "Job Seeker"}
+              status={profile.visibility}
+              avatar={profile.avatar_url}
+              tags={skills}
+              location={profile.location}
+              experienceYears={profile.experience_years}
+            />
           );
         })}
       </div>
@@ -273,18 +203,20 @@ export default async function BrowseCandidatesPage({
         <div className="flex-1 min-w-0">
           <Suspense
             fallback={
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="animate-pulse rounded-xl border border-border bg-white p-5"
+                    className="animate-pulse rounded-3xl bg-white p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.08),-8px_-8px_16px_rgba(255,255,255,0.9)]"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-full skeleton" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 w-3/4 rounded skeleton" />
-                        <div className="h-3 w-1/2 rounded skeleton" />
-                        <div className="h-3 w-1/3 rounded skeleton" />
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-24 w-24 rounded-full skeleton" />
+                      <div className="h-4 w-2/3 rounded skeleton" />
+                      <div className="h-3 w-1/2 rounded skeleton" />
+                      <div className="h-3 w-1/3 rounded skeleton" />
+                      <div className="flex gap-2 mt-2 w-full">
+                        <div className="flex-1 h-10 rounded-full skeleton" />
+                        <div className="flex-1 h-10 rounded-full skeleton" />
                       </div>
                     </div>
                   </div>
