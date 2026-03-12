@@ -204,4 +204,4 @@ CREATE POLICY "Seekers can upload own CV" ON storage.objects FOR INSERT WITH CHE
 CREATE POLICY "Seekers can view own CV" ON storage.objects FOR SELECT USING (bucket_id = 'cvs' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Seekers can upload cover letters" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'cover-letters' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Anyone can view company logos" ON storage.objects FOR SELECT USING (bucket_id = 'company-logos');
-CREATE POLICY "Employers can upload company logos" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'company-logos' AND auth.uid() IS NOT NULL);
+CREATE POLICY "Employers can upload company logos" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'company-logos' AND auth.uid()::text = (storage.foldername(name))[1]);

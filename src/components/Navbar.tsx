@@ -36,7 +36,7 @@ export default function Navbar() {
 
   const isEmployer = userRole === "employer";
   const isAdmin = userRole === "admin";
-  const canBeAdmin = isAdmin || user?.user_metadata?.is_admin === true;
+  const canBeAdmin = isAdmin;
 
   const navLinks = isAdmin
     ? [

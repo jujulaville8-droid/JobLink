@@ -29,6 +29,39 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  // Verify this employer has a legitimate relationship to the seeker
+  // (the seeker applied to one of the employer's jobs, or their profile is visible)
+  const { data: company } = await supabase
+    .from("companies")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!company) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Check if this seeker has applied to any of the employer's jobs
+  const { data: hasApplication } = await supabase
+    .from("applications")
+    .select("id")
+    .eq("seeker_id", profileId)
+    .in(
+      "job_id",
+      (
+        await supabase
+          .from("job_listings")
+          .select("id")
+          .eq("company_id", company.id)
+      ).data?.map((j: { id: string }) => j.id) ?? []
+    )
+    .limit(1)
+    .single();
+
+  if (!hasApplication) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Fetch the profile's cv_url
   const { data: profile } = await supabase
     .from("seeker_profiles")

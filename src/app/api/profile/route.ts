@@ -42,21 +42,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { profile_id, ...profileData } = body
 
-    const payload = {
+    // Whitelist allowed fields — never accept arbitrary input
+    const payload: Record<string, unknown> = {
       user_id: user.id,
-      first_name: profileData.first_name,
-      last_name: profileData.last_name,
-      phone: profileData.phone,
-      location: profileData.location,
-      bio: profileData.bio,
-      skills: profileData.skills,
-      experience_years: profileData.experience_years,
-      education: profileData.education,
-      cv_url: profileData.cv_url,
-      avatar_url: profileData.avatar_url,
-      visibility: profileData.visibility,
-      profile_complete_pct: profileData.profile_complete_pct,
       updated_at: new Date().toISOString(),
+    }
+
+    const allowedFields = [
+      'first_name', 'last_name', 'phone', 'location', 'bio',
+      'skills', 'experience_years', 'education', 'cv_url',
+      'avatar_url', 'visibility',
+    ] as const
+
+    for (const field of allowedFields) {
+      if (profileData[field] !== undefined) {
+        payload[field] = profileData[field]
+      }
     }
 
     let error
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Profile save error:', error)
       return NextResponse.json(
-        { error: error.message || 'Failed to save profile' },
+        { error: 'Failed to save profile' },
         { status: 500 }
       )
     }

@@ -71,18 +71,6 @@ export default function JobCard({ job }: { job: Job }) {
 
   return (
     <div className="group relative bg-white rounded-[--radius-card] border border-border hover:border-primary/20 transition-all duration-300 p-5 hover-lift">
-      {/* Badges */}
-      {job.is_featured && (
-        <div className="absolute top-4 right-4 bg-accent-warm text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
-          Featured
-        </div>
-      )}
-      {isNew(job.created_at) && !job.is_featured && (
-        <div className="absolute top-4 right-4 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
-          New
-        </div>
-      )}
-
       <Link href={`/jobs/${job.id}`} className="block">
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (
@@ -100,9 +88,21 @@ export default function JobCard({ job }: { job: Job }) {
           )}
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug">
-              {job.title}
-            </h3>
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
+                {job.title}
+              </h3>
+              {job.is_featured && (
+                <span className="shrink-0 bg-accent-warm text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                  Featured
+                </span>
+              )}
+              {isNew(job.created_at) && !job.is_featured && (
+                <span className="shrink-0 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                  New
+                </span>
+              )}
+            </div>
             <p className="text-text-muted text-[13px] mt-0.5">{job.company_name}</p>
 
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
