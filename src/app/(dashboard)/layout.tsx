@@ -16,6 +16,7 @@ const employerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/post-job", label: "Post a Job", icon: "plus-circle" },
   { href: "/my-listings", label: "My Listings", icon: "list" },
+  { href: "/browse-candidates", label: "Browse Candidates", icon: "users" },
   { href: "/company-profile", label: "Company Profile", icon: "building" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];

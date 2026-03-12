@@ -235,11 +235,40 @@ async function EmployerDashboard({ userId }: { userId: string }) {
 
   const companyName = company.company_name || "your company";
 
+  // Company profile completion
+  const companyFields = [
+    company.company_name,
+    company.description,
+    company.logo_url,
+    company.industry,
+    company.website,
+    company.location,
+  ];
+  const companyFilledFields = companyFields.filter(Boolean).length;
+  const companyCompletePct = Math.round(
+    (companyFilledFields / companyFields.length) * 100
+  );
+  const companyMissing: string[] = [];
+  if (!company.description) companyMissing.push("Description");
+  if (!company.logo_url) companyMissing.push("Logo");
+  if (!company.industry) companyMissing.push("Industry");
+  if (!company.website) companyMissing.push("Website");
+  if (!company.location) companyMissing.push("Location");
+
   const { count: activeListings } = await supabase
     .from("job_listings")
     .select("id", { count: "exact", head: true })
     .eq("company_id", company.id)
     .eq("status", "active");
+
+  // Active listings with applicant counts
+  const { data: activeJobsWithCounts } = await supabase
+    .from("job_listings")
+    .select("id, title, status, created_at, applications(count)")
+    .eq("company_id", company.id)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(5);
 
   const { data: companyJobs } = await supabase
     .from("job_listings")
@@ -249,7 +278,8 @@ async function EmployerDashboard({ userId }: { userId: string }) {
   const jobIds = (companyJobs ?? []).map((j: { id: string }) => j.id);
 
   let totalApplicants = 0;
-  let monthApplicants = 0;
+  let weekApplicants = 0;
+  let shortlistedCount = 0;
   let recentApplicants: Record<string, unknown>[] = [];
 
   if (jobIds.length > 0) {
@@ -259,20 +289,26 @@ async function EmployerDashboard({ userId }: { userId: string }) {
       .in("job_id", jobIds);
     totalApplicants = total ?? 0;
 
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - 7);
 
-    const { count: monthCount } = await supabase
+    const { count: weekCount } = await supabase
       .from("applications")
       .select("id", { count: "exact", head: true })
       .in("job_id", jobIds)
-      .gte("applied_at", monthStart.toISOString());
-    monthApplicants = monthCount ?? 0;
+      .gte("applied_at", weekStart.toISOString());
+    weekApplicants = weekCount ?? 0;
+
+    const { count: shortlisted } = await supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .in("job_id", jobIds)
+      .eq("status", "shortlisted");
+    shortlistedCount = shortlisted ?? 0;
 
     const { data: recent } = await supabase
       .from("applications")
-      .select("id, status, applied_at, job_listings(title), seeker_profiles:seeker_id(first_name, last_name)")
+      .select("id, status, applied_at, job_id, job_listings(id, title), seeker_profiles:seeker_id(first_name, last_name)")
       .in("job_id", jobIds)
       .order("applied_at", { ascending: false })
       .limit(5);
@@ -286,21 +322,116 @@ async function EmployerDashboard({ userId }: { userId: string }) {
           <h1 className="font-display text-2xl text-text sm:text-3xl">
             Welcome back, {companyName}!
           </h1>
-          <p className="mt-1 text-text-light">Manage your job listings and applicants.</p>
+          <p className="mt-1 text-text-light">Manage your listings, review applicants, and find talent.</p>
         </div>
-        <Link
-          href="/post-job"
-          className="btn-warm"
-        >
-          + Post a Job
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/browse-candidates"
+            className="btn-primary text-sm px-4 py-2"
+          >
+            Browse Candidates
+          </Link>
+          <Link
+            href="/post-job"
+            className="btn-warm"
+          >
+            + Post a Job
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-3 stagger-children">
+      <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-4 stagger-children">
         <StatCard label="Active Listings" value={activeListings ?? 0} color="primary" />
         <StatCard label="Total Applicants" value={totalApplicants} color="accent" />
-        <StatCard label="This Month" value={monthApplicants} color="green" />
+        <StatCard label="New This Week" value={weekApplicants} color="green" />
+        <StatCard label="Shortlisted" value={shortlistedCount} color="purple" />
+      </div>
+
+      {/* Company Profile Completion */}
+      {companyCompletePct < 100 && (
+        <div className="mt-6 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-text">Company Profile</h2>
+              <p className="text-sm text-text-light">{companyCompletePct}% complete</p>
+            </div>
+            <Link
+              href="/company-profile"
+              className="btn-warm text-sm px-4 py-2"
+            >
+              Complete Profile
+            </Link>
+          </div>
+          <div className="mt-3 h-3 w-full rounded-full bg-bg-alt">
+            <div
+              className="h-3 rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${companyCompletePct}%` }}
+            />
+          </div>
+          {companyMissing.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-text-light">Missing:</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {companyMissing.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center rounded-full bg-accent-warm/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-accent-warm/20"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Active Listings Summary */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg text-text">Active Listings</h2>
+          <Link href="/my-listings" className="text-sm font-medium text-primary hover:text-primary-dark link-animated">
+            View all
+          </Link>
+        </div>
+        {activeJobsWithCounts && activeJobsWithCounts.length > 0 ? (
+          <div className="mt-4 space-y-3 stagger-children">
+            {activeJobsWithCounts.map((job: Record<string, unknown>) => {
+              const apps = job.applications as { count: number }[] | null;
+              const appCount = apps?.[0]?.count ?? 0;
+              return (
+                <Link
+                  key={job.id as string}
+                  href={`/my-listings/${job.id}/applicants`}
+                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-text truncate">
+                      {job.title as string}
+                    </p>
+                    <p className="text-sm text-text-light">
+                      Posted {new Date(job.created_at as string).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className="ml-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                    {appCount} {appCount === 1 ? "applicant" : "applicants"}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
+            <p className="text-text-light">No active listings. Post a job to get started!</p>
+            <Link
+              href="/post-job"
+              className="mt-3 inline-block btn-primary text-sm px-4 py-2"
+            >
+              Post a Job
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Recent Applicants */}
@@ -314,9 +445,10 @@ async function EmployerDashboard({ userId }: { userId: string }) {
               const status = app.status as ApplicationStatus;
 
               return (
-                <div
+                <Link
                   key={app.id as string}
-                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                  href={`/my-listings/${(job?.id as string) ?? ""}/applicants`}
+                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-text">
@@ -332,7 +464,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
                   >
                     {STATUS_LABELS[status] ?? status}
                   </span>
-                </div>
+                </Link>
               );
             })}
           </div>

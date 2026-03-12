@@ -6,12 +6,12 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Settings, LogOut, Search, Info } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, avatarUrl, logout, isLoading } = useAuth();
+  const { isAuthenticated, user, userRole, avatarUrl, logout, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [floatingVisible, setFloatingVisible] = useState(false);
@@ -33,11 +33,19 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navLinks = [
-    { href: "/jobs", label: "Find Jobs" },
-    { href: "/about", label: "About" },
-    ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
-  ];
+  const isEmployer = userRole === "employer";
+
+  const navLinks = isEmployer
+    ? [
+        { href: "/browse-candidates", label: "Browse Candidates" },
+        { href: "/about", label: "About" },
+        ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+      ]
+    : [
+        { href: "/jobs", label: "Find Jobs" },
+        { href: "/about", label: "About" },
+        ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+      ];
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -45,6 +53,7 @@ export default function Navbar() {
 
   function isActive(href: string) {
     if (href === "/jobs") return pathname.startsWith("/jobs") || pathname.startsWith("/browse-jobs");
+    if (href === "/browse-candidates") return pathname.startsWith("/browse-candidates") || pathname.startsWith("/candidates");
     if (href === "/dashboard") return pathname.startsWith("/dashboard");
     return pathname === href;
   }
@@ -130,9 +139,9 @@ export default function Navbar() {
                       Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
                     },
                     {
-                      label: "Profile",
-                      onClick: () => router.push("/profile"),
-                      Icon: <User className="h-4 w-4 text-text-muted" />,
+                      label: isEmployer ? "Company Profile" : "Profile",
+                      onClick: () => router.push(isEmployer ? "/company-profile" : "/profile"),
+                      Icon: isEmployer ? <Building className="h-4 w-4 text-text-muted" /> : <User className="h-4 w-4 text-text-muted" />,
                     },
                     {
                       label: "Settings",
@@ -234,6 +243,8 @@ export default function Navbar() {
             link: link.href,
             icon: link.href === "/jobs" ? (
               <Search className="h-4 w-4" />
+            ) : link.href === "/browse-candidates" ? (
+              <Users className="h-4 w-4" />
             ) : link.href === "/about" ? (
               <Info className="h-4 w-4" />
             ) : (
