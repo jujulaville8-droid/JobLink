@@ -9,7 +9,7 @@ import { useAuth } from "@/components/AuthProvider";
  * redirects them to /dashboard. Otherwise renders children normally.
  */
 export default function AuthRedirect({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, userRole, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {

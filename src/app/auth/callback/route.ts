@@ -18,6 +18,20 @@ export async function GET(request: NextRequest) {
         })
       }
 
+      // Determine the user's role for redirect
+      let userRole = role
+      if (!userRole) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          userRole = userData?.role ?? user.user_metadata?.role ?? 'seeker'
+        }
+      }
+
       return NextResponse.redirect(`${origin}/dashboard`)
     }
   }
