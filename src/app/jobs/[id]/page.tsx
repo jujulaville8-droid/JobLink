@@ -302,7 +302,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             <hr className="my-6 border-border" />
 
             {/* Share + Report */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <a
                 href={`https://wa.me/?text=${whatsappText}`}
                 target="_blank"
@@ -310,7 +310,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 className="inline-flex items-center gap-2 rounded-[--radius-button] bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 transition-colors"
               >
                 <svg
-                  className="h-5 w-5"
+                  className="h-5 w-5 shrink-0"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
@@ -412,8 +412,11 @@ export default async function JobDetailPage({ params }: PageProps) {
         </div>
       </div>
 
+      {/* Spacer for mobile sticky bar */}
+      <div className="h-20 lg:hidden" />
+
       {/* Mobile sticky apply button */}
-      <div className="fixed bottom-16 left-0 right-0 z-40 border-t border-border bg-white p-3 lg:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
         <Link
           href={`/jobs/${job.id}/apply`}
           className="flex w-full items-center justify-center btn-warm text-base"
