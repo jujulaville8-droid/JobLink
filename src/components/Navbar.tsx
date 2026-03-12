@@ -74,10 +74,10 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-4 py-2 text-[15px] font-medium rounded-lg transition-colors link-animated ${
+                className={`relative px-4 py-2 text-[15px] font-medium rounded-lg transition-colors ${
                   isActive(link.href)
                     ? "text-primary"
-                    : "text-text-light hover:text-primary hover:bg-bg-alt"
+                    : "text-text-light hover:text-primary hover:bg-bg-alt link-animated"
                 }`}
               >
                 {link.label}
