@@ -15,6 +15,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [floatingVisible, setFloatingVisible] = useState(false);
+  const [scrolledPastTop, setScrolledPastTop] = useState(false);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
   const showAvatar = avatarUrl && !imgError;
@@ -22,6 +23,15 @@ export default function Navbar() {
   useEffect(() => {
     setImgError(false);
   }, [avatarUrl]);
+
+  // Hide static navbar once user scrolls past the navbar height
+  useEffect(() => {
+    function handleScroll() {
+      setScrolledPastTop(window.scrollY > 80);
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks = [
     { href: "/jobs", label: "Find Jobs" },
@@ -65,9 +75,9 @@ export default function Navbar() {
       {/* ── Static navbar — transparent, disappears when floating is visible ── */}
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
-          floatingVisible
-            ? "opacity-0 -translate-y-full pointer-events-none"
-            : "opacity-100 translate-y-0"
+          scrolledPastTop
+            ? "-translate-y-full opacity-0 pointer-events-none"
+            : "translate-y-0 opacity-100"
         }`}
       >
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
