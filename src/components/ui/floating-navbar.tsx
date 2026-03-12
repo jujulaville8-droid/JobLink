@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   motion,
   AnimatePresence,
@@ -13,6 +13,7 @@ export const FloatingNav = ({
   navItems,
   className,
   rightContent,
+  onVisibilityChange,
 }: {
   navItems: {
     name: string;
@@ -22,10 +23,14 @@ export const FloatingNav = ({
   }[];
   className?: string;
   rightContent?: React.ReactNode;
+  onVisibilityChange?: (visible: boolean) => void;
 }) => {
   const { scrollYProgress } = useScroll();
-
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    onVisibilityChange?.(visible);
+  }, [visible, onVisibilityChange]);
 
   useMotionValueEvent(scrollYProgress, "change", (current) => {
     if (typeof current === "number") {
@@ -47,7 +52,7 @@ export const FloatingNav = ({
     <AnimatePresence mode="wait">
       <motion.div
         initial={{
-          opacity: 1,
+          opacity: 0,
           y: -100,
         }}
         animate={{
@@ -58,45 +63,33 @@ export const FloatingNav = ({
           duration: 0.2,
         }}
         className={cn(
-          "fixed top-4 inset-x-0 mx-auto z-[5000] w-[92%] max-w-[720px]",
-          "flex items-center justify-between",
-          "h-14 px-5 rounded-2xl",
+          "fixed top-4 inset-x-0 mx-auto z-[5000]",
+          "flex items-center justify-center gap-5",
+          "w-auto max-w-fit px-6 py-2.5 rounded-full",
           "bg-white/80 backdrop-blur-xl border border-border/60",
-          "shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)]",
+          "shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)]",
           className
         )}
       >
-        {/* Wordmark */}
-        <Link href="/" className="font-display text-lg font-bold tracking-tight text-primary shrink-0">
-          JobLink
-        </Link>
-
         {/* Nav links */}
-        <nav className="flex items-center gap-1">
-          {navItems.map((navItem, idx: number) => (
-            <Link
-              key={`link-${idx}`}
-              href={navItem.link}
-              className={cn(
-                "relative px-3 py-1.5 text-[14px] font-medium rounded-lg transition-colors",
-                navItem.active
-                  ? "text-primary"
-                  : "text-text-light hover:text-primary hover:bg-bg-alt"
-              )}
-            >
-              <span className="block sm:hidden">{navItem.icon}</span>
-              <span className="hidden sm:block">{navItem.name}</span>
-              {navItem.active && (
-                <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />
-              )}
-            </Link>
-          ))}
-        </nav>
+        {navItems.map((navItem, idx: number) => (
+          <Link
+            key={`link-${idx}`}
+            href={navItem.link}
+            className={cn(
+              "relative items-center flex gap-1.5 text-[14px] font-medium transition-colors whitespace-nowrap",
+              navItem.active
+                ? "text-primary"
+                : "text-text-light hover:text-primary"
+            )}
+          >
+            <span className="block sm:hidden">{navItem.icon}</span>
+            <span className="hidden sm:block">{navItem.name}</span>
+          </Link>
+        ))}
 
         {/* Right content */}
-        <div className="shrink-0">
-          {rightContent}
-        </div>
+        {rightContent}
       </motion.div>
     </AnimatePresence>
   );

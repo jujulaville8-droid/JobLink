@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Settings, LogOut, Briefcase, Search, Info } from "lucide-react";
+import { LayoutGrid, User, Settings, LogOut, Search, Info } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function Navbar() {
   const { isAuthenticated, user, avatarUrl, logout, isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [floatingVisible, setFloatingVisible] = useState(false);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
   const showAvatar = avatarUrl && !imgError;
@@ -28,7 +29,6 @@ export default function Navbar() {
     ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
   ];
 
-  // Close menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
@@ -39,7 +39,10 @@ export default function Navbar() {
     return pathname === href;
   }
 
-  // Avatar element reused in desktop
+  const handleFloatingVisibility = useCallback((visible: boolean) => {
+    setFloatingVisible(visible);
+  }, []);
+
   const avatarElement = (
     <>
       {showAvatar ? (
@@ -58,153 +61,163 @@ export default function Navbar() {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border/60">
-      <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
-        <div className="relative flex h-16 items-center justify-between">
+    <>
+      {/* ── Static navbar — transparent, disappears when floating is visible ── */}
+      <header
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          floatingVisible
+            ? "opacity-0 -translate-y-full pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
+          <div className="relative flex h-16 items-center justify-between">
 
-          {/* ── Left: Wordmark ── */}
-          <Link href="/" className="flex items-center shrink-0 gap-2.5">
-            <span className="font-display text-xl font-bold tracking-tight text-primary">
-              JobLink
-            </span>
-            <span className="hidden sm:inline text-[11px] font-medium text-text-muted/70 border-l border-border pl-2.5 leading-tight">
-              Antigua&apos;s Career Network
-            </span>
-          </Link>
+            {/* ── Left: Wordmark ── */}
+            <Link href="/" className="flex items-center shrink-0 gap-2.5">
+              <span className="font-display text-xl font-bold tracking-tight text-primary">
+                JobLink
+              </span>
+              <span className="hidden sm:inline text-[11px] font-medium text-text-muted/70 border-l border-border pl-2.5 leading-tight">
+                Antigua&apos;s Career Network
+              </span>
+            </Link>
 
-          {/* ── Center: Nav links (desktop) — absolutely centered ── */}
-          <nav className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`relative px-4 py-2 text-[14px] font-medium rounded-lg transition-colors ${
-                  isActive(link.href)
-                    ? "text-primary"
-                    : "text-text-light hover:text-primary hover:bg-bg-alt link-animated"
-                }`}
-              >
-                {link.label}
-                {isActive(link.href) && (
-                  <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />
-                )}
-              </Link>
-            ))}
-          </nav>
-
-          {/* ── Right: Account area (desktop) ── */}
-          <div className="hidden md:flex items-center gap-3 shrink-0">
-            {isLoading ? (
-              <div className="h-9 w-9" />
-            ) : isAuthenticated ? (
-              <DropdownMenu
-                header={
-                  <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
-                }
-                dividerAfter={[2]}
-                options={[
-                  {
-                    label: "Dashboard",
-                    onClick: () => router.push("/dashboard"),
-                    Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
-                  },
-                  {
-                    label: "Profile",
-                    onClick: () => router.push("/profile"),
-                    Icon: <User className="h-4 w-4 text-text-muted" />,
-                  },
-                  {
-                    label: "Settings",
-                    onClick: () => router.push("/settings"),
-                    Icon: <Settings className="h-4 w-4 text-text-muted" />,
-                  },
-                  {
-                    label: "Sign Out",
-                    onClick: () => logout(),
-                    Icon: <LogOut className="h-4 w-4" />,
-                    className: "text-red-600 hover:bg-red-50",
-                  },
-                ]}
-              >
-                {avatarElement}
-              </DropdownMenu>
-            ) : (
-              <div className="flex items-center gap-2">
+            {/* ── Center: Nav links (desktop) ── */}
+            <nav className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              {navLinks.map((link) => (
                 <Link
-                  href="/login"
-                  className="text-[14px] font-medium text-text-light hover:text-primary transition-colors px-3 py-2 link-animated"
+                  key={link.href}
+                  href={link.href}
+                  className={`relative px-4 py-2 text-[14px] font-medium rounded-lg transition-colors ${
+                    isActive(link.href)
+                      ? "text-primary"
+                      : "text-text-light hover:text-primary hover:bg-white/50 link-animated"
+                  }`}
                 >
-                  Sign In
+                  {link.label}
+                  {isActive(link.href) && (
+                    <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-primary rounded-full" />
+                  )}
                 </Link>
-                <Link
-                  href="/signup"
-                  className="btn-warm"
-                >
-                  Post a Job
-                </Link>
-              </div>
-            )}
-          </div>
+              ))}
+            </nav>
 
-          {/* ── Mobile: Avatar + Hamburger ── */}
-          <div className="flex md:hidden items-center gap-2">
-            {isAuthenticated && (
-              <Link href="/dashboard" className="flex shrink-0 rounded-full overflow-hidden">
-                {showAvatar ? (
-                  <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setImgError(true)} />
-                ) : (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-[12px] font-semibold">
-                    {initial}
-                  </span>
-                )}
-              </Link>
-            )}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-bg-alt transition-colors"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? (
-                <svg className="h-5 w-5 text-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            {/* ── Right: Account area (desktop) ── */}
+            <div className="hidden md:flex items-center gap-3 shrink-0">
+              {isLoading ? (
+                <div className="h-9 w-9" />
+              ) : isAuthenticated ? (
+                <DropdownMenu
+                  header={
+                    <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
+                  }
+                  dividerAfter={[2]}
+                  options={[
+                    {
+                      label: "Dashboard",
+                      onClick: () => router.push("/dashboard"),
+                      Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+                    },
+                    {
+                      label: "Profile",
+                      onClick: () => router.push("/profile"),
+                      Icon: <User className="h-4 w-4 text-text-muted" />,
+                    },
+                    {
+                      label: "Settings",
+                      onClick: () => router.push("/settings"),
+                      Icon: <Settings className="h-4 w-4 text-text-muted" />,
+                    },
+                    {
+                      label: "Sign Out",
+                      onClick: () => logout(),
+                      Icon: <LogOut className="h-4 w-4" />,
+                      className: "text-red-600 hover:bg-red-50",
+                    },
+                  ]}
+                >
+                  {avatarElement}
+                </DropdownMenu>
               ) : (
-                <svg className="h-5 w-5 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="text-[14px] font-medium text-text-light hover:text-primary transition-colors px-3 py-2 link-animated"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="btn-warm"
+                  >
+                    Post a Job
+                  </Link>
+                </div>
               )}
-            </button>
-          </div>
-        </div>
+            </div>
 
-        {/* ── Mobile menu ── */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border py-2 pb-4 animate-fade-in">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`block px-3 py-2.5 text-[15px] font-medium rounded-lg transition-colors ${
-                  isActive(link.href)
-                    ? "text-primary bg-primary/[0.05]"
-                    : "text-text-light hover:text-primary hover:bg-bg-alt"
-                }`}
+            {/* ── Mobile: Avatar + Hamburger ── */}
+            <div className="flex md:hidden items-center gap-2">
+              {isAuthenticated && (
+                <Link href="/dashboard" className="flex shrink-0 rounded-full overflow-hidden">
+                  {showAvatar ? (
+                    <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setImgError(true)} />
+                  ) : (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-[12px] font-semibold">
+                      {initial}
+                    </span>
+                  )}
+                </Link>
+              )}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/50 transition-colors"
+                aria-label="Toggle menu"
               >
-                {link.label}
-              </Link>
-            ))}
-            {!isAuthenticated && !isLoading && (
-              <div className="mt-3 pt-3 border-t border-border flex gap-2 px-3">
-                <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-bg-alt transition-all duration-200">
-                  Sign In
-                </Link>
-                <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
-                  Post a Job
-                </Link>
-              </div>
-            )}
+                {mobileMenuOpen ? (
+                  <svg className="h-5 w-5 text-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                ) : (
+                  <svg className="h-5 w-5 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+                )}
+              </button>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* ── Floating nav: appears on scroll ── */}
+          {/* ── Mobile menu ── */}
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-border/40 py-2 pb-4 animate-fade-in">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`block px-3 py-2.5 text-[15px] font-medium rounded-lg transition-colors ${
+                    isActive(link.href)
+                      ? "text-primary bg-primary/[0.05]"
+                      : "text-text-light hover:text-primary hover:bg-white/50"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              {!isAuthenticated && !isLoading && (
+                <div className="mt-3 pt-3 border-t border-border/40 flex gap-2 px-3">
+                  <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-white/50 transition-all duration-200">
+                    Sign In
+                  </Link>
+                  <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
+                    Post a Job
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* ── Floating nav: just the buttons, appears on scroll-up ── */}
       <FloatingNav
+        onVisibilityChange={handleFloatingVisibility}
         navItems={[
           ...navLinks.map((link) => ({
             name: link.label,
@@ -221,31 +234,23 @@ export default function Navbar() {
         ]}
         rightContent={
           !isLoading && !isAuthenticated ? (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="text-[14px] font-medium text-text-light hover:text-primary transition-colors px-3 py-1.5 link-animated"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/signup"
-                className="btn-warm !py-1.5 !px-4 !text-[13px]"
-              >
-                Post a Job
-              </Link>
-            </div>
+            <Link
+              href="/login"
+              className="text-[14px] font-medium text-white bg-primary hover:bg-primary-dark px-4 py-1.5 rounded-full transition-colors"
+            >
+              Sign In
+            </Link>
           ) : isAuthenticated ? (
             <Link href="/dashboard" className="flex shrink-0">
               {showAvatar ? (
                 <img
                   src={avatarUrl}
                   alt=""
-                  className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/10"
+                  className="h-7 w-7 rounded-full object-cover ring-2 ring-primary/20"
                   onError={() => setImgError(true)}
                 />
               ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-xs font-semibold">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white text-xs font-semibold">
                   {initial}
                 </span>
               )}
@@ -253,6 +258,6 @@ export default function Navbar() {
           ) : undefined
         }
       />
-    </header>
+    </>
   );
 }
