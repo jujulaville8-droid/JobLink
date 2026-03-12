@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { ApplicationStatus } from "@/lib/types";
+import AdminBentoDashboard from "@/components/AdminBentoDashboard";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   applied: "bg-primary/10 text-primary",
@@ -482,22 +483,30 @@ async function EmployerDashboard({ userId }: { userId: string }) {
 async function AdminDashboard() {
   const supabase = await createClient();
 
-  const { count: totalUsers } = await supabase
+  const [
+    { count: totalUsers },
+    { count: totalSeekers },
+    { count: totalEmployers },
+    { count: totalJobs },
+    { count: activeJobs },
+    { count: pendingApprovals },
+    { count: totalApplications },
+  ] = await Promise.all([
+    supabase.from("users").select("id", { count: "exact", head: true }),
+    supabase.from("users").select("id", { count: "exact", head: true }).eq("role", "seeker"),
+    supabase.from("users").select("id", { count: "exact", head: true }).eq("role", "employer"),
+    supabase.from("job_listings").select("id", { count: "exact", head: true }),
+    supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "pending_approval"),
+    supabase.from("applications").select("id", { count: "exact", head: true }),
+  ]);
+
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const { count: newUsersThisWeek } = await supabase
     .from("users")
-    .select("id", { count: "exact", head: true });
-
-  const { count: totalJobs } = await supabase
-    .from("job_listings")
-    .select("id", { count: "exact", head: true });
-
-  const { count: pendingApprovals } = await supabase
-    .from("job_listings")
     .select("id", { count: "exact", head: true })
-    .eq("status", "pending_approval");
-
-  const { count: totalApplications } = await supabase
-    .from("applications")
-    .select("id", { count: "exact", head: true });
+    .gte("created_at", weekAgo.toISOString());
 
   const { data: recentUsers } = await supabase
     .from("users")
@@ -512,82 +521,54 @@ async function AdminDashboard() {
     .order("created_at", { ascending: false })
     .limit(5);
 
+  const stats = {
+    totalUsers: totalUsers ?? 0,
+    totalSeekers: totalSeekers ?? 0,
+    totalEmployers: totalEmployers ?? 0,
+    totalJobs: totalJobs ?? 0,
+    activeJobs: activeJobs ?? 0,
+    pendingApprovals: pendingApprovals ?? 0,
+    totalApplications: totalApplications ?? 0,
+    newUsersThisWeek: newUsersThisWeek ?? 0,
+  };
+
+  const formattedUsers = (recentUsers || []).map((u: Record<string, unknown>) => ({
+    id: u.id as string,
+    email: u.email as string,
+    role: u.role as string,
+    created_at: u.created_at as string,
+  }));
+
+  const formattedJobs = (pendingJobs || []).map((j: Record<string, unknown>) => {
+    const company = j.companies as Record<string, unknown> | null;
+    return {
+      id: j.id as string,
+      title: j.title as string,
+      created_at: j.created_at as string,
+      company_name: (company?.company_name as string) ?? "Unknown",
+    };
+  });
+
   return (
     <div className="animate-fade-up">
       <h1 className="font-display text-2xl text-text sm:text-3xl">Admin Dashboard</h1>
       <p className="mt-1 text-text-light">Platform overview and management.</p>
 
-      {/* Stats */}
+      {/* Stat cards */}
       <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-4 stagger-children">
-        <StatCard label="Total Users" value={totalUsers ?? 0} color="primary" />
-        <StatCard label="Total Jobs" value={totalJobs ?? 0} color="accent" />
-        <StatCard label="Pending Approvals" value={pendingApprovals ?? 0} color="purple" />
-        <StatCard label="Total Applications" value={totalApplications ?? 0} color="green" />
+        <StatCard label="Total Users" value={stats.totalUsers} color="primary" />
+        <StatCard label="Total Jobs" value={stats.totalJobs} color="accent" />
+        <StatCard label="Pending Approvals" value={stats.pendingApprovals} color="purple" />
+        <StatCard label="Total Applications" value={stats.totalApplications} color="green" />
       </div>
 
-      {/* Recent Signups */}
+      {/* Bento dashboard */}
       <div className="mt-8">
-        <h2 className="font-display text-lg text-text">Recent Signups</h2>
-        {recentUsers && recentUsers.length > 0 ? (
-          <div className="mt-4 space-y-3 stagger-children">
-            {recentUsers.map((u: Record<string, unknown>) => (
-              <div
-                key={u.id as string}
-                className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm"
-              >
-                <div>
-                  <p className="font-medium text-text">{u.email as string}</p>
-                  <p className="text-sm text-text-light">
-                    Joined {new Date(u.created_at as string).toLocaleDateString()}
-                  </p>
-                </div>
-                <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium capitalize text-text-light">
-                  {u.role as string}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-4 text-text-light">No users yet.</p>
-        )}
-      </div>
-
-      {/* Pending Approvals */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-text">Pending Job Approvals</h2>
-          <Link href="/admin/approvals" className="text-sm font-medium text-primary hover:text-primary-dark link-animated">
-            View all
-          </Link>
-        </div>
-        {pendingJobs && pendingJobs.length > 0 ? (
-          <div className="mt-4 space-y-3 stagger-children">
-            {pendingJobs.map((job: Record<string, unknown>) => {
-              const company = job.companies as Record<string, unknown> | null;
-              return (
-                <div
-                  key={job.id as string}
-                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm"
-                >
-                  <div>
-                    <p className="font-medium text-text">{job.title as string}</p>
-                    <p className="text-sm text-text-light">
-                      {(company?.company_name as string) ?? "Unknown"} &middot;{" "}
-                      {new Date(job.created_at as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="inline-flex items-center rounded-full bg-accent-warm/10 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-                    Pending
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-            <p className="text-text-light">No pending approvals.</p>
-          </div>
-        )}
+        <AdminBentoDashboard
+          stats={stats}
+          recentUsers={formattedUsers}
+          pendingJobs={formattedJobs}
+        />
       </div>
     </div>
   );
