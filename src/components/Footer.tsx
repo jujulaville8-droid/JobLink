@@ -18,9 +18,9 @@ export default function Footer() {
               <Image
                 src="/company-logo.png"
                 alt="JobLink"
-                width={200}
-                height={200}
-                className="h-20 w-auto brightness-0 invert -my-2"
+                width={400}
+                height={400}
+                className="h-40 w-auto brightness-0 invert -my-4"
               />
             </Link>
             <p className="mt-3 text-sm text-white/40 leading-relaxed max-w-[220px]">

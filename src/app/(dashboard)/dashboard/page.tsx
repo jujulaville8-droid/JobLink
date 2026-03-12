@@ -550,26 +550,15 @@ async function AdminDashboard() {
   });
 
   return (
-    <div className="animate-fade-up">
+    <div>
       <h1 className="font-display text-2xl text-text sm:text-3xl">Admin Dashboard</h1>
-      <p className="mt-1 text-text-light">Platform overview and management.</p>
+      <p className="mt-1 text-text-light mb-6">Platform overview and management.</p>
 
-      {/* Stat cards */}
-      <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-4 stagger-children">
-        <StatCard label="Total Users" value={stats.totalUsers} color="primary" />
-        <StatCard label="Total Jobs" value={stats.totalJobs} color="accent" />
-        <StatCard label="Pending Approvals" value={stats.pendingApprovals} color="purple" />
-        <StatCard label="Total Applications" value={stats.totalApplications} color="green" />
-      </div>
-
-      {/* Bento dashboard */}
-      <div className="mt-8">
-        <AdminBentoDashboard
-          stats={stats}
-          recentUsers={formattedUsers}
-          pendingJobs={formattedJobs}
-        />
-      </div>
+      <AdminBentoDashboard
+        stats={stats}
+        recentUsers={formattedUsers}
+        pendingJobs={formattedJobs}
+      />
     </div>
   );
 }
