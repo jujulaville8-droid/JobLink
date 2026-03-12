@@ -25,11 +25,14 @@ export async function GET(request: NextRequest) {
       }
 
       // Ensure role is always synced to user metadata for reliable downstream detection
-      if (user && userRole && (userRole === 'seeker' || userRole === 'employer')) {
+      if (user && userRole) {
         const currentMetaRole = user.user_metadata?.role
         if (currentMetaRole !== userRole) {
           await supabase.auth.updateUser({
-            data: { role: userRole },
+            data: {
+              role: userRole,
+              ...(userRole === 'admin' ? { is_admin: true } : {}),
+            },
           })
         }
       }

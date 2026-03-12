@@ -14,19 +14,27 @@ export async function POST(request: NextRequest) {
 
   const { role } = await request.json();
 
-  if (role !== "seeker" && role !== "employer") {
-    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
-  }
-
-  // Don't allow admins to switch away from admin
   const { data: userData } = await supabase
     .from("users")
     .select("role")
     .eq("id", user.id)
     .single();
 
-  if (userData?.role === "admin") {
-    return NextResponse.json({ error: "Admins cannot switch roles" }, { status: 403 });
+  const currentRole = userData?.role;
+  const isAdmin = currentRole === "admin" || user.user_metadata?.is_admin === true;
+
+  // Only admins can switch to the admin role
+  if (role === "admin") {
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+  } else if (role !== "seeker" && role !== "employer") {
+    return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+  }
+
+  // Non-admin users cannot switch if they are currently admin (safety check)
+  if (currentRole === "admin" && !isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   // Update role in users table
@@ -39,9 +47,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to switch role" }, { status: 500 });
   }
 
-  // Also update user metadata so it stays in sync
+  // Update user metadata — persist is_admin flag so they can always switch back
   await supabase.auth.updateUser({
-    data: { role },
+    data: {
+      role,
+      ...(isAdmin ? { is_admin: true } : {}),
+    },
   });
 
   return NextResponse.json({ success: true, role });

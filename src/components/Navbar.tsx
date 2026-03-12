@@ -35,8 +35,17 @@ export default function Navbar() {
   }, []);
 
   const isEmployer = userRole === "employer";
+  const isAdmin = userRole === "admin";
+  const canBeAdmin = isAdmin || user?.user_metadata?.is_admin === true;
 
-  const navLinks = isEmployer
+  const navLinks = isAdmin
+    ? [
+        { href: "/admin/approvals", label: "Approvals" },
+        { href: "/admin/users", label: "Users" },
+        { href: "/about", label: "About" },
+        ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+      ]
+    : isEmployer
     ? [
         { href: "/browse-candidates", label: "Browse Candidates" },
         { href: "/about", label: "About" },
@@ -55,7 +64,8 @@ export default function Navbar() {
   function isActive(href: string) {
     if (href === "/jobs") return pathname.startsWith("/jobs") || pathname.startsWith("/browse-jobs");
     if (href === "/browse-candidates") return pathname.startsWith("/browse-candidates") || pathname.startsWith("/candidates");
-    if (href === "/dashboard") return pathname.startsWith("/dashboard");
+    if (href === "/dashboard") return pathname === "/dashboard";
+    if (href.startsWith("/admin/")) return pathname.startsWith(href);
     return pathname === href;
   }
 
@@ -63,10 +73,10 @@ export default function Navbar() {
     setFloatingVisible(visible);
   }, []);
 
-  async function handleSwitchRole() {
+  async function handleSwitchRole(targetRole?: string) {
     if (switching) return;
     setSwitching(true);
-    const newRole = isEmployer ? "seeker" : "employer";
+    const newRole = targetRole ?? (isEmployer ? "seeker" : "employer");
     try {
       const res = await fetch("/api/switch-role", {
         method: "POST",
@@ -152,33 +162,65 @@ export default function Navbar() {
                   header={
                     <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
                   }
-                  dividerAfter={[3]}
+                  dividerAfter={[isAdmin ? 1 : 3]}
                   options={[
-                    {
-                      label: "Dashboard",
-                      onClick: () => router.push("/dashboard"),
-                      Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
-                    },
-                    {
-                      label: isEmployer ? "Company Profile" : "Profile",
-                      onClick: () => router.push(isEmployer ? "/company-profile" : "/profile"),
-                      Icon: isEmployer ? <Building className="h-4 w-4 text-text-muted" /> : <User className="h-4 w-4 text-text-muted" />,
-                    },
-                    {
-                      label: "Settings",
-                      onClick: () => router.push("/settings"),
-                      Icon: <Settings className="h-4 w-4 text-text-muted" />,
-                    },
-                    {
-                      label: switching
-                        ? "Switching..."
-                        : isEmployer
-                          ? "Switch to Job Seeker"
-                          : "Switch to Employer",
-                      onClick: handleSwitchRole,
-                      Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
-                      className: "text-primary hover:bg-primary/5",
-                    },
+                    ...(isAdmin
+                      ? [
+                          {
+                            label: "Admin Dashboard",
+                            onClick: () => router.push("/dashboard"),
+                            Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+                          },
+                          {
+                            label: switching ? "Switching..." : "Switch to Employer",
+                            onClick: () => handleSwitchRole("employer"),
+                            Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
+                            className: "text-primary hover:bg-primary/5",
+                          },
+                          {
+                            label: switching ? "Switching..." : "Switch to Job Seeker",
+                            onClick: () => handleSwitchRole("seeker"),
+                            Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
+                            className: "text-primary hover:bg-primary/5",
+                          },
+                        ]
+                      : [
+                          {
+                            label: "Dashboard",
+                            onClick: () => router.push("/dashboard"),
+                            Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+                          },
+                          {
+                            label: isEmployer ? "Company Profile" : "Profile",
+                            onClick: () => router.push(isEmployer ? "/company-profile" : "/profile"),
+                            Icon: isEmployer ? <Building className="h-4 w-4 text-text-muted" /> : <User className="h-4 w-4 text-text-muted" />,
+                          },
+                          {
+                            label: "Settings",
+                            onClick: () => router.push("/settings"),
+                            Icon: <Settings className="h-4 w-4 text-text-muted" />,
+                          },
+                          {
+                            label: switching
+                              ? "Switching..."
+                              : isEmployer
+                                ? "Switch to Job Seeker"
+                                : "Switch to Employer",
+                            onClick: () => handleSwitchRole(),
+                            Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
+                            className: "text-primary hover:bg-primary/5",
+                          },
+                          ...(canBeAdmin
+                            ? [
+                                {
+                                  label: switching ? "Switching..." : "Switch to Admin",
+                                  onClick: () => handleSwitchRole("admin"),
+                                  Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
+                                  className: "text-amber-600 hover:bg-amber-50",
+                                },
+                              ]
+                            : []),
+                        ]),
                     {
                       label: "Sign Out",
                       onClick: () => logout(),
