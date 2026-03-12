@@ -206,12 +206,6 @@ export default function Navbar() {
       {/* ── Floating nav: appears on scroll ── */}
       <FloatingNav
         navItems={[
-          {
-            name: "Home",
-            link: "/",
-            icon: <Briefcase className="h-4 w-4" />,
-            active: pathname === "/",
-          },
           ...navLinks.map((link) => ({
             name: link.label,
             link: link.href,
@@ -227,20 +221,34 @@ export default function Navbar() {
         ]}
         rightContent={
           !isLoading && !isAuthenticated ? (
-            <Link
-              href="/login"
-              className="border text-sm font-medium relative border-primary/20 text-primary px-4 py-2 rounded-full hover:bg-primary/5 transition-colors"
-            >
-              <span>Sign In</span>
-              <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-primary to-transparent h-px" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="text-[14px] font-medium text-text-light hover:text-primary transition-colors px-3 py-1.5 link-animated"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/signup"
+                className="btn-warm !py-1.5 !px-4 !text-[13px]"
+              >
+                Post a Job
+              </Link>
+            </div>
           ) : isAuthenticated ? (
-            <Link
-              href="/dashboard"
-              className="border text-sm font-medium relative border-primary/20 text-primary px-4 py-2 rounded-full hover:bg-primary/5 transition-colors"
-            >
-              <span>Dashboard</span>
-              <span className="absolute inset-x-0 w-1/2 mx-auto -bottom-px bg-gradient-to-r from-transparent via-primary to-transparent h-px" />
+            <Link href="/dashboard" className="flex shrink-0">
+              {showAvatar ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  className="h-8 w-8 rounded-full object-cover ring-2 ring-primary/10"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-xs font-semibold">
+                  {initial}
+                </span>
+              )}
             </Link>
           ) : undefined
         }
