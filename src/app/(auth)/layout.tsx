@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import AuthRedirect from "@/components/AuthRedirect";
 
 export default function AuthLayout({
@@ -16,9 +17,13 @@ export default function AuthLayout({
       <div className="w-full max-w-md relative">
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
-            <span className="text-3xl font-display text-primary">
-              Job<span className="text-primary-light">Link</span>
-            </span>
+            <Image
+              src="/joblink-logo.png"
+              alt="JobLink — Antigua's Career Network"
+              width={220}
+              height={75}
+              className="h-16 w-auto"
+            />
           </a>
         </div>
         <AuthRedirect>{children}</AuthRedirect>
