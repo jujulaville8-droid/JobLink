@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -46,11 +45,11 @@ export default function Navbar() {
         <img
           src={avatarUrl}
           alt=""
-          className="h-10 w-10 rounded-full object-cover"
+          className="h-9 w-9 rounded-full object-cover ring-2 ring-primary/10"
           onError={() => setImgError(true)}
         />
       ) : (
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white text-sm font-semibold">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white text-sm font-semibold">
           {initial}
         </span>
       )}
@@ -58,20 +57,18 @@ export default function Navbar() {
   );
 
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-border/60">
       <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
-        <div className="relative flex h-24 sm:h-28 items-center justify-between">
+        <div className="relative flex h-16 items-center justify-between">
 
-          {/* ── Left: Logo ── */}
-          <Link href="/" className="flex items-center shrink-0">
-            <Image
-              src="/company-logo.png"
-              alt="JobLink — Antigua's Career Network"
-              width={200}
-              height={200}
-              className="h-16 w-auto sm:h-20 -my-2"
-              priority
-            />
+          {/* ── Left: Wordmark ── */}
+          <Link href="/" className="flex items-center shrink-0 gap-2.5">
+            <span className="font-display text-xl font-bold tracking-tight text-primary">
+              JobLink
+            </span>
+            <span className="hidden sm:inline text-[11px] font-medium text-text-muted/70 border-l border-border pl-2.5 leading-tight">
+              Antigua&apos;s Career Network
+            </span>
           </Link>
 
           {/* ── Center: Nav links (desktop) — absolutely centered ── */}
@@ -80,7 +77,7 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`relative px-4 py-2 text-[15px] font-medium rounded-lg transition-colors ${
+                className={`relative px-4 py-2 text-[14px] font-medium rounded-lg transition-colors ${
                   isActive(link.href)
                     ? "text-primary"
                     : "text-text-light hover:text-primary hover:bg-bg-alt link-animated"
@@ -134,7 +131,7 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="text-[15px] font-medium text-text-light hover:text-primary transition-colors px-3 py-2 link-animated"
+                  className="text-[14px] font-medium text-text-light hover:text-primary transition-colors px-3 py-2 link-animated"
                 >
                   Sign In
                 </Link>
