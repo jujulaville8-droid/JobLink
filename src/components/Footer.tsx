@@ -18,9 +18,9 @@ export default function Footer() {
               <Image
                 src="/joblink-logo.png"
                 alt="JobLink"
-                width={130}
-                height={36}
-                className="h-9 w-auto brightness-0 invert"
+                width={180}
+                height={50}
+                className="h-14 w-auto brightness-0 invert"
               />
             </Link>
             <p className="mt-3 text-sm text-white/40 leading-relaxed max-w-[220px]">
