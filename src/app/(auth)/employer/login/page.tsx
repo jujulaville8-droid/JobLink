@@ -35,7 +35,7 @@ export default function EmployerLoginPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -44,6 +44,21 @@ export default function EmployerLoginPage() {
       setError(error.message)
       setLoading(false)
       return
+    }
+
+    // Ensure role metadata is set for reliable detection on the dashboard
+    if (signInData.user) {
+      const currentMetaRole = signInData.user.user_metadata?.role
+      if (!currentMetaRole) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', signInData.user.id)
+          .single()
+        if (userData?.role) {
+          await supabase.auth.updateUser({ data: { role: userData.role } })
+        }
+      }
     }
 
     router.push('/dashboard')

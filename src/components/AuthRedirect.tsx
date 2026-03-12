@@ -16,7 +16,7 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
     if (!isLoading && isAuthenticated) {
       router.replace("/dashboard");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, userRole, isLoading, router]);
 
   // While loading auth state, show nothing (avoids flash of login form)
   if (isLoading) {

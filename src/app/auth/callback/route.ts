@@ -11,24 +11,26 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // If a role was passed (Google signup from the signup page), set it in user metadata
-      if (role && (role === 'seeker' || role === 'employer')) {
-        await supabase.auth.updateUser({
-          data: { role },
-        })
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Determine the user's role
+      let userRole = role
+      if (!userRole && user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        userRole = userData?.role ?? user.user_metadata?.role ?? 'seeker'
       }
 
-      // Determine the user's role for redirect
-      let userRole = role
-      if (!userRole) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-          userRole = userData?.role ?? user.user_metadata?.role ?? 'seeker'
+      // Ensure role is always synced to user metadata for reliable downstream detection
+      if (user && userRole && (userRole === 'seeker' || userRole === 'employer')) {
+        const currentMetaRole = user.user_metadata?.role
+        if (currentMetaRole !== userRole) {
+          await supabase.auth.updateUser({
+            data: { role: userRole },
+          })
         }
       }
 
