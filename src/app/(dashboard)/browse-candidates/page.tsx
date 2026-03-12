@@ -179,7 +179,8 @@ export default async function BrowseCandidatesPage({
             name="q"
             defaultValue={params.q || ""}
             placeholder="Search by name, skills, or bio..."
-            className="input-base pl-11"
+            className="input-base"
+            style={{ paddingLeft: "2.75rem" }}
           />
         </div>
       </form>
