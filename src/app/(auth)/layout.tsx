@@ -18,7 +18,7 @@ export default function AuthLayout({
         <div className="text-center mb-8">
           <a href="/" className="inline-block">
             <Image
-              src="/joblink-logo.png"
+              src="/company-logo.png"
               alt="JobLink — Antigua's Career Network"
               width={220}
               height={75}

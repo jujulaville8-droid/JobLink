@@ -65,7 +65,7 @@ export default function Navbar() {
           {/* ── Left: Logo ── */}
           <Link href="/" className="flex items-center shrink-0">
             <Image
-              src="/joblink-logo.png"
+              src="/company-logo.png"
               alt="JobLink — Antigua's Career Network"
               width={220}
               height={75}

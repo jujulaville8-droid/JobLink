@@ -16,7 +16,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center">
               <Image
-                src="/joblink-logo.png"
+                src="/company-logo.png"
                 alt="JobLink"
                 width={240}
                 height={70}
