@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 const FROM_ADDRESS = 'JobLink <notifications@joblink.ag>'
+
+function escapeHtml(str: string | undefined): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
 
 type EmailType =
   | 'application_confirmation'
@@ -48,46 +59,46 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
   switch (type) {
     case 'application_confirmation':
       return {
-        subject: `Application submitted: ${data.job_title}`,
+        subject: `Application submitted: ${escapeHtml(data.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Application Submitted</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has been submitted successfully.
+            Your application for <strong>${escapeHtml(data.job_title)}</strong> at <strong>${escapeHtml(data.company_name)}</strong> has been submitted successfully.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             The employer will review your application and get back to you. You can track your application status from your dashboard.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Dashboard</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${escapeHtml(data.dashboard_url)}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Dashboard</a></p>` : ''}
         `),
       }
 
     case 'new_applicant':
       return {
-        subject: `New applicant for ${data.job_title}`,
+        subject: `New applicant for ${escapeHtml(data.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">New Application Received</h2>
           <p style="color: #374151; line-height: 1.6;">
-            <strong>${data.applicant_name}</strong> has applied for the position of <strong>${data.job_title}</strong>.
+            <strong>${escapeHtml(data.applicant_name)}</strong> has applied for the position of <strong>${escapeHtml(data.job_title)}</strong>.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Log in to your dashboard to review the application and manage candidates.
           </p>
-          ${data.application_url ? `<p style="margin-top: 24px;"><a href="${data.application_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Review Application</a></p>` : ''}
+          ${data.application_url ? `<p style="margin-top: 24px;"><a href="${escapeHtml(data.application_url)}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Review Application</a></p>` : ''}
         `),
       }
 
     case 'status_update':
       return {
-        subject: `Application update: ${data.job_title}`,
+        subject: `Application update: ${escapeHtml(data.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Application Status Update</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has been updated.
+            Your application for <strong>${escapeHtml(data.job_title)}</strong> at <strong>${escapeHtml(data.company_name)}</strong> has been updated.
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            New status: <strong style="color: #14919b;">${data.status}</strong>
+            New status: <strong style="color: #14919b;">${escapeHtml(data.status)}</strong>
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Details</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${escapeHtml(data.dashboard_url)}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Details</a></p>` : ''}
         `),
       }
 
@@ -104,9 +115,9 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
               ?.map(
                 (job) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-                <h3 style="color: #0d7377; margin: 0 0 4px 0; font-size: 16px;">${job.title}</h3>
-                <p style="color: #6b7280; margin: 0; font-size: 14px;">${job.company}</p>
-                ${job.url ? `<a href="${job.url}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600;">View Job &rarr;</a>` : ''}
+                <h3 style="color: #0d7377; margin: 0 0 4px 0; font-size: 16px;">${escapeHtml(job.title)}</h3>
+                <p style="color: #6b7280; margin: 0; font-size: 14px;">${escapeHtml(job.company)}</p>
+                ${job.url ? `<a href="${escapeHtml(job.url)}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600;">View Job &rarr;</a>` : ''}
               </div>
             `
               )
@@ -117,16 +128,16 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'listing_expiry':
       return {
-        subject: `Your listing is expiring: ${data.listing_title}`,
+        subject: `Your listing is expiring: ${escapeHtml(data.listing_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Listing Expiring Soon</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${data.listing_title}</strong> is set to expire on <strong>${data.expires_at}</strong>.
+            Your job listing <strong>${escapeHtml(data.listing_title)}</strong> is set to expire on <strong>${escapeHtml(data.expires_at)}</strong>.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Log in to your dashboard to renew or extend the listing if you are still hiring.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Manage Listing</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${escapeHtml(data.dashboard_url)}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Manage Listing</a></p>` : ''}
         `),
       }
 
@@ -140,6 +151,18 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient()
+
+    // Verify authentication — only authenticated users can trigger emails
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { to, type } = body
 
@@ -147,8 +170,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'to and type are required' }, { status: 400 })
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (typeof to !== 'string' || !emailRegex.test(to)) {
+      return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
+    }
+
+    // Validate type is a known email type
+    const validTypes: EmailType[] = ['application_confirmation', 'new_applicant', 'status_update', 'job_alert', 'listing_expiry']
+    if (!validTypes.includes(type as EmailType)) {
+      return NextResponse.json({ error: 'Invalid email type' }, { status: 400 })
+    }
+
     // Email sending disabled until Resend API key is configured
-    console.log(`[Email Disabled] Would send "${type}" email to ${to}`)
+    console.log(`[Email Disabled] Would send "${type}" email to ${to} (requested by ${user.id})`)
     return NextResponse.json({ success: true, id: 'email-disabled', message: 'Email sending not yet configured' })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

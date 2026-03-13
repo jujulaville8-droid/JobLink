@@ -15,6 +15,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Enforce email verification
+    if (!user.email_confirmed_at) {
+      return NextResponse.json({ error: 'Please verify your email first' }, { status: 403 })
+    }
+
     const body = await request.json()
     const { job_id, reason } = body
 
@@ -35,6 +40,18 @@ export async function POST(request: NextRequest) {
 
     if (jobError || !job) {
       return NextResponse.json({ error: 'Job listing not found' }, { status: 404 })
+    }
+
+    // Prevent duplicate reports from the same user
+    const { data: existingReport } = await supabase
+      .from('reported_listings')
+      .select('id')
+      .eq('job_id', job_id)
+      .eq('reported_by', user.id)
+      .maybeSingle()
+
+    if (existingReport) {
+      return NextResponse.json({ error: 'You have already reported this listing' }, { status: 409 })
     }
 
     // Insert report

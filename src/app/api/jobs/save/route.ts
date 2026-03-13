@@ -26,6 +26,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only job seekers can save jobs' }, { status: 403 })
     }
 
+    // Enforce email verification
+    if (!user.email_confirmed_at) {
+      return NextResponse.json({ error: 'Please verify your email first' }, { status: 403 })
+    }
+
     // Get seeker profile
     const { data: seekerProfile, error: profileError } = await supabase
       .from('seeker_profiles')
