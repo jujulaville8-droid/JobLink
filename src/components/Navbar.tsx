@@ -11,7 +11,7 @@ import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Arro
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user, userRole, avatarUrl, logout, setUserRole, isLoading } = useAuth();
+  const { isAuthenticated, user, userRole, isAdminUser, avatarUrl, logout, setUserRole, isLoading } = useAuth();
   const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -36,7 +36,7 @@ export default function Navbar() {
 
   const isEmployer = userRole === "employer";
   const isAdmin = userRole === "admin";
-  const canBeAdmin = isAdmin;
+  const canBeAdmin = isAdminUser;
 
   const navLinks = isAdmin
     ? [
