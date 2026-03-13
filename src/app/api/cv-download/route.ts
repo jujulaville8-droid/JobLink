@@ -41,22 +41,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Check if this seeker has applied to any of the employer's jobs
+  // Verify this specific seeker applied to one of the employer's jobs
+  // Single query with join instead of nested N+1 queries
   const { data: hasApplication } = await supabase
     .from("applications")
-    .select("id")
+    .select("id, job_listings!inner(company_id)")
     .eq("seeker_id", profileId)
-    .in(
-      "job_id",
-      (
-        await supabase
-          .from("job_listings")
-          .select("id")
-          .eq("company_id", company.id)
-      ).data?.map((j: { id: string }) => j.id) ?? []
-    )
+    .eq("job_listings.company_id", company.id)
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (!hasApplication) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });

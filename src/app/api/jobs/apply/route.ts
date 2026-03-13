@@ -30,6 +30,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account is banned' }, { status: 403 })
     }
 
+    // Enforce email verification
+    if (!user.email_confirmed_at) {
+      return NextResponse.json({ error: 'Please verify your email before applying' }, { status: 403 })
+    }
+
     if (userData.role !== 'seeker') {
       return NextResponse.json({ error: 'Only job seekers can apply' }, { status: 403 })
     }
@@ -58,7 +63,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status')
+      .select('id, status, company_id')
       .eq('id', job_id)
       .single()
 
@@ -68,6 +73,18 @@ export async function POST(request: NextRequest) {
 
     if (job.status !== 'active') {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
+    }
+
+    // Prevent self-application: check if the user owns the company that posted this job
+    const { data: ownedCompany } = await supabase
+      .from('companies')
+      .select('id')
+      .eq('id', job.company_id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (ownedCompany) {
+      return NextResponse.json({ error: 'You cannot apply to your own company\'s listings' }, { status: 403 })
     }
 
     // Insert application (unique constraint on job_id + seeker_id will catch duplicates)
