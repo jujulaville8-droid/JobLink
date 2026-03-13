@@ -44,7 +44,7 @@ export default async function ApplicationsPage() {
     .select(
       "id, status, applied_at, cover_letter_text, job_listings(id, title, location, job_type, companies(company_name, logo_url))"
     )
-    .eq("seeker_id", user.id)
+    .eq("seeker_id", profile.id)
     .order("applied_at", { ascending: false });
 
   const apps = (applications as Record<string, unknown>[] | null) ?? [];

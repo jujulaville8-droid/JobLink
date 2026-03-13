@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const returnTo = searchParams.get('returnTo')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -17,10 +19,13 @@ export default function LoginPage() {
     setError(null)
     setGoogleLoading(true)
     const supabase = createClient()
+    const callbackUrl = returnTo
+      ? `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`
+      : `${window.location.origin}/auth/callback`
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl,
       },
     })
     if (error) {
@@ -61,7 +66,9 @@ export default function LoginPage() {
       }
     }
 
-    router.push('/dashboard')
+    // Redirect to returnTo path (if it's a safe internal path) or dashboard
+    const dest = returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard'
+    router.push(dest)
     router.refresh()
   }
 

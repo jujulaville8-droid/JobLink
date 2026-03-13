@@ -34,7 +34,10 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      return NextResponse.redirect(`${origin}/dashboard`)
+      // Redirect to returnTo path if provided and safe, otherwise dashboard
+      const returnTo = searchParams.get('returnTo')
+      const dest = returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard'
+      return NextResponse.redirect(`${origin}${dest}`)
     }
   }
 

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import type { Metadata } from "next";
+import ApplyButton from "@/components/ApplyButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -148,6 +149,48 @@ export default async function JobDetailPage({ params }: PageProps) {
   const whatsappText = encodeURIComponent(
     `Check out this job: ${job.title} at ${company?.company_name || "a company"} - ${jobUrl}`
   );
+
+  // ─── Auth & application state for dynamic Apply button ───
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let applyState: "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete" = "login";
+
+  if (job.status !== "active") {
+    applyState = "closed";
+  } else if (!user) {
+    applyState = "login";
+  } else {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (!userData || userData.role !== "seeker") {
+      applyState = "not-seeker";
+    } else {
+      const { data: profile } = await supabase
+        .from("seeker_profiles")
+        .select("id, first_name, last_name, phone, cv_url")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!profile || !profile.first_name || !profile.last_name || !profile.phone || !profile.cv_url) {
+        applyState = "profile-incomplete";
+      } else {
+        const { data: existing } = await supabase
+          .from("applications")
+          .select("id")
+          .eq("job_id", job.id)
+          .eq("seeker_id", profile.id)
+          .maybeSingle();
+
+        applyState = existing ? "applied" : "apply";
+      }
+    }
+  }
 
   const companyInitial = company?.company_name?.charAt(0).toUpperCase() || "?";
   const colors = [
@@ -337,12 +380,7 @@ export default async function JobDetailPage({ params }: PageProps) {
               <h2 className="font-display text-lg text-text mb-4">
                 Interested in this role?
               </h2>
-              <Link
-                href={`/jobs/${job.id}/apply`}
-                className="flex w-full items-center justify-center btn-warm text-base"
-              >
-                Apply Now
-              </Link>
+              <ApplyButton jobId={job.id} state={applyState} />
               {salary && (
                 <p className="mt-3 text-center text-sm text-text-light">
                   Salary: {salary}
@@ -417,12 +455,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
       {/* Mobile sticky apply button */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
-        <Link
-          href={`/jobs/${job.id}/apply`}
-          className="flex w-full items-center justify-center btn-warm text-base"
-        >
-          Apply Now
-        </Link>
+        <ApplyButton jobId={job.id} state={applyState} />
       </div>
     </div>
   );
