@@ -7,6 +7,8 @@ import type { User } from "@supabase/supabase-js";
 interface AuthState {
   user: User | null;
   userRole: string | null;
+  /** Whether the user has admin privileges (persists across role switches) */
+  isAdminUser: boolean;
   avatarUrl: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -18,6 +20,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState>({
   user: null,
   userRole: null,
+  isAdminUser: false,
   avatarUrl: null,
   isAuthenticated: false,
   isLoading: true,
@@ -33,6 +36,7 @@ export function useAuth() {
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,6 +45,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     await supabase.auth.signOut();
     setUser(null);
     setUserRole(null);
+    setIsAdminUser(false);
     setAvatarUrl(null);
     window.location.href = "/login";
   }, []);
@@ -55,11 +60,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       try {
         const { data } = await supabase
           .from("users")
-          .select("role")
+          .select("role, is_admin")
           .eq("id", u.id)
           .maybeSingle();
         if (!mounted) return;
         setUserRole((data?.role as string) ?? (u.user_metadata?.role as string) ?? "seeker");
+        setIsAdminUser(data?.is_admin === true);
       } catch {
         if (!mounted) return;
         setUserRole((u.user_metadata?.role as string) ?? "seeker");
@@ -106,6 +112,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         } else if (event === "SIGNED_OUT") {
           setUser(null);
           setUserRole(null);
+          setIsAdminUser(false);
           setAvatarUrl(null);
           setIsLoading(false);
         } else if (event === "TOKEN_REFRESHED" && session?.user) {
@@ -133,7 +140,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userRole, avatarUrl, isAuthenticated: !!user, isLoading, logout, setAvatarUrl, setUserRole }}>
+    <AuthContext.Provider value={{ user, userRole, isAdminUser, avatarUrl, isAuthenticated: !!user, isLoading, logout, setAvatarUrl, setUserRole }}>
       {children}
     </AuthContext.Provider>
   );

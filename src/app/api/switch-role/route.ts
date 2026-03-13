@@ -16,16 +16,13 @@ export async function POST(request: NextRequest) {
 
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, is_admin")
     .eq("id", user.id)
     .single();
 
-  const currentRole = userData?.role;
-  const isAdmin = currentRole === "admin";
-
-  // Only admins can switch to the admin role
+  // Only users with is_admin=true can switch to the admin role
   if (role === "admin") {
-    if (!isAdmin) {
+    if (!userData?.is_admin) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
   } else if (role !== "seeker" && role !== "employer") {

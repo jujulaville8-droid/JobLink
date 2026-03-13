@@ -49,6 +49,22 @@ export async function requireAuth() {
 
 export async function requireRole(role: string) {
   const user = await requireAuth()
+
+  // For admin role, check the is_admin flag (persists across role switches)
+  if (role === 'admin') {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!data?.is_admin) {
+      redirect('/')
+    }
+    return user
+  }
+
   const userRole = await getUserRole()
 
   if (userRole !== role) {
