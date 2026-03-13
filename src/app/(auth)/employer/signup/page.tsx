@@ -46,7 +46,7 @@ export default function EmployerSignupPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -57,6 +57,14 @@ export default function EmployerSignupPage() {
 
     if (error) {
       setError(error.message)
+      setLoading(false)
+      return
+    }
+
+    // Supabase returns a fake success with empty identities when the email
+    // is already registered (to prevent enumeration). Detect and surface it.
+    if (signUpData.user && signUpData.user.identities?.length === 0) {
+      setError('Email already in use. Please sign in instead.')
       setLoading(false)
       return
     }
