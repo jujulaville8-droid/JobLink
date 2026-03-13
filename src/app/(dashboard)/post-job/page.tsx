@@ -3,6 +3,19 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { motion } from 'motion/react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import {
+  Briefcase01Icon,
+  Location01Icon,
+  MoneyBag02Icon,
+  Clock01Icon,
+  Tick01Icon,
+  File01Icon,
+  CircleArrowUpRight02Icon,
+  ViewIcon,
+} from '@hugeicons/core-free-icons';
+import { cn } from '@/lib/utils';
 import {
   ANTIGUA_PARISHES,
   INDUSTRIES,
@@ -26,6 +39,30 @@ interface FormData {
 interface FormErrors {
   [key: string]: string;
 }
+
+const cardBase =
+  'rounded-2xl border border-border/40 bg-white overflow-hidden transition-all duration-300';
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] as const },
+  },
+};
+
+const inputBase =
+  'block w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10 placeholder:text-text-muted/60';
 
 export default function PostJobPage() {
   const router = useRouter();
@@ -102,7 +139,6 @@ export default function PostJobPage() {
         return;
       }
 
-      // Get or verify company
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id')
@@ -166,180 +202,231 @@ export default function PostJobPage() {
 
   if (success) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center">
-        <div className="rounded-[--radius-card] border border-green-200 bg-green-50 p-8">
-          <svg
-            className="mx-auto h-16 w-16 text-green-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="mx-auto max-w-lg px-4 py-16"
+      >
+        <div className={cn(cardBase, 'p-10 text-center')}>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', bounce: 0.5, delay: 0.1 }}
+            className="mx-auto w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h2 className="mt-4 text-xl font-bold font-display text-green-800">
+            <HugeiconsIcon icon={Tick01Icon} size={32} className="text-emerald-500" />
+          </motion.div>
+          <h2 className="mt-5 text-xl font-bold font-display text-text">
             Job Submitted Successfully!
           </h2>
-          <p className="mt-2 text-green-700">
-            Your job listing has been submitted for review. You will be
+          <p className="mt-2 text-sm text-text-muted">
+            Your job listing has been submitted for review. You&apos;ll be
             redirected to your listings shortly.
           </p>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
-      <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
-        Post a Job
-      </h1>
-      <p className="mt-2 text-text-light">
-        Fill out the form below to submit your job listing for review.
-      </p>
+    <motion.div
+      variants={container}
+      initial="hidden"
+      animate="show"
+      className="mx-auto max-w-5xl"
+    >
+      {/* Header */}
+      <motion.div variants={item} className="mb-8">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
+            <HugeiconsIcon icon={Briefcase01Icon} size={20} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">
+              Post a Job
+            </h1>
+            <p className="text-sm text-text-muted">
+              Fill out the details below to submit your listing for review.
+            </p>
+          </div>
+        </div>
+      </motion.div>
 
       {serverError && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
           {serverError}
-        </div>
+        </motion.div>
       )}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-5">
+      <div className="grid gap-6 lg:grid-cols-5">
         {/* Form */}
         <form
           onSubmit={handleSubmit}
           className="space-y-6 lg:col-span-3"
           noValidate
         >
-          {/* Title */}
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-text"
-            >
-              Job Title <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={form.title}
-              onChange={(e) => updateField('title', e.target.value)}
-              placeholder="e.g. Front Desk Manager"
-              className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
-                errors.title ? 'border-red-400 bg-red-50' : 'border-border'
-              }`}
-            />
-            {errors.title && (
-              <p className="mt-1 text-xs text-red-600">{errors.title}</p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-text"
-            >
-              Job Description <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="description"
-              rows={8}
-              value={form.description}
-              onChange={(e) => updateField('description', e.target.value)}
-              placeholder="Describe the role, responsibilities, requirements, and benefits..."
-              className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
-                errors.description
-                  ? 'border-red-400 bg-red-50'
-                  : 'border-border'
-              }`}
-            />
-            {errors.description && (
-              <p className="mt-1 text-xs text-red-600">{errors.description}</p>
-            )}
-          </div>
-
-          {/* Category + Location row */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="category"
-                className="block text-sm font-medium text-text"
-              >
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="category"
-                value={form.category}
-                onChange={(e) => updateField('category', e.target.value)}
-                className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
-                  errors.category
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-border'
-                }`}
-              >
-                <option value="">Select category</option>
-                {INDUSTRIES.map((ind) => (
-                  <option key={ind} value={ind}>
-                    {ind}
-                  </option>
-                ))}
-              </select>
-              {errors.category && (
-                <p className="mt-1 text-xs text-red-600">{errors.category}</p>
-              )}
+          {/* Job Details Card */}
+          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
+                <HugeiconsIcon icon={File01Icon} size={16} className="text-primary" />
+              </div>
+              <h2 className="text-sm font-semibold text-text">Job Details</h2>
             </div>
 
-            <div>
-              <label
-                htmlFor="location"
-                className="block text-sm font-medium text-text"
-              >
-                Location <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="location"
-                value={form.location}
-                onChange={(e) => updateField('location', e.target.value)}
-                className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
-                  errors.location
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-border'
-                }`}
-              >
-                <option value="">Select parish</option>
-                {ANTIGUA_PARISHES.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-              {errors.location && (
-                <p className="mt-1 text-xs text-red-600">{errors.location}</p>
-              )}
-            </div>
-          </div>
+            <div className="space-y-5">
+              {/* Title */}
+              <div>
+                <label
+                  htmlFor="title"
+                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+                >
+                  Job Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  value={form.title}
+                  onChange={(e) => updateField('title', e.target.value)}
+                  placeholder="e.g. Front Desk Manager"
+                  className={cn(
+                    inputBase,
+                    errors.title ? 'border-red-300 bg-red-50/50' : 'border-border/60'
+                  )}
+                />
+                {errors.title && (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.title}</p>
+                )}
+              </div>
 
-          {/* Job Type */}
-          <div>
-            <span className="block text-sm font-medium text-text">
-              Job Type
-            </span>
-            <div className="mt-2 flex flex-wrap gap-3">
+              {/* Description */}
+              <div>
+                <label
+                  htmlFor="description"
+                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+                >
+                  Job Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  id="description"
+                  rows={8}
+                  value={form.description}
+                  onChange={(e) => updateField('description', e.target.value)}
+                  placeholder="Describe the role, responsibilities, requirements, and benefits..."
+                  className={cn(
+                    inputBase,
+                    'resize-none',
+                    errors.description
+                      ? 'border-red-300 bg-red-50/50'
+                      : 'border-border/60'
+                  )}
+                />
+                {errors.description && (
+                  <p className="mt-1.5 text-xs text-red-600">
+                    {errors.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Category & Location Card */}
+          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <HugeiconsIcon icon={Location01Icon} size={16} className="text-blue-600" />
+              </div>
+              <h2 className="text-sm font-semibold text-text">Category & Location</h2>
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+                >
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="category"
+                  value={form.category}
+                  onChange={(e) => updateField('category', e.target.value)}
+                  className={cn(
+                    inputBase,
+                    errors.category
+                      ? 'border-red-300 bg-red-50/50'
+                      : 'border-border/60'
+                  )}
+                >
+                  <option value="">Select category</option>
+                  {INDUSTRIES.map((ind) => (
+                    <option key={ind} value={ind}>
+                      {ind}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.category}</p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="location"
+                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+                >
+                  Location <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="location"
+                  value={form.location}
+                  onChange={(e) => updateField('location', e.target.value)}
+                  className={cn(
+                    inputBase,
+                    errors.location
+                      ? 'border-red-300 bg-red-50/50'
+                      : 'border-border/60'
+                  )}
+                >
+                  <option value="">Select parish</option>
+                  {ANTIGUA_PARISHES.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+                {errors.location && (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.location}</p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Job Type Card */}
+          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <HugeiconsIcon icon={Briefcase01Icon} size={16} className="text-emerald-600" />
+              </div>
+              <h2 className="text-sm font-semibold text-text">Job Type</h2>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
               {(
                 Object.entries(JOB_TYPE_LABELS) as [JobType, string][]
               ).map(([value, label]) => (
                 <label
                   key={value}
-                  className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                  className={cn(
+                    'cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200',
                     form.job_type === value
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-border text-text hover:border-primary/40'
-                  }`}
+                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
+                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
+                  )}
                 >
                   <input
                     type="radio"
@@ -353,100 +440,138 @@ export default function PostJobPage() {
                 </label>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          {/* Salary */}
-          <div>
-            <span className="block text-sm font-medium text-text">
-              Salary Range (XCD)
-            </span>
-            <div className="mt-2 grid gap-4 sm:grid-cols-2">
-              <div>
-                <input
-                  type="number"
-                  placeholder="Min salary"
-                  value={form.salary_min}
-                  onChange={(e) => updateField('salary_min', e.target.value)}
-                  min={0}
-                  className={`block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
-                    errors.salary_min
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-border'
-                  }`}
-                />
-                {errors.salary_min && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.salary_min}
-                  </p>
-                )}
+          {/* Salary Card */}
+          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                <HugeiconsIcon icon={MoneyBag02Icon} size={16} className="text-amber-600" />
               </div>
-              <div>
-                <input
-                  type="number"
-                  placeholder="Max salary"
-                  value={form.salary_max}
-                  onChange={(e) => updateField('salary_max', e.target.value)}
-                  min={0}
-                  className={`block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
-                    errors.salary_max
-                      ? 'border-red-400 bg-red-50'
-                      : 'border-border'
-                  }`}
-                />
-                {errors.salary_max && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {errors.salary_max}
-                  </p>
-                )}
+              <h2 className="text-sm font-semibold text-text">Compensation</h2>
+            </div>
+
+            <div className="space-y-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                    Min Salary (XCD)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 2000"
+                    value={form.salary_min}
+                    onChange={(e) => updateField('salary_min', e.target.value)}
+                    min={0}
+                    className={cn(
+                      inputBase,
+                      errors.salary_min
+                        ? 'border-red-300 bg-red-50/50'
+                        : 'border-border/60'
+                    )}
+                  />
+                  {errors.salary_min && (
+                    <p className="mt-1.5 text-xs text-red-600">
+                      {errors.salary_min}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                    Max Salary (XCD)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 5000"
+                    value={form.salary_max}
+                    onChange={(e) => updateField('salary_max', e.target.value)}
+                    min={0}
+                    className={cn(
+                      inputBase,
+                      errors.salary_max
+                        ? 'border-red-300 bg-red-50/50'
+                        : 'border-border/60'
+                    )}
+                  />
+                  {errors.salary_max && (
+                    <p className="mt-1.5 text-xs text-red-600">
+                      {errors.salary_max}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={cn(
+                    'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200',
+                    form.salary_visible
+                      ? 'border-primary bg-primary'
+                      : 'border-border/60 group-hover:border-primary/40'
+                  )}>
+                    {form.salary_visible && (
+                      <HugeiconsIcon icon={Tick01Icon} size={12} className="text-white" />
+                    )}
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={form.salary_visible}
+                    onChange={(e) =>
+                      updateField('salary_visible', e.target.checked)
+                    }
+                    className="sr-only"
+                  />
+                  <span className="text-sm text-text">
+                    Show salary on listing
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={cn(
+                    'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200',
+                    form.requires_work_permit
+                      ? 'border-primary bg-primary'
+                      : 'border-border/60 group-hover:border-primary/40'
+                  )}>
+                    {form.requires_work_permit && (
+                      <HugeiconsIcon icon={Tick01Icon} size={12} className="text-white" />
+                    )}
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={form.requires_work_permit}
+                    onChange={(e) =>
+                      updateField('requires_work_permit', e.target.checked)
+                    }
+                    className="sr-only"
+                  />
+                  <span className="text-sm text-text">
+                    Requires work permit
+                  </span>
+                </label>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Checkboxes */}
-          <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.salary_visible}
-                onChange={(e) =>
-                  updateField('salary_visible', e.target.checked)
-                }
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-text">
-                Show salary on listing
-              </span>
-            </label>
+          {/* Duration Card */}
+          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                <HugeiconsIcon icon={Clock01Icon} size={16} className="text-purple-600" />
+              </div>
+              <h2 className="text-sm font-semibold text-text">Listing Duration</h2>
+            </div>
 
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.requires_work_permit}
-                onChange={(e) =>
-                  updateField('requires_work_permit', e.target.checked)
-                }
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              />
-              <span className="text-sm text-text">
-                Requires work permit
-              </span>
-            </label>
-          </div>
-
-          {/* Listing Duration */}
-          <div>
-            <span className="block text-sm font-medium text-text">
-              Listing Duration
-            </span>
-            <div className="mt-2 flex gap-3">
+            <div className="flex gap-3">
               {(['30', '60'] as const).map((d) => (
                 <label
                   key={d}
-                  className={`cursor-pointer rounded-lg border px-5 py-2.5 text-sm font-medium transition-colors ${
+                  className={cn(
+                    'cursor-pointer rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
                     form.duration === d
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-border text-text hover:border-primary/40'
-                  }`}
+                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
+                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
+                  )}
                 >
                   <input
                     type="radio"
@@ -456,53 +581,69 @@ export default function PostJobPage() {
                     onChange={() => updateField('duration', d)}
                     className="sr-only"
                   />
-                  {d} days
+                  <span className="text-lg font-bold block">{d}</span>
+                  <span className="text-xs">days</span>
                 </label>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto"
-          >
-            {submitting ? 'Submitting...' : 'Submit Job Listing'}
-          </button>
+          <motion.div variants={item}>
+            <button
+              type="submit"
+              disabled={submitting}
+              className={cn(
+                'w-full sm:w-auto rounded-xl px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300',
+                'bg-accent hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5',
+                'disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0',
+                'flex items-center justify-center gap-2'
+              )}
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <HugeiconsIcon icon={CircleArrowUpRight02Icon} size={16} />
+                  Submit Job Listing
+                </>
+              )}
+            </button>
+          </motion.div>
         </form>
 
         {/* Preview */}
         <div className="lg:col-span-2">
-          <div className="sticky top-20">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-text-light">
-              Preview
-            </h2>
-            <div className="mt-3 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
+          <motion.div variants={item} className="sticky top-20">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
+                <HugeiconsIcon icon={ViewIcon} size={16} className="text-primary" />
+              </div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Live Preview
+              </h2>
+            </div>
+
+            <div className={cn(cardBase, 'p-6 hover:shadow-lg hover:shadow-primary/5')}>
               <h3 className="text-lg font-semibold text-text">
                 {form.title || 'Job Title'}
               </h3>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 {form.location && (
-                  <span className="flex items-center gap-1 text-xs text-text-light">
-                    <svg
-                      className="h-3.5 w-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
-                    </svg>
+                  <span className="flex items-center gap-1.5 text-xs text-text-muted">
+                    <HugeiconsIcon icon={Location01Icon} size={12} className="text-text-muted" />
                     {form.location}
                   </span>
                 )}
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                <span className="inline-flex items-center rounded-lg bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
                   {JOB_TYPE_LABELS[form.job_type]}
                 </span>
                 {form.category && (
-                  <span className="rounded-full bg-bg-alt px-2 py-0.5 text-xs font-medium text-text-light">
+                  <span className="inline-flex items-center rounded-lg bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-muted">
                     {form.category}
                   </span>
                 )}
@@ -510,32 +651,40 @@ export default function PostJobPage() {
 
               {form.salary_visible &&
                 (form.salary_min || form.salary_max) && (
-                  <p className="mt-3 text-sm font-semibold text-primary">
-                    {formatSalaryPreview(form.salary_min, form.salary_max)}
-                  </p>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                      <HugeiconsIcon icon={MoneyBag02Icon} size={14} className="text-emerald-600" />
+                    </div>
+                    <p className="text-sm font-semibold text-emerald-600">
+                      {formatSalaryPreview(form.salary_min, form.salary_max)}
+                    </p>
+                  </div>
                 )}
 
               {form.requires_work_permit && (
-                <span className="mt-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                <span className="mt-3 inline-flex items-center rounded-lg bg-amber-50 border border-amber-200/40 px-2.5 py-1 text-xs font-medium text-amber-700">
                   Work Permit Required
                 </span>
               )}
 
               {form.description && (
-                <div className="mt-4 border-t border-border pt-4">
-                  <p className="whitespace-pre-wrap text-sm text-text-light line-clamp-6">
+                <div className="mt-4 border-t border-border/40 pt-4">
+                  <p className="whitespace-pre-wrap text-sm text-text-muted leading-relaxed line-clamp-6">
                     {form.description}
                   </p>
                 </div>
               )}
 
-              <div className="mt-4 border-t border-border pt-3 text-xs text-text-light">
-                Listing expires after {form.duration} days
+              <div className="mt-4 flex items-center gap-2 border-t border-border/40 pt-4">
+                <HugeiconsIcon icon={Clock01Icon} size={12} className="text-text-muted" />
+                <span className="text-xs text-text-muted">
+                  Listing expires after {form.duration} days
+                </span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

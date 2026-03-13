@@ -321,7 +321,7 @@ function RepostListing({ listingId }: { listingId: string }) {
       salary_max: original.salary_max,
       salary_visible: original.salary_visible,
       requires_work_permit: original.requires_work_permit,
-      status: 'pending_approval',
+      status: 'active',
       expires_at: expiresAt.toISOString(),
     });
 
