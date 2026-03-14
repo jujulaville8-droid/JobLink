@@ -4,14 +4,16 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { useTheme } from "@/components/ThemeProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, Sun, Moon } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user, userRole, isAdminUser, avatarUrl, logout, setUserRole, isLoading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -128,7 +130,7 @@ export default function Navbar() {
         disabled={switching}
         className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
           userRole === "seeker"
-            ? "bg-white text-primary shadow-sm"
+            ? "bg-[--color-surface] text-primary shadow-sm"
             : "text-text-muted hover:text-text"
         }`}
       >
@@ -142,7 +144,7 @@ export default function Navbar() {
         disabled={switching}
         className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
           userRole === "employer"
-            ? "bg-white text-primary shadow-sm"
+            ? "bg-[--color-surface] text-primary shadow-sm"
             : "text-text-muted hover:text-text"
         }`}
       >
@@ -157,7 +159,7 @@ export default function Navbar() {
           disabled={switching}
           className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
             userRole === "admin"
-              ? "bg-white text-amber-600 shadow-sm"
+              ? "bg-[--color-surface] text-amber-600 shadow-sm"
               : "text-text-muted hover:text-text"
           }`}
         >
@@ -167,7 +169,7 @@ export default function Navbar() {
       )}
 
       {switching && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
+        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[--color-surface]/60 backdrop-blur-sm">
           <div className="h-3.5 w-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       )}
@@ -182,7 +184,7 @@ export default function Navbar() {
         disabled={switching}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
           userRole === "seeker"
-            ? "bg-white text-primary shadow-sm"
+            ? "bg-[--color-surface] text-primary shadow-sm"
             : "text-text-muted"
         }`}
       >
@@ -194,7 +196,7 @@ export default function Navbar() {
         disabled={switching}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
           userRole === "employer"
-            ? "bg-white text-primary shadow-sm"
+            ? "bg-[--color-surface] text-primary shadow-sm"
             : "text-text-muted"
         }`}
       >
@@ -207,7 +209,7 @@ export default function Navbar() {
           disabled={switching}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
             userRole === "admin"
-              ? "bg-white text-amber-600 shadow-sm"
+              ? "bg-[--color-surface] text-amber-600 shadow-sm"
               : "text-text-muted"
           }`}
         >
@@ -294,7 +296,7 @@ export default function Navbar() {
                   className={`relative px-4 py-2 text-[14px] font-medium rounded-lg transition-colors ${
                     isActive(link.href)
                       ? "text-primary"
-                      : "text-text-light hover:text-primary hover:bg-white/50 link-animated"
+                      : "text-text-light hover:text-primary hover:bg-[--color-surface]/50 link-animated"
                   }`}
                 >
                   {link.label}
@@ -305,8 +307,17 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* ── Right: Role switcher + Avatar (desktop) ── */}
+            {/* ── Right: Theme toggle + Role switcher + Avatar (desktop) ── */}
             <div className="hidden md:flex items-center gap-3 shrink-0">
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-bg-alt/50 text-text-light hover:text-primary hover:bg-bg-alt transition-colors"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+
               {isLoading ? (
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
@@ -345,8 +356,15 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* ── Mobile: Role switcher + Avatar + Hamburger ── */}
+            {/* ── Mobile: Theme toggle + Role switcher + Avatar + Hamburger ── */}
             <div className="flex md:hidden items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-light hover:text-primary transition-colors"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
               {isAuthenticated && !isLoading && (
                 <>
                   {mobileRoleSwitcher}
@@ -363,7 +381,7 @@ export default function Navbar() {
               )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-white/50 transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[--color-surface]/50 transition-colors"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? (
@@ -385,7 +403,7 @@ export default function Navbar() {
                   className={`block px-3 py-2.5 text-[15px] font-medium rounded-lg transition-colors ${
                     isActive(link.href)
                       ? "text-primary bg-primary/[0.05]"
-                      : "text-text-light hover:text-primary hover:bg-white/50"
+                      : "text-text-light hover:text-primary hover:bg-[--color-surface]/50"
                   }`}
                 >
                   {link.label}
@@ -393,7 +411,7 @@ export default function Navbar() {
               ))}
               {!isAuthenticated && !isLoading && (
                 <div className="mt-3 pt-3 border-t border-border/40 flex gap-2 px-3">
-                  <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-white/50 transition-all duration-200">
+                  <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-[--color-surface]/50 transition-all duration-200">
                     Sign In
                   </Link>
                   <Link href="/employer/signup" className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">

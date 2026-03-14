@@ -17,6 +17,7 @@
   --color-text-light: #71717a;
   --color-text-muted: #a1a1aa;
   --color-border: #e8e3db;
+  --color-surface: #ffffff;
   --shadow-xs: 0 1px 2px rgba(13, 115, 119, 0.04);
   --shadow-sm: 0 2px 8px rgba(13, 115, 119, 0.06);
   --shadow-md: 0 4px 16px rgba(13, 115, 119, 0.08);
@@ -24,6 +25,30 @@
   --radius-card: 16px;
   --radius-button: 12px;
   --radius-input: 10px;
+}
+
+html.dark {
+  --color-primary: #14b8a6;
+  --color-primary-light: #2dd4bf;
+  --color-primary-dark: #0d9488;
+  --color-accent: #14b8a6;
+  --color-accent-hover: #0d9488;
+  --color-accent-warm: #f59e0b;
+  --color-accent-warm-hover: #d97706;
+  --color-coral: #fb923c;
+  --color-coral-light: #fdba74;
+  --color-bg: #0f1419;
+  --color-bg-alt: #1a2027;
+  --color-bg-dark: #0a1014;
+  --color-text: #e8eaed;
+  --color-text-light: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border: #2a3441;
+  --color-surface: #1a2027;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-warm: 0 4px 20px rgba(245, 158, 11, 0.15);
 }
 
 @theme inline {
@@ -43,6 +68,7 @@
   --color-text-light: var(--color-text-light);
   --color-text-muted: var(--color-text-muted);
   --color-border: var(--color-border);
+  --color-surface: var(--color-surface);
   --font-sans: var(--font-body);
   --font-display: var(--font-heading);
 }
@@ -63,6 +89,10 @@ html {
   background: #0d737733;
 }
 
+html.dark ::selection {
+  background: #14b8a644;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -75,6 +105,13 @@ html {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1aa;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3a4555;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
 }
 
 /* ── Accessible focus ring ── */
@@ -195,6 +232,11 @@ html {
   border-radius: 8px;
 }
 
+html.dark .skeleton {
+  background: linear-gradient(90deg, #2a3441 25%, #1a2027 50%, #2a3441 75%);
+  background-size: 200% 100%;
+}
+
 /* ── Animated link underline ── */
 .link-animated {
   position: relative;
@@ -220,7 +262,7 @@ html {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-button);
-  background: #0d7377;
+  background: var(--color-primary);
   color: #fff;
   font-weight: 600;
   font-size: 15px;
@@ -228,7 +270,7 @@ html {
   transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .btn-primary:hover {
-  background: #095355;
+  background: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(13, 115, 119, 0.25);
 }
@@ -290,7 +332,7 @@ html {
   justify-content: center;
   border-radius: var(--radius-button);
   background: transparent;
-  color: #52525b;
+  color: var(--color-text-light);
   font-weight: 500;
   font-size: 15px;
   padding: 12px 28px;
@@ -299,7 +341,7 @@ html {
 }
 .btn-secondary-dark:hover {
   background: var(--color-bg-alt);
-  border-color: #d4d4d8;
+  border-color: var(--color-border);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(13, 115, 119, 0.06);
 }
@@ -313,7 +355,7 @@ html {
   width: 100%;
   border-radius: var(--radius-input);
   border: 1px solid var(--color-border);
-  background: white;
+  background: var(--color-surface);
   padding: 10px 16px;
   font-size: 14px;
   color: var(--color-text);
