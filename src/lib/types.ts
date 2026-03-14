@@ -175,6 +175,8 @@ export interface ConversationMeta {
   application_status: ApplicationStatus;
   is_archived: boolean;
   is_blocked: boolean;
+  dialogue_open: boolean;
+  seeker_user_id: string;
 }
 
 export interface UserMessagingSettings {

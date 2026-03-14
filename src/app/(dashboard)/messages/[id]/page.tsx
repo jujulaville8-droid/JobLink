@@ -157,6 +157,8 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
           // Mark as read since we're viewing
           if (newMsg.sender_id !== user?.id) {
             fetch(`/api/messages/conversations/${conversationId}/read`, { method: "POST" });
+            // Employer replied — open the dialogue so compose box appears
+            setMeta((prev) => prev ? { ...prev, dialogue_open: true } : prev);
           }
         }
       )
@@ -249,6 +251,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   }
 
   const isBlocked = meta?.is_blocked ?? false;
+  const isSeekerAwaitingReply = meta ? (user?.id === meta.seeker_user_id && !meta.dialogue_open) : false;
 
   return (
     <div className="flex flex-col h-[calc(100dvh-10rem)] -my-6 overflow-hidden">
@@ -354,8 +357,20 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
+      {/* Awaiting employer reply banner (seeker only) */}
+      {!isBlocked && isSeekerAwaitingReply && (
+        <div className="px-4 py-3 bg-amber-50 border-t border-amber-200 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <svg className="h-4 w-4 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+            </svg>
+            <p className="text-sm text-amber-700">Your application has been sent. You&apos;ll be able to continue the conversation once the employer responds.</p>
+          </div>
+        </div>
+      )}
+
       {/* Compose area */}
-      {!isBlocked && (
+      {!isBlocked && !isSeekerAwaitingReply && (
         <div className="relative">
           {showTemplates && (
             <TemplateDrawer

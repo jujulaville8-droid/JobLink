@@ -83,6 +83,19 @@ export async function POST(
     if (!participant) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     if (participant.is_blocked) return NextResponse.json({ error: 'You are blocked from this conversation' }, { status: 403 })
 
+    // Dialogue gating: seekers can't send more messages until the employer replies
+    const { data: convMeta } = await supabase.rpc('get_conversation_meta', {
+      p_user_id: user.id,
+      p_conversation_id: conversationId,
+    })
+    const meta = convMeta?.[0]
+    if (meta && user.id === meta.seeker_user_id && !meta.dialogue_open) {
+      return NextResponse.json(
+        { error: 'Please wait for the employer to respond before sending another message.' },
+        { status: 403 }
+      )
+    }
+
     // Insert message (trigger auto-updates conversation.last_message_*)
     const { data: message, error } = await supabase
       .from('messages')
