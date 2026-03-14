@@ -239,12 +239,14 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   if (loading || authLoading) {
     return (
       <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
-        <div className="p-4 border-b border-border">
-          <div className="h-5 w-40 skeleton rounded" />
-          <div className="h-3 w-60 skeleton rounded mt-2" />
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        <div className="border border-border rounded-lg bg-white flex flex-col h-full mx-2 sm:mx-4 my-2 overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <div className="h-5 w-40 skeleton rounded" />
+            <div className="h-3 w-60 skeleton rounded mt-2" />
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          </div>
         </div>
       </div>
     );
@@ -255,137 +257,151 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 p-4 border-b border-border bg-white relative z-10">
-        <Link
-          href="/messages"
-          className="shrink-0 flex items-center justify-center h-8 w-8 rounded-lg border border-border text-text-light hover:border-primary/30 hover:text-primary transition-all duration-200 sm:hidden"
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
-        </Link>
+      {/* Desktop container card */}
+      <div className="flex flex-col h-full mx-0 sm:mx-3 my-0 sm:my-2 border-0 sm:border border-border sm:rounded-lg bg-white overflow-hidden">
+        {/* Header */}
+        <div className="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-border bg-white relative z-10">
+          <Link
+            href="/messages"
+            className="shrink-0 flex items-center justify-center h-8 w-8 rounded-md border border-border text-text-light hover:border-primary/30 hover:text-primary transition-colors sm:hidden"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          </Link>
 
-        {/* Avatar with presence */}
-        <div className="relative shrink-0">
-          {meta?.other_avatar_url ? (
-            <img src={meta.other_avatar_url} alt="" className="h-10 w-10 rounded-full object-cover border border-border" />
-          ) : (
-            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
-              {meta?.other_display_name?.charAt(0).toUpperCase() || "?"}
-            </div>
-          )}
-          {meta?.other_is_online && (
-            <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white" />
-          )}
-        </div>
+          {/* Back button — desktop */}
+          <Link
+            href="/messages"
+            className="hidden sm:flex shrink-0 items-center justify-center h-8 w-8 rounded-md text-text-light hover:text-primary hover:bg-primary/5 transition-colors"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+          </Link>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-text truncate">{meta?.other_display_name || "Conversation"}</h2>
-            {meta?.application_status && (
-              <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${STATUS_COLORS[meta.application_status] || STATUS_COLORS.applied}`}>
-                {STATUS_LABELS[meta.application_status] || meta.application_status}
-              </span>
+          {/* Avatar with presence */}
+          <div className="relative shrink-0">
+            {meta?.other_avatar_url ? (
+              <img src={meta.other_avatar_url} alt="" className="h-9 w-9 rounded-md object-cover border border-border" />
+            ) : (
+              <div className="h-9 w-9 rounded-md bg-primary flex items-center justify-center text-white font-semibold text-sm">
+                {meta?.other_display_name?.charAt(0).toUpperCase() || "?"}
+              </div>
+            )}
+            {meta?.other_is_online && (
+              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-white" />
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <p className="text-xs text-text-muted truncate">
-              {meta?.job_title} at {meta?.company_name}
-            </p>
-            {meta?.other_is_online ? (
-              <span className="text-[10px] text-emerald-600 font-medium">Online</span>
-            ) : meta?.other_last_seen_at ? (
-              <span className="text-[10px] text-text-muted">{lastSeenText(meta.other_last_seen_at)}</span>
-            ) : null}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-[15px] font-semibold text-text truncate leading-tight">{meta?.other_display_name || "Conversation"}</h2>
+              {meta?.other_is_online ? (
+                <span className="shrink-0 flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  Online
+                </span>
+              ) : meta?.other_last_seen_at ? (
+                <span className="shrink-0 text-[11px] text-text-muted">{lastSeenText(meta.other_last_seen_at)}</span>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="text-xs text-text-muted truncate">
+                {meta?.job_title} at {meta?.company_name}
+              </p>
+              {meta?.application_status && (
+                <span className={`shrink-0 inline-block rounded px-1.5 py-[1px] text-[10px] font-medium leading-tight ${STATUS_COLORS[meta.application_status] || STATUS_COLORS.applied}`}>
+                  {STATUS_LABELS[meta.application_status] || meta.application_status}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Actions menu toggle */}
+          <div className="relative">
+            <button
+              onClick={() => setShowActions(!showActions)}
+              className="flex items-center justify-center h-8 w-8 rounded-md text-text-light hover:text-primary hover:bg-primary/5 transition-colors"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
+              </svg>
+            </button>
+            {showActions && (
+              <ThreadActions
+                conversationId={conversationId}
+                isArchived={meta?.is_archived || false}
+                onArchiveToggle={handleArchiveToggle}
+                onClose={() => setShowActions(false)}
+              />
+            )}
           </div>
         </div>
 
-        {/* Actions menu toggle */}
-        <div className="relative">
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="flex items-center justify-center h-8 w-8 rounded-lg border border-border text-text-light hover:border-primary/30 hover:text-primary transition-all duration-200"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
-            </svg>
-          </button>
-          {showActions && (
-            <ThreadActions
-              conversationId={conversationId}
-              isArchived={meta?.is_archived || false}
-              onArchiveToggle={handleArchiveToggle}
-              onClose={() => setShowActions(false)}
+        {/* Archive banner */}
+        {meta?.is_archived && (
+          <div className="flex items-center justify-between px-5 py-2 bg-amber-50 border-b border-amber-200">
+            <p className="text-xs text-amber-700">This conversation is archived.</p>
+            <button
+              onClick={handleArchiveToggle}
+              className="text-xs font-medium text-amber-700 underline hover:no-underline"
+            >
+              Move to inbox
+            </button>
+          </div>
+        )}
+
+        {/* Messages */}
+        <MessageThread
+          messages={messages}
+          currentUserId={user?.id || ""}
+          otherName={meta?.other_display_name || "them"}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onLoadMore={loadOlderMessages}
+        />
+
+        {/* Send error banner */}
+        {sendError && (
+          <div className="px-5 py-2 bg-red-50 border-t border-red-200">
+            <p className="text-xs text-red-600">{sendError}</p>
+          </div>
+        )}
+
+        {/* Blocked banner */}
+        {isBlocked && (
+          <div className="px-5 py-3 bg-bg-alt border-t border-border text-center">
+            <p className="text-sm text-text-muted">This participant is blocked and cannot send messages.</p>
+          </div>
+        )}
+
+        {/* Awaiting employer reply banner (seeker only) */}
+        {!isBlocked && isSeekerAwaitingReply && (
+          <div className="px-5 py-3 bg-amber-50 border-t border-amber-200 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+              <p className="text-sm text-amber-700">Your application has been sent. You&apos;ll be able to continue the conversation once the employer responds.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Compose area */}
+        {!isBlocked && !isSeekerAwaitingReply && (
+          <div className="relative">
+            {showTemplates && (
+              <TemplateDrawer
+                onSelect={handleTemplateInsert}
+                onClose={() => setShowTemplates(false)}
+              />
+            )}
+            <ComposeBox
+              onSend={handleSend}
+              onTemplateToggle={() => setShowTemplates(!showTemplates)}
+              externalValue={composeValue}
+              onExternalValueConsumed={() => setComposeValue("")}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Archive banner */}
-      {meta?.is_archived && (
-        <div className="flex items-center justify-between px-4 py-2 bg-amber-50 border-b border-amber-200">
-          <p className="text-xs text-amber-700">This conversation is archived.</p>
-          <button
-            onClick={handleArchiveToggle}
-            className="text-xs font-medium text-amber-700 underline hover:no-underline"
-          >
-            Move to inbox
-          </button>
-        </div>
-      )}
-
-      {/* Messages */}
-      <MessageThread
-        messages={messages}
-        currentUserId={user?.id || ""}
-        otherName={meta?.other_display_name || "them"}
-        hasMore={hasMore}
-        loadingMore={loadingMore}
-        onLoadMore={loadOlderMessages}
-      />
-
-      {/* Send error banner */}
-      {sendError && (
-        <div className="px-4 py-2 bg-red-50 border-t border-red-200">
-          <p className="text-xs text-red-600">{sendError}</p>
-        </div>
-      )}
-
-      {/* Blocked banner */}
-      {isBlocked && (
-        <div className="px-4 py-3 bg-bg-alt border-t border-border text-center">
-          <p className="text-sm text-text-muted">This participant is blocked and cannot send messages.</p>
-        </div>
-      )}
-
-      {/* Awaiting employer reply banner (seeker only) */}
-      {!isBlocked && isSeekerAwaitingReply && (
-        <div className="px-4 py-3 bg-amber-50 border-t border-amber-200 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <svg className="h-4 w-4 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-            </svg>
-            <p className="text-sm text-amber-700">Your application has been sent. You&apos;ll be able to continue the conversation once the employer responds.</p>
-          </div>
-        </div>
-      )}
-
-      {/* Compose area */}
-      {!isBlocked && !isSeekerAwaitingReply && (
-        <div className="relative">
-          {showTemplates && (
-            <TemplateDrawer
-              onSelect={handleTemplateInsert}
-              onClose={() => setShowTemplates(false)}
-            />
-          )}
-          <ComposeBox
-            onSend={handleSend}
-            onTemplateToggle={() => setShowTemplates(!showTemplates)}
-            externalValue={composeValue}
-            onExternalValueConsumed={() => setComposeValue("")}
-          />
-        </div>
-      )}
     </div>
   );
 }

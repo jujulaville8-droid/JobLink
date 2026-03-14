@@ -106,14 +106,14 @@ export default function MessagesPage() {
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">{pageTitle}</h1>
+        <h1 className="text-xl font-semibold font-display text-text sm:text-2xl">{pageTitle}</h1>
       </div>
 
       {/* Tabs */}
-      <div className="mt-4 flex gap-1 rounded-xl bg-bg-alt p-1 w-fit">
+      <div className="mt-3 flex gap-0.5 rounded-md bg-bg-alt p-0.5 w-fit">
         <button
           onClick={() => setTab("active")}
-          className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+          className={`rounded-[5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
             tab === "active"
               ? "bg-white text-text shadow-sm"
               : "text-text-light hover:text-text"
@@ -123,7 +123,7 @@ export default function MessagesPage() {
         </button>
         <button
           onClick={() => setTab("archived")}
-          className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+          className={`rounded-[5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
             tab === "archived"
               ? "bg-white text-text shadow-sm"
               : "text-text-light hover:text-text"
@@ -135,11 +135,11 @@ export default function MessagesPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-[13px] text-red-600">{error}</p>
           <button
             onClick={() => fetchInbox(tab === "archived")}
-            className="mt-2 text-sm font-medium text-red-700 underline hover:no-underline"
+            className="mt-2 text-[13px] font-medium text-red-700 underline hover:no-underline"
           >
             Try again
           </button>
@@ -148,13 +148,13 @@ export default function MessagesPage() {
 
       {/* Loading state */}
       {loading && !error && (
-        <div className="mt-6 space-y-2">
+        <div className="mt-5 space-y-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border border-border bg-white p-4 sm:p-5 animate-pulse">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full skeleton" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-1/3 skeleton rounded" />
+            <div key={i} className="rounded-lg border border-border bg-white px-4 py-3.5 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-md skeleton" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-1/3 skeleton rounded" />
                   <div className="h-3 w-2/3 skeleton rounded" />
                 </div>
               </div>
@@ -165,24 +165,24 @@ export default function MessagesPage() {
 
       {/* Empty state */}
       {!loading && !error && conversations.length === 0 && (
-        <div className="mt-16 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-bg-alt">
+        <div className="mt-14 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-bg-alt">
             {tab === "archived" ? (
-              <svg className="h-8 w-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="21 8 21 21 3 21 3 8" />
                 <rect x="1" y="3" width="22" height="5" />
                 <line x1="10" y1="12" x2="14" y2="12" />
               </svg>
             ) : (
-              <svg className="h-8 w-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
               </svg>
             )}
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-text">
+          <h3 className="mt-3 text-[15px] font-semibold text-text">
             {tab === "archived" ? "No archived conversations" : "No messages yet"}
           </h3>
-          <p className="mt-1 text-sm text-text-light max-w-sm mx-auto">
+          <p className="mt-1 text-[13px] text-text-light max-w-sm mx-auto">
             {tab === "archived"
               ? "Conversations you archive will appear here. You can restore them anytime."
               : isEmployer
@@ -195,7 +195,7 @@ export default function MessagesPage() {
 
       {/* Conversation list */}
       {!loading && !error && conversations.length > 0 && (
-        <div className="mt-6 space-y-2">
+        <div className="mt-4 border border-border rounded-lg bg-white overflow-hidden divide-y divide-border">
           {conversations.map((conv) => {
             const appStatus = conv.application_context.application_status as ApplicationStatus;
             const isUnread = conv.unread_count > 0;
@@ -204,10 +204,8 @@ export default function MessagesPage() {
               <Link
                 key={conv.id}
                 href={`/messages/${conv.id}`}
-                className={`group relative flex items-center gap-4 rounded-2xl border bg-white p-4 sm:p-5 transition-all duration-300 hover:shadow-md hover:shadow-primary/[0.04] ${
-                  isUnread
-                    ? "border-primary/20 hover:border-primary/30"
-                    : "border-border hover:border-primary/20"
+                className={`group relative flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 ${
+                  isUnread ? "bg-primary/[0.02]" : ""
                 }`}
               >
                 {/* Avatar with online indicator */}
@@ -216,15 +214,15 @@ export default function MessagesPage() {
                     <img
                       src={conv.other_participant.avatar_url}
                       alt=""
-                      className="h-12 w-12 rounded-full object-cover border border-border"
+                      className="h-10 w-10 rounded-md object-cover border border-border"
                     />
                   ) : (
-                    <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
+                    <div className="h-10 w-10 rounded-md bg-primary flex items-center justify-center text-white font-semibold text-sm">
                       {conv.other_participant.display_name.charAt(0).toUpperCase()}
                     </div>
                   )}
                   {conv.other_participant.is_online && (
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-white" />
                   )}
                 </div>
 
@@ -232,8 +230,8 @@ export default function MessagesPage() {
                 <div className="min-w-0 flex-1">
                   {/* Row 1: Name + time */}
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className={`text-sm truncate transition-colors ${
-                      isUnread ? "font-bold text-text" : "font-semibold text-text-light"
+                    <h3 className={`text-[13px] truncate transition-colors ${
+                      isUnread ? "font-semibold text-text" : "font-medium text-text-light"
                     } group-hover:text-primary`}>
                       {conv.other_participant.display_name}
                     </h3>
@@ -243,26 +241,26 @@ export default function MessagesPage() {
                   </div>
 
                   {/* Row 2: Job title + application status */}
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-text-muted truncate">
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <p className="text-[11px] text-text-muted truncate">
                       {conv.application_context.job_title}
                       {isEmployer ? "" : ` at ${conv.application_context.company_name}`}
                     </p>
                     {appStatus && (
-                      <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${STATUS_COLORS[appStatus] || STATUS_COLORS.applied}`}>
+                      <span className={`shrink-0 inline-block rounded px-1.5 py-[1px] text-[10px] font-medium leading-tight ${STATUS_COLORS[appStatus] || STATUS_COLORS.applied}`}>
                         {STATUS_LABELS[appStatus] || appStatus}
                       </span>
                     )}
                   </div>
 
                   {/* Row 3: Last message + unread badge */}
-                  <div className="flex items-center justify-between gap-2 mt-1">
-                    <p className={`text-sm truncate ${isUnread ? "text-text font-medium" : "text-text-light"}`}>
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <p className={`text-[13px] truncate ${isUnread ? "text-text font-medium" : "text-text-light"}`}>
                       {conv.last_message_sender_id === user?.id ? "You: " : ""}
                       {conv.last_message_text || "No messages yet"}
                     </p>
                     {isUnread && (
-                      <span className="shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-white text-[10px] font-bold px-1.5">
+                      <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-white text-[10px] font-bold px-1">
                         {conv.unread_count}
                       </span>
                     )}
@@ -274,17 +272,17 @@ export default function MessagesPage() {
                   onClick={(e) => handleArchive(e, conv.id)}
                   disabled={archivingId === conv.id}
                   title={tab === "archived" ? "Move to inbox" : "Archive"}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center h-8 w-8 rounded-lg border border-border text-text-muted hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
+                  className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center h-7 w-7 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-all duration-150"
                 >
                   {archivingId === conv.id ? (
                     <div className="h-3 w-3 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
                   ) : tab === "archived" ? (
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="1 4 1 10 7 10" />
                       <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                     </svg>
                   ) : (
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="21 8 21 21 3 21 3 8" />
                       <rect x="1" y="3" width="22" height="5" />
                       <line x1="10" y1="12" x2="14" y2="12" />
@@ -303,14 +301,14 @@ export default function MessagesPage() {
 function InboxSkeleton({ title }: { title: string }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">{title}</h1>
-      <div className="mt-8 space-y-2">
+      <h1 className="text-xl font-semibold font-display text-text sm:text-2xl">{title}</h1>
+      <div className="mt-5 border border-border rounded-lg bg-white overflow-hidden divide-y divide-border">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-2xl border border-border bg-white p-4 sm:p-5 animate-pulse">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full skeleton" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 w-1/3 skeleton rounded" />
+          <div key={i} className="px-4 py-3.5 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-md skeleton" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-1/3 skeleton rounded" />
                 <div className="h-3 w-2/3 skeleton rounded" />
               </div>
             </div>

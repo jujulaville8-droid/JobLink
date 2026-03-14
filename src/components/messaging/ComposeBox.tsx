@@ -75,15 +75,14 @@ export default function ComposeBox({
   const hasText = body.trim().length > 0;
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-end gap-2 p-4 border-t border-border bg-white">
+    <form onSubmit={handleSubmit} className="flex items-end gap-2 px-4 py-3 border-t border-border bg-white">
       {/* Templates button */}
       {onTemplateToggle && (
-        <motion.button
+        <button
           type="button"
           onClick={onTemplateToggle}
           title="Quick replies"
-          whileTap={{ scale: 0.9 }}
-          className="shrink-0 flex items-center justify-center h-10 w-10 rounded-xl border border-border text-text-muted hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
+          className="shrink-0 flex items-center justify-center h-8 w-8 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="8" y1="6" x2="21" y2="6" />
@@ -93,7 +92,7 @@ export default function ComposeBox({
             <line x1="3" y1="12" x2="3.01" y2="12" />
             <line x1="3" y1="18" x2="3.01" y2="18" />
           </svg>
-        </motion.button>
+        </button>
       )}
 
       <textarea
@@ -102,11 +101,11 @@ export default function ComposeBox({
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
         onInput={handleInput}
-        placeholder="Type a message..."
+        placeholder="Write a message..."
         disabled={disabled || sending}
         rows={1}
         maxLength={5000}
-        className="flex-1 resize-none rounded-xl border border-border bg-bg-alt px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10 placeholder:text-text-muted/60 disabled:opacity-50"
+        className="flex-1 resize-none rounded-md border border-border bg-gray-50 px-3 py-2 text-[13px] leading-[1.5] outline-none transition-colors focus:border-primary/40 focus:bg-white placeholder:text-text-muted/50 disabled:opacity-50"
       />
 
       <AnimatePresence mode="wait">
@@ -114,18 +113,17 @@ export default function ComposeBox({
           key={hasText ? "send" : "send-disabled"}
           type="submit"
           disabled={!hasText || sending || disabled}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 20 }}
-          className="shrink-0 flex items-center justify-center h-10 w-10 rounded-xl bg-primary text-white transition-all duration-200 hover:bg-primary-dark hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          transition={{ duration: 0.15 }}
+          className="shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-primary text-white transition-colors hover:bg-primary-dark disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {sending ? (
             <motion.div
-              className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full"
+              className="h-3.5 w-3.5 border-[1.5px] border-white/30 border-t-white rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
             />
           ) : (
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" />
               <polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>

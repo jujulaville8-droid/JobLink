@@ -29,6 +29,24 @@ function formatTime(dateStr: string): string {
   return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
 }
 
+// Detect system/application messages (cover letter, CV, etc.)
+function isSystemMessage(body: string): boolean {
+  const systemPatterns = [
+    /^📄\s/,
+    /^📎\s/,
+    /^💼\s/,
+    /^🔗\s/,
+    /\[View CV\]/i,
+    /\[View Resume\]/i,
+    /\[Download CV\]/i,
+    /\[Download Resume\]/i,
+    /Cover Letter:/i,
+    /has applied for/i,
+    /Application submitted/i,
+  ];
+  return systemPatterns.some((p) => p.test(body));
+}
+
 // Track which message IDs have already been animated
 const animatedMessages = new Set<string>();
 
@@ -46,68 +64,102 @@ function MessageBubble({
   showTimestamp: boolean;
 }) {
   const isNew = !animatedMessages.has(msg.id);
+  const isSystem = isSystemMessage(msg.body);
 
   useEffect(() => {
     animatedMessages.add(msg.id);
   }, [msg.id]);
 
-  // Bubble shape with tail on last message in group
+  // System/application info card style
+  if (isSystem) {
+    return (
+      <div>
+        {showTimestamp && (
+          <motion.p
+            initial={isNew ? { opacity: 0, y: 4 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-center text-[11px] font-medium text-text-muted/50 py-2 select-none"
+          >
+            {formatTime(msg.created_at)}
+          </motion.p>
+        )}
+        <div className={`flex justify-center ${isGrouped && !showTimestamp ? "mt-1" : "mt-1.5"}`}>
+          <motion.div
+            initial={isNew ? { opacity: 0, y: 6 } : false}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            className="max-w-[85%] w-full border border-border rounded-md bg-slate-50 px-4 py-3"
+          >
+            <div className="flex items-start gap-2.5">
+              <div className="shrink-0 mt-0.5">
+                <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
+              </div>
+              <p className="text-[13px] leading-[1.5] text-text whitespace-pre-wrap break-words">{msg.body}</p>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Professional bubble radii — subtle tail on last in group
   const bubbleRadius = isMine
     ? isLastInGroup
-      ? "rounded-[20px] rounded-br-[6px]"
-      : "rounded-[20px]"
+      ? "rounded-lg rounded-br-sm"
+      : "rounded-lg"
     : isLastInGroup
-      ? "rounded-[20px] rounded-bl-[6px]"
-      : "rounded-[20px]";
+      ? "rounded-lg rounded-bl-sm"
+      : "rounded-lg";
 
   const bubbleColor = isMine
     ? msg._failed
-      ? "bg-red-100 text-red-700"
+      ? "bg-red-50 text-red-700 border border-red-200"
       : msg._optimistic
-        ? "bg-primary/80 text-white"
+        ? "bg-primary/90 text-white"
         : "bg-primary text-white"
-    : "bg-bg-alt text-text";
+    : "bg-gray-50 text-text border border-border";
 
   return (
     <div>
       {showTimestamp && (
         <motion.p
-          initial={isNew ? { opacity: 0, y: 5 } : false}
+          initial={isNew ? { opacity: 0, y: 4 } : false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="text-center text-[11px] font-medium text-text-muted/50 py-3 select-none"
+          transition={{ duration: 0.2 }}
+          className="text-center text-[11px] font-medium text-text-muted/50 py-2 select-none"
         >
           {formatTime(msg.created_at)}
         </motion.p>
       )}
-      <div className={`flex ${isMine ? "justify-end" : "justify-start"} ${isGrouped && !showTimestamp ? "mt-[3px]" : "mt-2"}`}>
+      <div className={`flex ${isMine ? "justify-end" : "justify-start"} ${isGrouped && !showTimestamp ? "mt-[2px]" : "mt-1.5"}`}>
         <motion.div
           initial={isNew ? {
             opacity: 0,
-            scale: 0.85,
-            y: 8,
-            x: isMine ? 12 : -12,
+            y: 6,
+            x: isMine ? 8 : -8,
           } : false}
           animate={{
             opacity: 1,
-            scale: 1,
             y: 0,
             x: 0,
           }}
           transition={{
             type: "spring",
-            stiffness: 400,
-            damping: 25,
-            mass: 0.8,
+            stiffness: 500,
+            damping: 30,
+            mass: 0.6,
           }}
-          className={`max-w-[75%] px-[14px] py-[9px] text-[15px] leading-[1.35] ${bubbleRadius} ${bubbleColor} shadow-sm`}
+          className={`max-w-[70%] px-3 py-2 text-[13px] leading-[1.5] ${bubbleRadius} ${bubbleColor}`}
         >
           <p className="whitespace-pre-wrap break-words">{msg.body}</p>
           {msg._optimistic && !msg._failed && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-[10px] mt-1 text-white/50 font-medium"
+              className="text-[10px] mt-0.5 text-white/50 font-medium"
             >
               Sending...
             </motion.p>
@@ -116,7 +168,7 @@ function MessageBubble({
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-[10px] mt-1 text-red-500 font-medium"
+              className="text-[10px] mt-0.5 text-red-500 font-medium"
             >
               Not delivered
             </motion.p>
@@ -151,7 +203,6 @@ export default function MessageThread({
     if (isNewMessage) {
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
       if (isNearBottom) {
-        // Small delay to let the animation start, then scroll
         requestAnimationFrame(() => {
           container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
         });
@@ -187,18 +238,18 @@ export default function MessageThread({
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8 text-center">
+      <div className="flex-1 flex items-center justify-center p-8 text-center bg-gray-50/50">
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 24 }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/[0.07] mb-3">
-            <svg className="h-7 w-7 text-primary/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary/[0.06] mb-3">
+            <svg className="h-5 w-5 text-primary/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
             </svg>
           </div>
-          <p className="text-[14px] text-text-muted/70">Start the conversation with {otherName}</p>
+          <p className="text-[13px] text-text-muted">Start the conversation with {otherName}</p>
         </motion.div>
       </div>
     );
@@ -208,23 +259,23 @@ export default function MessageThread({
     <div
       ref={scrollContainerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-4 py-6 space-y-1"
+      className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50/30"
     >
       {/* Load more indicator */}
       <AnimatePresence>
         {loadingMore && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex justify-center py-3"
+            exit={{ opacity: 0, y: -8 }}
+            className="flex justify-center py-2"
           >
             <div className="flex gap-1">
               {[0, 1, 2].map((i) => (
                 <motion.div
                   key={i}
-                  className="h-2 w-2 rounded-full bg-primary/40"
-                  animate={{ y: [0, -6, 0] }}
+                  className="h-1.5 w-1.5 rounded-full bg-primary/40"
+                  animate={{ y: [0, -4, 0] }}
                   transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
                 />
               ))}
@@ -233,10 +284,10 @@ export default function MessageThread({
         )}
       </AnimatePresence>
       {hasMore && !loadingMore && (
-        <div className="flex justify-center py-2">
+        <div className="flex justify-center py-1.5">
           <button
             onClick={onLoadMore}
-            className="text-xs text-primary/70 font-medium hover:text-primary transition-colors"
+            className="text-[11px] text-primary/70 font-medium hover:text-primary transition-colors"
           >
             Load older messages
           </button>
