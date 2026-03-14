@@ -596,7 +596,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
                       </p>
                       <p className="text-sm text-text-light">
                         Posted {formatDate(job.created_at as string)}
-                        {job.expires_at && (
+                        {(job.expires_at as string | null) && (
                           <span className="text-text-muted"> &middot; Expires {formatDate(job.expires_at as string)}</span>
                         )}
                       </p>
