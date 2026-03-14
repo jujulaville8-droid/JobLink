@@ -134,7 +134,7 @@ export default function AboutPage() {
             to hear from you.
           </p>
           <a
-            href="mailto:hello@joblink.ag"
+            href="mailto:hello@joblinkantigua.com"
             className="inline-block bg-[#14919b] hover:bg-[#0d7377] text-white font-semibold px-8 py-3 rounded-full transition-colors"
           >
             Contact Us
@@ -142,7 +142,7 @@ export default function AboutPage() {
           <div className="mt-12 grid sm:grid-cols-2 gap-6 max-w-md mx-auto text-left">
             <div>
               <h4 className="font-semibold text-[#0d7377] mb-1">Email</h4>
-              <p className="text-[#71717a]">hello@joblink.ag</p>
+              <p className="text-[#71717a]">hello@joblinkantigua.com</p>
             </div>
             <div>
               <h4 className="font-semibold text-[#0d7377] mb-1">Location</h4>

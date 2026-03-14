@@ -51,7 +51,7 @@ export default function EmployerSignupPage() {
       password,
       options: {
         data: { role: 'employer' },
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=employer`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=employer&returnTo=/login?verified=true`,
       },
     })
 

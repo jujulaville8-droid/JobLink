@@ -145,7 +145,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   const jobTypeLabel =
     JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type;
 
-  const jobUrl = `https://joblink.ag/jobs/${job.id}`;
+  const jobUrl = `https://joblinkantigua.com/jobs/${job.id}`;
   const whatsappText = encodeURIComponent(
     `Check out this job: ${job.title} at ${company?.company_name || "a company"} - ${jobUrl}`
   );

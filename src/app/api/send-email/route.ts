@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const FROM_ADDRESS = 'JobLink <notifications@joblink.ag>'
+const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
 
 type EmailType =
   | 'application_confirmation'
@@ -48,59 +48,74 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
     </html>
   `
 
+  const btnStyle = 'background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;'
+  const statusLabel: Record<string, { text: string; color: string }> = {
+    shortlisted: { text: 'Shortlisted', color: '#059669' },
+    rejected: { text: 'Not Selected', color: '#dc2626' },
+    hired: { text: 'Hired', color: '#0d7377' },
+  }
+
   switch (type) {
     case 'application_confirmation':
       return {
-        subject: `Application submitted: ${data.job_title}`,
+        subject: `You applied for ${data.job_title} — we'll keep you posted`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Application Submitted</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">Application Sent!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has been submitted successfully.
+            Nice one — your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has been submitted.
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            The employer will review your application and get back to you. You can track your application status from your dashboard.
+            The employer will review it and you'll get an email as soon as your status changes. In the meantime, you can track everything from your dashboard.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Dashboard</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">View My Applications</a></p>` : ''}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Keep applying — the more you put out, the better your chances.</p>
         `),
       }
 
     case 'new_applicant':
       return {
-        subject: `New applicant for ${data.job_title}`,
+        subject: `${data.applicant_name} just applied for ${data.job_title}`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">New Application Received</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">You Have a New Applicant</h2>
           <p style="color: #374151; line-height: 1.6;">
-            <strong>${data.applicant_name}</strong> has applied for the position of <strong>${data.job_title}</strong>.
+            <strong>${data.applicant_name}</strong> has applied for <strong>${data.job_title}</strong>. Their profile, CV, and cover letter are ready for you to review.
           </p>
-          <p style="color: #374151; line-height: 1.6;">
-            Log in to your dashboard to review the application and manage candidates.
-          </p>
-          ${data.application_url ? `<p style="margin-top: 24px;"><a href="${data.application_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Review Application</a></p>` : ''}
+          ${data.application_url ? `<p style="margin-top: 24px;"><a href="${data.application_url}" style="${btnStyle}">Review Applicant</a></p>` : ''}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>
         `),
       }
 
-    case 'status_update':
+    case 'status_update': {
+      const info = statusLabel[data.status || ''] || { text: data.status || 'Updated', color: '#14919b' }
+      const isHired = data.status === 'hired'
+      const isRejected = data.status === 'rejected'
       return {
-        subject: `Application update: ${data.job_title}`,
+        subject: isHired
+          ? `Congratulations! You got the job: ${data.job_title}`
+          : `Update on your application: ${data.job_title}`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Application Status Update</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">${isHired ? 'Congratulations!' : 'Application Update'}</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has been updated.
+            Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has a new status:
           </p>
-          <p style="color: #374151; line-height: 1.6;">
-            New status: <strong style="color: #14919b;">${data.status}</strong>
-          </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Details</a></p>` : ''}
+          <div style="background-color: ${info.color}10; border-left: 4px solid ${info.color}; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
+            <p style="color: ${info.color}; font-weight: 700; margin: 0; font-size: 16px;">${info.text}</p>
+          </div>
+          ${isHired ? `<p style="color: #374151; line-height: 1.6;">The employer has selected you for the role. Expect to hear from them shortly about next steps.</p>` : ''}
+          ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLink.</p>` : ''}
+          ${!isHired && !isRejected ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">${isRejected ? 'Browse More Jobs' : 'View Details'}</a></p>` : ''}
         `),
       }
+    }
 
     case 'job_alert':
       return {
-        subject: 'New jobs matching your alert',
+        subject: `New jobs on JobLink that match your alert`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">New Job Matches</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">Jobs Matching Your Alert</h2>
           <p style="color: #374151; line-height: 1.6;">
-            We found new jobs matching your alert preferences:
+            Here are fresh opportunities that match what you're looking for:
           </p>
           ${
             data.jobs
@@ -109,57 +124,58 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
                 <h3 style="color: #0d7377; margin: 0 0 4px 0; font-size: 16px;">${job.title}</h3>
                 <p style="color: #6b7280; margin: 0; font-size: 14px;">${job.company}</p>
-                ${job.url ? `<a href="${job.url}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600;">View Job &rarr;</a>` : ''}
+                ${job.url ? `<a href="${job.url}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">View &amp; Apply &rarr;</a>` : ''}
               </div>
             `
               )
               .join('') || '<p style="color: #6b7280;">No jobs to display.</p>'
           }
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 16px;">You can manage your alerts from your dashboard settings.</p>
         `),
       }
 
     case 'listing_expiry':
       return {
-        subject: `Your listing is expiring: ${data.listing_title}`,
+        subject: `Heads up: "${data.listing_title}" expires soon`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Listing Expiring Soon</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">Your Listing Is Expiring</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${data.listing_title}</strong> is set to expire on <strong>${data.expires_at}</strong>.
+            Your job listing <strong>${data.listing_title}</strong> expires on <strong>${data.expires_at}</strong>.
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            Log in to your dashboard to renew or extend the listing if you are still hiring.
+            Still hiring? Repost or extend the listing from your dashboard to keep receiving applications.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">Manage Listing</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">Manage Listing</a></p>` : ''}
         `),
       }
 
     case 'listing_approved':
       return {
-        subject: `Your listing has been approved: ${data.listing_title}`,
+        subject: `Your listing "${data.listing_title}" is now live!`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Listing Approved!</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">You're Live!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Great news! Your job listing <strong>${data.listing_title}</strong> has been approved and is now live on JobLink.
+            Your job listing <strong>${data.listing_title}</strong> has been approved and is now visible to job seekers across Antigua and Barbuda.
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            Job seekers can now find and apply to your listing. You can manage it from your dashboard.
+            You'll receive an email each time someone applies. You can also check applicants anytime from your dashboard.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">View Listing</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">View My Listings</a></p>` : ''}
         `),
       }
 
     case 'listing_rejected':
       return {
-        subject: `Listing not approved: ${data.listing_title}`,
+        subject: `Your listing "${data.listing_title}" needs changes`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Listing Not Approved</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">Listing Needs Revision</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${data.listing_title}</strong> was not approved. This may be due to incomplete information or a policy concern.
+            Your job listing <strong>${data.listing_title}</strong> wasn't approved this time. This is usually because of missing details or a content issue.
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            Please review your listing and resubmit, or contact support if you have questions.
+            Please review it and resubmit. If you're unsure what to change, reply to this email and we'll help.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">My Listings</a></p>` : ''}
+          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">Edit My Listing</a></p>` : ''}
         `),
       }
 

@@ -113,10 +113,10 @@ export default function PrivacyPage() {
               If you have questions about this privacy policy or your data,
               contact us at{' '}
               <a
-                href="mailto:hello@joblink.ag"
+                href="mailto:hello@joblinkantigua.com"
                 className="text-[#14919b] hover:underline"
               >
-                hello@joblink.ag
+                hello@joblinkantigua.com
               </a>
               .
             </p>

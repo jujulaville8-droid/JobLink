@@ -9,6 +9,7 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const returnTo = searchParams.get('returnTo')
+  const verified = searchParams.get('verified') === 'true'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -77,6 +78,12 @@ export default function LoginPage() {
       <h1 className="font-display text-2xl text-text text-center mb-6">
         Welcome back
       </h1>
+
+      {verified && (
+        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-[--radius-input] px-4 py-3 text-center">
+          Email verified successfully! Sign in to get started.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (

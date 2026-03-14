@@ -62,7 +62,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { role },
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}&returnTo=/login?verified=true`,
       },
     })
 

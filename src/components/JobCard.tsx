@@ -66,7 +66,7 @@ export default function JobCard({ job }: { job: Job }) {
     colors.length;
 
   const whatsappText = encodeURIComponent(
-    `Check out this job: ${job.title} at ${job.company_name} — https://joblink.ag/jobs/${job.id}`
+    `Check out this job: ${job.title} at ${job.company_name} — https://joblinkantigua.com/jobs/${job.id}`
   );
 
   return (
