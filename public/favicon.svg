@@ -1,13 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="7" fill="#0d7377"/>
-  <g transform="translate(4, 3)">
-    <!-- Location pin outline -->
-    <path d="M12 1C7.58 1 4 4.58 4 9c0 6 8 14 8 14s8-8 8-14c0-4.42-3.58-8-8-8z" stroke="white" stroke-width="1.6" fill="none"/>
-    <!-- Briefcase body -->
-    <rect x="7" y="7" width="10" height="6" rx="1.2" stroke="white" stroke-width="1.4" fill="none"/>
-    <!-- Briefcase handle -->
-    <path d="M9.5 7V6a1.5 1.5 0 011.5-1.5h2A1.5 1.5 0 0114.5 6v1" stroke="white" stroke-width="1.2" fill="none"/>
-    <!-- Briefcase clasp -->
-    <line x1="7" y1="9.8" x2="17" y2="9.8" stroke="white" stroke-width="0.8" opacity="0.5"/>
+  <defs>
+    <linearGradient id="grad" x1="16" y1="14" x2="16" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14919b"/>
+      <stop offset="1" stop-color="#5bbcad"/>
+    </linearGradient>
+    <!-- Clip: only show bottom link where it overlaps in front of top link -->
+    <clipPath id="clip-bottom-front">
+      <rect x="0" y="0" width="12.25" height="32"/>
+      <rect x="19.75" y="0" width="12.25" height="32"/>
+      <rect x="12.25" y="17" width="7.5" height="15"/>
+      <rect x="12.25" y="0" width="7.5" height="13"/>
+    </clipPath>
+  </defs>
+
+  <!-- Top chain link (dark navy/teal) - drawn first, full shape -->
+  <rect x="9.25" y="1.5" width="13.5" height="17" rx="6.75" fill="none" stroke="#1a3a4a" stroke-width="3.2"/>
+
+  <!-- Bottom chain link (teal-green gradient) - clipped so middle overlaps correctly -->
+  <rect x="9.25" y="13.5" width="13.5" height="17" rx="6.75" fill="none" stroke="url(#grad)" stroke-width="3.2" clip-path="url(#clip-bottom-front)"/>
+
+  <!-- Re-draw the bottom portion of the bottom link on top for interlock -->
+  <path d="M9.25 20.25a6.75 6.75 0 0 0 6.75 6.75v0a6.75 6.75 0 0 0 6.75-6.75" fill="none" stroke="url(#grad)" stroke-width="3.2"/>
+
+  <!-- Palm tree inside top link -->
+  <g transform="translate(14, 5)" opacity="0.9">
+    <!-- Trunk -->
+    <line x1="2" y1="10" x2="2.8" y2="4" stroke="#1a3a4a" stroke-width="1.2" stroke-linecap="round"/>
+    <!-- Left frond -->
+    <path d="M2.5 4.5C1 3.5-0.5 3.5-0.5 3.5s1.5 0 3 0.8" stroke="#1a3a4a" stroke-width="1" stroke-linecap="round" fill="none"/>
+    <!-- Right frond -->
+    <path d="M2.5 4.5C4 3.5 5.5 3.5 5.5 3.5s-1.5 0-3 0.8" stroke="#1a3a4a" stroke-width="1" stroke-linecap="round" fill="none"/>
+    <!-- Center frond -->
+    <path d="M2.6 4.5C2.2 3 2.5 1.5 2.5 1.5s0.5 1.2 0.5 2.8" stroke="#1a3a4a" stroke-width="1" stroke-linecap="round" fill="none"/>
   </g>
 </svg>
