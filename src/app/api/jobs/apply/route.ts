@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       if (insertError.code === '23505') {
         return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
       }
+      console.error('[apply] insert application error:', insertError)
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
     }
 
@@ -94,10 +95,10 @@ export async function POST(request: NextRequest) {
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
     const companyName = company?.company_name || 'the company'
 
-    // Get seeker name for employer notification
+    // Get seeker name + CV for employer notification and auto-thread
     const { data: seekerInfo } = await supabase
       .from('seeker_profiles')
-      .select('first_name, last_name')
+      .select('first_name, last_name, cv_url')
       .eq('id', seekerProfile.id)
       .single()
 
@@ -105,7 +106,76 @@ export async function POST(request: NextRequest) {
       ? `${seekerInfo.first_name || ''} ${seekerInfo.last_name || ''}`.trim() || 'A candidate'
       : 'A candidate'
 
-    // 1. Confirmation to seeker
+    // ── Auto-create messaging thread ──
+    let conversationId: string | null = null
+    const employerUserId = company?.user_id
+
+    if (employerUserId) {
+      const messageParts: string[] = []
+      messageParts.push(`Hi, I've applied for the ${job.title} position.`)
+
+      if (cover_letter_text?.trim()) {
+        messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
+      }
+
+      if (seekerInfo?.cv_url) {
+        messageParts.push(`\n--- Resume/CV ---\n${seekerInfo.cv_url}`)
+      }
+
+      const firstMessageBody = messageParts.join('\n')
+
+      // Create conversation
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .insert({ application_id: application.id })
+        .select()
+        .single()
+
+      if (convError) {
+        console.error('[apply] create conversation error:', convError)
+      }
+
+      if (conversation) {
+        conversationId = conversation.id
+
+        // Add both participants
+        const { error: partError } = await supabase
+          .from('conversation_participants')
+          .insert([
+            { conversation_id: conversation.id, user_id: user.id },
+            { conversation_id: conversation.id, user_id: employerUserId },
+          ])
+
+        if (partError) {
+          console.error('[apply] insert participants error:', partError)
+        }
+
+        // Insert the first message from the applicant
+        const { error: msgError } = await supabase
+          .from('messages')
+          .insert({
+            conversation_id: conversation.id,
+            sender_id: user.id,
+            body: firstMessageBody,
+          })
+
+        if (msgError) {
+          console.error('[apply] insert message error:', msgError)
+        }
+      }
+    }
+
+    // If we didn't get conversationId from the insert, try looking it up
+    if (!conversationId) {
+      const { data: convLookup } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('application_id', application.id)
+        .single()
+      conversationId = convLookup?.id || null
+    }
+
+    // Fire-and-forget emails
     sendEmail({
       to: user.email!,
       type: 'application_confirmation',
@@ -116,7 +186,6 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // 2. Notification to employer
     if (company?.user_id) {
       const { data: employerUser } = await supabase
         .from('users')
@@ -137,8 +206,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, application }, { status: 201 })
-  } catch {
+    return NextResponse.json({
+      success: true,
+      application,
+      conversation_id: conversationId,
+    }, { status: 201 })
+  } catch (err) {
+    console.error('[apply] unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
