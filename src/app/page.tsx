@@ -3,100 +3,130 @@ import Image from "next/image";
 import SearchBar from "@/components/SearchBar";
 import { HeroCTAs, GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
 import JobCard, { type Job } from "@/components/JobCard";
+import { createClient } from "@/lib/supabase/server";
+import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
-const mockJobs: Job[] = [
-  {
-    id: "1",
-    title: "Front Desk Receptionist",
-    company_name: "Sandals Grande Antigua",
-    company_logo: null,
-    location: "St. John's",
-    job_type: "Full-Time",
-    salary_min: 2500,
-    salary_max: 3200,
-    salary_visible: true,
-    created_at: new Date().toISOString(),
-    is_featured: true,
-  },
-  {
-    id: "2",
-    title: "Accounts Payable Clerk",
-    company_name: "APUA",
-    company_logo: null,
-    location: "St. John's",
-    job_type: "Full-Time",
-    salary_min: 3000,
-    salary_max: 4000,
-    salary_visible: true,
-    created_at: new Date().toISOString(),
-    is_featured: false,
-  },
-  {
-    id: "3",
-    title: "Marketing Coordinator",
-    company_name: "Antigua Barbuda Tourism Authority",
-    company_logo: null,
-    location: "St. George",
-    job_type: "Contract",
-    salary_min: 3500,
-    salary_max: 5000,
-    salary_visible: true,
-    created_at: new Date().toISOString(),
-    is_featured: true,
-  },
-  {
-    id: "4",
-    title: "Chef de Partie",
-    company_name: "Jumby Bay Island",
-    company_logo: null,
-    location: "St. Peter",
-    job_type: "Full-Time",
-    salary_min: 2800,
-    salary_max: 3800,
-    salary_visible: true,
-    created_at: new Date().toISOString(),
-    is_featured: false,
-  },
-  {
-    id: "5",
-    title: "IT Support Technician",
-    company_name: "LIAT 2020",
-    company_logo: null,
-    location: "St. John's",
-    job_type: "Full-Time",
-    salary_min: 3200,
-    salary_max: 4500,
-    salary_visible: true,
-    created_at: new Date().toISOString(),
-    is_featured: false,
-  },
-  {
-    id: "6",
-    title: "Retail Sales Associate",
-    company_name: "Epicurean Fine Foods",
-    company_logo: null,
-    location: "All Saints",
-    job_type: "Part-Time",
-    salary_min: 1500,
-    salary_max: 2000,
-    salary_visible: true,
-    created_at: new Date().toISOString(),
-    is_featured: false,
-  },
-];
+const INDUSTRY_ICONS: Record<string, string> = {
+  "Tourism & Hospitality": "M3 21h18M5 21V7l8-4v18M13 21V3l6 4v14",
+  "Banking & Finance": "M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  "Healthcare": "M22 12h-4l-3 9L9 3l-3 9H2",
+  "Education": "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z",
+  "Construction": "M2 20h20M4 20V10l8-6 8 6v10M9 20v-4h6v4",
+  "Retail & Trade": "M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0",
+  "Government & Civil Service": "M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3",
+  "Technology": "M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16",
+  "Legal": "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  "Other": "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z",
+};
 
-const industries = [
-  { name: "Tourism & Hospitality", icon: "M3 21h18M5 21V7l8-4v18M13 21V3l6 4v14", count: 48 },
-  { name: "Finance & Banking", icon: "M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6", count: 22 },
-  { name: "Healthcare", icon: "M22 12h-4l-3 9L9 3l-3 9H2", count: 18 },
-  { name: "Education", icon: "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zM22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z", count: 15 },
-  { name: "Construction", icon: "M2 20h20M4 20V10l8-6 8 6v10M9 20v-4h6v4", count: 24 },
-  { name: "Retail & Trade", icon: "M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0", count: 31 },
-  { name: "Government", icon: "M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3", count: 12 },
-  { name: "Technology", icon: "M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0l1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16", count: 9 },
-];
+async function getFeaturedJobs(): Promise<Job[]> {
+  try {
+    const supabase = await createClient();
 
-export default function Home() {
+    const { data: jobs } = await supabase
+      .from("job_listings")
+      .select(
+        `
+        id, title, job_type, salary_min, salary_max, salary_visible,
+        location, is_featured, created_at,
+        company:companies ( company_name, logo_url )
+      `
+      )
+      .eq("status", "active")
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(6);
+
+    if (!jobs || jobs.length === 0) return [];
+
+    return jobs.map((job) => {
+      const company = job.company as unknown as {
+        company_name: string;
+        logo_url: string | null;
+      } | null;
+
+      return {
+        id: job.id,
+        title: job.title,
+        company_name: company?.company_name || "Company",
+        company_logo: company?.logo_url || null,
+        location: job.location,
+        job_type: JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type,
+        salary_min: job.salary_min,
+        salary_max: job.salary_max,
+        salary_visible: job.salary_visible,
+        created_at: job.created_at,
+        is_featured: job.is_featured,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function getIndustryCounts(): Promise<{ name: string; icon: string; count: number }[]> {
+  try {
+    const supabase = await createClient();
+
+    const { data: jobs } = await supabase
+      .from("job_listings")
+      .select("category")
+      .eq("status", "active");
+
+    const counts: Record<string, number> = {};
+    if (jobs) {
+      for (const job of jobs) {
+        const cat = job.category || "Other";
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
+    }
+
+    // Return all industries from INDUSTRY_ICONS with their real counts
+    return Object.entries(INDUSTRY_ICONS).map(([name, icon]) => ({
+      name,
+      icon,
+      count: counts[name] || 0,
+    }));
+  } catch {
+    return Object.entries(INDUSTRY_ICONS).map(([name, icon]) => ({
+      name,
+      icon,
+      count: 0,
+    }));
+  }
+}
+
+async function getStats(): Promise<{ seekers: number; listings: number; companies: number }> {
+  try {
+    const supabase = await createClient();
+
+    const [seekersRes, listingsRes, companiesRes] = await Promise.all([
+      supabase.from("seeker_profiles").select("id", { count: "exact", head: true }),
+      supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("companies").select("id", { count: "exact", head: true }),
+    ]);
+
+    return {
+      seekers: seekersRes.count || 0,
+      listings: listingsRes.count || 0,
+      companies: companiesRes.count || 0,
+    };
+  } catch {
+    return { seekers: 0, listings: 0, companies: 0 };
+  }
+}
+
+function formatCount(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k+`;
+  return n > 0 ? String(n) : "—";
+}
+
+export default async function Home() {
+  const [featuredJobs, industries, stats] = await Promise.all([
+    getFeaturedJobs(),
+    getIndustryCounts(),
+    getStats(),
+  ]);
   return (
     <>
       {/* ===== HERO ===== */}
@@ -138,11 +168,11 @@ export default function Home() {
             </div>
 
             <div className="animate-fade-up mt-10 flex items-center justify-center gap-6 sm:gap-8 text-white/50 text-sm" style={{ animationDelay: "400ms" }}>
-              <span><strong className="text-white/85 font-semibold">2,400+</strong> job seekers</span>
+              <span><strong className="text-white/85 font-semibold">{formatCount(stats.seekers)}</strong> job seekers</span>
               <span className="w-px h-3 bg-white/20" />
-              <span><strong className="text-white/85 font-semibold">180</strong> active listings</span>
+              <span><strong className="text-white/85 font-semibold">{formatCount(stats.listings)}</strong> active listings</span>
               <span className="hidden sm:block w-px h-3 bg-white/20" />
-              <span className="hidden sm:block"><strong className="text-white/85 font-semibold">85</strong> companies</span>
+              <span className="hidden sm:block"><strong className="text-white/85 font-semibold">{formatCount(stats.companies)}</strong> companies</span>
             </div>
           </div>
         </div>
@@ -194,11 +224,17 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
-          {mockJobs.map((job) => (
-            <JobCard key={job.id} job={job} />
-          ))}
-        </div>
+        {featuredJobs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
+            {featuredJobs.map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
+            <p className="text-text-light">No jobs posted yet. Check back soon!</p>
+          </div>
+        )}
 
         <div className="mt-8 text-center sm:hidden">
           <Link
@@ -239,7 +275,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="font-semibold text-text text-[13px] leading-tight">{ind.name}</h3>
-                <p className="text-xs text-text-muted mt-1">{ind.count} jobs</p>
+                <p className="text-xs text-text-muted mt-1">{ind.count} {ind.count === 1 ? "job" : "jobs"}</p>
               </Link>
             ))}
           </div>
