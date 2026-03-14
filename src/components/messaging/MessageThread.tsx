@@ -51,7 +51,7 @@ function MessageBubble({
     animatedMessages.add(msg.id);
   }, [msg.id]);
 
-  // Bubble shape: iMessage-style with tail on last message in group
+  // Bubble shape with tail on last message in group
   const bubbleRadius = isMine
     ? isLastInGroup
       ? "rounded-[20px] rounded-br-[6px]"
@@ -66,7 +66,7 @@ function MessageBubble({
       : msg._optimistic
         ? "bg-primary/80 text-white"
         : "bg-primary text-white"
-    : "bg-[#E8E3DB] text-text";
+    : "bg-bg-alt text-text";
 
   return (
     <div>
@@ -208,10 +208,7 @@ export default function MessageThread({
     <div
       ref={scrollContainerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-3 sm:px-4 py-4"
-      style={{
-        background: "linear-gradient(180deg, rgba(250,248,245,0.5) 0%, rgba(255,255,255,0.8) 100%)",
-      }}
+      className="flex-1 overflow-y-auto px-4 py-6 space-y-1"
     >
       {/* Load more indicator */}
       <AnimatePresence>
