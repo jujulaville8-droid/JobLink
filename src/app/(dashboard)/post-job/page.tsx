@@ -7,7 +7,6 @@ import { motion } from 'motion/react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Briefcase01Icon,
-  Location01Icon,
   MoneyBag02Icon,
   Clock01Icon,
   Tick01Icon,
@@ -17,7 +16,6 @@ import {
 } from '@hugeicons/core-free-icons';
 import { cn } from '@/lib/utils';
 import {
-  ANTIGUA_PARISHES,
   INDUSTRIES,
   JOB_TYPE_LABELS,
   type JobType,
@@ -28,7 +26,6 @@ interface FormData {
   description: string;
   category: string;
   job_type: JobType;
-  location: string;
   salary_min: string;
   salary_max: string;
   salary_visible: boolean;
@@ -75,7 +72,6 @@ export default function PostJobPage() {
     description: '',
     category: '',
     job_type: 'full_time',
-    location: '',
     salary_min: '',
     salary_max: '',
     salary_visible: true,
@@ -99,7 +95,6 @@ export default function PostJobPage() {
     if (!form.title.trim()) errs.title = 'Job title is required';
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Please select a category';
-    if (!form.location) errs.location = 'Please select a location';
     if (form.salary_min && form.salary_max) {
       if (Number(form.salary_min) > Number(form.salary_max)) {
         errs.salary_max = 'Max salary must be greater than min salary';
@@ -165,7 +160,6 @@ export default function PostJobPage() {
           description: form.description.trim(),
           category: form.category,
           job_type: form.job_type,
-          location: form.location,
           salary_min: form.salary_min ? Number(form.salary_min) : null,
           salary_max: form.salary_max ? Number(form.salary_max) : null,
           salary_visible: form.salary_visible,
@@ -338,71 +332,39 @@ export default function PostJobPage() {
           <motion.div variants={item} className={cn(cardBase, 'p-6')}>
             <div className="flex items-center gap-2.5 mb-5">
               <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                <HugeiconsIcon icon={Location01Icon} size={16} className="text-blue-600" />
+                <HugeiconsIcon icon={Briefcase01Icon} size={16} className="text-blue-600" />
               </div>
-              <h2 className="text-sm font-semibold text-text">Category & Location</h2>
+              <h2 className="text-sm font-semibold text-text">Category</h2>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="category"
-                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-                >
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="category"
-                  value={form.category}
-                  onChange={(e) => updateField('category', e.target.value)}
-                  className={cn(
-                    inputBase,
-                    errors.category
-                      ? 'border-red-300 bg-red-50/50'
-                      : 'border-border/60'
-                  )}
-                >
-                  <option value="">Select category</option>
-                  {INDUSTRIES.map((ind) => (
-                    <option key={ind} value={ind}>
-                      {ind}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && (
-                  <p className="mt-1.5 text-xs text-red-600">{errors.category}</p>
+            <div>
+              <label
+                htmlFor="category"
+                className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+              >
+                Category <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="category"
+                value={form.category}
+                onChange={(e) => updateField('category', e.target.value)}
+                className={cn(
+                  inputBase,
+                  errors.category
+                    ? 'border-red-300 bg-red-50/50'
+                    : 'border-border/60'
                 )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="location"
-                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-                >
-                  Location <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="location"
-                  value={form.location}
-                  onChange={(e) => updateField('location', e.target.value)}
-                  className={cn(
-                    inputBase,
-                    errors.location
-                      ? 'border-red-300 bg-red-50/50'
-                      : 'border-border/60'
-                  )}
-                >
-                  <option value="">Select parish</option>
-                  {ANTIGUA_PARISHES.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-                {errors.location && (
-                  <p className="mt-1.5 text-xs text-red-600">{errors.location}</p>
-                )}
-              </div>
+              >
+                <option value="">Select category</option>
+                {INDUSTRIES.map((ind) => (
+                  <option key={ind} value={ind}>
+                    {ind}
+                  </option>
+                ))}
+              </select>
+              {errors.category && (
+                <p className="mt-1.5 text-xs text-red-600">{errors.category}</p>
+              )}
             </div>
           </motion.div>
 
@@ -633,12 +595,6 @@ export default function PostJobPage() {
               </h3>
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {form.location && (
-                  <span className="flex items-center gap-1.5 text-xs text-text-muted">
-                    <HugeiconsIcon icon={Location01Icon} size={12} className="text-text-muted" />
-                    {form.location}
-                  </span>
-                )}
                 <span className="inline-flex items-center rounded-lg bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
                   {JOB_TYPE_LABELS[form.job_type]}
                 </span>

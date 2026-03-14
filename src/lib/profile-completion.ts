@@ -7,7 +7,6 @@ export interface ProfileFields {
   first_name?: string | null;
   last_name?: string | null;
   phone?: string | null;
-  location?: string | null;
   bio?: string | null;
   skills?: string[] | null;
   experience_years?: number | null;
@@ -40,11 +39,6 @@ const REQUIRED_FIELDS: {
   {
     key: "phone",
     label: "Phone number",
-    check: (v) => typeof v === "string" && v.trim().length > 0,
-  },
-  {
-    key: "location",
-    label: "Location",
     check: (v) => typeof v === "string" && v.trim().length > 0,
   },
   {

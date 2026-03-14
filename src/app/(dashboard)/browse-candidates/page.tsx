@@ -8,7 +8,6 @@ import { Suspense } from "react";
 interface PageProps {
   searchParams: Promise<{
     q?: string;
-    location?: string;
     min_exp?: string;
     max_exp?: string;
     skills?: string;
@@ -20,7 +19,6 @@ async function CandidateResults({
 }: {
   searchParams: {
     q?: string;
-    location?: string;
     min_exp?: string;
     max_exp?: string;
     skills?: string;
@@ -40,10 +38,6 @@ async function CandidateResults({
     query = query.or(
       `first_name.ilike.${keyword},last_name.ilike.${keyword},bio.ilike.${keyword}`
     );
-  }
-
-  if (searchParams.location) {
-    query = query.eq("location", searchParams.location);
   }
 
   if (searchParams.min_exp) {

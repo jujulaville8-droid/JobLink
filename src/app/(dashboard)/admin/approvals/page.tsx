@@ -2,6 +2,37 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
+import { sendEmail, BASE_URL } from '@/lib/email'
+
+async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>, jobId: string, type: 'listing_approved' | 'listing_rejected') {
+  const { data: job } = await supabase
+    .from('job_listings')
+    .select('title, companies(user_id)')
+    .eq('id', jobId)
+    .single()
+
+  if (!job) return
+
+  const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
+  if (!company?.user_id) return
+
+  const { data: employerUser } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', company.user_id)
+    .single()
+
+  if (!employerUser?.email) return
+
+  sendEmail({
+    to: employerUser.email,
+    type,
+    data: {
+      listing_title: job.title,
+      dashboard_url: `${BASE_URL}/my-listings`,
+    },
+  })
+}
 
 async function approveJob(formData: FormData) {
   'use server'
@@ -13,6 +44,7 @@ async function approveJob(formData: FormData) {
     .update({ status: 'active' })
     .eq('id', jobId)
 
+  await notifyEmployer(supabase, jobId, 'listing_approved')
   revalidatePath('/admin/approvals')
 }
 
@@ -26,6 +58,7 @@ async function rejectJob(formData: FormData) {
     .update({ status: 'closed' })
     .eq('id', jobId)
 
+  await notifyEmployer(supabase, jobId, 'listing_rejected')
   revalidatePath('/admin/approvals')
 }
 

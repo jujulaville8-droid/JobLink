@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import { ANTIGUA_PARISHES } from "@/lib/types";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { getResumePreviewUrl } from "@/lib/resume-url";
 import type { VisibilityMode } from "@/lib/types";
@@ -999,20 +998,6 @@ function ProfileEditForm({
                 className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
                 placeholder="+1 (268) 555-0123"
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-text-light mb-1">Location (Parish)</label>
-              <select
-                value={profile.location}
-                onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
-              >
-                <option value="">Select a parish</option>
-                {ANTIGUA_PARISHES.map((parish) => (
-                  <option key={parish} value={parish}>{parish}</option>
-                ))}
-              </select>
             </div>
 
             <div>

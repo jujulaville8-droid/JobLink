@@ -7,7 +7,6 @@ import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 interface PageProps {
   searchParams: Promise<{
     q?: string;
-    location?: string;
     category?: string;
     job_type?: string | string[];
     work_permit?: string;
@@ -19,7 +18,6 @@ async function JobResults({
 }: {
   searchParams: {
     q?: string;
-    location?: string;
     category?: string;
     job_type?: string | string[];
     work_permit?: string;
@@ -59,10 +57,6 @@ async function JobResults({
   if (searchParams.q) {
     const keyword = `%${searchParams.q}%`;
     query = query.or(`title.ilike.${keyword},description.ilike.${keyword}`);
-  }
-
-  if (searchParams.location) {
-    query = query.eq("location", searchParams.location);
   }
 
   if (searchParams.category) {

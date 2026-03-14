@@ -117,17 +117,6 @@ export interface ReportedListing {
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-export const ANTIGUA_PARISHES: string[] = [
-  "St. John's",
-  "St. George",
-  "St. Peter",
-  "St. Philip",
-  "St. Paul",
-  "St. Mary",
-  "All Saints",
-  "Barbuda",
-];
-
 export const INDUSTRIES: string[] = [
   "Tourism & Hospitality",
   "Government & Civil Service",

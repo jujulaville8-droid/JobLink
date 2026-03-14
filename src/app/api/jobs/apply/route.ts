@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, BASE_URL } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,11 +31,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Account is banned' }, { status: 403 })
     }
 
-    // Enforce email verification
-    if (!user.email_confirmed_at) {
-      return NextResponse.json({ error: 'Please verify your email before applying' }, { status: 403 })
-    }
-
     if (userData.role !== 'seeker') {
       return NextResponse.json({ error: 'Only job seekers can apply' }, { status: 403 })
     }
@@ -60,10 +56,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'job_id is required' }, { status: 400 })
     }
 
-    // Check the job exists and is active
+    // Check the job exists and is active (include company info for emails)
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, company_id')
+      .select('id, status, title, company_id, companies(company_name, user_id)')
       .eq('id', job_id)
       .single()
 
@@ -73,18 +69,6 @@ export async function POST(request: NextRequest) {
 
     if (job.status !== 'active') {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
-    }
-
-    // Prevent self-application: check if the user owns the company that posted this job
-    const { data: ownedCompany } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('id', job.company_id)
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (ownedCompany) {
-      return NextResponse.json({ error: 'You cannot apply to your own company\'s listings' }, { status: 403 })
     }
 
     // Insert application (unique constraint on job_id + seeker_id will catch duplicates)
@@ -104,6 +88,53 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
       }
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+    }
+
+    // Send emails (fire-and-forget — don't block the response)
+    const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
+    const companyName = company?.company_name || 'the company'
+
+    // Get seeker name for employer notification
+    const { data: seekerInfo } = await supabase
+      .from('seeker_profiles')
+      .select('first_name, last_name')
+      .eq('id', seekerProfile.id)
+      .single()
+
+    const seekerName = seekerInfo
+      ? `${seekerInfo.first_name || ''} ${seekerInfo.last_name || ''}`.trim() || 'A candidate'
+      : 'A candidate'
+
+    // 1. Confirmation to seeker
+    sendEmail({
+      to: user.email!,
+      type: 'application_confirmation',
+      data: {
+        job_title: job.title,
+        company_name: companyName,
+        dashboard_url: `${BASE_URL}/applications`,
+      },
+    })
+
+    // 2. Notification to employer
+    if (company?.user_id) {
+      const { data: employerUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', company.user_id)
+        .single()
+
+      if (employerUser?.email) {
+        sendEmail({
+          to: employerUser.email,
+          type: 'new_applicant',
+          data: {
+            applicant_name: seekerName,
+            job_title: job.title,
+            application_url: `${BASE_URL}/my-listings`,
+          },
+        })
+      }
     }
 
     return NextResponse.json({ success: true, application }, { status: 201 })

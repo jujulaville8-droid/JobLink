@@ -2,14 +2,11 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ANTIGUA_PARISHES } from "@/lib/types";
-
 export default function CandidateFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
-  const currentLocation = searchParams.get("location") || "";
   const currentMinExp = searchParams.get("min_exp") || "";
   const currentMaxExp = searchParams.get("max_exp") || "";
   const currentSkills = searchParams.get("skills") || "";
@@ -34,29 +31,10 @@ export default function CandidateFilters() {
   }
 
   const hasFilters =
-    currentLocation || currentMinExp || currentMaxExp || currentSkills;
+    currentMinExp || currentMaxExp || currentSkills;
 
   const filterContent = (
     <div className="space-y-6">
-      {/* Location */}
-      <div>
-        <label className="block text-sm font-semibold text-text mb-2">
-          Location
-        </label>
-        <select
-          value={currentLocation}
-          onChange={(e) => updateParams({ location: e.target.value || null })}
-          className="input-base"
-        >
-          <option value="">All Locations</option>
-          {ANTIGUA_PARISHES.map((parish) => (
-            <option key={parish} value={parish}>
-              {parish}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Experience Range */}
       <div>
         <label className="block text-sm font-semibold text-text mb-2">
@@ -136,7 +114,7 @@ export default function CandidateFilters() {
             Filters
             {hasFilters && (
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-                {[currentLocation, currentMinExp, currentMaxExp, currentSkills].filter(Boolean).length}
+                {[currentMinExp, currentMaxExp, currentSkills].filter(Boolean).length}
               </span>
             )}
           </span>

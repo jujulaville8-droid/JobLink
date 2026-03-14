@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendEmail, BASE_URL } from '@/lib/email';
 
 const VALID_STATUSES = ['shortlisted', 'rejected', 'hired'] as const;
 type ValidStatus = (typeof VALID_STATUSES)[number];
@@ -36,10 +37,10 @@ export async function PATCH(
       );
     }
 
-    // Get the application
+    // Get the application with seeker info
     const { data: application, error: appError } = await supabase
       .from('applications')
-      .select('id, job_id')
+      .select('id, job_id, seeker_id')
       .eq('id', id)
       .single();
 
@@ -50,10 +51,10 @@ export async function PATCH(
       );
     }
 
-    // Get the listing to verify ownership
+    // Get the listing to verify ownership (include title + company for email)
     const { data: listing, error: listingError } = await supabase
       .from('job_listings')
-      .select('company_id')
+      .select('company_id, title, companies(company_name)')
       .eq('id', application.job_id)
       .single();
 
@@ -92,6 +93,41 @@ export async function PATCH(
         { error: 'Failed to update application status' },
         { status: 500 }
       );
+    }
+
+    // Notify the seeker about status change (fire-and-forget)
+    const { data: seekerProfile } = await supabase
+      .from('seeker_profiles')
+      .select('user_id')
+      .eq('id', application.seeker_id)
+      .single();
+
+    if (seekerProfile?.user_id) {
+      const { data: seekerUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', seekerProfile.user_id)
+        .single();
+
+      if (seekerUser?.email) {
+        const company = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+        const statusLabels: Record<string, string> = {
+          shortlisted: 'Shortlisted',
+          rejected: 'Not Selected',
+          hired: 'Hired',
+        };
+
+        sendEmail({
+          to: seekerUser.email,
+          type: 'status_update',
+          data: {
+            job_title: listing.title,
+            company_name: company?.company_name || 'the employer',
+            status: statusLabels[status] || status,
+            dashboard_url: `${BASE_URL}/applications`,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ application: updated });

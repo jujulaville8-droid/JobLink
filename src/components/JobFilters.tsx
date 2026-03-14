@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ANTIGUA_PARISHES, INDUSTRIES, JOB_TYPE_LABELS, JobType } from "@/lib/types";
+import { INDUSTRIES, JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
 const JOB_TYPES: { value: JobType; label: string }[] = Object.entries(
   JOB_TYPE_LABELS
@@ -14,7 +14,6 @@ export default function JobFilters() {
   const [open, setOpen] = useState(false);
 
   const currentCategory = searchParams.get("category") || "";
-  const currentLocation = searchParams.get("location") || "";
   const currentJobTypes = searchParams.getAll("job_type");
   const currentWorkPermit = searchParams.get("work_permit") === "true";
 
@@ -52,7 +51,7 @@ export default function JobFilters() {
   }
 
   const hasFilters =
-    currentCategory || currentLocation || currentJobTypes.length > 0 || currentWorkPermit;
+    currentCategory || currentJobTypes.length > 0 || currentWorkPermit;
 
   const filterContent = (
     <div className="space-y-6">
@@ -113,25 +112,6 @@ export default function JobFilters() {
         </label>
       </div>
 
-      {/* Location */}
-      <div>
-        <label className="block text-sm font-semibold text-text mb-2">
-          Location
-        </label>
-        <select
-          value={currentLocation}
-          onChange={(e) => updateParams({ location: e.target.value || null })}
-          className="input-base"
-        >
-          <option value="">All Locations</option>
-          {ANTIGUA_PARISHES.map((parish) => (
-            <option key={parish} value={parish}>
-              {parish}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Clear all */}
       {hasFilters && (
         <button
@@ -170,7 +150,7 @@ export default function JobFilters() {
             {hasFilters && (
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                 {
-                  [currentCategory, currentLocation, ...currentJobTypes, currentWorkPermit ? "wp" : ""].filter(Boolean).length
+                  [currentCategory, ...currentJobTypes, currentWorkPermit ? "wp" : ""].filter(Boolean).length
                 }
               </span>
             )}

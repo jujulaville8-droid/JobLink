@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "playwright-extension": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--extension"
+      ],
+      "env": {
+        "PLAYWRIGHT_MCP_EXTENSION_TOKEN": "FDpL-tTi5nPfpcM3F2CWyi8Bd6lNIgmM-LPmqvhJuwk"
+      }
+    }
+  }
+}
