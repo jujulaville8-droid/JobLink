@@ -116,16 +116,48 @@ async function getStats(): Promise<{ seekers: number; listings: number; companie
   }
 }
 
+async function getHiringCompanies(): Promise<string[]> {
+  try {
+    const supabase = await createClient();
+
+    const { data } = await supabase
+      .from("job_listings")
+      .select("company:companies ( company_name )")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (!data) return [];
+
+    // Deduplicate company names, keep first 6
+    const seen = new Set<string>();
+    const names: string[] = [];
+    for (const row of data) {
+      const company = row.company as unknown as { company_name: string } | null;
+      const name = company?.company_name;
+      if (name && !seen.has(name)) {
+        seen.add(name);
+        names.push(name);
+        if (names.length >= 6) break;
+      }
+    }
+    return names;
+  } catch {
+    return [];
+  }
+}
+
 function formatCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k+`;
   return n > 0 ? String(n) : "—";
 }
 
 export default async function Home() {
-  const [featuredJobs, industries, stats] = await Promise.all([
+  const [featuredJobs, industries, stats, hiringCompanies] = await Promise.all([
     getFeaturedJobs(),
     getIndustryCounts(),
     getStats(),
+    getHiringCompanies(),
   ]);
   return (
     <>
@@ -185,21 +217,24 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ===== TRUSTED BY — sits flush between hero and featured ===== */}
-      <div className="relative bg-bg-alt -mt-px">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
-            {["Sandals", "APUA", "LIAT", "Jumby Bay", "ABTA", "Epicurean"].map((name) => (
-              <span
-                key={name}
-                className="text-text-muted/60 font-bold text-xs uppercase tracking-[0.15em]"
-              >
-                {name}
-              </span>
-            ))}
+      {/* ===== COMPANIES HIRING — sits flush between hero and featured ===== */}
+      {hiringCompanies.length > 0 && (
+        <div className="relative bg-bg-alt -mt-px">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
+            <p className="text-center text-text-muted/50 text-[11px] uppercase tracking-[0.2em] mb-3">Companies hiring now</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
+              {hiringCompanies.map((name) => (
+                <span
+                  key={name}
+                  className="text-text-muted/60 font-bold text-xs uppercase tracking-[0.15em]"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ===== FEATURED JOBS ===== */}
       <section className="bg-bg-alt py-20 sm:py-24">

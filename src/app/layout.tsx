@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description:
     "The first dedicated job platform for Antigua and Barbuda. Find jobs, post listings, and connect with employers.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.png",
   },
 };
 

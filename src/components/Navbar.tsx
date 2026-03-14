@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, ArrowLeftRight } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, ArrowLeftRight, Compass } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -38,22 +38,26 @@ export default function Navbar() {
   const isAdmin = userRole === "admin";
   const canBeAdmin = isAdminUser;
 
+  const aboutOrExplore = isAuthenticated
+    ? { href: "/explore", label: "Explore" }
+    : { href: "/about", label: "About" };
+
   const navLinks = isAdmin
     ? [
         { href: "/admin/approvals", label: "Approvals" },
         { href: "/admin/users", label: "Users" },
-        { href: "/about", label: "About" },
-        ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+        aboutOrExplore,
+        { href: "/dashboard", label: "Dashboard" },
       ]
     : isEmployer
     ? [
         { href: "/browse-candidates", label: "Browse Candidates" },
-        { href: "/about", label: "About" },
-        ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
+        aboutOrExplore,
+        { href: "/dashboard", label: "Dashboard" },
       ]
     : [
         { href: "/jobs", label: "Find Jobs" },
-        { href: "/about", label: "About" },
+        aboutOrExplore,
         ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
       ];
 
@@ -65,6 +69,7 @@ export default function Navbar() {
     if (href === "/jobs") return pathname.startsWith("/jobs") || pathname.startsWith("/browse-jobs");
     if (href === "/browse-candidates") return pathname.startsWith("/browse-candidates") || pathname.startsWith("/candidates");
     if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/explore") return pathname === "/explore";
     if (href.startsWith("/admin/")) return pathname.startsWith(href);
     return pathname === href;
   }
@@ -320,6 +325,8 @@ export default function Navbar() {
               <Users className="h-4 w-4" />
             ) : link.href === "/about" ? (
               <Info className="h-4 w-4" />
+            ) : link.href === "/explore" ? (
+              <Compass className="h-4 w-4" />
             ) : (
               <LayoutGrid className="h-4 w-4" />
             ),
