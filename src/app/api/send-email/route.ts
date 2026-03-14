@@ -48,7 +48,11 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
     </html>
   `
 
+  const SITE = 'https://joblinkantigua.com'
   const btnStyle = 'background-color: #14919b; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;'
+  const btn = (label: string, path: string) =>
+    `<p style="margin-top: 24px;"><a href="${SITE}${path}" style="${btnStyle}">${label}</a></p>`
+
   const statusLabel: Record<string, { text: string; color: string }> = {
     shortlisted: { text: 'Shortlisted', color: '#059669' },
     rejected: { text: 'Not Selected', color: '#dc2626' },
@@ -67,7 +71,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           <p style="color: #374151; line-height: 1.6;">
             The employer will review it and you'll get an email as soon as your status changes. In the meantime, you can track everything from your dashboard.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">View My Applications</a></p>` : ''}
+          ${btn('View My Applications', '/applications')}
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Keep applying — the more you put out, the better your chances.</p>
         `),
       }
@@ -80,7 +84,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           <p style="color: #374151; line-height: 1.6;">
             <strong>${data.applicant_name}</strong> has applied for <strong>${data.job_title}</strong>. Their profile, CV, and cover letter are ready for you to review.
           </p>
-          ${data.application_url ? `<p style="margin-top: 24px;"><a href="${data.application_url}" style="${btnStyle}">Review Applicant</a></p>` : ''}
+          ${btn('Review Applicant', '/my-listings')}
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>
         `),
       }
@@ -104,7 +108,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           ${isHired ? `<p style="color: #374151; line-height: 1.6;">The employer has selected you for the role. Expect to hear from them shortly about next steps.</p>` : ''}
           ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLink.</p>` : ''}
           ${!isHired && !isRejected ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">${isRejected ? 'Browse More Jobs' : 'View Details'}</a></p>` : ''}
+          ${isRejected ? btn('Browse More Jobs', '/jobs') : btn('View My Applications', '/applications')}
         `),
       }
     }
@@ -124,12 +128,13 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
                 <h3 style="color: #0d7377; margin: 0 0 4px 0; font-size: 16px;">${job.title}</h3>
                 <p style="color: #6b7280; margin: 0; font-size: 14px;">${job.company}</p>
-                ${job.url ? `<a href="${job.url}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">View &amp; Apply &rarr;</a>` : ''}
+                <a href="${job.url || `${SITE}/jobs`}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">View &amp; Apply &rarr;</a>
               </div>
             `
               )
               .join('') || '<p style="color: #6b7280;">No jobs to display.</p>'
           }
+          ${btn('Browse All Jobs', '/jobs')}
           <p style="color: #9ca3af; font-size: 13px; margin-top: 16px;">You can manage your alerts from your dashboard settings.</p>
         `),
       }
@@ -145,7 +150,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           <p style="color: #374151; line-height: 1.6;">
             Still hiring? Repost or extend the listing from your dashboard to keep receiving applications.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">Manage Listing</a></p>` : ''}
+          ${btn('Manage My Listings', '/my-listings')}
         `),
       }
 
@@ -160,7 +165,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           <p style="color: #374151; line-height: 1.6;">
             You'll receive an email each time someone applies. You can also check applicants anytime from your dashboard.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">View My Listings</a></p>` : ''}
+          ${btn('View My Listings', '/my-listings')}
         `),
       }
 
@@ -175,14 +180,17 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           <p style="color: #374151; line-height: 1.6;">
             Please review it and resubmit. If you're unsure what to change, reply to this email and we'll help.
           </p>
-          ${data.dashboard_url ? `<p style="margin-top: 24px;"><a href="${data.dashboard_url}" style="${btnStyle}">Edit My Listing</a></p>` : ''}
+          ${btn('Edit My Listings', '/my-listings')}
         `),
       }
 
     default:
       return {
         subject: 'Notification from JobLink',
-        html: wrapper(`<p style="color: #374151;">You have a new notification from JobLink.</p>`),
+        html: wrapper(`
+          <p style="color: #374151;">You have a new notification from JobLink.</p>
+          ${btn('Go to JobLink', '/dashboard')}
+        `),
       }
   }
 }
