@@ -516,28 +516,33 @@ export default function ApplyPage() {
   // ─── Success ───
   if (state === "success") {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-16">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="space-y-4"
-        >
-          <motion.div variants={item} className={cardBase}>
+      <div className="mx-auto max-w-2xl px-4 py-16 animate-in fade-in duration-500">
+        <div className="space-y-4">
+          {/* Success banner */}
+          <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/30 p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center shrink-0">
+              <HugeiconsIcon icon={Tick01Icon} size={20} className="text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                Success! Your application has been sent.
+              </p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                The employer has been notified.
+              </p>
+            </div>
+          </div>
+
+          <div className={cardBase}>
             {jobHeader}
             <div className="p-8 text-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
-                className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-5"
-              >
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-5">
                 <HugeiconsIcon
                   icon={SentIcon}
                   size={28}
                   className="text-emerald-600 dark:text-emerald-400"
                 />
-              </motion.div>
+              </div>
               <h1 className="font-display text-xl font-bold text-text">
                 Application Submitted!
               </h1>
@@ -610,8 +615,8 @@ export default function ApplyPage() {
                 </Link>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     );
   }
