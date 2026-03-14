@@ -7,7 +7,6 @@ interface PageProps {
     q?: string;
     category?: string;
     job_type?: string | string[];
-    work_permit?: string;
   }>;
 }
 

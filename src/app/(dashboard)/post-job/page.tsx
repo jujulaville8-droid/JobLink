@@ -29,7 +29,6 @@ interface FormData {
   salary_min: string;
   salary_max: string;
   salary_visible: boolean;
-  requires_work_permit: boolean;
   duration: '30' | '60';
 }
 
@@ -75,7 +74,6 @@ export default function PostJobPage() {
     salary_min: '',
     salary_max: '',
     salary_visible: true,
-    requires_work_permit: false,
     duration: '30',
   });
 
@@ -163,7 +161,7 @@ export default function PostJobPage() {
           salary_min: form.salary_min ? Number(form.salary_min) : null,
           salary_max: form.salary_max ? Number(form.salary_max) : null,
           salary_visible: form.salary_visible,
-          requires_work_permit: form.requires_work_permit,
+          requires_work_permit: false,
           status: 'pending_approval',
           expires_at: expiresAt.toISOString(),
         });
@@ -488,29 +486,6 @@ export default function PostJobPage() {
                   </span>
                 </label>
 
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className={cn(
-                    'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200',
-                    form.requires_work_permit
-                      ? 'border-primary bg-primary'
-                      : 'border-border/60 group-hover:border-primary/40'
-                  )}>
-                    {form.requires_work_permit && (
-                      <HugeiconsIcon icon={Tick01Icon} size={12} className="text-white" />
-                    )}
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={form.requires_work_permit}
-                    onChange={(e) =>
-                      updateField('requires_work_permit', e.target.checked)
-                    }
-                    className="sr-only"
-                  />
-                  <span className="text-sm text-text">
-                    Requires work permit
-                  </span>
-                </label>
               </div>
             </div>
           </motion.div>
@@ -616,12 +591,6 @@ export default function PostJobPage() {
                     </p>
                   </div>
                 )}
-
-              {form.requires_work_permit && (
-                <span className="mt-3 inline-flex items-center rounded-lg bg-amber-50 border border-amber-200/40 px-2.5 py-1 text-xs font-medium text-amber-700">
-                  Work Permit Required
-                </span>
-              )}
 
               {form.description && (
                 <div className="mt-4 border-t border-border/40 pt-4">

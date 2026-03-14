@@ -16,7 +16,6 @@ export default function JobFilters() {
 
   const currentCategory = searchParams.get("category") || "";
   const currentJobTypes = searchParams.getAll("job_type");
-  const currentWorkPermit = searchParams.get("work_permit") === "true";
 
   function updateParams(updates: Record<string, string | string[] | null>) {
     const params = new URLSearchParams(searchParams.toString());
@@ -52,7 +51,7 @@ export default function JobFilters() {
   }
 
   const hasFilters =
-    currentCategory || currentJobTypes.length > 0 || currentWorkPermit;
+    currentCategory || currentJobTypes.length > 0;
 
   const filterContent = (
     <div className="space-y-6">
@@ -98,21 +97,6 @@ export default function JobFilters() {
         </div>
       </div>
 
-      {/* Work Permit */}
-      <div>
-        <label className="flex items-center gap-2.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={currentWorkPermit}
-            onChange={() =>
-              updateParams({ work_permit: currentWorkPermit ? null : "true" })
-            }
-            className="h-4 w-4 rounded border-border text-primary focus:ring-primary accent-primary"
-          />
-          <span className="text-sm text-text">Requires work permit</span>
-        </label>
-      </div>
-
       {/* Clear all */}
       {hasFilters && (
         <button
@@ -151,7 +135,7 @@ export default function JobFilters() {
             {hasFilters && (
               <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
                 {
-                  [currentCategory, ...currentJobTypes, currentWorkPermit ? "wp" : ""].filter(Boolean).length
+                  [currentCategory, ...currentJobTypes].filter(Boolean).length
                 }
               </span>
             )}

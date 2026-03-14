@@ -6,7 +6,6 @@ interface JobResultsProps {
     q?: string;
     category?: string;
     job_type?: string | string[];
-    work_permit?: string;
   };
   gridClassName?: string;
 }
@@ -62,10 +61,6 @@ export default async function JobResults({
     if (types.length > 0) {
       query = query.in("job_type", types);
     }
-  }
-
-  if (searchParams.work_permit === "true") {
-    query = query.eq("requires_work_permit", true);
   }
 
   const { data: jobs, error } = await query;

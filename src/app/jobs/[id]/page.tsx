@@ -243,11 +243,6 @@ export default async function JobDetailPage({ params }: PageProps) {
                   New
                 </span>
               )}
-              {job.requires_work_permit && (
-                <span className="inline-flex items-center rounded-full bg-accent-warm/10 text-amber-700 px-2.5 py-0.5 text-xs font-semibold">
-                  Work Permit Required
-                </span>
-              )}
             </div>
 
             {/* Company info */}
