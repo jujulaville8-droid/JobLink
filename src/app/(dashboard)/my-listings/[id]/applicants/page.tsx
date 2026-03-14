@@ -199,10 +199,10 @@ export default async function ApplicantsPage({
       {/* Header */}
       <Link
         href="/my-listings"
-        className="inline-flex items-center gap-1 text-sm text-text-light hover:text-primary transition-colors"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3.5 py-2 text-sm font-medium text-text transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0"
       >
         <svg
-          className="h-4 w-4"
+          className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

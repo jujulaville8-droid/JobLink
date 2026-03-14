@@ -20,14 +20,14 @@ export default function UnsaveButton({ savedJobId }: { savedJobId: string }) {
       type="button"
       onClick={handleUnsave}
       disabled={removing}
-      className="rounded-full p-1.5 text-text-light hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-text-light transition-all duration-200 hover:border-red-300 hover:bg-red-50 hover:text-red-600 hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       title="Remove from saved"
     >
       {removing ? (
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-red-500" />
+        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-border border-t-red-500" />
       ) : (
         <svg
-          className="h-4 w-4"
+          className="h-3.5 w-3.5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -35,10 +35,12 @@ export default function UnsaveButton({ savedJobId }: { savedJobId: string }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          <line x1="15" y1="9" x2="9" y2="15" />
+          <line x1="9" y1="9" x2="15" y2="15" />
         </svg>
       )}
+      {removing ? "Removing..." : "Unsave"}
     </button>
   );
 }
