@@ -22,46 +22,38 @@ const ThemeSwitch = ({
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      role="switch"
+      aria-checked={isDark}
       className={cn(
-        "relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
-        isDark
-          ? "bg-[#1e293b] border border-[#334155]"
-          : "bg-[#e2e8f0] border border-[#cbd5e1]",
+        "relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+        "border-border bg-bg-alt",
         className
       )}
       {...props}
     >
-      {/* Sliding thumb */}
+      {/* Sliding thumb — uses inline transform for buttery smooth animation */}
       <span
-        className={cn(
-          "pointer-events-none absolute flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-all duration-300 ease-in-out",
-          isDark
-            ? "translate-x-7 bg-[#1e293b] ring-1 ring-[#475569]"
-            : "translate-x-1 bg-white ring-1 ring-black/5"
-        )}
+        className="pointer-events-none absolute flex h-6 w-6 items-center justify-center rounded-full bg-[--color-surface] shadow-md ring-1 ring-black/5 dark:ring-white/10"
+        style={{
+          transform: `translateX(${isDark ? 24 : 4}px)`,
+          transition: "transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
       >
-        {isDark ? (
-          <Moon className="h-3.5 w-3.5 text-blue-300" />
-        ) : (
-          <Sun className="h-3.5 w-3.5 text-amber-500" />
-        )}
-      </span>
-
-      {/* Background icons (subtle, behind the thumb) */}
-      <span className="pointer-events-none absolute left-[7px] flex items-center justify-center">
         <Sun
-          className={cn(
-            "h-3 w-3 transition-opacity duration-300",
-            isDark ? "opacity-30 text-slate-500" : "opacity-0"
-          )}
+          className="h-3.5 w-3.5 text-amber-500 absolute"
+          style={{
+            opacity: isDark ? 0 : 1,
+            transform: isDark ? "rotate(-90deg) scale(0)" : "rotate(0deg) scale(1)",
+            transition: "opacity 300ms ease, transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
         />
-      </span>
-      <span className="pointer-events-none absolute right-[7px] flex items-center justify-center">
         <Moon
-          className={cn(
-            "h-3 w-3 transition-opacity duration-300",
-            isDark ? "opacity-0" : "opacity-30 text-slate-400"
-          )}
+          className="h-3.5 w-3.5 text-blue-300 absolute"
+          style={{
+            opacity: isDark ? 1 : 0,
+            transform: isDark ? "rotate(0deg) scale(1)" : "rotate(90deg) scale(0)",
+            transition: "opacity 300ms ease, transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
         />
       </span>
     </button>
