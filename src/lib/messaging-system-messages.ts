@@ -1,20 +1,15 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-
 const STATUS_MESSAGES: Record<string, string> = {
-  shortlisted: '🟢 Your application has been shortlisted. The employer is interested in moving forward.',
+  shortlisted: 'Your application has been shortlisted. The employer is interested in moving forward.',
   rejected: 'Thank you for your interest. The employer has decided to move forward with other candidates for this position.',
-  hired: '🎉 Congratulations! You have been hired for this position. The employer will follow up with next steps.',
+  hired: 'Congratulations! You have been hired for this position. The employer will follow up with next steps.',
 }
 
 /**
  * Sends a system-style message into the conversation thread
- * when an application status changes. The message is sent
- * as the employer (since they're the one changing the status).
- *
- * If no conversation exists for the application, one is created.
+ * when an application status changes. Uses admin client to bypass RLS.
  */
 export async function sendStatusChangeMessage(
-  supabase: SupabaseClient,
+  _supabase: unknown,
   params: {
     applicationId: string
     employerUserId: string
@@ -32,10 +27,13 @@ export async function sendStatusChangeMessage(
   const fullMessage = `--- Application Update ---\n${statusMessage}\n\nPosition: ${jobTitle}\nCompany: ${companyName}`
 
   try {
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const adminDb = createAdminClient()
+
     // Find existing conversation for this application
     let conversationId: string | null = null
 
-    const { data: existing } = await supabase
+    const { data: existing } = await adminDb
       .from('conversations')
       .select('id')
       .eq('application_id', applicationId)
@@ -45,17 +43,17 @@ export async function sendStatusChangeMessage(
       conversationId = existing.id
     } else {
       // Create conversation if one doesn't exist yet
-      const { data: newConv } = await supabase
+      const { data: newConv } = await adminDb
         .from('conversations')
         .insert({ application_id: applicationId })
-        .select()
+        .select('id')
         .single()
 
       if (newConv) {
         conversationId = newConv.id
 
         // Add both participants
-        await supabase
+        await adminDb
           .from('conversation_participants')
           .insert([
             { conversation_id: newConv.id, user_id: employerUserId },
@@ -67,7 +65,7 @@ export async function sendStatusChangeMessage(
     if (!conversationId) return
 
     // Insert the status update message as the employer
-    await supabase
+    await adminDb
       .from('messages')
       .insert({
         conversation_id: conversationId,

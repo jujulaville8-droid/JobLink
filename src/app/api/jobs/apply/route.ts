@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'job_id is required' }, { status: 400 })
     }
 
-    // Check the job exists and is active (include company info for emails)
+    // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
       .select('id, status, title, company_id, companies(company_name, user_id)')
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
     }
 
-    // Insert application (unique constraint on job_id + seeker_id will catch duplicates)
+    // Insert application
     const { data: application, error: insertError } = await supabase
       .from('applications')
       .insert({
@@ -91,11 +91,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
     }
 
-    // Send emails (fire-and-forget — don't block the response)
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
     const companyName = company?.company_name || 'the company'
 
-    // Get seeker name + CV for employer notification and auto-thread
     const { data: seekerInfo } = await supabase
       .from('seeker_profiles')
       .select('first_name, last_name, cv_url')
@@ -107,72 +105,117 @@ export async function POST(request: NextRequest) {
       : 'A candidate'
 
     // ── Auto-create messaging thread ──
+    // Use admin client to bypass RLS since we've already verified authorization.
+    // RLS blocks the read-back on .select() because the user isn't a participant yet
+    // at the moment the conversation row is created.
     let conversationId: string | null = null
     const employerUserId = company?.user_id
 
     if (employerUserId) {
-      const messageParts: string[] = []
-      messageParts.push(`Hi, I've applied for the ${job.title} position.`)
+      try {
+        // Try admin client first (bypasses RLS)
+        const { createAdminClient } = await import('@/lib/supabase/admin')
+        const adminDb = createAdminClient()
 
-      if (cover_letter_text?.trim()) {
-        messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
-      }
+        const messageParts: string[] = []
+        messageParts.push(`Hi, I've applied for the ${job.title} position.`)
+        if (cover_letter_text?.trim()) {
+          messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
+        }
+        if (seekerInfo?.cv_url) {
+          messageParts.push(`\n--- Resume/CV ---\n${seekerInfo.cv_url}`)
+        }
+        const firstMessageBody = messageParts.join('\n')
 
-      if (seekerInfo?.cv_url) {
-        messageParts.push(`\n--- Resume/CV ---\n${seekerInfo.cv_url}`)
-      }
+        // Create conversation
+        const { data: conversation, error: convError } = await adminDb
+          .from('conversations')
+          .insert({ application_id: application.id })
+          .select('id')
+          .single()
 
-      const firstMessageBody = messageParts.join('\n')
-
-      // Create conversation
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .insert({ application_id: application.id })
-        .select()
-        .single()
-
-      if (convError) {
-        console.error('[apply] create conversation error:', convError)
-      }
-
-      if (conversation) {
-        conversationId = conversation.id
-
-        // Add both participants
-        const { error: partError } = await supabase
-          .from('conversation_participants')
-          .insert([
-            { conversation_id: conversation.id, user_id: user.id },
-            { conversation_id: conversation.id, user_id: employerUserId },
-          ])
-
-        if (partError) {
-          console.error('[apply] insert participants error:', partError)
+        if (convError) {
+          console.error('[apply] create conversation error:', convError)
         }
 
-        // Insert the first message from the applicant
-        const { error: msgError } = await supabase
-          .from('messages')
-          .insert({
-            conversation_id: conversation.id,
-            sender_id: user.id,
-            body: firstMessageBody,
-          })
+        if (conversation) {
+          conversationId = conversation.id
 
-        if (msgError) {
-          console.error('[apply] insert message error:', msgError)
+          // Add both participants
+          const { error: partError } = await adminDb
+            .from('conversation_participants')
+            .insert([
+              { conversation_id: conversation.id, user_id: user.id },
+              { conversation_id: conversation.id, user_id: employerUserId },
+            ])
+
+          if (partError) {
+            console.error('[apply] insert participants error:', partError)
+          }
+
+          // Insert the first message
+          const { error: msgError } = await adminDb
+            .from('messages')
+            .insert({
+              conversation_id: conversation.id,
+              sender_id: user.id,
+              body: firstMessageBody,
+            })
+
+          if (msgError) {
+            console.error('[apply] insert message error:', msgError)
+          }
+        }
+      } catch (adminErr) {
+        // Admin client not available (no service key) — fall back to regular client
+        console.error('[apply] admin client unavailable, trying regular client:', adminErr)
+
+        const messageParts: string[] = []
+        messageParts.push(`Hi, I've applied for the ${job.title} position.`)
+        if (cover_letter_text?.trim()) {
+          messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
+        }
+        if (seekerInfo?.cv_url) {
+          messageParts.push(`\n--- Resume/CV ---\n${seekerInfo.cv_url}`)
+        }
+        const firstMessageBody = messageParts.join('\n')
+
+        // With regular client: insert without .select() to avoid RLS read-back issue
+        const { error: convError } = await supabase
+          .from('conversations')
+          .insert({ application_id: application.id })
+
+        if (convError) {
+          console.error('[apply] create conversation error (regular):', convError)
+        } else {
+          // Look up the conversation we just created
+          const { data: convLookup } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('application_id', application.id)
+            .single()
+
+          if (convLookup) {
+            conversationId = convLookup.id
+
+            await supabase
+              .from('conversation_participants')
+              .insert([
+                { conversation_id: convLookup.id, user_id: user.id },
+                { conversation_id: convLookup.id, user_id: employerUserId },
+              ])
+
+            // Now that we're a participant, we can insert the message
+            await supabase
+              .from('messages')
+              .insert({
+                conversation_id: convLookup.id,
+                sender_id: user.id,
+                body: firstMessageBody,
+              })
+          }
         }
       }
-    }
-
-    // If we didn't get conversationId from the insert, try looking it up
-    if (!conversationId) {
-      const { data: convLookup } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('application_id', application.id)
-        .single()
-      conversationId = convLookup?.id || null
     }
 
     // Fire-and-forget emails

@@ -67,7 +67,6 @@ export async function POST(request: NextRequest) {
 
       if (msgError) return NextResponse.json({ error: msgError.message }, { status: 500 })
 
-      // Notify other party (with dedup)
       const senderName = user.id === seekerUserId
         ? `${seeker.first_name} ${seeker.last_name}`.trim()
         : job.companies.company_name
@@ -82,47 +81,105 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ conversation_id: existing.id, message })
     }
 
-    // Create new conversation
-    const { data: conversation, error: convError } = await supabase
-      .from('conversations')
-      .insert({ application_id })
-      .select()
-      .single()
+    // Create new conversation using admin client to bypass RLS read-back issue
+    let conversationId: string | null = null
 
-    if (convError) return NextResponse.json({ error: convError.message }, { status: 500 })
+    try {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const adminDb = createAdminClient()
 
-    // Add both participants
-    const { error: partError } = await supabase
-      .from('conversation_participants')
-      .insert([
-        { conversation_id: conversation.id, user_id: user.id },
-        { conversation_id: conversation.id, user_id: otherUserId },
-      ])
+      const { data: conversation, error: convError } = await adminDb
+        .from('conversations')
+        .insert({ application_id })
+        .select('id')
+        .single()
 
-    if (partError) return NextResponse.json({ error: partError.message }, { status: 500 })
+      if (convError || !conversation) {
+        console.error('[conversations] create error:', convError)
+        return NextResponse.json({ error: convError?.message || 'Failed to create conversation' }, { status: 500 })
+      }
 
-    // Insert the first message
-    const { data: message, error: msgError } = await supabase
-      .from('messages')
-      .insert({ conversation_id: conversation.id, sender_id: user.id, body: body.trim() })
-      .select()
-      .single()
+      conversationId = conversation.id
 
-    if (msgError) return NextResponse.json({ error: msgError.message }, { status: 500 })
+      // Add both participants
+      const { error: partError } = await adminDb
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: conversation.id, user_id: user.id },
+          { conversation_id: conversation.id, user_id: otherUserId },
+        ])
 
-    // Send notification to the other party
-    const senderName = user.id === seekerUserId
-      ? `${seeker.first_name} ${seeker.last_name}`.trim()
-      : job.companies.company_name
-    sendMessageNotification(supabase, {
-      conversationId: conversation.id,
-      recipientId: otherUserId,
-      senderName,
-      jobTitle: job.title,
-      messagePreview: body.trim().slice(0, 100),
-    })
+      if (partError) {
+        console.error('[conversations] insert participants error:', partError)
+        return NextResponse.json({ error: partError.message }, { status: 500 })
+      }
 
-    return NextResponse.json({ conversation_id: conversation.id, message }, { status: 201 })
+      // Insert the first message
+      const { data: message, error: msgError } = await adminDb
+        .from('messages')
+        .insert({ conversation_id: conversation.id, sender_id: user.id, body: body.trim() })
+        .select()
+        .single()
+
+      if (msgError) {
+        console.error('[conversations] insert message error:', msgError)
+        return NextResponse.json({ error: msgError.message }, { status: 500 })
+      }
+
+      // Send notification
+      const senderName = user.id === seekerUserId
+        ? `${seeker.first_name} ${seeker.last_name}`.trim()
+        : job.companies.company_name
+      sendMessageNotification(supabase, {
+        conversationId: conversation.id,
+        recipientId: otherUserId,
+        senderName,
+        jobTitle: job.title,
+        messagePreview: body.trim().slice(0, 100),
+      })
+
+      return NextResponse.json({ conversation_id: conversation.id, message }, { status: 201 })
+    } catch (adminErr) {
+      // Fallback: no service key available
+      console.error('[conversations] admin client unavailable:', adminErr)
+
+      // Insert without select to avoid RLS read-back
+      const { error: convError } = await supabase
+        .from('conversations')
+        .insert({ application_id })
+
+      if (convError) {
+        return NextResponse.json({ error: convError.message }, { status: 500 })
+      }
+
+      // Look it up now
+      const { data: convLookup } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('application_id', application_id)
+        .single()
+
+      if (!convLookup) {
+        return NextResponse.json({ error: 'Conversation created but could not be retrieved' }, { status: 500 })
+      }
+
+      conversationId = convLookup.id
+
+      await supabase
+        .from('conversation_participants')
+        .insert([
+          { conversation_id: convLookup.id, user_id: user.id },
+          { conversation_id: convLookup.id, user_id: otherUserId },
+        ])
+
+      const { data: message } = await supabase
+        .from('messages')
+        .insert({ conversation_id: convLookup.id, sender_id: user.id, body: body.trim() })
+        .select()
+        .single()
+
+      return NextResponse.json({ conversation_id: convLookup.id, message }, { status: 201 })
+    }
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -137,19 +194,16 @@ export async function GET(request: NextRequest) {
 
     const archived = request.nextUrl.searchParams.get('archived') === 'true'
 
-    // Use optimized RPC that does a single JOIN query
     const { data, error } = await supabase.rpc('get_inbox', {
       p_user_id: user.id,
       p_archived: archived,
     })
 
     if (error) {
-      // Fallback to empty if RPC not deployed yet
       console.error('[inbox] RPC error:', error.message)
       return NextResponse.json([])
     }
 
-    // Map RPC result to InboxConversation shape for frontend compatibility
     const inbox = (data || []).map((row: {
       conversation_id: string
       application_id: string
