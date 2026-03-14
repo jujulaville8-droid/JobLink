@@ -53,8 +53,8 @@ BEGIN
       WHERE m.conversation_id = p_conversation_id
         AND m.sender_id = co_job.user_id
     ) AS dialogue_open,
-    -- seeker_user_id: the seeker in this conversation
-    a.seeker_id AS seeker_user_id
+    -- seeker_user_id: the auth user id of the seeker in this conversation
+    sp_seeker.user_id AS seeker_user_id
   FROM public.conversation_participants cp_me
   JOIN public.conversations c ON c.id = cp_me.conversation_id
   JOIN public.conversation_participants cp_other
@@ -64,6 +64,7 @@ BEGIN
   LEFT JOIN public.user_presence up ON up.user_id = cp_other.user_id
   LEFT JOIN public.user_messaging_settings ums ON ums.user_id = cp_other.user_id
   LEFT JOIN public.applications a ON a.id = c.application_id
+  LEFT JOIN public.seeker_profiles sp_seeker ON sp_seeker.id = a.seeker_id
   LEFT JOIN public.job_listings jl ON jl.id = a.job_id
   LEFT JOIN public.companies co_job ON co_job.id = jl.company_id
   WHERE cp_me.user_id = p_user_id
