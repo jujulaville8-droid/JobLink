@@ -238,7 +238,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
   if (loading || authLoading) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-4rem-5rem)] md:h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
+      <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
         <div className="p-4 border-b border-border">
           <div className="h-5 w-40 skeleton rounded" />
           <div className="h-3 w-60 skeleton rounded mt-2" />
@@ -254,7 +254,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   const isSeekerAwaitingReply = meta ? (user?.id === meta.seeker_user_id && !meta.dialogue_open) : false;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem-5rem)] md:h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
       {/* Header */}
       <div className="shrink-0 flex items-center gap-3 p-4 border-b border-border bg-white relative z-10">
         <Link

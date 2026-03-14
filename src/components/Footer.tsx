@@ -1,7 +1,21 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+
+const DASHBOARD_PREFIXES = [
+  "/dashboard", "/admin", "/messages", "/profile", "/settings",
+  "/browse-jobs", "/browse-candidates", "/applications", "/saved",
+  "/alerts", "/my-listings", "/post-job", "/company-profile", "/candidates",
+];
 
 export default function Footer() {
+  const pathname = usePathname();
+  const isDashboard = DASHBOARD_PREFIXES.some((p) => pathname.startsWith(p));
+
+  if (isDashboard) return null;
+
   return (
     <footer className="relative bg-bg-dark text-white">
       {/* Gradient top border */}
