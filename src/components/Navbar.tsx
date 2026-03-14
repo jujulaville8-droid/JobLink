@@ -346,7 +346,7 @@ export default function Navbar() {
               )}
 
               {/* Theme toggle — far right */}
-              <ThemeSwitch />
+              <ThemeSwitch className="-mr-1.5" />
             </div>
 
             {/* ── Mobile: Role switcher + Avatar + Hamburger + Theme toggle ── */}
@@ -377,7 +377,7 @@ export default function Navbar() {
                 )}
               </button>
               {/* Theme toggle — far right */}
-              <ThemeSwitch className="h-7 w-12 [&>span:first-child]:h-5 [&>span:first-child]:w-5" />
+              <ThemeSwitch className="h-7 w-12 -mr-1.5 [&>span:first-child]:h-5 [&>span:first-child]:w-5" />
             </div>
           </div>
 
