@@ -66,7 +66,7 @@ export const FloatingNav = ({
           "fixed top-4 inset-x-0 mx-auto z-[5000]",
           "flex items-center justify-center gap-5",
           "w-auto max-w-fit px-6 py-2.5 rounded-full",
-          "bg-white/80 backdrop-blur-xl border border-border/60",
+          "bg-[--color-surface]/80 backdrop-blur-xl border border-border/60",
           "shadow-[0_8px_32px_-8px_rgba(0,0,0,0.1)]",
           className
         )}

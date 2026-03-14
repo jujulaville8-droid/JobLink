@@ -237,7 +237,7 @@ export default function Navbar() {
           label: "Sign Out",
           onClick: () => logout(),
           Icon: <LogOut className="h-4 w-4" />,
-          className: "text-red-600 hover:bg-red-50",
+          className: "text-red-500 hover:bg-red-500/10",
         },
       ]
     : [
@@ -260,7 +260,7 @@ export default function Navbar() {
           label: "Sign Out",
           onClick: () => logout(),
           Icon: <LogOut className="h-4 w-4" />,
-          className: "text-red-600 hover:bg-red-50",
+          className: "text-red-500 hover:bg-red-500/10",
         },
       ];
 
@@ -307,17 +307,8 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* ── Right: Theme toggle + Role switcher + Avatar (desktop) ── */}
+            {/* ── Right: Role switcher + Avatar + Theme toggle (desktop) ── */}
             <div className="hidden md:flex items-center gap-3 shrink-0">
-              {/* Theme toggle */}
-              <button
-                onClick={toggleTheme}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/60 bg-bg-alt/50 text-text-light hover:text-primary hover:bg-bg-alt transition-colors"
-                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-
               {isLoading ? (
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
@@ -354,17 +345,19 @@ export default function Navbar() {
                   </Link>
                 </div>
               )}
-            </div>
 
-            {/* ── Mobile: Theme toggle + Role switcher + Avatar + Hamburger ── */}
-            <div className="flex md:hidden items-center gap-2">
+              {/* Theme toggle — far right */}
               <button
                 onClick={toggleTheme}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-text-light hover:text-primary transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 text-text-muted hover:text-primary hover:border-primary/30 hover:bg-primary/[0.06] transition-all"
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
               </button>
+            </div>
+
+            {/* ── Mobile: Role switcher + Avatar + Hamburger + Theme toggle ── */}
+            <div className="flex md:hidden items-center gap-2">
               {isAuthenticated && !isLoading && (
                 <>
                   {mobileRoleSwitcher}
@@ -389,6 +382,14 @@ export default function Navbar() {
                 ) : (
                   <svg className="h-5 w-5 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
                 )}
+              </button>
+              {/* Theme toggle — far right */}
+              <button
+                onClick={toggleTheme}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:text-primary transition-colors"
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
             </div>
           </div>
