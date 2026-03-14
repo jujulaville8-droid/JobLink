@@ -287,7 +287,7 @@ export default function Navbar() {
             </Link>
 
             {/* ── Center: Nav links (desktop) ── */}
-            <nav className="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <nav className="hidden md:flex items-center gap-1 mx-auto">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -307,7 +307,7 @@ export default function Navbar() {
             </nav>
 
             {/* ── Right: Role switcher + Avatar + Theme toggle (desktop) ── */}
-            <div className="hidden md:flex items-center gap-3 shrink-0">
+            <div className="hidden md:flex items-center gap-2.5 shrink-0">
               {isLoading ? (
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
