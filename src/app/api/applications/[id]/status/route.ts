@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendEmail, BASE_URL } from '@/lib/email';
+import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
 
 const VALID_STATUSES = ['shortlisted', 'rejected', 'hired'] as const;
 type ValidStatus = (typeof VALID_STATUSES)[number];
@@ -128,6 +129,19 @@ export async function PATCH(
           },
         });
       }
+    }
+
+    // Send system message into the conversation thread (fire-and-forget)
+    if (seekerProfile?.user_id) {
+      const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+      sendStatusChangeMessage(supabase, {
+        applicationId: id,
+        employerUserId: user.id,
+        seekerUserId: seekerProfile.user_id,
+        newStatus: status,
+        jobTitle: listing.title,
+        companyName: companyData?.company_name || 'the employer',
+      })
     }
 
     return NextResponse.json({ application: updated });

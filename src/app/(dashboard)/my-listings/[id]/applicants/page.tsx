@@ -4,6 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import Link from 'next/link';
 import type { ApplicationStatus } from '@/lib/types';
 import MessageButton from '@/components/messaging/MessageButton';
+import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -64,10 +65,10 @@ function StatusButton({
     const supabase = await createClient();
     const user = await requireAuth();
 
-    // Verify ownership
+    // Verify ownership and get context for system message
     const { data: application } = await supabase
       .from('applications')
-      .select('id, job_id')
+      .select('id, job_id, seeker_id')
       .eq('id', applicationId)
       .single();
 
@@ -75,7 +76,7 @@ function StatusButton({
 
     const { data: listing } = await supabase
       .from('job_listings')
-      .select('company_id')
+      .select('company_id, title, companies(company_name)')
       .eq('id', application.job_id)
       .single();
 
@@ -94,6 +95,25 @@ function StatusButton({
       .from('applications')
       .update({ status })
       .eq('id', applicationId);
+
+    // Send system message into the conversation thread
+    const { data: seekerProfile } = await supabase
+      .from('seeker_profiles')
+      .select('user_id')
+      .eq('id', application.seeker_id)
+      .single();
+
+    if (seekerProfile?.user_id) {
+      const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+      await sendStatusChangeMessage(supabase, {
+        applicationId,
+        employerUserId: user.id,
+        seekerUserId: seekerProfile.user_id,
+        newStatus: status,
+        jobTitle: listing.title,
+        companyName: (companyData as { company_name: string } | null)?.company_name || 'the employer',
+      });
+    }
 
     redirect(`/my-listings/${application.job_id}/applicants`);
   }
