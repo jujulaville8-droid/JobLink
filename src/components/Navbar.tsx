@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, ArrowLeftRight, Compass } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -25,7 +25,6 @@ export default function Navbar() {
     setImgError(false);
   }, [avatarUrl]);
 
-  // Hide static navbar once user scrolls past the navbar height
   useEffect(() => {
     function handleScroll() {
       setScrolledPastTop(window.scrollY > 80);
@@ -115,9 +114,152 @@ export default function Navbar() {
     </>
   );
 
+  // ── Role switcher (desktop) ──
+  const roleSwitcher = isAuthenticated && !isLoading && (
+    <div className="flex items-center rounded-full bg-bg-alt/80 border border-border/60 p-[3px]">
+      {/* Job Seeker toggle */}
+      <button
+        onClick={() => !switching && userRole !== "seeker" && handleSwitchRole("seeker")}
+        disabled={switching}
+        className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
+          userRole === "seeker"
+            ? "bg-white text-primary shadow-sm"
+            : "text-text-muted hover:text-text"
+        }`}
+      >
+        <Search className="h-3 w-3" />
+        <span className="hidden lg:inline">Job Seeker</span>
+      </button>
+
+      {/* Employer toggle */}
+      <button
+        onClick={() => !switching && userRole !== "employer" && handleSwitchRole("employer")}
+        disabled={switching}
+        className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
+          userRole === "employer"
+            ? "bg-white text-primary shadow-sm"
+            : "text-text-muted hover:text-text"
+        }`}
+      >
+        <Building className="h-3 w-3" />
+        <span className="hidden lg:inline">Employer</span>
+      </button>
+
+      {/* Admin toggle (only for admin users) */}
+      {canBeAdmin && (
+        <button
+          onClick={() => !switching && userRole !== "admin" && handleSwitchRole("admin")}
+          disabled={switching}
+          className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
+            userRole === "admin"
+              ? "bg-white text-amber-600 shadow-sm"
+              : "text-text-muted hover:text-text"
+          }`}
+        >
+          <Shield className="h-3 w-3" />
+          <span className="hidden lg:inline">Admin</span>
+        </button>
+      )}
+
+      {switching && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-sm">
+          <div className="h-3.5 w-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Mobile role switcher ──
+  const mobileRoleSwitcher = isAuthenticated && !isLoading && (
+    <div className="flex items-center rounded-full bg-bg-alt/80 border border-border/60 p-[3px]">
+      <button
+        onClick={() => !switching && userRole !== "seeker" && handleSwitchRole("seeker")}
+        disabled={switching}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
+          userRole === "seeker"
+            ? "bg-white text-primary shadow-sm"
+            : "text-text-muted"
+        }`}
+      >
+        <Search className="h-3 w-3" />
+        Seeker
+      </button>
+      <button
+        onClick={() => !switching && userRole !== "employer" && handleSwitchRole("employer")}
+        disabled={switching}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
+          userRole === "employer"
+            ? "bg-white text-primary shadow-sm"
+            : "text-text-muted"
+        }`}
+      >
+        <Building className="h-3 w-3" />
+        Employer
+      </button>
+      {canBeAdmin && (
+        <button
+          onClick={() => !switching && userRole !== "admin" && handleSwitchRole("admin")}
+          disabled={switching}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
+            userRole === "admin"
+              ? "bg-white text-amber-600 shadow-sm"
+              : "text-text-muted"
+          }`}
+        >
+          <Shield className="h-3 w-3" />
+          Admin
+        </button>
+      )}
+    </div>
+  );
+
+  // ── Dropdown options (account actions only, no role switching) ──
+  const dropdownOptions = isAdmin
+    ? [
+        {
+          label: "Admin Dashboard",
+          onClick: () => router.push("/dashboard"),
+          Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+        },
+        {
+          label: "Settings",
+          onClick: () => router.push("/settings"),
+          Icon: <Settings className="h-4 w-4 text-text-muted" />,
+        },
+        {
+          label: "Sign Out",
+          onClick: () => logout(),
+          Icon: <LogOut className="h-4 w-4" />,
+          className: "text-red-600 hover:bg-red-50",
+        },
+      ]
+    : [
+        {
+          label: "Dashboard",
+          onClick: () => router.push("/dashboard"),
+          Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+        },
+        {
+          label: isEmployer ? "Company Profile" : "Profile",
+          onClick: () => router.push(isEmployer ? "/company-profile" : "/profile"),
+          Icon: isEmployer ? <Building className="h-4 w-4 text-text-muted" /> : <User className="h-4 w-4 text-text-muted" />,
+        },
+        {
+          label: "Settings",
+          onClick: () => router.push("/settings"),
+          Icon: <Settings className="h-4 w-4 text-text-muted" />,
+        },
+        {
+          label: "Sign Out",
+          onClick: () => logout(),
+          Icon: <LogOut className="h-4 w-4" />,
+          className: "text-red-600 hover:bg-red-50",
+        },
+      ];
+
   return (
     <>
-      {/* ── Static navbar — transparent, disappears when floating is visible ── */}
+      {/* ── Static navbar ── */}
       <header
         className={`sticky top-0 z-50 transition-all duration-300 ${
           scrolledPastTop
@@ -158,84 +300,28 @@ export default function Navbar() {
               ))}
             </nav>
 
-            {/* ── Right: Account area (desktop) ── */}
+            {/* ── Right: Role switcher + Avatar (desktop) ── */}
             <div className="hidden md:flex items-center gap-3 shrink-0">
               {isLoading ? (
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
-                <DropdownMenu
-                  header={
-                    <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
-                  }
-                  dividerAfter={[isAdmin ? 1 : 3]}
-                  options={[
-                    ...(isAdmin
-                      ? [
-                          {
-                            label: "Admin Dashboard",
-                            onClick: () => router.push("/dashboard"),
-                            Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
-                          },
-                          {
-                            label: switching ? "Switching..." : "Switch to Employer",
-                            onClick: () => handleSwitchRole("employer"),
-                            Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
-                            className: "text-primary hover:bg-primary/5",
-                          },
-                          {
-                            label: switching ? "Switching..." : "Switch to Job Seeker",
-                            onClick: () => handleSwitchRole("seeker"),
-                            Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
-                            className: "text-primary hover:bg-primary/5",
-                          },
-                        ]
-                      : [
-                          {
-                            label: "Dashboard",
-                            onClick: () => router.push("/dashboard"),
-                            Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
-                          },
-                          {
-                            label: isEmployer ? "Company Profile" : "Profile",
-                            onClick: () => router.push(isEmployer ? "/company-profile" : "/profile"),
-                            Icon: isEmployer ? <Building className="h-4 w-4 text-text-muted" /> : <User className="h-4 w-4 text-text-muted" />,
-                          },
-                          {
-                            label: "Settings",
-                            onClick: () => router.push("/settings"),
-                            Icon: <Settings className="h-4 w-4 text-text-muted" />,
-                          },
-                          {
-                            label: switching
-                              ? "Switching..."
-                              : isEmployer
-                                ? "Switch to Job Seeker"
-                                : "Switch to Employer",
-                            onClick: () => handleSwitchRole(),
-                            Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
-                            className: "text-primary hover:bg-primary/5",
-                          },
-                          ...(canBeAdmin
-                            ? [
-                                {
-                                  label: switching ? "Switching..." : "Switch to Admin",
-                                  onClick: () => handleSwitchRole("admin"),
-                                  Icon: <ArrowLeftRight className="h-4 w-4 text-text-muted" />,
-                                  className: "text-amber-600 hover:bg-amber-50",
-                                },
-                              ]
-                            : []),
-                        ]),
-                    {
-                      label: "Sign Out",
-                      onClick: () => logout(),
-                      Icon: <LogOut className="h-4 w-4" />,
-                      className: "text-red-600 hover:bg-red-50",
-                    },
-                  ]}
-                >
-                  {avatarElement}
-                </DropdownMenu>
+                <>
+                  {/* Role switcher */}
+                  <div className="relative">
+                    {roleSwitcher}
+                  </div>
+
+                  {/* Avatar dropdown (account actions only) */}
+                  <DropdownMenu
+                    header={
+                      <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
+                    }
+                    dividerAfter={[isAdmin ? 1 : 2]}
+                    options={dropdownOptions}
+                  >
+                    {avatarElement}
+                  </DropdownMenu>
+                </>
               ) : (
                 <div className="flex items-center gap-2">
                   <Link
@@ -254,18 +340,21 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* ── Mobile: Avatar + Hamburger ── */}
+            {/* ── Mobile: Role switcher + Avatar + Hamburger ── */}
             <div className="flex md:hidden items-center gap-2">
-              {isAuthenticated && (
-                <Link href="/dashboard" className="flex shrink-0 rounded-full overflow-hidden">
-                  {showAvatar ? (
-                    <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setImgError(true)} />
-                  ) : (
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-[12px] font-semibold">
-                      {initial}
-                    </span>
-                  )}
-                </Link>
+              {isAuthenticated && !isLoading && (
+                <>
+                  {mobileRoleSwitcher}
+                  <Link href="/dashboard" className="flex shrink-0 rounded-full overflow-hidden">
+                    {showAvatar ? (
+                      <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setImgError(true)} />
+                    ) : (
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-[12px] font-semibold">
+                        {initial}
+                      </span>
+                    )}
+                  </Link>
+                </>
               )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -312,7 +401,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ── Floating nav: just the buttons, appears on scroll-up (homepage only) ── */}
+      {/* ── Floating nav (homepage only) ── */}
       {pathname === "/" && <FloatingNav
         onVisibilityChange={handleFloatingVisibility}
         navItems={[
