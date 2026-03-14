@@ -17,7 +17,12 @@ export async function GET(
       p_conversation_id: conversationId,
     })
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      console.error('[meta] RPC error:', error.message, error.details, error.hint)
+      return NextResponse.json({ error: 'Conversation not found', details: error.message }, { status: 404 })
+    }
+    if (!data || data.length === 0) {
+      console.error('[meta] No data returned for conversation:', conversationId, 'user:', user.id)
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
     }
 
