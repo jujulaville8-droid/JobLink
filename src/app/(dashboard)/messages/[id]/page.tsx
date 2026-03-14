@@ -41,6 +41,14 @@ function lastSeenText(lastSeen: string | null): string {
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+
+  // Lock body scroll so the page never jumps — only the chat thread scrolls
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
   const [conversationId, setConversationId] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [meta, setMeta] = useState<ConversationMeta | null>(null);

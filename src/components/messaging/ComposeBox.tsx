@@ -29,7 +29,7 @@ export default function ComposeBox({
       // Focus and resize textarea
       setTimeout(() => {
         if (textareaRef.current) {
-          textareaRef.current.focus();
+          textareaRef.current.focus({ preventScroll: true });
           textareaRef.current.style.height = "auto";
           textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px";
         }
