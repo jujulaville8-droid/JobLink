@@ -18,6 +18,7 @@ import {
   SentIcon,
   ViewIcon,
   Search01Icon,
+  Message01Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -84,6 +85,7 @@ export default function ApplyPage() {
   });
   const [coverLetter, setCoverLetter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [applicationId, setApplicationId] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -217,6 +219,9 @@ export default function ApplyPage() {
         return;
       }
 
+      if (data.application?.id) {
+        setApplicationId(data.application.id);
+      }
       setState("success");
     } catch {
       setErrorMessage(
@@ -592,9 +597,22 @@ export default function ApplyPage() {
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                {applicationId && (
+                  <Link
+                    href={`/messages/new?application_id=${applicationId}`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
+                  >
+                    <HugeiconsIcon icon={Message01Icon} size={14} />
+                    Message Employer
+                  </Link>
+                )}
                 <Link
                   href="/applications"
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-px ${
+                    applicationId
+                      ? "border-2 border-border bg-white text-text-light hover:text-primary hover:border-primary/30"
+                      : "bg-primary text-white hover:bg-primary-dark hover:shadow-md hover:shadow-primary/20"
+                  }`}
                 >
                   <HugeiconsIcon icon={ViewIcon} size={14} />
                   View My Applications

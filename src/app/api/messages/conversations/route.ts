@@ -214,10 +214,10 @@ export async function GET() {
         }
       }
 
-      // Get application context (job title + company)
+      // Get application context (job title + company + status)
       const { data: appData } = await supabase
         .from('applications')
-        .select('job_listings!inner ( title, companies!inner ( company_name ) )')
+        .select('status, job_listings!inner ( title, companies!inner ( company_name ) )')
         .eq('id', conv.application_id)
         .single()
 
@@ -230,6 +230,7 @@ export async function GET() {
         application_context: {
           job_title: jobInfo?.title || 'Unknown Position',
           company_name: jobInfo?.companies?.company_name || 'Unknown Company',
+          application_status: (appData?.status as string) || 'applied',
         },
       })
     }

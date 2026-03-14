@@ -153,6 +153,7 @@ export interface InboxConversation extends Conversation {
   application_context: {
     job_title: string;
     company_name: string;
+    application_status: ApplicationStatus;
   };
 }
 

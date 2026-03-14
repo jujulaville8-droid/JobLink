@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { ApplicationStatus } from "@/lib/types";
+import MessageButton from "@/components/messaging/MessageButton";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   applied: "bg-primary/10 text-primary",
@@ -139,17 +140,23 @@ export default async function ApplicationsPage() {
                         { year: "numeric", month: "long", day: "numeric" }
                       )}
                     </span>
-                    <Link
-                      href={`/jobs/${job?.id ?? ""}`}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-white hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                      View Job
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <MessageButton
+                        applicationId={app.id as string}
+                        label="Message Employer"
+                      />
+                      <Link
+                        href={`/jobs/${job?.id ?? ""}`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-white hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
+                      >
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                        View Job
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );

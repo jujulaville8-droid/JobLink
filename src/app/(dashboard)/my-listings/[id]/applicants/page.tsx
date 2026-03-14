@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireAuth } from '@/lib/auth';
 import Link from 'next/link';
 import type { ApplicationStatus } from '@/lib/types';
+import MessageButton from '@/components/messaging/MessageButton';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -413,8 +414,14 @@ export default async function ApplicantsPage({
                     </a>
                   )}
 
-                  {/* Status Actions */}
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                  {/* Message + Status Actions */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                    <MessageButton
+                      applicationId={app.id}
+                      label="Message Candidate"
+                      variant="primary"
+                    />
+                    <span className="mx-1 text-border">|</span>
                     <span className="mr-2 text-xs font-medium text-text-light self-center">
                       Set status:
                     </span>

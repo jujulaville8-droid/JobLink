@@ -9,11 +9,28 @@ import MessageThread from "@/components/messaging/MessageThread";
 import ComposeBox from "@/components/messaging/ComposeBox";
 import type { Message } from "@/lib/types";
 
+import type { ApplicationStatus } from "@/lib/types";
+
+const STATUS_COLORS: Record<ApplicationStatus, string> = {
+  applied: "bg-primary/10 text-primary",
+  shortlisted: "bg-emerald-50 text-emerald-700",
+  rejected: "bg-red-50 text-red-600",
+  hired: "bg-accent-warm/10 text-amber-700",
+};
+
+const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  applied: "Applied",
+  shortlisted: "Shortlisted",
+  rejected: "Rejected",
+  hired: "Hired",
+};
+
 interface ConversationMeta {
   other_name: string;
   other_avatar: string | null;
   job_title: string;
   company_name: string;
+  application_status: ApplicationStatus;
 }
 
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
@@ -64,6 +81,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
               other_avatar: conv.other_participant.avatar_url,
               job_title: conv.application_context.job_title,
               company_name: conv.application_context.company_name,
+              application_status: conv.application_context.application_status || "applied",
             });
           }
         }
@@ -152,10 +170,17 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
             {meta?.other_name?.charAt(0).toUpperCase() || "?"}
           </div>
         )}
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-text truncate">{meta?.other_name || "Conversation"}</h2>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-text truncate">{meta?.other_name || "Conversation"}</h2>
+            {meta?.application_status && (
+              <span className={`shrink-0 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${STATUS_COLORS[meta.application_status] || STATUS_COLORS.applied}`}>
+                {STATUS_LABELS[meta.application_status] || meta.application_status}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-text-muted truncate">
-            Re: {meta?.job_title} at {meta?.company_name}
+            {meta?.job_title} at {meta?.company_name}
           </p>
         </div>
       </div>

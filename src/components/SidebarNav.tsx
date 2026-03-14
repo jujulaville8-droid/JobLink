@@ -7,6 +7,7 @@ interface NavLink {
   href: string;
   label: string;
   icon: string;
+  badge?: React.ReactNode;
 }
 
 function SidebarIcon({ icon }: { icon: string }) {
@@ -109,7 +110,8 @@ export default function SidebarNav({ links }: { links: NavLink[] }) {
             }`}
           >
             <SidebarIcon icon={link.icon} />
-            {link.label}
+            <span className="flex-1">{link.label}</span>
+            {link.badge}
           </Link>
         );
       })}
