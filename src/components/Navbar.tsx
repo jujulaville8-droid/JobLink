@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import { useTheme } from "@/components/ThemeProvider";
+import ThemeSwitch from "@/components/ui/theme-switch";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, Sun, Moon } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user, userRole, isAdminUser, avatarUrl, logout, setUserRole, isLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -347,13 +346,7 @@ export default function Navbar() {
               )}
 
               {/* Theme toggle — far right */}
-              <button
-                onClick={toggleTheme}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-border/60 text-text-muted hover:text-primary hover:border-primary/30 hover:bg-primary/[0.06] transition-all"
-                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
-              </button>
+              <ThemeSwitch />
             </div>
 
             {/* ── Mobile: Role switcher + Avatar + Hamburger + Theme toggle ── */}
@@ -384,13 +377,7 @@ export default function Navbar() {
                 )}
               </button>
               {/* Theme toggle — far right */}
-              <button
-                onClick={toggleTheme}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-text-muted hover:text-primary transition-colors"
-                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
+              <ThemeSwitch className="h-8 w-16 [&>span]:h-6 [&>span]:w-6" />
             </div>
           </div>
 

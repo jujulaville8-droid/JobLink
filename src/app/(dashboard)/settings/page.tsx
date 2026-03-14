@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "next-themes";
 import type { VisibilityMode, UserMessagingSettings } from "@/lib/types";
 
 const VISIBILITY_OPTIONS: {
@@ -32,7 +32,8 @@ const VISIBILITY_OPTIONS: {
 export default function SettingsPage() {
   const router = useRouter();
   const { user: authUser, isLoading: authLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme: theme, setTheme } = useTheme();
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{
