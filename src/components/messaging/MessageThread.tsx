@@ -52,14 +52,17 @@ export default function MessageThread({
       // Auto-scroll if user is within 200px of bottom
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
       if (isNearBottom) {
-        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+        container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
       }
     }
   }, [messages.length]);
 
   // Initial scroll to bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, []);
 
   // Scroll-to-load: detect when user scrolls to top
