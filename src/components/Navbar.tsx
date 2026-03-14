@@ -377,7 +377,7 @@ export default function Navbar() {
                 )}
               </button>
               {/* Theme toggle — far right */}
-              <ThemeSwitch className="h-8 w-16 [&>span]:h-6 [&>span]:w-6" />
+              <ThemeSwitch className="h-7 w-12 [&>span:first-child]:h-5 [&>span:first-child]:w-5" />
             </div>
           </div>
 

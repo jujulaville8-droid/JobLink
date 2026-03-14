@@ -1,83 +1,70 @@
 "use client";
 
-import { MoonIcon, SunIcon } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const ThemeSwitch = ({
   className,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+}: React.HTMLAttributes<HTMLButtonElement>) => {
   const { resolvedTheme, setTheme } = useTheme();
-  const [checked, setChecked] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
-  useEffect(() => setChecked(resolvedTheme === "dark"), [resolvedTheme]);
 
-  const handleCheckedChange = useCallback(
-    (isChecked: boolean) => {
-      setChecked(isChecked);
-      setTheme(isChecked ? "dark" : "light");
-    },
-    [setTheme],
-  );
+  if (!mounted) return <div className={cn("h-8 w-14", className)} />;
 
-  if (!mounted) return null;
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <div
+    <button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       className={cn(
-        "relative flex items-center justify-center",
-        "h-9 w-20",
+        "relative inline-flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2",
+        isDark
+          ? "bg-[#1e293b] border border-[#334155]"
+          : "bg-[#e2e8f0] border border-[#cbd5e1]",
         className
       )}
       {...props}
     >
-      <Switch
-        checked={checked}
-        onCheckedChange={handleCheckedChange}
-        className={cn(
-          "peer absolute inset-0 h-full w-full rounded-full bg-input/50 transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          "[&>span]:h-7 [&>span]:w-7 [&>span]:rounded-full [&>span]:bg-background [&>span]:shadow [&>span]:z-10",
-          "data-[state=unchecked]:[&>span]:translate-x-1",
-          "data-[state=checked]:[&>span]:translate-x-[44px]"
-        )}
-      />
-
+      {/* Sliding thumb */}
       <span
         className={cn(
-          "pointer-events-none absolute left-2 inset-y-0 z-0",
-          "flex items-center justify-center"
+          "pointer-events-none absolute flex h-6 w-6 items-center justify-center rounded-full shadow-md transition-all duration-300 ease-in-out",
+          isDark
+            ? "translate-x-7 bg-[#1e293b] ring-1 ring-[#475569]"
+            : "translate-x-1 bg-white ring-1 ring-black/5"
         )}
       >
-        <SunIcon
-          size={16}
+        {isDark ? (
+          <Moon className="h-3.5 w-3.5 text-blue-300" />
+        ) : (
+          <Sun className="h-3.5 w-3.5 text-amber-500" />
+        )}
+      </span>
+
+      {/* Background icons (subtle, behind the thumb) */}
+      <span className="pointer-events-none absolute left-[7px] flex items-center justify-center">
+        <Sun
           className={cn(
-            "transition-all duration-200 ease-out",
-            checked ? "text-muted-foreground/70" : "text-foreground scale-110"
+            "h-3 w-3 transition-opacity duration-300",
+            isDark ? "opacity-30 text-slate-500" : "opacity-0"
           )}
         />
       </span>
-
-      <span
-        className={cn(
-          "pointer-events-none absolute right-2 inset-y-0 z-0",
-          "flex items-center justify-center"
-        )}
-      >
-        <MoonIcon
-          size={16}
+      <span className="pointer-events-none absolute right-[7px] flex items-center justify-center">
+        <Moon
           className={cn(
-            "transition-all duration-200 ease-out",
-            checked ? "text-foreground scale-110" : "text-muted-foreground/70"
+            "h-3 w-3 transition-opacity duration-300",
+            isDark ? "opacity-0" : "opacity-30 text-slate-400"
           )}
         />
       </span>
-    </div>
+    </button>
   );
 };
 

@@ -57,10 +57,10 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
             animate={{ y: 0, scale: 1, opacity: 1, filter: "blur(0px)" }}
             exit={{ y: -5, scale: 0.95, opacity: 0, filter: "blur(10px)" }}
             transition={{ duration: 0.6, ease: "circInOut", type: "spring" }}
-            className="absolute right-0 z-50 w-56 mt-2.5 py-1.5 bg-[--color-surface] rounded-xl border border-border shadow-lg shadow-primary/[0.06] flex flex-col"
+            className="absolute right-0 z-50 w-56 mt-2.5 py-1.5 bg-[--color-surface] rounded-xl border border-border shadow-lg shadow-black/10 dark:shadow-black/40 flex flex-col"
           >
             {header && (
-              <div className="px-4 py-2.5 border-b border-bg-alt mb-1">
+              <div className="px-4 py-2.5 border-b border-border mb-1">
                 {header}
               </div>
             )}
@@ -88,7 +88,7 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
                       type: "spring",
                     }}
                     whileHover={{
-                      backgroundColor: "var(--color-bg-alt, #f5f5f5)",
+                      backgroundColor: "var(--color-bg-alt)",
                       transition: {
                         duration: 0.2,
                         ease: "easeInOut",
@@ -105,7 +105,7 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
                       option.onClick();
                       setIsOpen(false);
                     }}
-                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text-light cursor-pointer transition-colors ${option.className ?? ""}`}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text cursor-pointer transition-colors ${option.className ?? ""}`}
                   >
                     {option.Icon}
                     {option.label}
