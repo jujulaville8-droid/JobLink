@@ -219,13 +219,7 @@ export default function ApplyPage() {
         return;
       }
 
-      // Redirect straight to the conversation thread
-      if (data.conversation_id) {
-        window.location.href = `/messages/${data.conversation_id}`;
-        return;
-      }
-
-      // Fallback if no conversation was created
+      // Store conversation ID and show the success confirmation
       if (data.conversation_id) {
         setConversationId(data.conversation_id);
       }
