@@ -141,6 +141,8 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   body: string;
+  attachment_url?: string | null;
+  attachment_name?: string | null;
   created_at: string;
   // Client-only: optimistic send state
   _optimistic?: boolean;

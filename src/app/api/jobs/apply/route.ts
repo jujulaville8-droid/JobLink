@@ -122,10 +122,13 @@ export async function POST(request: NextRequest) {
         if (cover_letter_text?.trim()) {
           messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
         }
-        if (seekerInfo?.cv_url) {
-          messageParts.push(`\n--- Resume/CV ---\n${seekerInfo.cv_url}`)
-        }
         const firstMessageBody = messageParts.join('\n')
+
+        // Build CV attachment info if available
+        const cvAttachmentUrl = seekerInfo?.cv_url || null
+        const cvAttachmentName = cvAttachmentUrl
+          ? `${(seekerInfo?.first_name || 'Applicant')}_${(seekerInfo?.last_name || '')}_CV.pdf`.replace(/\s+/g, '_')
+          : null
 
         // Create conversation
         const { data: conversation, error: convError } = await adminDb
@@ -153,13 +156,14 @@ export async function POST(request: NextRequest) {
             console.error('[apply] insert participants error:', partError)
           }
 
-          // Insert the first message
+          // Insert the first message with CV as attachment
           const { error: msgError } = await adminDb
             .from('messages')
             .insert({
               conversation_id: conversation.id,
               sender_id: user.id,
               body: firstMessageBody,
+              ...(cvAttachmentUrl ? { attachment_url: cvAttachmentUrl, attachment_name: cvAttachmentName } : {}),
             })
 
           if (msgError) {
@@ -175,10 +179,13 @@ export async function POST(request: NextRequest) {
         if (cover_letter_text?.trim()) {
           messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
         }
-        if (seekerInfo?.cv_url) {
-          messageParts.push(`\n--- Resume/CV ---\n${seekerInfo.cv_url}`)
-        }
         const firstMessageBody = messageParts.join('\n')
+
+        // Build CV attachment info if available
+        const cvAttachmentUrl = seekerInfo?.cv_url || null
+        const cvAttachmentName = cvAttachmentUrl
+          ? `${(seekerInfo?.first_name || 'Applicant')}_${(seekerInfo?.last_name || '')}_CV.pdf`.replace(/\s+/g, '_')
+          : null
 
         // With regular client: insert without .select() to avoid RLS read-back issue
         const { error: convError } = await supabase
@@ -205,13 +212,14 @@ export async function POST(request: NextRequest) {
                 { conversation_id: convLookup.id, user_id: employerUserId },
               ])
 
-            // Now that we're a participant, we can insert the message
+            // Now that we're a participant, we can insert the message with CV attachment
             await supabase
               .from('messages')
               .insert({
                 conversation_id: convLookup.id,
                 sender_id: user.id,
                 body: firstMessageBody,
+                ...(cvAttachmentUrl ? { attachment_url: cvAttachmentUrl, attachment_name: cvAttachmentName } : {}),
               })
           }
         }

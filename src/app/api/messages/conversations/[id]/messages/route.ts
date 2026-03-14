@@ -29,7 +29,7 @@ export async function GET(
 
     let query = supabase
       .from('messages')
-      .select('id, conversation_id, sender_id, body, created_at')
+      .select('id, conversation_id, sender_id, body, attachment_url, attachment_name, created_at')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
       .limit(pageSize)
