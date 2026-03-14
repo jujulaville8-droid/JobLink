@@ -87,44 +87,44 @@ async function SeekerDashboard({ userId }: { userId: string }) {
         Here&apos;s what&apos;s happening with your job search.
       </p>
 
-      {/* Profile Completion */}
-      <div className="mt-6 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-text">Profile Completion</h2>
-            <p className="text-sm text-text-light">{completePct}% complete</p>
-          </div>
-          {completePct < 100 && (
+      {/* Profile Completion - hidden when 100% */}
+      {completePct < 100 && (
+        <div className="mt-6 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-text">Profile Completion</h2>
+              <p className="text-sm text-text-light">{completePct}% complete</p>
+            </div>
             <Link
               href="/profile"
               className="btn-warm text-sm px-4 py-2"
             >
               Complete Profile
             </Link>
+          </div>
+          <div className="mt-3 h-3 w-full rounded-full bg-bg-alt">
+            <div
+              className="h-3 rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${completePct}%` }}
+            />
+          </div>
+          {missing.length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs font-medium text-text-light">Missing:</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {missing.map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center rounded-full bg-accent-warm/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-accent-warm/20"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-        <div className="mt-3 h-3 w-full rounded-full bg-bg-alt">
-          <div
-            className={`h-3 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-emerald-500" : "bg-primary"}`}
-            style={{ width: `${completePct}%` }}
-          />
-        </div>
-        {missing.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs font-medium text-text-light">Missing:</p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {missing.map((item) => (
-                <span
-                  key={item}
-                  className="inline-flex items-center rounded-full bg-accent-warm/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-accent-warm/20"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Recent Applications */}
       <div className="mt-8">
