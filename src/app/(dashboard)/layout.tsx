@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/SidebarNav";
 import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
+import UnreadBadge from "@/components/messaging/UnreadBadge";
 
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
@@ -55,12 +56,19 @@ export default async function DashboardLayout({
 
   const role = (userData?.role as string) ?? (user.user_metadata?.role as string) ?? "seeker";
 
-  const navLinks =
+  const baseLinks =
     role === "admin"
       ? adminLinks
       : role === "employer"
         ? employerLinks
         : seekerLinks;
+
+  // Inject unread badge into the messages/inbox sidebar link
+  const navLinks = baseLinks.map((link) =>
+    link.href === "/messages"
+      ? { ...link, badge: <UnreadBadge /> }
+      : link
+  );
 
   return (
     <div className="flex min-h-screen">
