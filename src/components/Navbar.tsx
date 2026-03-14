@@ -25,13 +25,18 @@ export default function Navbar() {
     setImgError(false);
   }, [avatarUrl]);
 
+  // Only track scroll on homepage where floating nav takes over
   useEffect(() => {
+    if (pathname !== "/") {
+      setScrolledPastTop(false);
+      return;
+    }
     function handleScroll() {
       setScrolledPastTop(window.scrollY > 80);
     }
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   const isEmployer = userRole === "employer";
   const isAdmin = userRole === "admin";
@@ -261,10 +266,10 @@ export default function Navbar() {
     <>
       {/* ── Static navbar ── */}
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          scrolledPastTop
-            ? "-translate-y-full opacity-0 pointer-events-none"
-            : "translate-y-0 opacity-100"
+        className={`sticky top-0 z-50 bg-[--color-bg]/95 backdrop-blur-sm ${
+          pathname === "/"
+            ? `transition-all duration-200 ${scrolledPastTop ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`
+            : ""
         }`}
       >
         <div className="mx-auto w-full max-w-[1200px] px-5 sm:px-8">
