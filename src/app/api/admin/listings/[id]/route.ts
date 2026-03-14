@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail } from '@/lib/email'
 
 export async function PATCH(
   request: NextRequest,
@@ -55,6 +56,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
     }
 
+    // Get the listing before updating (to check previous status and get details for email)
+    const { data: currentListing } = await supabase
+      .from('job_listings')
+      .select('status, title, company_id, companies(user_id)')
+      .eq('id', id)
+      .single()
+
     const { data: updatedListing, error: updateError } = await supabase
       .from('job_listings')
       .update(updates)
@@ -68,6 +76,44 @@ export async function PATCH(
 
     if (!updatedListing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+    }
+
+    // Send approval/rejection email to employer if status changed from pending_approval
+    if (currentListing && currentListing.status === 'pending_approval' && status) {
+      const companyData = Array.isArray(currentListing.companies)
+        ? currentListing.companies[0]
+        : currentListing.companies
+      const employerUserId = (companyData as { user_id: string } | null)?.user_id
+
+      if (employerUserId) {
+        const { data: employerUser } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', employerUserId)
+          .single()
+
+        if (employerUser?.email) {
+          if (status === 'active') {
+            // Listing approved
+            sendEmail({
+              to: employerUser.email,
+              type: 'listing_approved',
+              data: {
+                listing_title: currentListing.title,
+              },
+            })
+          } else if (status === 'closed') {
+            // Listing rejected
+            sendEmail({
+              to: employerUser.email,
+              type: 'listing_rejected',
+              data: {
+                listing_title: currentListing.title,
+              },
+            })
+          }
+        }
+      }
     }
 
     return NextResponse.json({ listing: updatedListing })

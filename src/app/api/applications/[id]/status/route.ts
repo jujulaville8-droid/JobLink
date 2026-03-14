@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { sendEmail, BASE_URL } from '@/lib/email';
 import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
 
-const VALID_STATUSES = ['shortlisted', 'rejected', 'hired'] as const;
+const VALID_STATUSES = ['applied', 'shortlisted', 'rejected', 'hired'] as const;
 type ValidStatus = (typeof VALID_STATUSES)[number];
 
 export async function PATCH(
@@ -33,7 +33,7 @@ export async function PATCH(
 
     if (!status || !VALID_STATUSES.includes(status as ValidStatus)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be one of: shortlisted, rejected, hired' },
+        { error: 'Invalid status. Must be one of: applied, shortlisted, rejected, hired' },
         { status: 400 }
       );
     }
@@ -96,52 +96,53 @@ export async function PATCH(
       );
     }
 
-    // Notify the seeker about status change (fire-and-forget)
-    const { data: seekerProfile } = await supabase
-      .from('seeker_profiles')
-      .select('user_id')
-      .eq('id', application.seeker_id)
-      .single();
-
-    if (seekerProfile?.user_id) {
-      const { data: seekerUser } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', seekerProfile.user_id)
+    // Skip notifications for reset to 'applied'
+    if (status !== 'applied') {
+      // Notify the seeker about status change (fire-and-forget)
+      const { data: seekerProfile } = await supabase
+        .from('seeker_profiles')
+        .select('user_id')
+        .eq('id', application.seeker_id)
         .single();
 
-      if (seekerUser?.email) {
-        const company = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
-        const statusLabels: Record<string, string> = {
-          shortlisted: 'Shortlisted',
-          rejected: 'Not Selected',
-          hired: 'Hired',
-        };
+      if (seekerProfile?.user_id) {
+        const { data: seekerUser } = await supabase
+          .from('users')
+          .select('email')
+          .eq('id', seekerProfile.user_id)
+          .single();
 
-        sendEmail({
-          to: seekerUser.email,
-          type: 'status_update',
-          data: {
-            job_title: listing.title,
-            company_name: company?.company_name || 'the employer',
-            status: statusLabels[status] || status,
-            dashboard_url: `${BASE_URL}/applications`,
-          },
-        });
+        if (seekerUser?.email) {
+          const company = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+          const statusLabels: Record<string, string> = {
+            shortlisted: 'Shortlisted',
+            rejected: 'Not Selected',
+            hired: 'Hired',
+          };
+
+          sendEmail({
+            to: seekerUser.email,
+            type: 'status_update',
+            data: {
+              job_title: listing.title,
+              company_name: company?.company_name || 'the employer',
+              status: statusLabels[status] || status,
+              dashboard_url: `${BASE_URL}/applications`,
+            },
+          });
+        }
+
+        // Send system message into the conversation thread (fire-and-forget)
+        const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+        sendStatusChangeMessage(supabase, {
+          applicationId: id,
+          employerUserId: user.id,
+          seekerUserId: seekerProfile.user_id,
+          newStatus: status,
+          jobTitle: listing.title,
+          companyName: companyData?.company_name || 'the employer',
+        })
       }
-    }
-
-    // Send system message into the conversation thread (fire-and-forget)
-    if (seekerProfile?.user_id) {
-      const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
-      sendStatusChangeMessage(supabase, {
-        applicationId: id,
-        employerUserId: user.id,
-        seekerUserId: seekerProfile.user_id,
-        newStatus: status,
-        jobTitle: listing.title,
-        companyName: companyData?.company_name || 'the employer',
-      })
     }
 
     return NextResponse.json({ application: updated });

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'motion/react';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -62,10 +62,14 @@ const inputBase =
 
 export default function PostJobPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(!!editId);
   const [form, setForm] = useState<FormData>({
     title: '',
     description: '',
@@ -76,6 +80,64 @@ export default function PostJobPage() {
     salary_visible: true,
     duration: '30',
   });
+
+  // Load existing listing data when editing
+  useEffect(() => {
+    if (!editId) return;
+
+    async function loadListing() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setServerError('You must be logged in.');
+        setLoading(false);
+        return;
+      }
+
+      const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!company) {
+        setServerError('Company profile not found.');
+        setLoading(false);
+        return;
+      }
+
+      const { data: listing, error } = await supabase
+        .from('job_listings')
+        .select('*')
+        .eq('id', editId)
+        .eq('company_id', company.id)
+        .eq('status', 'pending_approval')
+        .single();
+
+      if (error || !listing) {
+        setServerError('Listing not found or cannot be edited.');
+        setLoading(false);
+        return;
+      }
+
+      setForm({
+        title: listing.title || '',
+        description: listing.description || '',
+        category: listing.category || '',
+        job_type: (listing.job_type as JobType) || 'full_time',
+        salary_min: listing.salary_min ? String(listing.salary_min) : '',
+        salary_max: listing.salary_max ? String(listing.salary_max) : '',
+        salary_visible: listing.salary_visible ?? true,
+        duration: '30',
+      });
+      setLoading(false);
+    }
+
+    loadListing();
+  }, [editId]);
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -146,30 +208,51 @@ export default function PostJobPage() {
         return;
       }
 
-      const now = new Date();
-      const expiresAt = new Date(now);
-      expiresAt.setDate(expiresAt.getDate() + Number(form.duration));
+      const listingData = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        job_type: form.job_type,
+        salary_min: form.salary_min ? Number(form.salary_min) : null,
+        salary_max: form.salary_max ? Number(form.salary_max) : null,
+        salary_visible: form.salary_visible,
+      };
 
-      const { error: insertError } = await supabase
-        .from('job_listings')
-        .insert({
-          company_id: company.id,
-          title: form.title.trim(),
-          description: form.description.trim(),
-          category: form.category,
-          job_type: form.job_type,
-          salary_min: form.salary_min ? Number(form.salary_min) : null,
-          salary_max: form.salary_max ? Number(form.salary_max) : null,
-          salary_visible: form.salary_visible,
-          requires_work_permit: false,
-          status: 'pending_approval',
-          expires_at: expiresAt.toISOString(),
-        });
+      if (editId) {
+        // Update existing pending listing
+        const { error: updateError } = await supabase
+          .from('job_listings')
+          .update(listingData)
+          .eq('id', editId)
+          .eq('company_id', company.id)
+          .eq('status', 'pending_approval');
 
-      if (insertError) {
-        setServerError(insertError.message);
-        setSubmitting(false);
-        return;
+        if (updateError) {
+          setServerError(updateError.message);
+          setSubmitting(false);
+          return;
+        }
+      } else {
+        // Create new listing
+        const now = new Date();
+        const expiresAt = new Date(now);
+        expiresAt.setDate(expiresAt.getDate() + Number(form.duration));
+
+        const { error: insertError } = await supabase
+          .from('job_listings')
+          .insert({
+            company_id: company.id,
+            ...listingData,
+            requires_work_permit: false,
+            status: 'pending_approval',
+            expires_at: expiresAt.toISOString(),
+          });
+
+        if (insertError) {
+          setServerError(insertError.message);
+          setSubmitting(false);
+          return;
+        }
       }
 
       setSuccess(true);
@@ -192,6 +275,15 @@ export default function PostJobPage() {
     return `Up to ${fmt(Number(max))}`;
   }
 
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
+        <p className="mt-4 text-sm text-text-muted">Loading listing...</p>
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <motion.div
@@ -209,11 +301,12 @@ export default function PostJobPage() {
             <HugeiconsIcon icon={Tick01Icon} size={32} className="text-emerald-500" />
           </motion.div>
           <h2 className="mt-5 text-xl font-bold font-display text-text">
-            Job Submitted Successfully!
+            {editId ? 'Listing Updated!' : 'Job Submitted Successfully!'}
           </h2>
           <p className="mt-2 text-sm text-text-muted">
-            Your job listing has been submitted for review. You&apos;ll be
-            redirected to your listings shortly.
+            {editId
+              ? 'Your changes have been saved. The listing is still pending review.'
+              : "Your job listing has been submitted for review. You'll be redirected to your listings shortly."}
           </p>
         </div>
       </motion.div>
@@ -235,10 +328,12 @@ export default function PostJobPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">
-              Post a Job
+              {editId ? 'Edit Listing' : 'Post a Job'}
             </h1>
             <p className="text-sm text-text-muted">
-              Fill out the details below to submit your listing for review.
+              {editId
+                ? 'Update your listing details before it goes live.'
+                : 'Fill out the details below to submit your listing for review.'}
             </p>
           </div>
         </div>
@@ -490,40 +585,42 @@ export default function PostJobPage() {
             </div>
           </motion.div>
 
-          {/* Duration Card */}
-          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-                <HugeiconsIcon icon={Clock01Icon} size={16} className="text-purple-600" />
+          {/* Duration Card — only show for new listings */}
+          {!editId && (
+            <motion.div variants={item} className={cn(cardBase, 'p-6')}>
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                  <HugeiconsIcon icon={Clock01Icon} size={16} className="text-purple-600" />
+                </div>
+                <h2 className="text-sm font-semibold text-text">Listing Duration</h2>
               </div>
-              <h2 className="text-sm font-semibold text-text">Listing Duration</h2>
-            </div>
 
-            <div className="flex gap-3">
-              {(['30', '60'] as const).map((d) => (
-                <label
-                  key={d}
-                  className={cn(
-                    'cursor-pointer rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
-                    form.duration === d
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="duration"
-                    value={d}
-                    checked={form.duration === d}
-                    onChange={() => updateField('duration', d)}
-                    className="sr-only"
-                  />
-                  <span className="text-lg font-bold block">{d}</span>
-                  <span className="text-xs">days</span>
-                </label>
-              ))}
-            </div>
-          </motion.div>
+              <div className="flex gap-3">
+                {(['30', '60'] as const).map((d) => (
+                  <label
+                    key={d}
+                    className={cn(
+                      'cursor-pointer rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
+                      form.duration === d
+                        ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
+                        : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="duration"
+                      value={d}
+                      checked={form.duration === d}
+                      onChange={() => updateField('duration', d)}
+                      className="sr-only"
+                    />
+                    <span className="text-lg font-bold block">{d}</span>
+                    <span className="text-xs">days</span>
+                  </label>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Submit */}
           <motion.div variants={item}>
@@ -540,12 +637,12 @@ export default function PostJobPage() {
               {submitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Submitting...
+                  {editId ? 'Saving...' : 'Submitting...'}
                 </>
               ) : (
                 <>
                   <HugeiconsIcon icon={CircleArrowUpRight02Icon} size={16} />
-                  Submit Job Listing
+                  {editId ? 'Save Changes' : 'Submit Job Listing'}
                 </>
               )}
             </button>
@@ -603,7 +700,7 @@ export default function PostJobPage() {
               <div className="mt-4 flex items-center gap-2 border-t border-border/40 pt-4">
                 <HugeiconsIcon icon={Clock01Icon} size={12} className="text-text-muted" />
                 <span className="text-xs text-text-muted">
-                  Listing expires after {form.duration} days
+                  {editId ? 'Editing pending listing' : `Listing expires after ${form.duration} days`}
                 </span>
               </div>
             </div>

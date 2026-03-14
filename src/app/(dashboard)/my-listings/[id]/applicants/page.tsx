@@ -40,14 +40,17 @@ function StatusButton({
   applicationId,
   status,
   currentStatus,
+  jobId,
 }: {
   applicationId: string;
   status: ApplicationStatus;
   currentStatus: ApplicationStatus;
+  jobId: string;
 }) {
   if (currentStatus === status) return null;
 
   const styles: Record<string, string> = {
+    applied: 'border-gray-300 text-gray-600 hover:bg-gray-50',
     shortlisted:
       'border-emerald-300 text-emerald-700 hover:bg-emerald-50',
     rejected: 'border-red-300 text-red-600 hover:bg-red-50',
@@ -55,6 +58,7 @@ function StatusButton({
   };
 
   const labels: Record<string, string> = {
+    applied: 'Reset',
     shortlisted: 'Shortlist',
     rejected: 'Reject',
     hired: 'Hire',
@@ -96,26 +100,28 @@ function StatusButton({
       .update({ status })
       .eq('id', applicationId);
 
-    // Send system message into the conversation thread
-    const { data: seekerProfile } = await supabase
-      .from('seeker_profiles')
-      .select('user_id')
-      .eq('id', application.seeker_id)
-      .single();
+    // Send system message into the conversation thread (skip for reset to applied)
+    if (status !== 'applied') {
+      const { data: seekerProfile } = await supabase
+        .from('seeker_profiles')
+        .select('user_id')
+        .eq('id', application.seeker_id)
+        .single();
 
-    if (seekerProfile?.user_id) {
-      const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
-      await sendStatusChangeMessage(supabase, {
-        applicationId,
-        employerUserId: user.id,
-        seekerUserId: seekerProfile.user_id,
-        newStatus: status,
-        jobTitle: listing.title,
-        companyName: (companyData as { company_name: string } | null)?.company_name || 'the employer',
-      });
+      if (seekerProfile?.user_id) {
+        const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+        await sendStatusChangeMessage(supabase, {
+          applicationId,
+          employerUserId: user.id,
+          seekerUserId: seekerProfile.user_id,
+          newStatus: status,
+          jobTitle: listing.title,
+          companyName: (companyData as { company_name: string } | null)?.company_name || 'the employer',
+        });
+      }
     }
 
-    redirect(`/my-listings/${application.job_id}/applicants`);
+    redirect(`/my-listings/${jobId}/applicants`);
   }
 
   return (
@@ -136,6 +142,7 @@ interface ApplicantData {
   applied_at: string;
   cover_letter_text: string | null;
   seeker_profiles: {
+    id: string;
     first_name: string;
     last_name: string;
     location: string;
@@ -150,10 +157,13 @@ interface ApplicantData {
 
 export default async function ApplicantsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ status?: string; sort?: string }>;
 }) {
   const { id } = await params;
+  const { status: statusFilter, sort } = await searchParams;
   const user = await requireAuth();
   const supabase = await createClient();
 
@@ -180,7 +190,7 @@ export default async function ApplicantsPage({
   }
 
   // Fetch applications with seeker profiles
-  const { data: applications } = await supabase
+  let query = supabase
     .from('applications')
     .select(
       `
@@ -189,6 +199,7 @@ export default async function ApplicantsPage({
       applied_at,
       cover_letter_text,
       seeker_profiles!applications_seeker_id_fkey (
+        id,
         first_name,
         last_name,
         location,
@@ -201,19 +212,55 @@ export default async function ApplicantsPage({
       )
     `
     )
-    .eq('job_id', id)
-    .order('applied_at', { ascending: false });
+    .eq('job_id', id);
+
+  // Apply status filter
+  if (statusFilter && ['applied', 'shortlisted', 'rejected', 'hired'].includes(statusFilter)) {
+    query = query.eq('status', statusFilter);
+  }
+
+  // Apply sort
+  if (sort === 'oldest') {
+    query = query.order('applied_at', { ascending: true });
+  } else {
+    query = query.order('applied_at', { ascending: false });
+  }
+
+  const { data: applications } = await query;
 
   const applicants = (applications ?? []) as unknown as ApplicantData[];
 
-  // Count by status
-  const counts = applicants.reduce(
+  // Get unfiltered counts for the filter tabs
+  const { data: allApplications } = await supabase
+    .from('applications')
+    .select('status')
+    .eq('job_id', id);
+
+  const allApplicants = allApplications ?? [];
+  const counts = allApplicants.reduce(
     (acc, a) => {
       acc[a.status] = (acc[a.status] || 0) + 1;
       return acc;
     },
     {} as Record<string, number>
   );
+  const totalCount = allApplicants.length;
+
+  const filterTabs = [
+    { key: '', label: 'All', count: totalCount },
+    { key: 'applied', label: 'Applied', count: counts.applied ?? 0 },
+    { key: 'shortlisted', label: 'Shortlisted', count: counts.shortlisted ?? 0 },
+    { key: 'hired', label: 'Hired', count: counts.hired ?? 0 },
+    { key: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
+  ];
+
+  function buildFilterUrl(newStatus: string, newSort?: string) {
+    const p = new URLSearchParams();
+    if (newStatus) p.set('status', newStatus);
+    if (newSort || sort) p.set('sort', newSort || sort || 'newest');
+    const qs = p.toString();
+    return `/my-listings/${id}/applicants${qs ? `?${qs}` : ''}`;
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
@@ -244,7 +291,7 @@ export default async function ApplicantsPage({
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: 'Total', count: applicants.length, color: 'bg-bg-alt text-text-light' },
+          { label: 'Total', count: totalCount, color: 'bg-bg-alt text-text-light' },
           { label: 'Shortlisted', count: counts.shortlisted ?? 0, color: 'bg-emerald-50 text-emerald-700' },
           { label: 'Hired', count: counts.hired ?? 0, color: 'bg-accent-warm/10 text-amber-700' },
           { label: 'Rejected', count: counts.rejected ?? 0, color: 'bg-red-50 text-red-600' },
@@ -259,6 +306,48 @@ export default async function ApplicantsPage({
             </p>
           </div>
         ))}
+      </div>
+
+      {/* Filter & Sort Controls */}
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Status filter tabs */}
+        <div className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-bg-alt p-1">
+          {filterTabs.map((tab) => (
+            <Link
+              key={tab.key}
+              href={buildFilterUrl(tab.key)}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                (statusFilter || '') === tab.key
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'text-text-light hover:text-text hover:bg-white/50'
+              }`}
+            >
+              {tab.label}
+              <span className="ml-1 text-text-muted">({tab.count})</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Sort */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-muted">Sort:</span>
+          <Link
+            href={buildFilterUrl(statusFilter || '', 'newest')}
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+              sort !== 'oldest' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Newest
+          </Link>
+          <Link
+            href={buildFilterUrl(statusFilter || '', 'oldest')}
+            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+              sort === 'oldest' ? 'bg-primary/10 text-primary' : 'text-text-muted hover:text-text'
+            }`}
+          >
+            Oldest
+          </Link>
+        </div>
       </div>
 
       {/* Applicant List */}
@@ -279,10 +368,12 @@ export default async function ApplicantsPage({
             <circle cx="9" cy="7" r="4" />
           </svg>
           <h3 className="mt-4 text-lg font-semibold text-text">
-            No applicants yet
+            {statusFilter ? 'No matching applicants' : 'No applicants yet'}
           </h3>
           <p className="mt-1 text-sm text-text-light">
-            When job seekers apply, they will appear here.
+            {statusFilter
+              ? 'Try a different filter to see other applicants.'
+              : 'When job seekers apply, they will appear here.'}
           </p>
         </div>
       ) : (
@@ -411,10 +502,10 @@ export default async function ApplicantsPage({
                     )}
                   </div>
 
-                  {/* CV Download */}
-                  {seeker?.cv_url && (
+                  {/* CV Download — route through secure API endpoint */}
+                  {seeker?.cv_url && seeker?.id && (
                     <a
-                      href={seeker.cv_url}
+                      href={`/api/cv-download?profileId=${seeker.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="mt-4 inline-flex items-center gap-2 rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-white"
@@ -445,20 +536,31 @@ export default async function ApplicantsPage({
                     <span className="mr-2 text-xs font-medium text-text-light self-center">
                       Set status:
                     </span>
+                    {app.status !== 'applied' && (
+                      <StatusButton
+                        applicationId={app.id}
+                        status="applied"
+                        currentStatus={app.status}
+                        jobId={id}
+                      />
+                    )}
                     <StatusButton
                       applicationId={app.id}
                       status="shortlisted"
                       currentStatus={app.status}
+                      jobId={id}
                     />
                     <StatusButton
                       applicationId={app.id}
                       status="hired"
                       currentStatus={app.status}
+                      jobId={id}
                     />
                     <StatusButton
                       applicationId={app.id}
                       status="rejected"
                       currentStatus={app.status}
+                      jobId={id}
                     />
                   </div>
                 </div>

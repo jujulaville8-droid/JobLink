@@ -22,25 +22,43 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
 function StatCard({
   label,
   value,
+  icon,
   color = "primary",
+  href,
 }: {
   label: string;
   value: number;
+  icon: React.ReactNode;
   color?: string;
+  href?: string;
 }) {
-  const colors: Record<string, string> = {
-    primary: "border-l-primary",
-    accent: "border-l-primary-light",
-    green: "border-l-emerald-500",
-    purple: "border-l-purple-500",
+  const colors: Record<string, { border: string; iconBg: string; iconText: string }> = {
+    primary: { border: "border-l-primary", iconBg: "bg-primary/10", iconText: "text-primary" },
+    accent: { border: "border-l-primary-light", iconBg: "bg-blue-50", iconText: "text-blue-600" },
+    green: { border: "border-l-emerald-500", iconBg: "bg-emerald-50", iconText: "text-emerald-600" },
+    purple: { border: "border-l-purple-500", iconBg: "bg-purple-50", iconText: "text-purple-600" },
+    amber: { border: "border-l-amber-500", iconBg: "bg-amber-50", iconText: "text-amber-600" },
   };
 
-  return (
-    <div className={`rounded-[--radius-card] border border-border bg-white p-5 shadow-sm border-l-4 ${colors[color] ?? colors.primary}`}>
-      <p className="text-sm text-text-light">{label}</p>
-      <p className="mt-2 text-3xl font-bold text-text">{value}</p>
+  const c = colors[color] ?? colors.primary;
+  const content = (
+    <div className={`rounded-[--radius-card] border border-border bg-white p-5 shadow-sm border-l-4 ${c.border} ${href ? 'hover:shadow-md hover:border-primary/20 transition-all cursor-pointer' : ''}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-text-light">{label}</p>
+          <p className="mt-1 text-3xl font-bold text-text">{value}</p>
+        </div>
+        <div className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center ${c.iconText}`}>
+          {icon}
+        </div>
+      </div>
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+  return content;
 }
 
 // ----- Seeker Dashboard -----
@@ -256,20 +274,40 @@ async function EmployerDashboard({ userId }: { userId: string }) {
   if (!company.website) companyMissing.push("Website");
   if (!company.location) companyMissing.push("Location");
 
-  const { count: activeListings } = await supabase
-    .from("job_listings")
-    .select("id", { count: "exact", head: true })
-    .eq("company_id", company.id)
-    .eq("status", "active");
+  // Fetch all listing counts in parallel
+  const [
+    { count: activeListings },
+    { count: pendingListings },
+  ] = await Promise.all([
+    supabase
+      .from("job_listings")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", company.id)
+      .eq("status", "active"),
+    supabase
+      .from("job_listings")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", company.id)
+      .eq("status", "pending_approval"),
+  ]);
 
   // Active listings with applicant counts
   const { data: activeJobsWithCounts } = await supabase
     .from("job_listings")
-    .select("id, title, status, created_at, applications(count)")
+    .select("id, title, status, created_at, expires_at, applications(count)")
     .eq("company_id", company.id)
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(5);
+
+  // Pending listings
+  const { data: pendingJobs } = await supabase
+    .from("job_listings")
+    .select("id, title, created_at")
+    .eq("company_id", company.id)
+    .eq("status", "pending_approval")
+    .order("created_at", { ascending: false })
+    .limit(3);
 
   const { data: companyJobs } = await supabase
     .from("job_listings")
@@ -284,40 +322,68 @@ async function EmployerDashboard({ userId }: { userId: string }) {
   let recentApplicants: Record<string, unknown>[] = [];
 
   if (jobIds.length > 0) {
-    const { count: total } = await supabase
-      .from("applications")
-      .select("id", { count: "exact", head: true })
-      .in("job_id", jobIds);
-    totalApplicants = total ?? 0;
-
     const weekStart = new Date();
     weekStart.setDate(weekStart.getDate() - 7);
 
-    const { count: weekCount } = await supabase
-      .from("applications")
-      .select("id", { count: "exact", head: true })
-      .in("job_id", jobIds)
-      .gte("applied_at", weekStart.toISOString());
+    const [
+      { count: total },
+      { count: weekCount },
+      { count: shortlisted },
+      { data: recent },
+    ] = await Promise.all([
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .in("job_id", jobIds),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .in("job_id", jobIds)
+        .gte("applied_at", weekStart.toISOString()),
+      supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .in("job_id", jobIds)
+        .eq("status", "shortlisted"),
+      supabase
+        .from("applications")
+        .select("id, status, applied_at, job_id, job_listings(id, title), seeker_profiles:seeker_id(first_name, last_name)")
+        .in("job_id", jobIds)
+        .order("applied_at", { ascending: false })
+        .limit(5),
+    ]);
+
+    totalApplicants = total ?? 0;
     weekApplicants = weekCount ?? 0;
-
-    const { count: shortlisted } = await supabase
-      .from("applications")
-      .select("id", { count: "exact", head: true })
-      .in("job_id", jobIds)
-      .eq("status", "shortlisted");
     shortlistedCount = shortlisted ?? 0;
-
-    const { data: recent } = await supabase
-      .from("applications")
-      .select("id, status, applied_at, job_id, job_listings(id, title), seeker_profiles:seeker_id(first_name, last_name)")
-      .in("job_id", jobIds)
-      .order("applied_at", { ascending: false })
-      .limit(5);
     recentApplicants = (recent as Record<string, unknown>[] | null) ?? [];
+  }
+
+  // Check for expiring listings (within 7 days)
+  const now = new Date();
+  const soonExpiry = new Date(now);
+  soonExpiry.setDate(soonExpiry.getDate() + 7);
+  const expiringJobs = (activeJobsWithCounts ?? []).filter((job: Record<string, unknown>) => {
+    if (!job.expires_at) return false;
+    const exp = new Date(job.expires_at as string);
+    return exp <= soonExpiry && exp >= now;
+  });
+
+  function formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  }
+
+  function daysUntil(dateStr: string): number {
+    const diff = new Date(dateStr).getTime() - now.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
   return (
     <div className="animate-fade-up">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl text-text sm:text-3xl">
@@ -343,11 +409,126 @@ async function EmployerDashboard({ userId }: { userId: string }) {
 
       {/* Stats */}
       <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-4 stagger-children">
-        <StatCard label="Active Listings" value={activeListings ?? 0} color="primary" />
-        <StatCard label="Total Applicants" value={totalApplicants} color="accent" />
-        <StatCard label="New This Week" value={weekApplicants} color="green" />
-        <StatCard label="Shortlisted" value={shortlistedCount} color="purple" />
+        <StatCard
+          label="Active Listings"
+          value={activeListings ?? 0}
+          color="primary"
+          href="/my-listings?filter=active"
+          icon={
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Total Applicants"
+          value={totalApplicants}
+          color="accent"
+          icon={
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87" />
+              <path d="M16 3.13a4 4 0 010 7.75" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="New This Week"
+          value={weekApplicants}
+          color="green"
+          icon={
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
+          }
+        />
+        <StatCard
+          label="Shortlisted"
+          value={shortlistedCount}
+          color="purple"
+          icon={
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          }
+        />
       </div>
+
+      {/* Alerts Row: Pending Listings + Expiring Listings */}
+      {((pendingListings ?? 0) > 0 || expiringJobs.length > 0) && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {/* Pending Listings Alert */}
+          {(pendingListings ?? 0) > 0 && (
+            <div className="rounded-[--radius-card] border border-amber-200 bg-amber-50/50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-800">
+                    {pendingListings} listing{(pendingListings ?? 0) !== 1 ? 's' : ''} pending review
+                  </p>
+                  {pendingJobs && pendingJobs.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {pendingJobs.map((job: Record<string, unknown>) => (
+                        <p key={job.id as string} className="text-xs text-amber-700 truncate">
+                          {job.title as string} — submitted {formatDate(job.created_at as string)}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  <Link
+                    href="/my-listings?filter=pending"
+                    className="mt-2 inline-block text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                  >
+                    View pending listings &rarr;
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Expiring Listings Alert */}
+          {expiringJobs.length > 0 && (
+            <div className="rounded-[--radius-card] border border-red-200 bg-red-50/50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <svg className="h-4 w-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-red-800">
+                    {expiringJobs.length} listing{expiringJobs.length !== 1 ? 's' : ''} expiring soon
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    {expiringJobs.map((job: Record<string, unknown>) => (
+                      <p key={job.id as string} className="text-xs text-red-700 truncate">
+                        {job.title as string} — {daysUntil(job.expires_at as string)} day{daysUntil(job.expires_at as string) !== 1 ? 's' : ''} left
+                      </p>
+                    ))}
+                  </div>
+                  <Link
+                    href="/my-listings?filter=active"
+                    className="mt-2 inline-block text-xs font-semibold text-red-700 hover:text-red-900 transition-colors"
+                  >
+                    Manage listings &rarr;
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Company Profile Completion */}
       {companyCompletePct < 100 && (
@@ -388,92 +569,104 @@ async function EmployerDashboard({ userId }: { userId: string }) {
         </div>
       )}
 
-      {/* Active Listings Summary */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-text">Active Listings</h2>
-          <Link href="/my-listings" className="text-sm font-medium text-primary hover:text-primary-dark link-animated">
-            View all
-          </Link>
-        </div>
-        {activeJobsWithCounts && activeJobsWithCounts.length > 0 ? (
-          <div className="mt-4 space-y-3 stagger-children">
-            {activeJobsWithCounts.map((job: Record<string, unknown>) => {
-              const apps = job.applications as { count: number }[] | null;
-              const appCount = apps?.[0]?.count ?? 0;
-              return (
-                <Link
-                  key={job.id as string}
-                  href={`/my-listings/${job.id}/applicants`}
-                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-text truncate">
-                      {job.title as string}
-                    </p>
-                    <p className="text-sm text-text-light">
-                      Posted {new Date(job.created_at as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="ml-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                    {appCount} {appCount === 1 ? "applicant" : "applicants"}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-            <p className="text-text-light">No active listings. Post a job to get started!</p>
-            <Link
-              href="/post-job"
-              className="mt-3 inline-block btn-primary text-sm px-4 py-2"
-            >
-              Post a Job
+      {/* Two-column layout: Active Listings + Recent Applicants */}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {/* Active Listings */}
+        <div>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg text-text">Active Listings</h2>
+            <Link href="/my-listings" className="text-sm font-medium text-primary hover:text-primary-dark link-animated">
+              View all
             </Link>
           </div>
-        )}
-      </div>
-
-      {/* Recent Applicants */}
-      <div className="mt-8">
-        <h2 className="font-display text-lg text-text">Recent Applicants</h2>
-        {recentApplicants.length > 0 ? (
-          <div className="mt-4 space-y-3 stagger-children">
-            {recentApplicants.map((app) => {
-              const seeker = app.seeker_profiles as Record<string, unknown> | null;
-              const job = app.job_listings as Record<string, unknown> | null;
-              const status = app.status as ApplicationStatus;
-
-              return (
-                <Link
-                  key={app.id as string}
-                  href={`/my-listings/${(job?.id as string) ?? ""}/applicants`}
-                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-text">
-                      {(seeker?.first_name as string) ?? ""} {(seeker?.last_name as string) ?? ""}
-                    </p>
-                    <p className="text-sm text-text-light">
-                      Applied to {(job?.title as string) ?? "Untitled"} &middot;{" "}
-                      {new Date(app.applied_at as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span
-                    className={`ml-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[status] ?? STATUS_COLORS.applied}`}
+          {activeJobsWithCounts && activeJobsWithCounts.length > 0 ? (
+            <div className="mt-4 space-y-3 stagger-children">
+              {activeJobsWithCounts.map((job: Record<string, unknown>) => {
+                const apps = job.applications as { count: number }[] | null;
+                const appCount = apps?.[0]?.count ?? 0;
+                return (
+                  <Link
+                    key={job.id as string}
+                    href={`/my-listings/${job.id}/applicants`}
+                    className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
                   >
-                    {STATUS_LABELS[status] ?? status}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-            <p className="text-text-light">No applicants yet. Post a job to get started!</p>
-          </div>
-        )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-text truncate">
+                        {job.title as string}
+                      </p>
+                      <p className="text-sm text-text-light">
+                        Posted {formatDate(job.created_at as string)}
+                        {job.expires_at && (
+                          <span className="text-text-muted"> &middot; Expires {formatDate(job.expires_at as string)}</span>
+                        )}
+                      </p>
+                    </div>
+                    <span className="ml-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary whitespace-nowrap">
+                      {appCount} {appCount === 1 ? "applicant" : "applicants"}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
+              <p className="text-text-light">No active listings. Post a job to get started!</p>
+              <Link
+                href="/post-job"
+                className="mt-3 inline-block btn-primary text-sm px-4 py-2"
+              >
+                Post a Job
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Applicants */}
+        <div>
+          <h2 className="font-display text-lg text-text">Recent Applicants</h2>
+          {recentApplicants.length > 0 ? (
+            <div className="mt-4 space-y-3 stagger-children">
+              {recentApplicants.map((app) => {
+                const seeker = app.seeker_profiles as Record<string, unknown> | null;
+                const job = app.job_listings as Record<string, unknown> | null;
+                const status = app.status as ApplicationStatus;
+
+                return (
+                  <Link
+                    key={app.id as string}
+                    href={`/my-listings/${(job?.id as string) ?? ""}/applicants`}
+                    className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+                        {((seeker?.first_name as string) ?? "?").charAt(0)}
+                        {((seeker?.last_name as string) ?? "").charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-text truncate">
+                          {(seeker?.first_name as string) ?? ""} {(seeker?.last_name as string) ?? ""}
+                        </p>
+                        <p className="text-xs text-text-light truncate">
+                          {(job?.title as string) ?? "Untitled"} &middot;{" "}
+                          {formatDate(app.applied_at as string)}
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      className={`ml-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] ?? STATUS_COLORS.applied}`}
+                    >
+                      {STATUS_LABELS[status] ?? status}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
+              <p className="text-text-light">No applicants yet. Post a job to get started!</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
