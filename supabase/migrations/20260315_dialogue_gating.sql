@@ -44,7 +44,7 @@ BEGIN
       THEN up.last_seen_at ELSE NULL END AS other_last_seen_at,
     COALESCE(jl.title, 'Unknown Position') AS job_title,
     COALESCE(co_job.company_name, 'Unknown Company') AS company_name,
-    COALESCE(a.status, 'applied') AS application_status,
+    COALESCE(a.status::text, 'applied') AS application_status,
     cp_me.is_archived,
     cp_me.is_blocked,
     -- dialogue_open: true if the employer has sent at least one message
