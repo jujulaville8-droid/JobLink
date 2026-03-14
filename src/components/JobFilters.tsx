@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { INDUSTRIES, JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
 const JOB_TYPES: { value: JobType; label: string }[] = Object.entries(
@@ -11,6 +11,7 @@ const JOB_TYPES: { value: JobType; label: string }[] = Object.entries(
 export default function JobFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   const currentCategory = searchParams.get("category") || "";
@@ -30,14 +31,14 @@ export default function JobFilters() {
       }
     }
 
-    router.push(`/jobs?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   function clearAll() {
     const params = new URLSearchParams();
     const q = searchParams.get("q");
     if (q) params.set("q", q);
-    router.push(`/jobs?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   function toggleJobType(type: string) {

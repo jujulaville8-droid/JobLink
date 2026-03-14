@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function SearchBar() {
+export default function SearchBar({ targetPath = "/jobs" }: { targetPath?: string }) {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
 
@@ -11,7 +11,7 @@ export default function SearchBar() {
     e.preventDefault();
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("q", keyword.trim());
-    router.push(`/jobs?${params.toString()}`);
+    router.push(`${targetPath}?${params.toString()}`);
   };
 
   return (

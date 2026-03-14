@@ -31,19 +31,15 @@ function formatSalary(min?: number | null, max?: number | null): string {
   return `Up to ${fmt(max!)}`;
 }
 
-function jobTypeBadgeColor(type: string): string {
-  switch (type.toLowerCase()) {
-    case "full-time":
-      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
-    case "part-time":
-      return "bg-primary/5 text-primary border border-primary/20";
-    case "contract":
-      return "bg-accent-warm/10 text-amber-700 border border-accent-warm/20";
-    case "seasonal":
-      return "bg-coral/10 text-orange-700 border border-coral/20";
-    default:
-      return "bg-bg-alt text-text-light border border-border";
-  }
+const JOB_TYPE_STYLES: Record<string, { color: string; label: string }> = {
+  full_time: { color: "bg-emerald-50 text-emerald-700 border border-emerald-200", label: "Full Time" },
+  part_time: { color: "bg-primary/5 text-primary border border-primary/20", label: "Part Time" },
+  contract: { color: "bg-accent-warm/10 text-amber-700 border border-accent-warm/20", label: "Contract" },
+  seasonal: { color: "bg-coral/10 text-orange-700 border border-coral/20", label: "Seasonal" },
+};
+
+function getJobType(type: string): { color: string; label: string } {
+  return JOB_TYPE_STYLES[type] ?? { color: "bg-bg-alt text-text-light border border-border", label: type };
 }
 
 export default function JobCard({ job }: { job: Job }) {
@@ -113,8 +109,8 @@ export default function JobCard({ job }: { job: Job }) {
                 </svg>
                 {job.location}
               </span>
-              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${jobTypeBadgeColor(job.job_type)}`}>
-                {job.job_type}
+              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${getJobType(job.job_type).color}`}>
+                {getJobType(job.job_type).label}
               </span>
             </div>
 
