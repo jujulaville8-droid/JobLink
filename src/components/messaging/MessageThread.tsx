@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Message } from "@/lib/types";
 
 interface MessageThreadProps {
@@ -28,6 +29,104 @@ function formatTime(dateStr: string): string {
   return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
 }
 
+// Track which message IDs have already been animated
+const animatedMessages = new Set<string>();
+
+function MessageBubble({
+  msg,
+  isMine,
+  isGrouped,
+  isLastInGroup,
+  showTimestamp,
+}: {
+  msg: Message;
+  isMine: boolean;
+  isGrouped: boolean;
+  isLastInGroup: boolean;
+  showTimestamp: boolean;
+}) {
+  const isNew = !animatedMessages.has(msg.id);
+
+  useEffect(() => {
+    animatedMessages.add(msg.id);
+  }, [msg.id]);
+
+  // Bubble shape: iMessage-style with tail on last message in group
+  const bubbleRadius = isMine
+    ? isLastInGroup
+      ? "rounded-[20px] rounded-br-[6px]"
+      : "rounded-[20px]"
+    : isLastInGroup
+      ? "rounded-[20px] rounded-bl-[6px]"
+      : "rounded-[20px]";
+
+  const bubbleColor = isMine
+    ? msg._failed
+      ? "bg-red-100 text-red-700"
+      : msg._optimistic
+        ? "bg-primary/80 text-white"
+        : "bg-primary text-white"
+    : "bg-[#E8E3DB] text-text";
+
+  return (
+    <div>
+      {showTimestamp && (
+        <motion.p
+          initial={isNew ? { opacity: 0, y: 5 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="text-center text-[11px] font-medium text-text-muted/50 py-3 select-none"
+        >
+          {formatTime(msg.created_at)}
+        </motion.p>
+      )}
+      <div className={`flex ${isMine ? "justify-end" : "justify-start"} ${isGrouped && !showTimestamp ? "mt-[3px]" : "mt-2"}`}>
+        <motion.div
+          initial={isNew ? {
+            opacity: 0,
+            scale: 0.85,
+            y: 8,
+            x: isMine ? 12 : -12,
+          } : false}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            x: 0,
+          }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 25,
+            mass: 0.8,
+          }}
+          className={`max-w-[75%] px-[14px] py-[9px] text-[15px] leading-[1.35] ${bubbleRadius} ${bubbleColor} shadow-sm`}
+        >
+          <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+          {msg._optimistic && !msg._failed && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-[10px] mt-1 text-white/50 font-medium"
+            >
+              Sending...
+            </motion.p>
+          )}
+          {msg._failed && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-[10px] mt-1 text-red-500 font-medium"
+            >
+              Not delivered
+            </motion.p>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 export default function MessageThread({
   messages,
   currentUserId,
@@ -39,6 +138,7 @@ export default function MessageThread({
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(messages.length);
+  const [initialScrollDone, setInitialScrollDone] = useState(false);
 
   // Auto-scroll to bottom on new messages (only if already near bottom)
   useEffect(() => {
@@ -49,21 +149,24 @@ export default function MessageThread({
     prevLengthRef.current = messages.length;
 
     if (isNewMessage) {
-      // Auto-scroll if user is within 200px of bottom
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
       if (isNearBottom) {
-        container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+        // Small delay to let the animation start, then scroll
+        requestAnimationFrame(() => {
+          container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+        });
       }
     }
   }, [messages.length]);
 
-  // Initial scroll to bottom
+  // Initial scroll to bottom (no animation for existing messages)
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (container) {
+    if (container && messages.length > 0 && !initialScrollDone) {
       container.scrollTop = container.scrollHeight;
+      setInitialScrollDone(true);
     }
-  }, []);
+  }, [messages.length, initialScrollDone]);
 
   // Scroll-to-load: detect when user scrolls to top
   const handleScroll = useCallback(() => {
@@ -73,7 +176,6 @@ export default function MessageThread({
     if (container.scrollTop < 100) {
       const prevHeight = container.scrollHeight;
       onLoadMore();
-      // After loading, maintain scroll position
       requestAnimationFrame(() => {
         if (container) {
           const newHeight = container.scrollHeight;
@@ -86,14 +188,18 @@ export default function MessageThread({
   if (messages.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 text-center">
-        <div>
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/5 mb-3">
-            <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        >
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/[0.07] mb-3">
+            <svg className="h-7 w-7 text-primary/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
             </svg>
           </div>
-          <p className="text-sm text-text-light">Start the conversation with {otherName}</p>
-        </div>
+          <p className="text-[14px] text-text-muted/70">Start the conversation with {otherName}</p>
+        </motion.div>
       </div>
     );
   }
@@ -102,19 +208,38 @@ export default function MessageThread({
     <div
       ref={scrollContainerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-4 py-6 space-y-1"
+      className="flex-1 overflow-y-auto px-3 sm:px-4 py-4"
+      style={{
+        background: "linear-gradient(180deg, rgba(250,248,245,0.5) 0%, rgba(255,255,255,0.8) 100%)",
+      }}
     >
       {/* Load more indicator */}
-      {loadingMore && (
-        <div className="flex justify-center py-3">
-          <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-        </div>
-      )}
+      <AnimatePresence>
+        {loadingMore && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex justify-center py-3"
+          >
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-primary/40"
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {hasMore && !loadingMore && (
         <div className="flex justify-center py-2">
           <button
             onClick={onLoadMore}
-            className="text-xs text-primary font-medium hover:underline"
+            className="text-xs text-primary/70 font-medium hover:text-primary transition-colors"
           >
             Load older messages
           </button>
@@ -127,36 +252,21 @@ export default function MessageThread({
           new Date(msg.created_at).getTime() - new Date(messages[i - 1].created_at).getTime() > 5 * 60 * 1000
         );
         const prevSameSender = i > 0 && messages[i - 1].sender_id === msg.sender_id;
+        const nextDiffSender = i === messages.length - 1 || messages[i + 1].sender_id !== msg.sender_id;
+        const nextHasTimestamp = i < messages.length - 1 && (
+          new Date(messages[i + 1].created_at).getTime() - new Date(msg.created_at).getTime() > 5 * 60 * 1000
+        );
+        const isLastInGroup = nextDiffSender || nextHasTimestamp;
 
         return (
-          <div key={msg.id}>
-            {showTimestamp && (
-              <p className="text-center text-[11px] text-text-muted/60 py-3">
-                {formatTime(msg.created_at)}
-              </p>
-            )}
-            <div className={`flex ${isMine ? "justify-end" : "justify-start"} ${prevSameSender && !showTimestamp ? "mt-0.5" : "mt-2"}`}>
-              <div
-                className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                  isMine
-                    ? msg._failed
-                      ? "bg-red-100 text-red-700 rounded-br-md"
-                      : msg._optimistic
-                        ? "bg-primary/70 text-white rounded-br-md"
-                        : "bg-primary text-white rounded-br-md"
-                    : "bg-bg-alt text-text rounded-bl-md"
-                }`}
-              >
-                <p className="whitespace-pre-wrap break-words">{msg.body}</p>
-                {msg._optimistic && !msg._failed && (
-                  <p className="text-[10px] mt-1 text-white/60">Sending...</p>
-                )}
-                {msg._failed && (
-                  <p className="text-[10px] mt-1 text-red-500 font-medium">Failed to send</p>
-                )}
-              </div>
-            </div>
-          </div>
+          <MessageBubble
+            key={msg.id}
+            msg={msg}
+            isMine={isMine}
+            isGrouped={prevSameSender && !showTimestamp}
+            isLastInGroup={isLastInGroup}
+            showTimestamp={showTimestamp}
+          />
         );
       })}
       <div ref={bottomRef} />
