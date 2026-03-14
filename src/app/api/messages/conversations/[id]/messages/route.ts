@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendMessageNotification } from '@/lib/messaging-notifications'
 
-// GET: Paginated messages for a conversation
-// POST: Send a message in a conversation
+// GET: Paginated messages for a conversation (supports cursor-based loading)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -24,23 +24,29 @@ export async function GET(
     if (!participant) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     const url = new URL(request.url)
-    const page = parseInt(url.searchParams.get('page') || '1')
+    const before = url.searchParams.get('before') // cursor: load messages before this timestamp
     const pageSize = 50
-    const from = (page - 1) * pageSize
-    const to = from + pageSize - 1
 
-    const { data: messages, error } = await supabase
+    let query = supabase
       .from('messages')
       .select('id, conversation_id, sender_id, body, created_at')
       .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true })
-      .range(from, to)
+      .order('created_at', { ascending: false })
+      .limit(pageSize)
+
+    if (before) {
+      query = query.lt('created_at', before)
+    }
+
+    const { data: messages, error } = await query
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+    // Reverse to ascending order for display
+    const sorted = (messages || []).reverse()
+
     return NextResponse.json({
-      messages: messages || [],
-      page,
+      messages: sorted,
       has_more: (messages?.length || 0) === pageSize,
     })
   } catch {
@@ -85,6 +91,33 @@ export async function POST(
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Send notification to other participant (fire-and-forget)
+    const { data: otherPart } = await supabase
+      .from('conversation_participants')
+      .select('user_id')
+      .eq('conversation_id', conversationId)
+      .neq('user_id', user.id)
+      .single()
+
+    if (otherPart) {
+      // Get sender name and job context for notification
+      const { data: convMeta } = await supabase.rpc('get_conversation_meta', {
+        p_user_id: otherPart.user_id,
+        p_conversation_id: conversationId,
+      })
+
+      const meta = convMeta?.[0]
+      if (meta) {
+        sendMessageNotification(supabase, {
+          conversationId,
+          recipientId: otherPart.user_id,
+          senderName: meta.other_display_name || 'Someone',
+          jobTitle: meta.job_title || 'a position',
+          messagePreview: body.trim().slice(0, 100),
+        })
+      }
+    }
 
     return NextResponse.json(message, { status: 201 })
   } catch {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import type { VisibilityMode } from "@/lib/types";
+import type { VisibilityMode, UserMessagingSettings } from "@/lib/types";
 
 const VISIBILITY_OPTIONS: {
   value: VisibilityMode;
@@ -60,6 +60,16 @@ export default function SettingsPage() {
   // Delete confirmation
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Messaging settings
+  const [msgSettings, setMsgSettings] = useState<UserMessagingSettings>({
+    email_notifications: true,
+    sms_notifications: false,
+    show_online_status: true,
+    show_read_receipts: true,
+    notification_cooldown_minutes: 5,
+  });
+  const [savingMsgSettings, setSavingMsgSettings] = useState(false);
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -96,6 +106,15 @@ export default function SettingsPage() {
           setVisibility(profile.visibility as VisibilityMode);
         }
       }
+
+      // Load messaging settings
+      try {
+        const msgRes = await fetch("/api/messages/settings");
+        if (msgRes.ok) {
+          const msgData = await msgRes.json();
+          setMsgSettings(msgData);
+        }
+      } catch { /* use defaults */ }
 
       setLoading(false);
     }
@@ -279,6 +298,75 @@ export default function SettingsPage() {
           </div>
         </section>
       )}
+
+      {/* Messaging Settings */}
+      <section className="mt-6 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold font-display text-text">
+          Messaging Preferences
+        </h2>
+        <p className="mt-1 text-sm text-text-light">
+          Control how messaging and notifications work for you.
+        </p>
+
+        <div className="mt-4 space-y-4">
+          {[
+            {
+              key: "email_notifications" as const,
+              label: "Email notifications for new messages",
+              desc: "Receive an email when someone sends you a new message",
+            },
+            {
+              key: "show_online_status" as const,
+              label: "Show online status",
+              desc: "Let others see when you're active on the platform",
+            },
+            {
+              key: "show_read_receipts" as const,
+              label: "Show read receipts",
+              desc: "Let others know when you've read their messages",
+            },
+          ].map((pref) => (
+            <label
+              key={pref.key}
+              className="flex items-start gap-3 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={msgSettings[pref.key]}
+                onChange={async (e) => {
+                  const newVal = e.target.checked;
+                  setMsgSettings((prev) => ({ ...prev, [pref.key]: newVal }));
+                  setSavingMsgSettings(true);
+                  setMessage(null);
+                  try {
+                    const res = await fetch("/api/messages/settings", {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ [pref.key]: newVal }),
+                    });
+                    if (res.ok) {
+                      setMessage({ type: "success", text: "Messaging preference updated." });
+                    } else {
+                      setMessage({ type: "error", text: "Failed to save preference." });
+                      setMsgSettings((prev) => ({ ...prev, [pref.key]: !newVal }));
+                    }
+                  } catch {
+                    setMessage({ type: "error", text: "Failed to save preference." });
+                    setMsgSettings((prev) => ({ ...prev, [pref.key]: !newVal }));
+                  }
+                  setSavingMsgSettings(false);
+                }}
+                disabled={savingMsgSettings}
+                className="mt-0.5 h-4 w-4 rounded accent-[#0d7377]"
+              />
+              <div>
+                <p className="text-sm font-medium text-text">{pref.label}</p>
+                <p className="text-xs text-text-light">{pref.desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </section>
 
       {/* Change Password */}
       <section className="mt-6 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">

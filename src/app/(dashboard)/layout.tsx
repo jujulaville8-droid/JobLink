@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/SidebarNav";
+import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
 
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
@@ -91,6 +92,9 @@ export default async function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* Presence heartbeat */}
+      <PresenceHeartbeat />
     </div>
   );
 }

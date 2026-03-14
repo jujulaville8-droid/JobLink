@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
+import { createClient } from "@/lib/supabase/client";
 import type { InboxConversation, ApplicationStatus } from "@/lib/types";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -18,6 +19,8 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
   rejected: "Rejected",
   hired: "Hired",
 };
+
+type InboxTab = "active" | "archived";
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -35,38 +38,119 @@ export default function MessagesPage() {
   const { user, userRole, isLoading: authLoading } = useAuth();
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<InboxTab>("active");
+  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   const isEmployer = userRole === "employer";
   const pageTitle = isEmployer ? "Inbox" : "Messages";
-  const pageSubtitle = isEmployer
-    ? "Messages from applicants for your job listings."
-    : "Your conversations with employers about your applications.";
+
+  const fetchInbox = useCallback(async (archived: boolean) => {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/messages/conversations${archived ? "?archived=true" : ""}`);
+      if (!res.ok) throw new Error("Failed to load conversations");
+      const data = await res.json();
+      setConversations(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) return;
+    fetchInbox(tab === "archived");
+  }, [user, authLoading, tab, fetchInbox]);
 
-    async function fetchInbox() {
-      try {
-        const res = await fetch("/api/messages/conversations");
-        if (res.ok) {
-          const data = await res.json();
-          setConversations(data);
-        }
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
-    }
+  // Realtime: refresh inbox when new messages arrive
+  useEffect(() => {
+    if (!user) return;
 
-    fetchInbox();
-  }, [user, authLoading]);
+    const supabase = createClient();
+    const channel = supabase
+      .channel("inbox-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => { fetchInbox(tab === "archived"); }
+      )
+      .subscribe();
 
-  if (authLoading || loading) {
-    return (
-      <div>
+    return () => { supabase.removeChannel(channel); };
+  }, [user, tab, fetchInbox]);
+
+  async function handleArchive(e: React.MouseEvent, convId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    setArchivingId(convId);
+
+    try {
+      const isArchived = tab === "archived";
+      const method = isArchived ? "DELETE" : "POST";
+      const res = await fetch(`/api/messages/conversations/${convId}/archive`, { method });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== convId));
+      }
+    } catch { /* ignore */ }
+    finally { setArchivingId(null); }
+  }
+
+  if (authLoading) {
+    return <InboxSkeleton title={pageTitle} />;
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">{pageTitle}</h1>
-        <p className="mt-1 text-sm text-text-light">{pageSubtitle}</p>
-        <div className="mt-8 space-y-3">
+      </div>
+
+      {/* Tabs */}
+      <div className="mt-4 flex gap-1 rounded-xl bg-bg-alt p-1 w-fit">
+        <button
+          onClick={() => setTab("active")}
+          className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+            tab === "active"
+              ? "bg-white text-text shadow-sm"
+              : "text-text-light hover:text-text"
+          }`}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => setTab("archived")}
+          className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+            tab === "archived"
+              ? "bg-white text-text shadow-sm"
+              : "text-text-light hover:text-text"
+          }`}
+        >
+          Archived
+        </button>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-center">
+          <p className="text-sm text-red-600">{error}</p>
+          <button
+            onClick={() => fetchInbox(tab === "archived")}
+            className="mt-2 text-sm font-medium text-red-700 underline hover:no-underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {loading && !error && (
+        <div className="mt-6 space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border border-border bg-white p-5 animate-pulse">
+            <div key={i} className="rounded-2xl border border-border bg-white p-4 sm:p-5 animate-pulse">
               <div className="flex items-center gap-4">
                 <div className="h-12 w-12 rounded-full skeleton" />
                 <div className="flex-1 space-y-2">
@@ -77,42 +161,57 @@ export default function MessagesPage() {
             </div>
           ))}
         </div>
-      </div>
-    );
-  }
+      )}
 
-  return (
-    <div>
-      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">{pageTitle}</h1>
-      <p className="mt-1 text-sm text-text-light">{pageSubtitle}</p>
-
-      {conversations.length === 0 ? (
+      {/* Empty state */}
+      {!loading && !error && conversations.length === 0 && (
         <div className="mt-16 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-bg-alt">
-            <svg className="h-8 w-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-            </svg>
+            {tab === "archived" ? (
+              <svg className="h-8 w-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="21 8 21 21 3 21 3 8" />
+                <rect x="1" y="3" width="22" height="5" />
+                <line x1="10" y1="12" x2="14" y2="12" />
+              </svg>
+            ) : (
+              <svg className="h-8 w-8 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+            )}
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-text">No messages yet</h3>
+          <h3 className="mt-4 text-lg font-semibold text-text">
+            {tab === "archived" ? "No archived conversations" : "No messages yet"}
+          </h3>
           <p className="mt-1 text-sm text-text-light max-w-sm mx-auto">
-            {isEmployer
-              ? "When candidates message you about job applications, they'll appear here."
-              : "When you apply to jobs and message employers, your conversations will appear here."}
+            {tab === "archived"
+              ? "Conversations you archive will appear here. You can restore them anytime."
+              : isEmployer
+                ? "When candidates message you about job applications, they'll appear here."
+                : "When you apply to jobs and message employers, your conversations will appear here."
+            }
           </p>
         </div>
-      ) : (
+      )}
+
+      {/* Conversation list */}
+      {!loading && !error && conversations.length > 0 && (
         <div className="mt-6 space-y-2">
           {conversations.map((conv) => {
             const appStatus = conv.application_context.application_status as ApplicationStatus;
+            const isUnread = conv.unread_count > 0;
 
             return (
               <Link
                 key={conv.id}
                 href={`/messages/${conv.id}`}
-                className="group flex items-center gap-4 rounded-2xl border border-border bg-white p-4 sm:p-5 transition-all duration-300 hover:border-primary/20 hover:shadow-md hover:shadow-primary/[0.04]"
+                className={`group relative flex items-center gap-4 rounded-2xl border bg-white p-4 sm:p-5 transition-all duration-300 hover:shadow-md hover:shadow-primary/[0.04] ${
+                  isUnread
+                    ? "border-primary/20 hover:border-primary/30"
+                    : "border-border hover:border-primary/20"
+                }`}
               >
-                {/* Avatar */}
-                <div className="shrink-0">
+                {/* Avatar with online indicator */}
+                <div className="shrink-0 relative">
                   {conv.other_participant.avatar_url ? (
                     <img
                       src={conv.other_participant.avatar_url}
@@ -124,13 +223,18 @@ export default function MessagesPage() {
                       {conv.other_participant.display_name.charAt(0).toUpperCase()}
                     </div>
                   )}
+                  {conv.other_participant.is_online && (
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-white" />
+                  )}
                 </div>
 
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   {/* Row 1: Name + time */}
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className={`text-sm font-semibold truncate ${conv.unread_count > 0 ? "text-text" : "text-text-light"} group-hover:text-primary transition-colors`}>
+                    <h3 className={`text-sm truncate transition-colors ${
+                      isUnread ? "font-bold text-text" : "font-semibold text-text-light"
+                    } group-hover:text-primary`}>
                       {conv.other_participant.display_name}
                     </h3>
                     <span className="shrink-0 text-[11px] text-text-muted">
@@ -153,22 +257,66 @@ export default function MessagesPage() {
 
                   {/* Row 3: Last message + unread badge */}
                   <div className="flex items-center justify-between gap-2 mt-1">
-                    <p className={`text-sm truncate ${conv.unread_count > 0 ? "text-text font-medium" : "text-text-light"}`}>
+                    <p className={`text-sm truncate ${isUnread ? "text-text font-medium" : "text-text-light"}`}>
                       {conv.last_message_sender_id === user?.id ? "You: " : ""}
                       {conv.last_message_text || "No messages yet"}
                     </p>
-                    {conv.unread_count > 0 && (
+                    {isUnread && (
                       <span className="shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-primary text-white text-[10px] font-bold px-1.5">
                         {conv.unread_count}
                       </span>
                     )}
                   </div>
                 </div>
+
+                {/* Archive button */}
+                <button
+                  onClick={(e) => handleArchive(e, conv.id)}
+                  disabled={archivingId === conv.id}
+                  title={tab === "archived" ? "Move to inbox" : "Archive"}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center h-8 w-8 rounded-lg border border-border text-text-muted hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all duration-200"
+                >
+                  {archivingId === conv.id ? (
+                    <div className="h-3 w-3 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
+                  ) : tab === "archived" ? (
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="1 4 1 10 7 10" />
+                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="21 8 21 21 3 21 3 8" />
+                      <rect x="1" y="3" width="22" height="5" />
+                      <line x1="10" y1="12" x2="14" y2="12" />
+                    </svg>
+                  )}
+                </button>
               </Link>
             );
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function InboxSkeleton({ title }: { title: string }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">{title}</h1>
+      <div className="mt-8 space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl border border-border bg-white p-4 sm:p-5 animate-pulse">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full skeleton" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/3 skeleton rounded" />
+                <div className="h-3 w-2/3 skeleton rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

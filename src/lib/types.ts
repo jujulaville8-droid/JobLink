@@ -132,6 +132,7 @@ export interface ConversationParticipant {
   user_id: string;
   last_read_at: string;
   is_blocked: boolean;
+  is_archived: boolean;
   created_at: string;
 }
 
@@ -141,20 +142,64 @@ export interface Message {
   sender_id: string;
   body: string;
   created_at: string;
+  // Client-only: optimistic send state
+  _optimistic?: boolean;
+  _failed?: boolean;
 }
 
 export interface InboxConversation extends Conversation {
   unread_count: number;
+  is_archived: boolean;
   other_participant: {
     user_id: string;
     display_name: string;
     avatar_url: string | null;
+    is_online?: boolean;
+    last_seen_at?: string | null;
   };
   application_context: {
     job_title: string;
     company_name: string;
     application_status: ApplicationStatus;
   };
+}
+
+export interface ConversationMeta {
+  other_user_id: string;
+  other_display_name: string;
+  other_avatar_url: string | null;
+  other_is_online: boolean;
+  other_last_seen_at: string | null;
+  job_title: string;
+  company_name: string;
+  application_status: ApplicationStatus;
+  is_archived: boolean;
+  is_blocked: boolean;
+}
+
+export interface UserMessagingSettings {
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  show_online_status: boolean;
+  show_read_receipts: boolean;
+  notification_cooldown_minutes: number;
+}
+
+export interface MessageTemplate {
+  id: string;
+  role: UserRole;
+  label: string;
+  body: string;
+  sort_order: number;
+}
+
+export interface ConversationReport {
+  id: string;
+  conversation_id: string;
+  reported_by: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  created_at: string;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────

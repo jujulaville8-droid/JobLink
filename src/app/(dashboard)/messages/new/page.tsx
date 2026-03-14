@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 import ComposeBox from "@/components/messaging/ComposeBox";
+import TemplateDrawer from "@/components/messaging/TemplateDrawer";
 
 interface ApplicationContext {
   job_title: string;
@@ -21,6 +22,8 @@ export default function NewConversationPage() {
   const [context, setContext] = useState<ApplicationContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [composeValue, setComposeValue] = useState("");
 
   useEffect(() => {
     if (authLoading || !user || !applicationId) return;
@@ -42,21 +45,13 @@ export default function NewConversationPage() {
 
       // Fetch application context for the header
       try {
-        const res = await fetch(`/api/messages/conversations/by-application?application_id=${applicationId}`);
-        if (res.status === 404) {
+        const res = await fetch(`/api/applications/${applicationId}/context`);
+        if (res.ok) {
+          setContext(await res.json());
+        } else if (res.status === 404) {
           setError("Application not found.");
         } else if (res.status === 403) {
           setError("You don't have access to this application.");
-        }
-      } catch { /* ignore */ }
-
-      // We need job + participant info — fetch via a lightweight endpoint
-      // Use the application data we can infer
-      try {
-        const res = await fetch(`/api/applications/${applicationId}/context`);
-        if (res.ok) {
-          const data = await res.json();
-          setContext(data);
         }
       } catch { /* ignore */ }
 
@@ -77,6 +72,11 @@ export default function NewConversationPage() {
       const { conversation_id } = await res.json();
       router.replace(`/messages/${conversation_id}`);
     }
+  }
+
+  function handleTemplateInsert(templateBody: string) {
+    setShowTemplates(false);
+    setComposeValue(templateBody);
   }
 
   if (!applicationId) {
@@ -164,7 +164,20 @@ export default function NewConversationPage() {
       </div>
 
       {/* Compose */}
-      <ComposeBox onSend={handleSend} />
+      <div className="relative">
+        {showTemplates && (
+          <TemplateDrawer
+            onSelect={handleTemplateInsert}
+            onClose={() => setShowTemplates(false)}
+          />
+        )}
+        <ComposeBox
+          onSend={handleSend}
+          onTemplateToggle={() => setShowTemplates(!showTemplates)}
+          externalValue={composeValue}
+          onExternalValueConsumed={() => setComposeValue("")}
+        />
+      </div>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { sendEmail } from '@/lib/email'
+import { sendMessageNotification } from '@/lib/messaging-notifications'
 
 // POST: Create a conversation + first message for an application
-// GET: List inbox conversations with unread counts
+// GET: List inbox conversations (supports ?archived=true)
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -67,6 +67,18 @@ export async function POST(request: NextRequest) {
 
       if (msgError) return NextResponse.json({ error: msgError.message }, { status: 500 })
 
+      // Notify other party (with dedup)
+      const senderName = user.id === seekerUserId
+        ? `${seeker.first_name} ${seeker.last_name}`.trim()
+        : job.companies.company_name
+      sendMessageNotification(supabase, {
+        conversationId: existing.id,
+        recipientId: otherUserId,
+        senderName,
+        jobTitle: job.title,
+        messagePreview: body.trim().slice(0, 100),
+      })
+
       return NextResponse.json({ conversation_id: existing.id, message })
     }
 
@@ -98,28 +110,17 @@ export async function POST(request: NextRequest) {
 
     if (msgError) return NextResponse.json({ error: msgError.message }, { status: 500 })
 
-    // Send email notification to the other party (fire-and-forget)
-    const { data: otherUser } = await supabase
-      .from('users')
-      .select('email')
-      .eq('id', otherUserId)
-      .single()
-
-    if (otherUser?.email) {
-      const senderName = user.id === seekerUserId
-        ? `${seeker.first_name} ${seeker.last_name}`.trim()
-        : job.companies.company_name
-
-      sendEmail({
-        to: otherUser.email,
-        type: 'new_message',
-        data: {
-          sender_name: senderName,
-          job_title: job.title,
-          message_preview: body.trim().slice(0, 100),
-        },
-      })
-    }
+    // Send notification to the other party
+    const senderName = user.id === seekerUserId
+      ? `${seeker.first_name} ${seeker.last_name}`.trim()
+      : job.companies.company_name
+    sendMessageNotification(supabase, {
+      conversationId: conversation.id,
+      recipientId: otherUserId,
+      senderName,
+      jobTitle: job.title,
+      messagePreview: body.trim().slice(0, 100),
+    })
 
     return NextResponse.json({ conversation_id: conversation.id, message }, { status: 201 })
   } catch {
@@ -127,113 +128,63 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET: Inbox list
-export async function GET() {
+// GET: Inbox list using optimized RPC
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Get all conversations the user participates in
-    const { data: participations, error } = await supabase
-      .from('conversation_participants')
-      .select(`
-        last_read_at,
-        conversations!inner (
-          id,
-          application_id,
-          last_message_text,
-          last_message_at,
-          last_message_sender_id,
-          created_at
-        )
-      `)
-      .eq('user_id', user.id)
-      .not('conversations.last_message_at', 'is', null)
-      .order('conversations(last_message_at)', { ascending: false })
+    const archived = request.nextUrl.searchParams.get('archived') === 'true'
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (!participations || participations.length === 0) {
+    // Use optimized RPC that does a single JOIN query
+    const { data, error } = await supabase.rpc('get_inbox', {
+      p_user_id: user.id,
+      p_archived: archived,
+    })
+
+    if (error) {
+      // Fallback to empty if RPC not deployed yet
+      console.error('[inbox] RPC error:', error.message)
       return NextResponse.json([])
     }
 
-    // Build inbox with unread counts and other participant info
-    const inbox = []
-    for (const p of participations) {
-      const conv = p.conversations as unknown as {
-        id: string; application_id: string; last_message_text: string | null;
-        last_message_at: string; last_message_sender_id: string | null; created_at: string;
-      }
-
-      // Get unread count
-      const { count: unreadCount } = await supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('conversation_id', conv.id)
-        .gt('created_at', p.last_read_at)
-        .neq('sender_id', user.id)
-
-      // Get the other participant's info
-      const { data: otherPart } = await supabase
-        .from('conversation_participants')
-        .select('user_id')
-        .eq('conversation_id', conv.id)
-        .neq('user_id', user.id)
-        .single()
-
-      let otherParticipant = { user_id: '', display_name: 'Unknown', avatar_url: null as string | null }
-      if (otherPart) {
-        // Try seeker profile first
-        const { data: seekerProfile } = await supabase
-          .from('seeker_profiles')
-          .select('first_name, last_name, avatar_url')
-          .eq('user_id', otherPart.user_id)
-          .single()
-
-        if (seekerProfile) {
-          otherParticipant = {
-            user_id: otherPart.user_id,
-            display_name: `${seekerProfile.first_name || ''} ${seekerProfile.last_name || ''}`.trim() || 'Job Seeker',
-            avatar_url: seekerProfile.avatar_url,
-          }
-        } else {
-          // Try company
-          const { data: companyProfile } = await supabase
-            .from('companies')
-            .select('company_name, logo_url')
-            .eq('user_id', otherPart.user_id)
-            .single()
-
-          if (companyProfile) {
-            otherParticipant = {
-              user_id: otherPart.user_id,
-              display_name: companyProfile.company_name || 'Employer',
-              avatar_url: companyProfile.logo_url,
-            }
-          }
-        }
-      }
-
-      // Get application context (job title + company + status)
-      const { data: appData } = await supabase
-        .from('applications')
-        .select('status, job_listings!inner ( title, companies!inner ( company_name ) )')
-        .eq('id', conv.application_id)
-        .single()
-
-      const jobInfo = appData?.job_listings as unknown as { title: string; companies: { company_name: string } } | null
-
-      inbox.push({
-        ...conv,
-        unread_count: unreadCount || 0,
-        other_participant: otherParticipant,
-        application_context: {
-          job_title: jobInfo?.title || 'Unknown Position',
-          company_name: jobInfo?.companies?.company_name || 'Unknown Company',
-          application_status: (appData?.status as string) || 'applied',
-        },
-      })
-    }
+    // Map RPC result to InboxConversation shape for frontend compatibility
+    const inbox = (data || []).map((row: {
+      conversation_id: string
+      application_id: string
+      last_message_text: string | null
+      last_message_at: string
+      last_message_sender_id: string | null
+      conversation_created_at: string
+      unread_count: number
+      is_archived: boolean
+      other_user_id: string
+      other_display_name: string
+      other_avatar_url: string | null
+      job_title: string
+      company_name: string
+      application_status: string
+    }) => ({
+      id: row.conversation_id,
+      application_id: row.application_id,
+      last_message_text: row.last_message_text,
+      last_message_at: row.last_message_at,
+      last_message_sender_id: row.last_message_sender_id,
+      created_at: row.conversation_created_at,
+      unread_count: Number(row.unread_count),
+      is_archived: row.is_archived,
+      other_participant: {
+        user_id: row.other_user_id,
+        display_name: row.other_display_name || 'Unknown',
+        avatar_url: row.other_avatar_url,
+      },
+      application_context: {
+        job_title: row.job_title,
+        company_name: row.company_name,
+        application_status: row.application_status || 'applied',
+      },
+    }))
 
     return NextResponse.json(inbox)
   } catch {

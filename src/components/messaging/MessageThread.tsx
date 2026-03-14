@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { Message } from "@/lib/types";
 
 interface MessageThreadProps {
   messages: Message[];
   currentUserId: string;
   otherName: string;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 function formatTime(dateStr: string): string {
@@ -25,12 +28,57 @@ function formatTime(dateStr: string): string {
   return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}, ${time}`;
 }
 
-export default function MessageThread({ messages, currentUserId, otherName }: MessageThreadProps) {
+export default function MessageThread({
+  messages,
+  currentUserId,
+  otherName,
+  hasMore,
+  loadingMore,
+  onLoadMore,
+}: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const prevLengthRef = useRef(messages.length);
 
+  // Auto-scroll to bottom on new messages (only if already near bottom)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const isNewMessage = messages.length > prevLengthRef.current;
+    prevLengthRef.current = messages.length;
+
+    if (isNewMessage) {
+      // Auto-scroll if user is within 200px of bottom
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+      if (isNearBottom) {
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
   }, [messages.length]);
+
+  // Initial scroll to bottom
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView();
+  }, []);
+
+  // Scroll-to-load: detect when user scrolls to top
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !hasMore || loadingMore || !onLoadMore) return;
+
+    if (container.scrollTop < 100) {
+      const prevHeight = container.scrollHeight;
+      onLoadMore();
+      // After loading, maintain scroll position
+      requestAnimationFrame(() => {
+        if (container) {
+          const newHeight = container.scrollHeight;
+          container.scrollTop = newHeight - prevHeight;
+        }
+      });
+    }
+  }, [hasMore, loadingMore, onLoadMore]);
 
   if (messages.length === 0) {
     return (
@@ -48,7 +96,28 @@ export default function MessageThread({ messages, currentUserId, otherName }: Me
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+    <div
+      ref={scrollContainerRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-y-auto px-4 py-6 space-y-1"
+    >
+      {/* Load more indicator */}
+      {loadingMore && (
+        <div className="flex justify-center py-3">
+          <div className="h-5 w-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
+      )}
+      {hasMore && !loadingMore && (
+        <div className="flex justify-center py-2">
+          <button
+            onClick={onLoadMore}
+            className="text-xs text-primary font-medium hover:underline"
+          >
+            Load older messages
+          </button>
+        </div>
+      )}
+
       {messages.map((msg, i) => {
         const isMine = msg.sender_id === currentUserId;
         const showTimestamp = i === 0 || (
@@ -67,11 +136,21 @@ export default function MessageThread({ messages, currentUserId, otherName }: Me
               <div
                 className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   isMine
-                    ? "bg-primary text-white rounded-br-md"
+                    ? msg._failed
+                      ? "bg-red-100 text-red-700 rounded-br-md"
+                      : msg._optimistic
+                        ? "bg-primary/70 text-white rounded-br-md"
+                        : "bg-primary text-white rounded-br-md"
                     : "bg-bg-alt text-text rounded-bl-md"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+                {msg._optimistic && !msg._failed && (
+                  <p className="text-[10px] mt-1 text-white/60">Sending...</p>
+                )}
+                {msg._failed && (
+                  <p className="text-[10px] mt-1 text-red-500 font-medium">Failed to send</p>
+                )}
               </div>
             </div>
           </div>
