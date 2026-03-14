@@ -115,6 +115,47 @@ export interface ReportedListing {
   created_at: string;
 }
 
+// ─── Messaging ──────────────────────────────────────────────────────
+
+export interface Conversation {
+  id: string;
+  application_id: string;
+  last_message_text: string | null;
+  last_message_at: string | null;
+  last_message_sender_id: string | null;
+  created_at: string;
+}
+
+export interface ConversationParticipant {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  last_read_at: string;
+  is_blocked: boolean;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+}
+
+export interface InboxConversation extends Conversation {
+  unread_count: number;
+  other_participant: {
+    user_id: string;
+    display_name: string;
+    avatar_url: string | null;
+  };
+  application_context: {
+    job_title: string;
+    company_name: string;
+  };
+}
+
 // ─── Constants ──────────────────────────────────────────────────────
 
 export const INDUSTRIES: string[] = [

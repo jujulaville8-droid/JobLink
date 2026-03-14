@@ -11,6 +11,7 @@ type EmailType =
   | 'listing_expiry'
   | 'listing_approved'
   | 'listing_rejected'
+  | 'new_message'
 
 interface EmailData {
   applicant_name?: string
@@ -22,6 +23,8 @@ interface EmailData {
   expires_at?: string
   application_url?: string
   dashboard_url?: string
+  sender_name?: string
+  message_preview?: string
 }
 
 function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; html: string } {
@@ -181,6 +184,21 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
             Please review it and resubmit. If you're unsure what to change, reply to this email and we'll help.
           </p>
           ${btn('Edit My Listings', '/my-listings')}
+        `),
+      }
+
+    case 'new_message':
+      return {
+        subject: `New message from ${data.sender_name} about ${data.job_title}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">You Have a New Message</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            <strong>${data.sender_name}</strong> sent you a message about <strong>${data.job_title}</strong>:
+          </p>
+          <div style="background-color: #f9fafb; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
+            <p style="color: #374151; margin: 0; font-style: italic;">"${data.message_preview}${(data.message_preview?.length || 0) >= 100 ? '...' : ''}"</p>
+          </div>
+          ${btn('View Conversation', '/messages')}
         `),
       }
 

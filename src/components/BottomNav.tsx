@@ -54,6 +54,17 @@ export default function BottomNav() {
           </Link>
         )}
 
+        {isAuthenticated && (
+          <Link href="/messages" className={linkClass("/messages")}>
+            <svg className={iconClass("/messages")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+              <polyline points="22,6 12,13 2,6" />
+            </svg>
+            <span>Messages</span>
+            {isActive("/messages") && activeDot}
+          </Link>
+        )}
+
         <Link href="/saved" className={linkClass("/saved")}>
           <svg className={iconClass("/saved")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
