@@ -85,7 +85,7 @@ export default function ApplyPage() {
   });
   const [coverLetter, setCoverLetter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     async function init() {
@@ -219,8 +219,15 @@ export default function ApplyPage() {
         return;
       }
 
-      if (data.application?.id) {
-        setApplicationId(data.application.id);
+      // Redirect straight to the conversation thread
+      if (data.conversation_id) {
+        window.location.href = `/messages/${data.conversation_id}`;
+        return;
+      }
+
+      // Fallback if no conversation was created
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id);
       }
       setState("success");
     } catch {
@@ -597,9 +604,9 @@ export default function ApplyPage() {
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-                {applicationId && (
+                {conversationId && (
                   <Link
-                    href={`/messages/new?application_id=${applicationId}`}
+                    href={`/messages/${conversationId}`}
                     className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
                   >
                     <HugeiconsIcon icon={Message01Icon} size={14} />
@@ -609,7 +616,7 @@ export default function ApplyPage() {
                 <Link
                   href="/applications"
                   className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-px ${
-                    applicationId
+                    conversationId
                       ? "border-2 border-border bg-white text-text-light hover:text-primary hover:border-primary/30"
                       : "bg-primary text-white hover:bg-primary-dark hover:shadow-md hover:shadow-primary/20"
                   }`}
