@@ -312,8 +312,8 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ── Floating nav: just the buttons, appears on scroll-up ── */}
-      <FloatingNav
+      {/* ── Floating nav: just the buttons, appears on scroll-up (homepage only) ── */}
+      {pathname === "/" && <FloatingNav
         onVisibilityChange={handleFloatingVisibility}
         navItems={[
           ...navLinks.map((link) => ({
@@ -358,7 +358,7 @@ export default function Navbar() {
             </Link>
           ) : undefined
         }
-      />
+      />}
     </>
   );
 }

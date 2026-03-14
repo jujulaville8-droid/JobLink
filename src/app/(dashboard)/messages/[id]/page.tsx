@@ -228,7 +228,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
   if (loading || authLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-10rem)]">
+      <div className="flex flex-col h-[calc(100dvh-10rem)] -my-6 overflow-hidden">
         <div className="p-4 border-b border-border">
           <div className="h-5 w-40 skeleton rounded" />
           <div className="h-3 w-60 skeleton rounded mt-2" />
@@ -243,7 +243,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   const isBlocked = meta?.is_blocked ?? false;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)]">
+    <div className="flex flex-col h-[calc(100dvh-10rem)] -my-6 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border bg-white">
         <Link
