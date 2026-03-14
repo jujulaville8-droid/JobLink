@@ -3,7 +3,10 @@
 -- for the employer to reply before they can send more messages.
 -- Once the employer replies once, the dialogue is fully open.
 
--- Update get_conversation_meta to include dialogue_open + seeker_user_id
+-- Drop existing function first since return type is changing
+DROP FUNCTION IF EXISTS public.get_conversation_meta(uuid, uuid);
+
+-- Recreate with dialogue_open + seeker_user_id
 CREATE OR REPLACE FUNCTION public.get_conversation_meta(
   p_user_id UUID,
   p_conversation_id UUID
