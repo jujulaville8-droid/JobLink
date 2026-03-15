@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="joblink-theme" disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="joblink-theme">
           <AuthProvider>
             <Navbar />
             <main className="min-h-screen pb-20 md:pb-0">{children}</main>
