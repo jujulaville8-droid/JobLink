@@ -278,13 +278,13 @@ export default function Navbar() {
           <div className="relative flex h-16 items-center justify-between">
 
             {/* ── Left: Wordmark ── */}
-            <Link href="/" className="flex items-center shrink-0 gap-1.5">
+            <Link href="/" className="flex items-center shrink-0 gap-0.5">
               <Image
                 src="/logo-icon.png"
                 alt=""
-                width={28}
-                height={28}
-                className="h-6 w-6 object-contain"
+                width={24}
+                height={24}
+                className="h-5 w-5 object-contain"
               />
               <span className="font-display text-xl font-bold tracking-tight text-primary">
                 JobLinks
