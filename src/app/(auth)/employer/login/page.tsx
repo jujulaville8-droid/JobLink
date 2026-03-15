@@ -107,12 +107,12 @@ export default function EmployerLoginPage() {
             >
               Password
             </label>
-            <a
-              href="#"
+            <Link
+              href="/forgot-password"
               className="text-sm text-primary hover:text-primary-dark transition"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
           <input
             id="password"

@@ -357,12 +357,12 @@ export default async function JobDetailPage({ params }: PageProps) {
                 Share on WhatsApp
               </a>
 
-              <Link
-                href={`/report?job_id=${job.id}`}
+              <a
+                href={`mailto:support@joblinkantigua.com?subject=Report%20Job%20Listing%20${job.id}&body=I%20would%20like%20to%20report%20the%20following%20listing%3A%20${encodeURIComponent(job.title)}`}
                 className="text-sm text-text-light hover:text-red-500 transition-colors"
               >
                 Report this listing
-              </Link>
+              </a>
             </div>
           </div>
         </div>

@@ -25,7 +25,7 @@ function isNew(dateStr: string): boolean {
 function formatSalary(min?: number | null, max?: number | null): string {
   if (!min && !max) return "";
   const fmt = (n: number) =>
-    n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
+    n >= 1000 ? `EC$${(n / 1000).toFixed(0)}k` : `EC$${n}`;
   if (min && max) return `${fmt(min)} – ${fmt(max)}`;
   if (min) return `From ${fmt(min)}`;
   return `Up to ${fmt(max!)}`;

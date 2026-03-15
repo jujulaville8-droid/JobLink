@@ -269,7 +269,7 @@ export default function PostJobPage() {
   function formatSalaryPreview(min: string, max: string): string {
     if (!min && !max) return 'Not specified';
     const fmt = (n: number) =>
-      n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`;
+      n >= 1000 ? `EC$${(n / 1000).toFixed(0)}k` : `EC$${n}`;
     if (min && max) return `${fmt(Number(min))} - ${fmt(Number(max))}`;
     if (min) return `From ${fmt(Number(min))}`;
     return `Up to ${fmt(Number(max))}`;
