@@ -810,6 +810,15 @@ function ProfileEditForm({
     const supabase = createClient();
     const fileName = `${userId}/cv-${Date.now()}.pdf`;
 
+    // Delete the old CV file if one exists to free up storage
+    if (profile.cv_url) {
+      await fetch("/api/cv-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: profile.cv_url }),
+      });
+    }
+
     const { error: uploadError } = await supabase.storage
       .from("cvs")
       .upload(fileName, file, { upsert: true });
