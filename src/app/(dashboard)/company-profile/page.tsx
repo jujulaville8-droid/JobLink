@@ -170,6 +170,21 @@ export default function CompanyProfilePage() {
         return;
       }
 
+      // Ensure public.users row exists (trigger may have failed during signup)
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingUser) {
+        await supabase.from('users').insert({
+          id: user.id,
+          email: user.email!,
+          role: 'employer' as const,
+        });
+      }
+
       const payload = {
         user_id: user.id,
         company_name: form.company_name.trim(),
