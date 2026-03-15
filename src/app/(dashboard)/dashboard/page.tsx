@@ -687,10 +687,15 @@ async function AdminDashboard() {
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const { count: newUsersThisWeek } = await supabase
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .gte("created_at", weekAgo.toISOString());
+  const [
+    { count: newUsersThisWeek },
+    { count: newSeekersThisWeek },
+    { count: newEmployersThisWeek },
+  ] = await Promise.all([
+    supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", weekAgo.toISOString()),
+    supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", weekAgo.toISOString()).eq("role", "seeker"),
+    supabase.from("users").select("id", { count: "exact", head: true }).gte("created_at", weekAgo.toISOString()).eq("role", "employer"),
+  ]);
 
   const { data: recentUsers } = await supabase
     .from("users")
@@ -715,6 +720,8 @@ async function AdminDashboard() {
     totalApplications: totalApplications ?? 0,
     totalReports: totalReports ?? 0,
     newUsersThisWeek: newUsersThisWeek ?? 0,
+    newSeekersThisWeek: newSeekersThisWeek ?? 0,
+    newEmployersThisWeek: newEmployersThisWeek ?? 0,
   };
 
   const formattedUsers = (recentUsers || []).map((u: Record<string, unknown>) => ({

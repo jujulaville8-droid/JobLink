@@ -338,7 +338,7 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/signup"
-                    className="btn-warm"
+                    className="btn-warm text-xs px-4 py-2"
                   >
                     Create Account
                   </Link>

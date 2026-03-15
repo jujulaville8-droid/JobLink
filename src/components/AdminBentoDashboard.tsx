@@ -29,6 +29,8 @@ interface AdminStats {
   totalApplications: number;
   totalReports: number;
   newUsersThisWeek: number;
+  newSeekersThisWeek: number;
+  newEmployersThisWeek: number;
 }
 
 interface RecentUser {
@@ -172,18 +174,18 @@ export default function AdminBentoDashboard({
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
                   <HugeiconsIcon icon={UserGroupIcon} size={16} className="text-emerald-600" />
                 </div>
-                <span className="text-sm text-text">Seekers</span>
+                <span className="text-sm text-text">New Seekers</span>
               </div>
-              <span className="text-lg font-bold text-text">{stats.totalSeekers}</span>
+              <span className="text-lg font-bold text-text">{stats.newSeekersThisWeek}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
                   <HugeiconsIcon icon={Briefcase01Icon} size={16} className="text-blue-600" />
                 </div>
-                <span className="text-sm text-text">Employers</span>
+                <span className="text-sm text-text">New Employers</span>
               </div>
-              <span className="text-lg font-bold text-text">{stats.totalEmployers}</span>
+              <span className="text-lg font-bold text-text">{stats.newEmployersThisWeek}</span>
             </div>
           </div>
         </motion.div>
