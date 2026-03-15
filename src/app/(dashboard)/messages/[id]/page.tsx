@@ -25,19 +25,6 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
   hired: "Hired",
 };
 
-function lastSeenText(lastSeen: string | null): string {
-  if (!lastSeen) return "";
-  const diff = Date.now() - new Date(lastSeen).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "Active now";
-  if (mins < 60) return `Active ${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `Active ${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `Active ${days}d ago`;
-  return "";
-}
-
 export default function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
@@ -285,22 +272,11 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                 {meta?.other_display_name?.charAt(0).toUpperCase() || "?"}
               </div>
             )}
-            {meta?.other_is_online && (
-              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-white" />
-            )}
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2.5">
               <h2 className="text-[15px] font-semibold text-text truncate leading-tight">{meta?.other_display_name || "Conversation"}</h2>
-              {meta?.other_is_online ? (
-                <span className="shrink-0 flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Online
-                </span>
-              ) : meta?.other_last_seen_at ? (
-                <span className="shrink-0 text-[11px] text-text-muted">{lastSeenText(meta.other_last_seen_at)}</span>
-              ) : null}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <p className="text-xs text-text-muted truncate">

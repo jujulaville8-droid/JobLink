@@ -221,9 +221,6 @@ export default function MessagesPage() {
                       {conv.other_participant.display_name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  {conv.other_participant.is_online && (
-                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-[1.5px] border-white" />
-                  )}
                 </div>
 
                 {/* Content */}
