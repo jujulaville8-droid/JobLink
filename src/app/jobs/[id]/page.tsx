@@ -22,13 +22,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!job) {
-    return { title: "Job Not Found | JobLink" };
+    return { title: "Job Not Found | JobLinks" };
   }
 
   const company = job.company as unknown as { company_name: string } | null;
 
   return {
-    title: `${job.title} at ${company?.company_name || "Company"} | JobLink`,
+    title: `${job.title} at ${company?.company_name || "Company"} | JobLinks`,
     description: `Apply for ${job.title} at ${company?.company_name || "a company"} in Antigua and Barbuda.`,
   };
 }

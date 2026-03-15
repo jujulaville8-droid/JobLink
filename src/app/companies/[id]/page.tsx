@@ -19,12 +19,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!company) {
-    return { title: "Company Not Found | JobLink" };
+    return { title: "Company Not Found | JobLinks" };
   }
 
   return {
-    title: `${company.company_name} | JobLink`,
-    description: `View ${company.company_name}'s profile and job listings on JobLink, Antigua's job platform.`,
+    title: `${company.company_name} | JobLinks`,
+    description: `View ${company.company_name}'s profile and job listings on JobLinks, Antigua's job platform.`,
   };
 }
 

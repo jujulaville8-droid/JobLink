@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'About — JobLink',
-  description: 'Learn about JobLink, Antigua\'s first dedicated job platform.',
+  title: 'About — JobLinks',
+  description: 'Learn about JobLinks, Antigua\'s first dedicated job platform.',
 }
 
 export default function AboutPage() {
@@ -15,7 +15,7 @@ export default function AboutPage() {
             Made in Antigua, for Antigua
           </h1>
           <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto">
-            JobLink is the first dedicated job platform built specifically for
+            JobLinks is the first dedicated job platform built specifically for
             Antigua and Barbuda. We&apos;re here to connect job seekers with
             employers across every industry on the island.
           </p>
@@ -26,7 +26,7 @@ export default function AboutPage() {
       <section className="py-16 px-4">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold font-display text-[#0d7377] mb-6">
-            Why JobLink?
+            Why JobLinks?
           </h2>
           <div className="space-y-4 text-[#71717a] text-lg leading-relaxed">
             <p>
@@ -36,14 +36,14 @@ export default function AboutPage() {
               — our industries, our communities, our way of doing things.
             </p>
             <p>
-              JobLink changes that. We&apos;ve built a professional, structured
+              JobLinks changes that. We&apos;ve built a professional, structured
               platform that understands the local job market — from Tourism &
               Hospitality to Government & Civil Service, from seasonal hotel
               work to full-time banking roles.
             </p>
             <p>
               Whether you&apos;re a job seeker looking for your next opportunity
-              or an employer searching for the right candidate, JobLink makes
+              or an employer searching for the right candidate, JobLinks makes
               the process simple, professional, and effective.
             </p>
           </div>
@@ -159,7 +159,7 @@ export default function AboutPage() {
             Ready to get started?
           </h2>
           <p className="text-white/70 mb-8">
-            Join hundreds of Antiguans already using JobLink.
+            Join hundreds of Antiguans already using JobLinks.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

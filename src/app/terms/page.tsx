@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'Terms of Service — JobLink',
-  description: 'JobLink terms of service. Rules and guidelines for using our platform.',
+  title: 'Terms of Service — JobLinks',
+  description: 'JobLinks terms of service. Rules and guidelines for using our platform.',
 }
 
 export default function TermsPage() {
@@ -18,7 +18,7 @@ export default function TermsPage() {
               1. Acceptance of Terms
             </h2>
             <p className="text-text-light leading-relaxed">
-              By accessing or using JobLink (&ldquo;the Platform&rdquo;), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform. JobLink is operated for the benefit of job seekers and employers in Antigua and Barbuda.
+              By accessing or using JobLinks (&ldquo;the Platform&rdquo;), you agree to be bound by these Terms of Service. If you do not agree, please do not use the Platform. JobLinks is operated for the benefit of job seekers and employers in Antigua and Barbuda.
             </p>
           </section>
 
@@ -54,7 +54,7 @@ export default function TermsPage() {
               5. Content Guidelines
             </h2>
             <p className="text-text-light leading-relaxed">
-              Users may not post content that is offensive, harassing, discriminatory, fraudulent, or illegal. JobLink reserves the right to remove any content and suspend or ban accounts that violate these guidelines. Messages between users must remain professional and relevant to employment.
+              Users may not post content that is offensive, harassing, discriminatory, fraudulent, or illegal. JobLinks reserves the right to remove any content and suspend or ban accounts that violate these guidelines. Messages between users must remain professional and relevant to employment.
             </p>
           </section>
 
@@ -74,7 +74,7 @@ export default function TermsPage() {
               7. Intellectual Property
             </h2>
             <p className="text-text-light leading-relaxed">
-              The JobLink name, logo, and platform design are the property of JobLink. Users retain ownership of the content they upload (resumes, job descriptions, etc.) but grant JobLink a license to display this content on the Platform.
+              The JobLinks name, logo, and platform design are the property of JobLinks. Users retain ownership of the content they upload (resumes, job descriptions, etc.) but grant JobLinks a license to display this content on the Platform.
             </p>
           </section>
 
@@ -83,7 +83,7 @@ export default function TermsPage() {
               8. Limitation of Liability
             </h2>
             <p className="text-text-light leading-relaxed">
-              JobLink is a platform that connects job seekers and employers. We do not guarantee employment outcomes, verify employer legitimacy beyond our review process, or take responsibility for interactions between users outside the Platform. The Platform is provided &ldquo;as is&rdquo; without warranties of any kind.
+              JobLinks is a platform that connects job seekers and employers. We do not guarantee employment outcomes, verify employer legitimacy beyond our review process, or take responsibility for interactions between users outside the Platform. The Platform is provided &ldquo;as is&rdquo; without warranties of any kind.
             </p>
           </section>
 
@@ -92,7 +92,7 @@ export default function TermsPage() {
               9. Account Termination
             </h2>
             <p className="text-text-light leading-relaxed">
-              JobLink may suspend or terminate accounts that violate these terms, engage in fraudulent activity, or are reported by other users. Users may delete their accounts at any time through the Settings page.
+              JobLinks may suspend or terminate accounts that violate these terms, engage in fraudulent activity, or are reported by other users. Users may delete their accounts at any time through the Settings page.
             </p>
           </section>
 

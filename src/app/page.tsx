@@ -389,7 +389,7 @@ export default async function Home() {
             <div className="rounded-[--radius-card] border border-border p-7 sm:p-8 bg-bg hover-lift transition-all">
               <div className="text-accent-warm/30 text-4xl font-display leading-none mb-2">&ldquo;</div>
               <p className="text-text leading-relaxed text-[15px]">
-                I uploaded my CV on a Monday and had three interview calls by Thursday. JobLink connected me to opportunities I never would have found scrolling through Facebook groups.
+                I uploaded my CV on a Monday and had three interview calls by Thursday. JobLinks connected me to opportunities I never would have found scrolling through Facebook groups.
               </p>
               <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
                 <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">

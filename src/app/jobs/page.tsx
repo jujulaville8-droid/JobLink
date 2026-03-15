@@ -13,7 +13,7 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Browse Jobs | JobLink",
+  title: "Browse Jobs | JobLinks",
   description:
     "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, job type, and more.",
 };

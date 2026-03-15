@@ -31,7 +31,7 @@ export default function Footer() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/company-logo.png"
-                alt="JobLink"
+                alt="JobLinks"
                 width={400}
                 height={400}
                 className="h-40 w-auto brightness-0 invert -my-4"
@@ -60,7 +60,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               <li><Link href="/signup" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Post a Job</Link></li>
               <li><Link href="/dashboard" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Dashboard</Link></li>
-              <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Why JobLink</Link></li>
+              <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Why JobLinks</Link></li>
             </ul>
           </div>
 
@@ -78,7 +78,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} JobLink. Made in Antigua &amp; Barbuda.
+            &copy; {new Date().getFullYear()} JobLinks. Made in Antigua &amp; Barbuda.
           </p>
         </div>
       </div>

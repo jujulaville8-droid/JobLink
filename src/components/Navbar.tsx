@@ -279,7 +279,7 @@ export default function Navbar() {
             {/* ── Left: Wordmark ── */}
             <Link href="/" className="flex items-center shrink-0 gap-2.5">
               <span className="font-display text-xl font-bold tracking-tight text-primary">
-                JobLink
+                JobLinks
               </span>
               <span className="hidden sm:inline text-[11px] font-medium text-text-muted/70 border-l border-border pl-2.5 leading-tight">
                 Antigua&apos;s Career Network

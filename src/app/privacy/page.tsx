@@ -1,6 +1,6 @@
 export const metadata = {
-  title: 'Privacy Policy — JobLink',
-  description: 'JobLink privacy policy. How we collect, use, and protect your data.',
+  title: 'Privacy Policy — JobLinks',
+  description: 'JobLinks privacy policy. How we collect, use, and protect your data.',
 }
 
 export default function PrivacyPage() {
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
               1. Information We Collect
             </h2>
             <p className="text-text-light leading-relaxed">
-              When you create an account on JobLink, we collect your email
+              When you create an account on JobLinks, we collect your email
               address and the information you provide in your profile, including
               your name, phone number, location, skills, work experience,
               education, and uploaded documents such as your CV and cover

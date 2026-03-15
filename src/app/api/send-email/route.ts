@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
 type EmailType =
   | 'application_confirmation'
@@ -40,13 +40,13 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <div style="background-color: #0d7377; padding: 24px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLink</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLinks</h1>
         </div>
         <div style="padding: 32px 24px;">
           ${content}
         </div>
         <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink &mdash; Antigua &amp; Barbuda's Job Platform</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
         </div>
       </div>
     </body>
@@ -111,7 +111,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
             <p style="color: ${info.color}; font-weight: 700; margin: 0; font-size: 16px;">${info.text}</p>
           </div>
           ${isHired ? `<p style="color: #374151; line-height: 1.6;">The employer has selected you for the role. Expect to hear from them shortly about next steps.</p>` : ''}
-          ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLink.</p>` : ''}
+          ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLinks.</p>` : ''}
           ${!isHired && !isRejected ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
           ${isRejected ? btn('Browse More Jobs', '/jobs') : btn('View My Applications', '/applications')}
         `),
@@ -120,7 +120,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'job_alert':
       return {
-        subject: `New jobs on JobLink that match your alert`,
+        subject: `New jobs on JobLinks that match your alert`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Jobs Matching Your Alert</h2>
           <p style="color: #374151; line-height: 1.6;">
@@ -201,7 +201,7 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
             <p style="color: #374151; margin: 0; white-space: pre-wrap;">${data.admin_message}</p>
           </div>
           <p style="color: #374151; line-height: 1.6;">
-            We appreciate you helping keep JobLink safe and trustworthy for everyone.
+            We appreciate you helping keep JobLinks safe and trustworthy for everyone.
           </p>
           ${btn('Browse Jobs', '/jobs')}
         `),
@@ -224,10 +224,10 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     default:
       return {
-        subject: 'Notification from JobLink',
+        subject: 'Notification from JobLinks',
         html: wrapper(`
-          <p style="color: #374151;">You have a new notification from JobLink.</p>
-          ${btn('Go to JobLink', '/dashboard')}
+          <p style="color: #374151;">You have a new notification from JobLinks.</p>
+          ${btn('Go to JobLinks', '/dashboard')}
         `),
       }
   }

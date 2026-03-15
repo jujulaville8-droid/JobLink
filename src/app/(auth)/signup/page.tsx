@@ -123,7 +123,7 @@ export default function SignupPage() {
   return (
     <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8">
       <h1 className="font-display text-2xl text-text text-center mb-6">
-        Create your JobLink account
+        Create your JobLinks account
       </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5">

@@ -19,7 +19,7 @@ const bodyFont = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "JobLink — Antigua's Job Platform",
+  title: "JobLinks — Antigua's Job Platform",
   description:
     "The first dedicated job platform for Antigua and Barbuda. Find jobs, post listings, and connect with employers.",
   icons: {
