@@ -96,6 +96,28 @@ export async function POST(
       )
     }
 
+    // Rejection gating: seekers can't send messages after being rejected
+    if (meta && user.id === meta.seeker_user_id) {
+      const { data: conv } = await supabase
+        .from('conversations')
+        .select('application_id')
+        .eq('id', conversationId)
+        .single()
+      if (conv?.application_id) {
+        const { data: application } = await supabase
+          .from('applications')
+          .select('status')
+          .eq('id', conv.application_id)
+          .single()
+        if (application?.status === 'rejected') {
+          return NextResponse.json(
+            { error: 'You can no longer send messages for this application.' },
+            { status: 403 }
+          )
+        }
+      }
+    }
+
     // Insert message (trigger auto-updates conversation.last_message_*)
     const { data: message, error } = await supabase
       .from('messages')

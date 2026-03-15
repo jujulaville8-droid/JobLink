@@ -241,6 +241,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
   const isBlocked = meta?.is_blocked ?? false;
   const isSeekerAwaitingReply = meta ? (user?.id === meta.seeker_user_id && !meta.dialogue_open) : false;
+  const isSeekerRejected = meta ? (user?.id === meta.seeker_user_id && meta.application_status === 'rejected') : false;
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
@@ -349,8 +350,20 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
           </div>
         )}
 
+        {/* Rejected banner (seeker only) */}
+        {!isBlocked && isSeekerRejected && (
+          <div className="px-5 py-3 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+              </svg>
+              <p className="text-sm text-red-600 dark:text-red-400">Your application was not selected. You can no longer send messages in this conversation.</p>
+            </div>
+          </div>
+        )}
+
         {/* Awaiting employer reply banner (seeker only) */}
-        {!isBlocked && isSeekerAwaitingReply && (
+        {!isBlocked && !isSeekerRejected && isSeekerAwaitingReply && (
           <div className="px-5 py-3 bg-amber-50 border-t border-amber-200 text-center">
             <div className="flex items-center justify-center gap-2">
               <svg className="h-4 w-4 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -362,7 +375,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
         )}
 
         {/* Compose area */}
-        {!isBlocked && !isSeekerAwaitingReply && (
+        {!isBlocked && !isSeekerRejected && !isSeekerAwaitingReply && (
           <div className="relative">
             {showTemplates && (
               <TemplateDrawer
