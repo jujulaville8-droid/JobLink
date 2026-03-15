@@ -317,34 +317,23 @@ async function EmployerDashboard({ userId }: { userId: string }) {
   const jobIds = (companyJobs ?? []).map((j: { id: string }) => j.id);
 
   let totalApplicants = 0;
-  let weekApplicants = 0;
-  let shortlistedCount = 0;
   let recentApplicants: Record<string, unknown>[] = [];
 
-  if (jobIds.length > 0) {
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 7);
+  // Count unread messages
+  const { data: unreadData } = await supabase.rpc("get_total_unread_count", {
+    p_user_id: userId,
+  });
+  const unreadMessages = (unreadData as number | null) ?? 0;
 
+  if (jobIds.length > 0) {
     const [
       { count: total },
-      { count: weekCount },
-      { count: shortlisted },
       { data: recent },
     ] = await Promise.all([
       supabase
         .from("applications")
         .select("id", { count: "exact", head: true })
         .in("job_id", jobIds),
-      supabase
-        .from("applications")
-        .select("id", { count: "exact", head: true })
-        .in("job_id", jobIds)
-        .gte("applied_at", weekStart.toISOString()),
-      supabase
-        .from("applications")
-        .select("id", { count: "exact", head: true })
-        .in("job_id", jobIds)
-        .eq("status", "shortlisted"),
       supabase
         .from("applications")
         .select("id, status, applied_at, job_id, job_listings(id, title), seeker_profiles:seeker_id(first_name, last_name)")
@@ -354,8 +343,6 @@ async function EmployerDashboard({ userId }: { userId: string }) {
     ]);
 
     totalApplicants = total ?? 0;
-    weekApplicants = weekCount ?? 0;
-    shortlistedCount = shortlisted ?? 0;
     recentApplicants = (recent as Record<string, unknown>[] | null) ?? [];
   }
 
@@ -413,7 +400,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
           label="Active Listings"
           value={activeListings ?? 0}
           color="primary"
-          href="/my-listings?filter=active"
+          href="/my-listings"
           icon={
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
@@ -425,6 +412,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
           label="Total Applicants"
           value={totalApplicants}
           color="accent"
+          href="/my-listings"
           icon={
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -435,24 +423,25 @@ async function EmployerDashboard({ userId }: { userId: string }) {
           }
         />
         <StatCard
-          label="New This Week"
-          value={weekApplicants}
-          color="green"
+          label="Pending Review"
+          value={pendingListings ?? 0}
+          color="amber"
+          href="/my-listings?filter=pending"
           icon={
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-              <polyline points="17 6 23 6 23 12" />
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
             </svg>
           }
         />
         <StatCard
-          label="Shortlisted"
-          value={shortlistedCount}
-          color="purple"
+          label="Unread Messages"
+          value={unreadMessages}
+          color="green"
+          href="/messages"
           icon={
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
             </svg>
           }
         />
