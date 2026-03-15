@@ -329,17 +329,24 @@ function DeleteListing({ listingId }: { listingId: string }) {
       .single();
     if (!company) return;
 
-    // Delete associated applications first, then the listing
-    await supabase
-      .from('applications')
-      .delete()
-      .eq('job_id', listingId);
+    // Verify this listing belongs to the employer's company
+    const { data: listing } = await supabase
+      .from('job_listings')
+      .select('id')
+      .eq('id', listingId)
+      .eq('company_id', company.id)
+      .single();
+    if (!listing) return;
 
-    await supabase
+    // Use admin client to bypass RLS (no DELETE policies exist)
+    // Ownership already verified above. CASCADE handles applications & conversations.
+    const { createAdminClient } = await import('@/lib/supabase/admin');
+    const adminDb = createAdminClient();
+
+    await adminDb
       .from('job_listings')
       .delete()
-      .eq('id', listingId)
-      .eq('company_id', company.id);
+      .eq('id', listingId);
 
     redirect('/my-listings');
   }
