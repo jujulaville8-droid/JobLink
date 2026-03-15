@@ -46,6 +46,14 @@ export default function EmployerLoginPage() {
       return
     }
 
+    // Block unverified email accounts
+    if (signInData.user && !signInData.user.email_confirmed_at) {
+      await supabase.auth.signOut()
+      setError('Please verify your email before signing in. Check your inbox for the verification link.')
+      setLoading(false)
+      return
+    }
+
     // Ensure role metadata is set for reliable detection on the dashboard
     let userRole = 'employer'
     if (signInData.user) {
