@@ -4,20 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import StatusChangeModal from "./StatusChangeModal";
 
-const BUTTON_STYLES: Record<string, string> = {
-  applied: "border-gray-300 text-gray-600 hover:bg-gray-50",
-  interview: "border-emerald-300 text-emerald-700 hover:bg-emerald-50",
-  rejected: "border-red-300 text-red-600 hover:bg-red-50",
-  hold: "border-amber-300 text-amber-700 hover:bg-amber-50",
-};
-
-const BUTTON_LABELS: Record<string, string> = {
-  applied: "Reset",
-  interview: "Interview",
-  rejected: "Reject",
-  hold: "Hold",
-};
-
 interface StatusActionButtonsProps {
   applicationId: string;
   jobId: string;
@@ -51,7 +37,47 @@ export default function StatusActionButtons({
     }
   }
 
-  const statuses = ["interview", "hold", "rejected"] as const;
+  const actions = [
+    {
+      key: "interview",
+      label: "Interview",
+      icon: (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 00-3-3.87" />
+          <path d="M16 3.13a4 4 0 010 7.75" />
+        </svg>
+      ),
+      style:
+        "border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-sm hover:shadow-emerald-100",
+    },
+    {
+      key: "hold",
+      label: "Hold",
+      icon: (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+      style:
+        "border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 hover:shadow-sm hover:shadow-amber-100",
+    },
+    {
+      key: "rejected",
+      label: "Reject",
+      icon: (
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="15" y1="9" x2="9" y2="15" />
+          <line x1="9" y1="9" x2="15" y2="15" />
+        </svg>
+      ),
+      style:
+        "border-red-200 bg-red-50/50 text-red-600 hover:bg-red-100 hover:border-red-300 hover:shadow-sm hover:shadow-red-100",
+    },
+  ] as const;
 
   return (
     <>
@@ -59,20 +85,25 @@ export default function StatusActionButtons({
         <button
           onClick={handleReset}
           disabled={resetting}
-          className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${BUTTON_STYLES.applied} disabled:opacity-50`}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-3 py-1.5 text-xs font-medium text-text-muted transition-all duration-200 hover:border-primary/30 hover:text-text hover:bg-bg-alt hover:shadow-sm cursor-pointer disabled:opacity-50"
         >
-          {resetting ? "..." : BUTTON_LABELS.applied}
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+          {resetting ? "..." : "Reset"}
         </button>
       )}
-      {statuses.map((status) => {
-        if (currentStatus === status) return null;
+      {actions.map(({ key, label, icon, style }) => {
+        if (currentStatus === key) return null;
         return (
           <button
-            key={status}
-            onClick={() => setModalStatus(status)}
-            className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors cursor-pointer ${BUTTON_STYLES[status]}`}
+            key={key}
+            onClick={() => setModalStatus(key)}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${style}`}
           >
-            {BUTTON_LABELS[status]}
+            {icon}
+            {label}
           </button>
         );
       })}
