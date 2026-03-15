@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -277,7 +278,14 @@ export default function Navbar() {
           <div className="relative flex h-16 items-center justify-between">
 
             {/* ── Left: Wordmark ── */}
-            <Link href="/" className="flex items-center shrink-0 gap-2.5">
+            <Link href="/" className="flex items-center shrink-0 gap-2">
+              <Image
+                src="/logo-icon.png"
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 object-contain"
+              />
               <span className="font-display text-xl font-bold tracking-tight text-primary">
                 JobLinks
               </span>

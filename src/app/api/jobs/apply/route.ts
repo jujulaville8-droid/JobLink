@@ -71,6 +71,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
     }
 
+    // Prevent applying to your own company's listing
+    const jobCompany = Array.isArray(job.companies) ? job.companies[0] : job.companies
+    if (jobCompany?.user_id === user.id) {
+      return NextResponse.json({ error: 'You cannot apply to your own job listing' }, { status: 403 })
+    }
+
     // Insert application
     const { data: application, error: insertError } = await supabase
       .from('applications')
