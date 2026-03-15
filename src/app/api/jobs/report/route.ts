@@ -31,8 +31,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'reason is required' }, { status: 400 })
     }
 
+    // Use admin client for DB operations (RLS may block reported_listings access)
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const adminClient = createAdminClient()
+
     // Verify the job exists
-    const { data: job, error: jobError } = await supabase
+    const { data: job, error: jobError } = await adminClient
       .from('job_listings')
       .select('id')
       .eq('id', job_id)
@@ -43,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prevent duplicate reports from the same user
-    const { data: existingReport } = await supabase
+    const { data: existingReport } = await adminClient
       .from('reported_listings')
       .select('id')
       .eq('job_id', job_id)
@@ -55,7 +59,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert report
-    const { data: report, error: insertError } = await supabase
+    const { data: report, error: insertError } = await adminClient
       .from('reported_listings')
       .insert({
         job_id,
