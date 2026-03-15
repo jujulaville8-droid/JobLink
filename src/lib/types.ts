@@ -8,7 +8,7 @@ export type JobType = 'full_time' | 'part_time' | 'seasonal' | 'contract';
 
 export type JobStatus = 'active' | 'closed' | 'pending_approval';
 
-export type ApplicationStatus = 'applied' | 'shortlisted' | 'rejected' | 'hired';
+export type ApplicationStatus = 'applied' | 'interview' | 'rejected' | 'hold';
 
 // ─── Table Interfaces ───────────────────────────────────────────────
 

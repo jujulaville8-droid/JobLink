@@ -59,9 +59,9 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
     `<p style="margin-top: 24px;"><a href="${SITE}${path}" style="${btnStyle}">${label}</a></p>`
 
   const statusLabel: Record<string, { text: string; color: string }> = {
-    shortlisted: { text: 'Shortlisted', color: '#059669' },
+    interview: { text: 'Interview', color: '#059669' },
     rejected: { text: 'Not Selected', color: '#dc2626' },
-    hired: { text: 'Hired', color: '#0d7377' },
+    hold: { text: 'On Hold', color: '#0d7377' },
   }
 
   switch (type) {
@@ -96,23 +96,25 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'status_update': {
       const info = statusLabel[data.status || ''] || { text: data.status || 'Updated', color: '#14919b' }
-      const isHired = data.status === 'hired'
-      const isRejected = data.status === 'rejected'
+      const isInterview = data.status === 'Interview'
+      const isRejected = data.status === 'rejected' || data.status === 'Not Selected'
+      const isHold = data.status === 'On Hold' || data.status === 'hold'
       return {
-        subject: isHired
-          ? `Congratulations! You got the job: ${data.job_title}`
+        subject: isInterview
+          ? `Interview request for ${data.job_title}`
           : `Update on your application: ${data.job_title}`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">${isHired ? 'Congratulations!' : 'Application Update'}</h2>
+          <h2 style="color: #0d7377; margin-top: 0;">${isInterview ? 'Interview Invitation' : 'Application Update'}</h2>
           <p style="color: #374151; line-height: 1.6;">
             Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has a new status:
           </p>
           <div style="background-color: ${info.color}10; border-left: 4px solid ${info.color}; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
             <p style="color: ${info.color}; font-weight: 700; margin: 0; font-size: 16px;">${info.text}</p>
           </div>
-          ${isHired ? `<p style="color: #374151; line-height: 1.6;">The employer has selected you for the role. Expect to hear from them shortly about next steps.</p>` : ''}
+          ${isInterview ? `<p style="color: #374151; line-height: 1.6;">The employer would like to interview you. Expect to hear from them shortly with details.</p>` : ''}
           ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLinks.</p>` : ''}
-          ${!isHired && !isRejected ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
+          ${isHold ? `<p style="color: #374151; line-height: 1.6;">Your application is on hold. The employer may follow up with next steps.</p>` : ''}
+          ${!isInterview && !isRejected && !isHold ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
           ${isRejected ? btn('Browse More Jobs', '/jobs') : btn('View My Applications', '/applications')}
         `),
       }

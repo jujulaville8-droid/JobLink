@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Update application status to hired
+    // Update application status to hold
     await supabase
       .from('applications')
-      .update({ status: 'hired' })
+      .update({ status: 'hold' })
       .eq('id', application_id)
 
     // Optionally close the job listing
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
           data: {
             job_title: listing.title,
             company_name: companyData?.company_name || 'the employer',
-            status: 'Hired',
+            status: 'On Hold',
             dashboard_url: `${BASE_URL}/applications`,
           },
         })
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
         applicationId: application_id,
         employerUserId: user.id,
         seekerUserId: seekerProfile.user_id,
-        newStatus: 'hired',
+        newStatus: 'hold',
         jobTitle: listing.title,
         companyName: companyData?.company_name || 'the employer',
       })

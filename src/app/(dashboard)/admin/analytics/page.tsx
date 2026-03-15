@@ -60,8 +60,8 @@ export default async function AdminAnalyticsPage() {
     { data: recentApps },
     { data: recentJobs },
     { count: appliedCount },
-    { count: shortlistedCount },
-    { count: hiredCount },
+    { count: interviewCount },
+    { count: holdCount },
     { count: rejectedCount },
   ] = await Promise.all([
     supabase.from('users').select('id', { count: 'exact', head: true }),
@@ -84,8 +84,8 @@ export default async function AdminAnalyticsPage() {
     supabase.from('job_listings').select('created_at').gte('created_at', since),
     // Application status counts
     supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'applied'),
-    supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'shortlisted'),
-    supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'hired'),
+    supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'interview'),
+    supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'hold'),
     supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
   ])
 
@@ -124,8 +124,8 @@ export default async function AdminAnalyticsPage() {
 
   const applicationStatusData = [
     { name: 'Applied', value: appliedCount ?? 0 },
-    { name: 'Shortlisted', value: shortlistedCount ?? 0 },
-    { name: 'Hired', value: hiredCount ?? 0 },
+    { name: 'Interview', value: interviewCount ?? 0 },
+    { name: 'On Hold', value: holdCount ?? 0 },
     { name: 'Rejected', value: rejectedCount ?? 0 },
   ].filter((d) => d.value > 0)
 

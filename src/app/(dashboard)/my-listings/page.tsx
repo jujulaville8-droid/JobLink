@@ -248,7 +248,7 @@ export default async function MyListingsPage({
                   View Applicants
                 </Link>
 
-                {listing.status === 'pending_approval' && (
+                {(listing.status === 'pending_approval' || listing.status === 'active') && (
                   <Link
                     href={`/post-job?edit=${listing.id}`}
                     className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-text transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:-translate-y-0.5 active:translate-y-0"

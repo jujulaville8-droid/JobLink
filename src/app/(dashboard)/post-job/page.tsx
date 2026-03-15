@@ -114,7 +114,7 @@ export default function PostJobPage() {
         .select('*')
         .eq('id', editId)
         .eq('company_id', company.id)
-        .eq('status', 'pending_approval')
+        .in('status', ['pending_approval', 'active'])
         .single();
 
       if (error || !listing) {
@@ -219,13 +219,13 @@ export default function PostJobPage() {
       };
 
       if (editId) {
-        // Update existing pending listing
+        // Update existing listing (pending or active)
         const { error: updateError } = await supabase
           .from('job_listings')
           .update(listingData)
           .eq('id', editId)
           .eq('company_id', company.id)
-          .eq('status', 'pending_approval');
+          .in('status', ['pending_approval', 'active']);
 
         if (updateError) {
           setServerError(updateError.message);
@@ -305,7 +305,7 @@ export default function PostJobPage() {
           </h2>
           <p className="mt-2 text-sm text-text-muted">
             {editId
-              ? 'Your changes have been saved. The listing is still pending review.'
+              ? 'Your changes have been saved and are live.'
               : "Your job listing has been submitted for review. You'll be redirected to your listings shortly."}
           </p>
         </div>
@@ -332,7 +332,7 @@ export default function PostJobPage() {
             </h1>
             <p className="text-sm text-text-muted">
               {editId
-                ? 'Update your listing details before it goes live.'
+                ? 'Update your listing details.'
                 : 'Fill out the details below to submit your listing for review.'}
             </p>
           </div>
@@ -700,7 +700,7 @@ export default function PostJobPage() {
               <div className="mt-4 flex items-center gap-2 border-t border-border/40 pt-4">
                 <HugeiconsIcon icon={Clock01Icon} size={12} className="text-text-muted" />
                 <span className="text-xs text-text-muted">
-                  {editId ? 'Editing pending listing' : `Listing expires after ${form.duration} days`}
+                  {editId ? 'Editing listing' : `Listing expires after ${form.duration} days`}
                 </span>
               </div>
             </div>

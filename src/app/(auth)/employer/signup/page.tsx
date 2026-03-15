@@ -76,9 +76,9 @@ export default function EmployerSignupPage() {
   if (success) {
     return (
       <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center">
-        <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
           <svg
-            className="w-7 h-7 text-emerald-600"
+            className="w-8 h-8 text-emerald-600"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth="2"
@@ -91,20 +91,25 @@ export default function EmployerSignupPage() {
             />
           </svg>
         </div>
-        <h2 className="font-display text-xl text-text mb-2">
-          Check your email
+        <h2 className="font-display text-2xl text-text mb-2">
+          You&apos;re almost there!
         </h2>
-        <p className="text-text-light mb-6">
+        <p className="text-text-light mb-2">
           We&apos;ve sent a verification link to{' '}
-          <span className="font-medium text-text">{email}</span>. Click the
-          link to activate your employer account.
+          <span className="font-medium text-text">{email}</span>.
+        </p>
+        <p className="text-text-light mb-6">
+          Click the link in your email to verify your account, then come back and sign in — your employer account will be ready to go.
         </p>
         <a
           href="/employer/login"
-          className="text-sm font-medium text-primary hover:text-primary-dark transition"
+          className="inline-block w-full btn-primary py-3 text-center"
         >
-          Back to employer sign in
+          Go to Employer Sign In
         </a>
+        <p className="mt-4 text-xs text-text-muted">
+          Didn&apos;t get the email? Check your spam folder or try signing up again.
+        </p>
       </div>
     )
   }

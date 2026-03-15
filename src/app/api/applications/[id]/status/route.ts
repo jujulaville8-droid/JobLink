@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { sendEmail, BASE_URL } from '@/lib/email';
 import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
 
-const VALID_STATUSES = ['applied', 'shortlisted', 'rejected', 'hired'] as const;
+const VALID_STATUSES = ['applied', 'interview', 'rejected', 'hold'] as const;
 type ValidStatus = (typeof VALID_STATUSES)[number];
 
 export async function PATCH(
@@ -29,11 +29,11 @@ export async function PATCH(
 
     // Parse body
     const body = await request.json();
-    const { status } = body as { status: string };
+    const { status, custom_message } = body as { status: string; custom_message?: string };
 
     if (!status || !VALID_STATUSES.includes(status as ValidStatus)) {
       return NextResponse.json(
-        { error: 'Invalid status. Must be one of: applied, shortlisted, rejected, hired' },
+        { error: 'Invalid status. Must be one of: applied, interview, rejected, hold' },
         { status: 400 }
       );
     }
@@ -115,9 +115,9 @@ export async function PATCH(
         if (seekerUser?.email) {
           const company = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
           const statusLabels: Record<string, string> = {
-            shortlisted: 'Shortlisted',
+            interview: 'Interview',
             rejected: 'Not Selected',
-            hired: 'Hired',
+            hold: 'On Hold',
           };
 
           sendEmail({
@@ -141,6 +141,7 @@ export async function PATCH(
           newStatus: status,
           jobTitle: listing.title,
           companyName: companyData?.company_name || 'the employer',
+          customMessage: custom_message,
         })
       }
     }

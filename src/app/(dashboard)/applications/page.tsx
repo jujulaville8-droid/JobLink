@@ -6,16 +6,16 @@ import MessageButton from "@/components/messaging/MessageButton";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   applied: "bg-primary/10 text-primary",
-  shortlisted: "bg-emerald-50 text-emerald-700",
+  interview: "bg-emerald-50 text-emerald-700",
   rejected: "bg-red-50 text-red-600",
-  hired: "bg-accent-warm/10 text-amber-700",
+  hold: "bg-accent-warm/10 text-amber-700",
 };
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   applied: "Applied",
-  shortlisted: "Shortlisted",
+  interview: "Interview",
   rejected: "Rejected",
-  hired: "Hired",
+  hold: "On Hold",
 };
 
 export default async function ApplicationsPage() {
@@ -66,7 +66,7 @@ export default async function ApplicationsPage() {
             <span className="inline-flex items-center rounded-full bg-bg-alt px-3 py-1 text-sm font-medium text-text-light">
               {apps.length} total
             </span>
-            {(["applied", "shortlisted", "rejected", "hired"] as ApplicationStatus[]).map(
+            {(["applied", "interview", "rejected", "hold"] as ApplicationStatus[]).map(
               (status) => {
                 const count = apps.filter(
                   (a) => a.status === status

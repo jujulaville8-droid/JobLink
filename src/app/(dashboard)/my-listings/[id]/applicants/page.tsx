@@ -4,8 +4,7 @@ import { requireAuth } from '@/lib/auth';
 import Link from 'next/link';
 import type { ApplicationStatus } from '@/lib/types';
 import MessageButton from '@/components/messaging/MessageButton';
-import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
-import HireButton from '@/components/HireButton';
+import StatusActionButtons from '@/components/StatusActionButtons';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -18,15 +17,15 @@ function formatDate(dateStr: string): string {
 function StatusBadge({ status }: { status: ApplicationStatus }) {
   const styles: Record<ApplicationStatus, string> = {
     applied: 'bg-primary/10 text-primary',
-    shortlisted: 'bg-emerald-50 text-emerald-700',
+    interview: 'bg-emerald-50 text-emerald-700',
     rejected: 'bg-red-50 text-red-600',
-    hired: 'bg-accent-warm/10 text-amber-700',
+    hold: 'bg-accent-warm/10 text-amber-700',
   };
   const labels: Record<ApplicationStatus, string> = {
     applied: 'Applied',
-    shortlisted: 'Shortlisted',
+    interview: 'Interview',
     rejected: 'Rejected',
-    hired: 'Hired',
+    hold: 'On Hold',
   };
   return (
     <span
@@ -37,105 +36,6 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
   );
 }
 
-function StatusButton({
-  applicationId,
-  status,
-  currentStatus,
-  jobId,
-}: {
-  applicationId: string;
-  status: ApplicationStatus;
-  currentStatus: ApplicationStatus;
-  jobId: string;
-}) {
-  if (currentStatus === status) return null;
-
-  const styles: Record<string, string> = {
-    applied: 'border-gray-300 text-gray-600 hover:bg-gray-50',
-    shortlisted:
-      'border-emerald-300 text-emerald-700 hover:bg-emerald-50',
-    rejected: 'border-red-300 text-red-600 hover:bg-red-50',
-    hired: 'border-amber-300 text-amber-700 hover:bg-amber-50',
-  };
-
-  const labels: Record<string, string> = {
-    applied: 'Reset',
-    shortlisted: 'Shortlist',
-    rejected: 'Reject',
-    hired: 'Hire',
-  };
-
-  async function updateStatus() {
-    'use server';
-    const supabase = await createClient();
-    const user = await requireAuth();
-
-    // Verify ownership and get context for system message
-    const { data: application } = await supabase
-      .from('applications')
-      .select('id, job_id, seeker_id')
-      .eq('id', applicationId)
-      .single();
-
-    if (!application) return;
-
-    const { data: listing } = await supabase
-      .from('job_listings')
-      .select('company_id, title, companies(company_name)')
-      .eq('id', application.job_id)
-      .single();
-
-    if (!listing) return;
-
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('id', listing.company_id)
-      .single();
-
-    if (!company) return;
-
-    await supabase
-      .from('applications')
-      .update({ status })
-      .eq('id', applicationId);
-
-    // Send system message into the conversation thread (skip for reset to applied)
-    if (status !== 'applied') {
-      const { data: seekerProfile } = await supabase
-        .from('seeker_profiles')
-        .select('user_id')
-        .eq('id', application.seeker_id)
-        .single();
-
-      if (seekerProfile?.user_id) {
-        const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
-        await sendStatusChangeMessage(supabase, {
-          applicationId,
-          employerUserId: user.id,
-          seekerUserId: seekerProfile.user_id,
-          newStatus: status,
-          jobTitle: listing.title,
-          companyName: (companyData as { company_name: string } | null)?.company_name || 'the employer',
-        });
-      }
-    }
-
-    redirect(`/my-listings/${jobId}/applicants`);
-  }
-
-  return (
-    <form action={updateStatus} className="inline">
-      <button
-        type="submit"
-        className={`rounded-md border px-3 py-1 text-xs font-medium transition-colors ${styles[status]}`}
-      >
-        {labels[status]}
-      </button>
-    </form>
-  );
-}
 
 interface ApplicantData {
   id: string;
@@ -216,7 +116,7 @@ export default async function ApplicantsPage({
     .eq('job_id', id);
 
   // Apply status filter
-  if (statusFilter && ['applied', 'shortlisted', 'rejected', 'hired'].includes(statusFilter)) {
+  if (statusFilter && ['applied', 'interview', 'rejected', 'hold'].includes(statusFilter)) {
     query = query.eq('status', statusFilter);
   }
 
@@ -250,8 +150,8 @@ export default async function ApplicantsPage({
   const filterTabs = [
     { key: '', label: 'All', count: totalCount },
     { key: 'applied', label: 'Applied', count: counts.applied ?? 0 },
-    { key: 'shortlisted', label: 'Shortlisted', count: counts.shortlisted ?? 0 },
-    { key: 'hired', label: 'Hired', count: counts.hired ?? 0 },
+    { key: 'interview', label: 'Interview', count: counts.interview ?? 0 },
+    { key: 'hold', label: 'On Hold', count: counts.hold ?? 0 },
     { key: 'rejected', label: 'Rejected', count: counts.rejected ?? 0 },
   ];
 
@@ -293,8 +193,8 @@ export default async function ApplicantsPage({
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: 'Total', count: totalCount, color: 'bg-bg-alt text-text-light' },
-          { label: 'Shortlisted', count: counts.shortlisted ?? 0, color: 'bg-emerald-50 text-emerald-700' },
-          { label: 'Hired', count: counts.hired ?? 0, color: 'bg-accent-warm/10 text-amber-700' },
+          { label: 'Interview', count: counts.interview ?? 0, color: 'bg-emerald-50 text-emerald-700' },
+          { label: 'On Hold', count: counts.hold ?? 0, color: 'bg-accent-warm/10 text-amber-700' },
           { label: 'Rejected', count: counts.rejected ?? 0, color: 'bg-red-50 text-red-600' },
         ].map((stat) => (
           <div
@@ -537,31 +437,10 @@ export default async function ApplicantsPage({
                     <span className="mr-2 text-xs font-medium text-text-light self-center">
                       Set status:
                     </span>
-                    {app.status !== 'applied' && (
-                      <StatusButton
-                        applicationId={app.id}
-                        status="applied"
-                        currentStatus={app.status}
-                        jobId={id}
-                      />
-                    )}
-                    <StatusButton
+                    <StatusActionButtons
                       applicationId={app.id}
-                      status="shortlisted"
-                      currentStatus={app.status}
                       jobId={id}
-                    />
-                    {app.status !== 'hired' && (
-                      <HireButton
-                        applicationId={app.id}
-                        jobId={id}
-                      />
-                    )}
-                    <StatusButton
-                      applicationId={app.id}
-                      status="rejected"
                       currentStatus={app.status}
-                      jobId={id}
                     />
                     <span className="ml-1 text-[10px] text-text-muted self-center italic">
                       The applicant will be notified

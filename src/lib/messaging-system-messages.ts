@@ -1,7 +1,7 @@
 const STATUS_MESSAGES: Record<string, string> = {
-  shortlisted: 'Your application has been shortlisted. The employer is interested in moving forward.',
+  interview: 'Great news! The employer would like to move forward with an interview.',
   rejected: 'Thank you for your interest. The employer has decided to move forward with other candidates for this position.',
-  hired: 'Congratulations! You have been hired for this position. The employer will follow up with next steps.',
+  hold: 'Your application has been placed on hold. The employer may follow up with next steps.',
 }
 
 /**
@@ -17,11 +17,12 @@ export async function sendStatusChangeMessage(
     newStatus: string
     jobTitle: string
     companyName: string
+    customMessage?: string
   }
 ): Promise<void> {
-  const { applicationId, employerUserId, seekerUserId, newStatus, jobTitle, companyName } = params
+  const { applicationId, employerUserId, seekerUserId, newStatus, jobTitle, companyName, customMessage } = params
 
-  const statusMessage = STATUS_MESSAGES[newStatus]
+  const statusMessage = customMessage || STATUS_MESSAGES[newStatus]
   if (!statusMessage) return
 
   const fullMessage = `--- Application Update ---\n${statusMessage}\n\nPosition: ${jobTitle}\nCompany: ${companyName}`

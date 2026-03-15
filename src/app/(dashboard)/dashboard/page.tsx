@@ -7,16 +7,16 @@ import AdminBentoDashboard from "@/components/AdminBentoDashboard";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   applied: "bg-primary/10 text-primary",
-  shortlisted: "bg-emerald-50 text-emerald-700",
+  interview: "bg-emerald-50 text-emerald-700",
   rejected: "bg-red-50 text-red-600",
-  hired: "bg-accent-warm/10 text-amber-700",
+  hold: "bg-accent-warm/10 text-amber-700",
 };
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   applied: "Applied",
-  shortlisted: "Shortlisted",
+  interview: "Interview",
   rejected: "Rejected",
-  hired: "Hired",
+  hold: "On Hold",
 };
 
 function StatCard({
