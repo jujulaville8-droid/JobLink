@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { ApplicationStatus } from '@/lib/types';
 import MessageButton from '@/components/messaging/MessageButton';
 import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
+import HireButton from '@/components/HireButton';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -550,12 +551,12 @@ export default async function ApplicantsPage({
                       currentStatus={app.status}
                       jobId={id}
                     />
-                    <StatusButton
-                      applicationId={app.id}
-                      status="hired"
-                      currentStatus={app.status}
-                      jobId={id}
-                    />
+                    {app.status !== 'hired' && (
+                      <HireButton
+                        applicationId={app.id}
+                        jobId={id}
+                      />
+                    )}
                     <StatusButton
                       applicationId={app.id}
                       status="rejected"
