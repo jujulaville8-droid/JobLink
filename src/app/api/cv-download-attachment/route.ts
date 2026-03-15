@@ -23,8 +23,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Use admin client for authorization lookups to bypass RLS
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const adminClient = createAdminClient();
+
   // Check 1: Is the user the owner of this CV?
-  const { data: ownProfile } = await supabase
+  const { data: ownProfile } = await adminClient
     .from("seeker_profiles")
     .select("id")
     .eq("user_id", user.id)
@@ -32,8 +36,8 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (!ownProfile) {
-    // Check 2: Is the user an employer who has an applicant with this CV?
-    const { data: userData } = await supabase
+    // Check 2: Is the user an employer/admin who has an applicant with this CV?
+    const { data: userData } = await adminClient
       .from("users")
       .select("role")
       .eq("id", user.id)
@@ -43,15 +47,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data: company } = await supabase
-      .from("companies")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    if (userData?.role === "admin") {
+      // Admins can access any CV — skip relationship check
+    } else {
+      const { data: company } = await adminClient
+        .from("companies")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-    if (company) {
+      if (!company) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
       // Find the seeker with this CV
-      const { data: profile } = await supabase
+      const { data: profile } = await adminClient
         .from("seeker_profiles")
         .select("id")
         .eq("cv_url", path)
@@ -62,7 +72,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Verify this seeker applied to one of the employer's jobs
-      const { data: hasApp } = await supabase
+      const { data: hasApp } = await adminClient
         .from("applications")
         .select("id, job_listings!inner(company_id)")
         .eq("seeker_id", profile.id)
@@ -73,15 +83,10 @@ export async function GET(request: NextRequest) {
       if (!hasApp) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
-    } else if (userData?.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
 
-  // Generate signed download URL using admin client to bypass storage RLS
-  // (we've already verified authorization above)
-  const { createAdminClient } = await import("@/lib/supabase/admin");
-  const adminClient = createAdminClient();
+  // Generate signed download URL
   const { data: signedUrlData, error: signError } = await adminClient.storage
     .from("cvs")
     .createSignedUrl(path, 3600, { download: true });
