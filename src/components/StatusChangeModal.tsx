@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 const DEFAULT_MESSAGES: Record<string, string> = {
@@ -14,7 +14,7 @@ const DEFAULT_MESSAGES: Record<string, string> = {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; heading: string; icon: JSX.Element; accent: string; btnClass: string }
+  { label: string; heading: string; icon: ReactNode; accent: string; btnClass: string }
 > = {
   interview: {
     label: "Interview",
