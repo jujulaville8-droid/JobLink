@@ -2,8 +2,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import UnsaveButton from "./UnsaveButton";
+import Pagination from "@/components/Pagination";
 
-export default async function SavedJobsPage() {
+const ITEMS_PER_PAGE = 12;
+
+interface PageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function SavedJobsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,7 +21,6 @@ export default async function SavedJobsPage() {
     redirect("/login");
   }
 
-  // Check seeker profile exists
   const { data: profile } = await supabase
     .from("seeker_profiles")
     .select("id")
@@ -24,16 +31,22 @@ export default async function SavedJobsPage() {
     redirect("/profile");
   }
 
-  // Fetch saved jobs with job and company info
-  const { data: savedJobs } = await supabase
+  const currentPage = Math.max(1, parseInt(params.page || "1", 10) || 1);
+  const from = (currentPage - 1) * ITEMS_PER_PAGE;
+  const to = from + ITEMS_PER_PAGE - 1;
+
+  const { data: savedJobs, count } = await supabase
     .from("saved_jobs")
     .select(
-      "id, saved_at, job_id, job_listings(id, title, description, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name, logo_url))"
+      "id, saved_at, job_id, job_listings(id, title, description, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name, logo_url))",
+      { count: "exact" }
     )
-    .eq("seeker_id", user.id)
-    .order("saved_at", { ascending: false });
+    .eq("seeker_id", profile.id)
+    .order("saved_at", { ascending: false })
+    .range(from, to);
 
   const saved = (savedJobs as Record<string, unknown>[] | null) ?? [];
+  const totalPages = Math.ceil((count ?? 0) / ITEMS_PER_PAGE);
 
   return (
     <div>
@@ -43,80 +56,79 @@ export default async function SavedJobsPage() {
       </p>
 
       {saved.length > 0 ? (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {saved.map((item) => {
-            const job = item.job_listings as Record<string, unknown> | null;
-            const company = job?.companies as Record<string, unknown> | null;
+        <>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {saved.map((item) => {
+              const job = item.job_listings as Record<string, unknown> | null;
+              const company = job?.companies as Record<string, unknown> | null;
 
-            if (!job) return null;
+              if (!job) return null;
 
-            const salaryMin = job.salary_min as number | null;
-            const salaryMax = job.salary_max as number | null;
-            const salaryVisible = job.salary_visible as boolean;
+              const salaryMin = job.salary_min as number | null;
+              const salaryMax = job.salary_max as number | null;
+              const salaryVisible = job.salary_visible as boolean;
 
-            return (
-              <div
-                key={item.id as string}
-                className="relative rounded-[--radius-card] border border-border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
-              >
-                {/* Unsave button */}
-                <div className="absolute top-3 right-3">
-                  <UnsaveButton savedJobId={item.id as string} />
-                </div>
-
-                <Link href={`/jobs/${job.id}`} className="block">
-                  <h3 className="pr-8 font-semibold text-text hover:text-[#0d7377]">
-                    {job.title as string}
-                  </h3>
-                  <p className="mt-1 text-sm text-text-light">
-                    {(company?.company_name as string) ?? "Unknown Company"}
-                  </p>
-
-                  {/* Description snippet */}
-                  {(job.description as string) ? (
-                    <p className="mt-2 text-sm text-text-light line-clamp-2">
-                      {(job.description as string).substring(0, 120)}
-                      {(job.description as string).length > 120 ? "..." : ""}
-                    </p>
-                  ) : null}
-
-                  {/* Tags */}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {(job.location as string) ? (
-                      <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium text-text-light">
-                        {job.location as string}
-                      </span>
-                    ) : null}
-                    {(job.job_type as string) ? (
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 capitalize">
-                        {((job.job_type as string) ?? "").replace("_", " ")}
-                      </span>
-                    ) : null}
-                    {salaryVisible && (salaryMin || salaryMax) && (
-                      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                        {salaryMin && salaryMax
-                          ? `$${salaryMin.toLocaleString()} - $${salaryMax.toLocaleString()}`
-                          : salaryMin
-                            ? `From $${salaryMin.toLocaleString()}`
-                            : `Up to $${salaryMax?.toLocaleString()}`}
-                      </span>
-                    )}
+              return (
+                <div
+                  key={item.id as string}
+                  className="relative rounded-[--radius-card] border border-border bg-white dark:bg-card p-5 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="absolute top-3 right-3">
+                    <UnsaveButton savedJobId={item.id as string} />
                   </div>
-                </Link>
 
-                <p className="mt-3 text-xs text-text-light">
-                  Saved{" "}
-                  {new Date(item.saved_at as string).toLocaleDateString(
-                    "en-US",
-                    { month: "short", day: "numeric", year: "numeric" }
-                  )}
-                </p>
-              </div>
-            );
-          })}
-        </div>
+                  <Link href={`/jobs/${job.id}`} className="block">
+                    <h3 className="pr-8 font-semibold text-text hover:text-[#0d7377]">
+                      {job.title as string}
+                    </h3>
+                    <p className="mt-1 text-sm text-text-light">
+                      {(company?.company_name as string) ?? "Unknown Company"}
+                    </p>
+
+                    {(job.description as string) ? (
+                      <p className="mt-2 text-sm text-text-light line-clamp-2">
+                        {(job.description as string).substring(0, 120)}
+                        {(job.description as string).length > 120 ? "..." : ""}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(job.location as string) ? (
+                        <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium text-text-light">
+                          {job.location as string}
+                        </span>
+                      ) : null}
+                      {(job.job_type as string) ? (
+                        <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-500/15 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400 capitalize">
+                          {((job.job_type as string) ?? "").replace("_", " ")}
+                        </span>
+                      ) : null}
+                      {salaryVisible && (salaryMin || salaryMax) && (
+                        <span className="inline-flex items-center rounded-full bg-green-50 dark:bg-green-500/15 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
+                          {salaryMin && salaryMax
+                            ? `EC$${salaryMin.toLocaleString()} - EC$${salaryMax.toLocaleString()}`
+                            : salaryMin
+                              ? `From EC$${salaryMin.toLocaleString()}`
+                              : `Up to EC$${salaryMax?.toLocaleString()}`}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+
+                  <p className="mt-3 text-xs text-text-muted">
+                    Saved{" "}
+                    {new Date(item.saved_at as string).toLocaleDateString(
+                      "en-US",
+                      { month: "short", day: "numeric", year: "numeric" }
+                    )}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          <Pagination currentPage={currentPage} totalPages={totalPages} />
+        </>
       ) : (
-        /* Empty state */
         <div className="mt-12 flex flex-col items-center justify-center rounded-[--radius-card] border-2 border-dashed border-border p-12 text-center">
           <svg
             className="h-16 w-16 text-text-light"
@@ -137,7 +149,7 @@ export default async function SavedJobsPage() {
           </p>
           <Link
             href="/jobs"
-            className="mt-6 inline-flex items-center rounded-[10px] bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+            className="mt-6 btn-primary text-sm"
           >
             Browse Jobs
           </Link>

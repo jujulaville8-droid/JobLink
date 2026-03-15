@@ -1,11 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import JobCard, { Job } from "@/components/JobCard";
+import Pagination from "@/components/Pagination";
+
+const JOBS_PER_PAGE = 12;
 
 interface JobResultsProps {
   searchParams: {
     q?: string;
     category?: string;
     job_type?: string | string[];
+    page?: string;
   };
   gridClassName?: string;
 }
@@ -15,6 +19,10 @@ export default async function JobResults({
   gridClassName = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4",
 }: JobResultsProps) {
   const supabase = await createClient();
+
+  const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1);
+  const from = (currentPage - 1) * JOBS_PER_PAGE;
+  const to = from + JOBS_PER_PAGE - 1;
 
   let query = supabase
     .from("job_listings")
@@ -39,11 +47,13 @@ export default async function JobResults({
         company_name,
         logo_url
       )
-    `
+    `,
+      { count: "exact" }
     )
     .eq("status", "active")
     .order("is_featured", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
   if (searchParams.q) {
     const keyword = `%${searchParams.q}%`;
@@ -63,7 +73,7 @@ export default async function JobResults({
     }
   }
 
-  const { data: jobs, error } = await query;
+  const { data: jobs, error, count } = await query;
 
   // Fetch saved job IDs for the current user (if logged in)
   let savedJobIds: Set<string> = new Set();
@@ -98,7 +108,7 @@ export default async function JobResults({
 
   if (!jobs || jobs.length === 0) {
     return (
-      <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
+      <div className="rounded-[--radius-card] border border-border bg-white dark:bg-card p-10 text-center">
         <svg
           className="mx-auto h-12 w-12 text-text-muted/50"
           viewBox="0 0 24 24"
@@ -118,6 +128,9 @@ export default async function JobResults({
       </div>
     );
   }
+
+  const totalCount = count ?? 0;
+  const totalPages = Math.ceil(totalCount / JOBS_PER_PAGE);
 
   const mappedJobs: Job[] = jobs.map((job) => {
     const company = job.company as unknown as {
@@ -144,14 +157,15 @@ export default async function JobResults({
   return (
     <div className="animate-fade-up">
       <p className="mb-4 text-sm text-text-light">
-        <span className="font-semibold text-text">{mappedJobs.length}</span>{" "}
-        {mappedJobs.length === 1 ? "job" : "jobs"} found
+        <span className="font-semibold text-text">{totalCount}</span>{" "}
+        {totalCount === 1 ? "job" : "jobs"} found
       </p>
       <div className={`${gridClassName} stagger-children`}>
         {mappedJobs.map((job) => (
           <JobCard key={job.id} job={job} isSaved={savedJobIds.has(job.id)} loggedIn={!!user} />
         ))}
       </div>
+      <Pagination currentPage={currentPage} totalPages={totalPages} />
     </div>
   );
 }
