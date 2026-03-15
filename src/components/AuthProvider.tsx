@@ -37,8 +37,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAdminUser, setIsAdminUser] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [seekerAvatarUrl, setSeekerAvatarUrl] = useState<string | null>(null);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Derive avatarUrl from current role
+  const avatarUrl = userRole === "employer" ? companyLogoUrl : seekerAvatarUrl;
+  const setAvatarUrl = useCallback((url: string | null) => {
+    if (userRole === "employer") {
+      setCompanyLogoUrl(url);
+    } else {
+      setSeekerAvatarUrl(url);
+    }
+  }, [userRole]);
 
   const logout = useCallback(async () => {
     const supabase = createClient();
@@ -46,7 +57,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     setUser(null);
     setUserRole(null);
     setIsAdminUser(false);
-    setAvatarUrl(null);
+    setSeekerAvatarUrl(null);
+    setCompanyLogoUrl(null);
     window.location.href = "/login";
   }, []);
 
@@ -71,19 +83,21 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setUserRole((u.user_metadata?.role as string) ?? "seeker");
       }
 
-      // Fetch avatar from seeker_profiles
+      // Fetch seeker avatar and company logo in parallel
       try {
-        const { data: profile } = await supabase
-          .from("seeker_profiles")
-          .select("avatar_url")
-          .eq("user_id", u.id)
-          .maybeSingle();
+        const [seekerRes, companyRes] = await Promise.all([
+          supabase.from("seeker_profiles").select("avatar_url").eq("user_id", u.id).maybeSingle(),
+          supabase.from("companies").select("logo_url").eq("user_id", u.id).maybeSingle(),
+        ]);
         if (!mounted) return;
-        if (profile?.avatar_url) {
-          setAvatarUrl(profile.avatar_url as string);
+        if (seekerRes.data?.avatar_url) {
+          setSeekerAvatarUrl(seekerRes.data.avatar_url as string);
+        }
+        if (companyRes.data?.logo_url) {
+          setCompanyLogoUrl(companyRes.data.logo_url as string);
         }
       } catch {
-        // Non-critical — avatar stays null
+        // Non-critical — avatars stay null
       }
     }
 
@@ -113,7 +127,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           setUser(null);
           setUserRole(null);
           setIsAdminUser(false);
-          setAvatarUrl(null);
+          setSeekerAvatarUrl(null);
+          setCompanyLogoUrl(null);
           setIsLoading(false);
         } else if (event === "TOKEN_REFRESHED" && session?.user) {
           setUser(session.user);
