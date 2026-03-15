@@ -15,14 +15,15 @@ export default function AuthLayout({
       <div className="absolute bottom-20 left-10 w-48 h-48 rounded-full bg-accent-warm/5 blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative">
-        <div className="text-center mb-8">
-          <a href="/" className="inline-block">
+        <div className="flex justify-center mb-4">
+          <a href="/" className="block w-full max-w-sm mx-auto">
             <Image
               src="/company-logo.png"
               alt="JobLink — Antigua's Career Network"
-              width={960}
-              height={960}
-              className="h-[32rem] w-auto"
+              width={2000}
+              height={2000}
+              className="w-full h-auto object-contain"
+              priority
             />
           </a>
         </div>
