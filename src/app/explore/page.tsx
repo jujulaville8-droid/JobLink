@@ -11,11 +11,10 @@ import {
 } from "lucide-react";
 
 const seekerLinks = [
-  { href: "/browse-jobs", label: "Browse Jobs", desc: "Search and filter opportunities across Antigua", Icon: Search },
+  { href: "/jobs", label: "Browse Jobs", desc: "Search and filter opportunities across Antigua", Icon: Search },
   { href: "/applications", label: "My Applications", desc: "Track the status of jobs you've applied to", Icon: Briefcase },
   { href: "/saved", label: "Saved Jobs", desc: "Jobs you've bookmarked for later", Icon: BookmarkCheck },
   { href: "/profile", label: "My Profile", desc: "Update your skills, experience, and CV", Icon: User },
-  { href: "/alerts", label: "Job Alerts", desc: "Get notified when new jobs match your criteria", Icon: Bell },
   { href: "/settings", label: "Settings", desc: "Notifications, visibility, and account preferences", Icon: Settings },
 ];
 
@@ -82,7 +81,7 @@ export default function ExplorePage() {
             <Link
               key={href}
               href={href}
-              className="group rounded-[--radius-card] border border-border bg-white p-5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/[0.04] transition-all hover-lift"
+              className="group rounded-[--radius-card] border border-border bg-white dark:bg-card p-5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/[0.04] transition-all hover-lift"
             >
               <div className="flex items-start gap-4">
                 <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-primary/8 text-primary group-hover:bg-accent-warm group-hover:text-white transition-all duration-300">
