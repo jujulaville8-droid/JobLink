@@ -78,8 +78,11 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Generate signed download URL
-  const { data: signedUrlData, error: signError } = await supabase.storage
+  // Generate signed download URL using admin client to bypass storage RLS
+  // (we've already verified authorization above)
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const adminClient = createAdminClient();
+  const { data: signedUrlData, error: signError } = await adminClient.storage
     .from("cvs")
     .createSignedUrl(path, 3600, { download: true });
 

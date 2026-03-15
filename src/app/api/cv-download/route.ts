@@ -67,10 +67,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "CV not found" }, { status: 404 });
   }
 
-  // Generate a signed URL for the CV file
-  const { data: signedUrlData, error: signError } = await supabase.storage
+  // Generate a signed URL using admin client to bypass storage RLS
+  // (we've already verified authorization above)
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const adminClient = createAdminClient();
+  const { data: signedUrlData, error: signError } = await adminClient.storage
     .from("cvs")
-    .createSignedUrl(profile.cv_url, 3600);
+    .createSignedUrl(profile.cv_url, 3600, { download: true });
 
   if (signError || !signedUrlData?.signedUrl) {
     return NextResponse.json(
