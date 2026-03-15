@@ -62,7 +62,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { role },
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}&returnTo=/login?verified=true`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=${role}`,
       },
     })
 
@@ -110,7 +110,7 @@ export default function SignupPage() {
           <span className="font-medium text-text">{email}</span>.
         </p>
         <p className="text-text-light mb-6">
-          Click the link in your email to verify your account, then come back and sign in — your account will be ready to go.
+          Click the link in your email to verify your account — you&apos;ll be signed in automatically.
         </p>
         <a
           href="/login"

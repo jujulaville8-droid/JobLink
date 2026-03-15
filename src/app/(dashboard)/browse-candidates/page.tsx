@@ -30,7 +30,6 @@ async function CandidateResults({
     .from("seeker_profiles")
     .select("*")
     .in("visibility", ["actively_looking", "open"])
-    .gt("profile_complete_pct", 0)
     .order("updated_at", { ascending: false });
 
   if (searchParams.q) {

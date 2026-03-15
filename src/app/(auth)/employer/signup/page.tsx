@@ -51,7 +51,7 @@ export default function EmployerSignupPage() {
       password,
       options: {
         data: { role: 'employer' },
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=employer&returnTo=/login?verified=true`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=employer`,
       },
     })
 
@@ -99,7 +99,7 @@ export default function EmployerSignupPage() {
           <span className="font-medium text-text">{email}</span>.
         </p>
         <p className="text-text-light mb-6">
-          Click the link in your email to verify your account, then come back and sign in — your employer account will be ready to go.
+          Click the link in your email to verify your account — you&apos;ll be signed in automatically.
         </p>
         <a
           href="/employer/login"

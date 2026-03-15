@@ -22,7 +22,16 @@ export async function GET(request: NextRequest) {
           .eq('id', user.id)
           .single()
 
-        userRole = userData?.role ?? userRole
+        if (userData) {
+          userRole = userData.role ?? userRole
+        } else {
+          // public.users row missing (trigger may have failed) — create it now
+          await supabase.from('users').insert({
+            id: user.id,
+            email: user.email!,
+            role: userRole,
+          })
+        }
 
         const currentMetaRole = user.user_metadata?.role
         if (currentMetaRole !== userRole) {

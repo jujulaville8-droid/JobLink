@@ -282,9 +282,9 @@ export default function Navbar() {
               <Image
                 src="/logo-icon.png"
                 alt=""
-                width={24}
-                height={24}
-                className="h-5 w-5 object-contain"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
               />
               <span className="font-display text-xl font-bold tracking-tight text-primary">
                 JobLinks
