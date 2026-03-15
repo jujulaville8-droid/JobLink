@@ -562,6 +562,9 @@ export default async function ApplicantsPage({
                       currentStatus={app.status}
                       jobId={id}
                     />
+                    <span className="ml-1 text-[10px] text-text-muted self-center italic">
+                      The applicant will be notified
+                    </span>
                   </div>
                 </div>
               </details>
