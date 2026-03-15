@@ -7,11 +7,10 @@ import UnreadBadge from "@/components/messaging/UnreadBadge";
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/profile", label: "My Profile", icon: "user" },
-  { href: "/browse-jobs", label: "Browse Jobs", icon: "search" },
+  { href: "/jobs", label: "Browse Jobs", icon: "search" },
   { href: "/applications", label: "My Applications", icon: "file-text" },
   { href: "/messages", label: "Messages", icon: "mail" },
   { href: "/saved", label: "Saved Jobs", icon: "bookmark" },
-  { href: "/alerts", label: "Job Alerts", icon: "bell" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 
