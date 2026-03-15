@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
       const returnTo = searchParams.get('returnTo')
       const dest = returnTo && returnTo.startsWith('/')
         ? returnTo
+        : userRole === 'admin' ? '/dashboard'
         : userRole === 'employer' ? '/post-job' : '/jobs'
       return NextResponse.redirect(`${origin}${dest}`)
     }

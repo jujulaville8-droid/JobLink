@@ -12,6 +12,7 @@ type EmailType =
   | 'listing_approved'
   | 'listing_rejected'
   | 'new_message'
+  | 'report_response'
 
 interface EmailData {
   applicant_name?: string
@@ -25,6 +26,7 @@ interface EmailData {
   dashboard_url?: string
   sender_name?: string
   message_preview?: string
+  admin_message?: string
 }
 
 function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; html: string } {
@@ -184,6 +186,24 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
             Please review it and resubmit. If you're unsure what to change, reply to this email and we'll help.
           </p>
           ${btn('Edit My Listings', '/my-listings')}
+        `),
+      }
+
+    case 'report_response':
+      return {
+        subject: `Update on your report — ${data.job_title}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Report Update</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            Thank you for reporting <strong>${data.job_title}</strong>. Our team has reviewed it and here's our response:
+          </p>
+          <div style="background-color: #f9fafb; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
+            <p style="color: #374151; margin: 0; white-space: pre-wrap;">${data.admin_message}</p>
+          </div>
+          <p style="color: #374151; line-height: 1.6;">
+            We appreciate you helping keep JobLink safe and trustworthy for everyone.
+          </p>
+          ${btn('Browse Jobs', '/jobs')}
         `),
       }
 

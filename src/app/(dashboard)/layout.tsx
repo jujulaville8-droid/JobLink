@@ -28,6 +28,7 @@ const adminLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/approvals", label: "Job Approvals", icon: "check-circle" },
+  { href: "/admin/reports", label: "Reports", icon: "alert-triangle" },
   { href: "/admin/analytics", label: "Analytics", icon: "bar-chart" },
   { href: "/admin/featured", label: "Featured Jobs", icon: "star" },
 ];

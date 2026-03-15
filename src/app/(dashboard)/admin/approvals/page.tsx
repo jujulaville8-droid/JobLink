@@ -68,9 +68,12 @@ interface PendingListing {
   description: string
   job_type: JobType
   location: string
+  salary_min: number | null
+  salary_max: number | null
   created_at: string
   companies: {
     company_name: string
+    logo_url: string | null
   }[] | null
 }
 
@@ -80,13 +83,13 @@ export default async function AdminApprovalsPage() {
 
   const { data: listings, error } = await supabase
     .from('job_listings')
-    .select('id, title, description, job_type, location, created_at, companies(company_name)')
+    .select('id, title, description, job_type, location, salary_min, salary_max, created_at, companies(company_name, logo_url)')
     .eq('status', 'pending_approval')
     .order('created_at', { ascending: true })
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-4 py-10">
         <p className="text-red-600">Error loading approvals: {error.message}</p>
       </div>
     )
@@ -95,78 +98,168 @@ export default async function AdminApprovalsPage() {
   const pendingListings = (listings || []) as PendingListing[]
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold font-display text-primary mb-6">Pending Approvals</h1>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
+      <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
+        Pending Approvals
+      </h1>
+      <p className="mt-1 text-sm text-text-light">
+        Review and approve or reject new job listings.
+      </p>
+
+      {/* Stats */}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-white p-4 text-center">
+          <p className="text-2xl font-bold text-text">{pendingListings.length}</p>
+          <p className="mt-0.5 inline-block rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700">
+            Pending
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-white p-4 text-center">
+          <p className="text-2xl font-bold text-text">
+            {new Set(pendingListings.map(l => l.companies?.[0]?.company_name).filter(Boolean)).size}
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-text-muted">Companies</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-white p-4 text-center">
+          <p className="text-2xl font-bold text-text">
+            {pendingListings.length > 0
+              ? Math.ceil((Date.now() - new Date(pendingListings[0].created_at).getTime()) / (1000 * 60 * 60))
+              : 0}h
+          </p>
+          <p className="mt-0.5 text-xs font-medium text-text-muted">Oldest Wait</p>
+        </div>
+      </div>
 
       {pendingListings.length === 0 ? (
-        <div className="bg-white rounded-[--radius-card] border border-border p-10 text-center">
-          <div className="text-4xl mb-3">&#10003;</div>
-          <p className="text-text-light text-lg">No pending approvals</p>
-          <p className="text-text-light text-sm mt-1">All job listings have been reviewed.</p>
+        <div className="mt-12 rounded-2xl border border-border bg-white p-10 text-center">
+          <svg className="mx-auto h-16 w-16 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="mt-4 text-lg font-semibold text-text">All caught up!</h3>
+          <p className="mt-1 text-sm text-text-light">All job listings have been reviewed.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {pendingListings.map((listing) => (
-            <details
-              key={listing.id}
-              className="group bg-white rounded-[--radius-card] border border-border overflow-hidden hover:border-primary/30 transition-colors"
-            >
-              <summary className="cursor-pointer p-5 list-none">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-text text-base">{listing.title}</h3>
-                    <p className="text-sm text-text-light mt-0.5">
-                      {listing.companies?.[0]?.company_name || 'Unknown Company'}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <span className="flex items-center gap-1 text-xs text-text-light">
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                          <circle cx="12" cy="10" r="3" />
-                        </svg>
-                        {listing.location}
-                      </span>
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                        {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
-                      </span>
-                      <span className="text-xs text-text-light">
-                        Posted {new Date(listing.created_at).toLocaleDateString()}
-                      </span>
+        <div className="mt-6 space-y-4">
+          {pendingListings.map((listing) => {
+            const company = listing.companies?.[0]
+            const companyName = company?.company_name || 'Unknown Company'
+            const initials = companyName.charAt(0).toUpperCase()
+
+            return (
+              <details
+                key={listing.id}
+                className="group rounded-2xl border border-border bg-white transition-shadow hover:shadow-sm overflow-hidden"
+              >
+                <summary className="cursor-pointer list-none p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      {/* Company avatar */}
+                      {company?.logo_url ? (
+                        <img
+                          src={company.logo_url}
+                          alt=""
+                          className="h-10 w-10 shrink-0 rounded-xl object-cover border border-border"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-semibold text-text truncate">
+                            {listing.title}
+                          </h3>
+                          <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/40">
+                            Pending
+                          </span>
+                        </div>
+                        <p className="text-xs text-text-muted mt-0.5">{companyName}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          <span className="flex items-center gap-1 text-xs text-text-light">
+                            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                              <circle cx="12" cy="10" r="3" />
+                            </svg>
+                            {listing.location}
+                          </span>
+                          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
+                          </span>
+                          {listing.salary_min && (
+                            <span className="text-xs text-text-light">
+                              EC${listing.salary_min.toLocaleString()}
+                              {listing.salary_max ? `–${listing.salary_max.toLocaleString()}` : '+'}
+                            </span>
+                          )}
+                          <span className="text-xs text-text-muted">
+                            {new Date(listing.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <form action={approveJob}>
+                        <input type="hidden" name="job_id" value={listing.id} />
+                        <button
+                          type="submit"
+                          className="rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-semibold hover:bg-emerald-700 transition-colors cursor-pointer"
+                        >
+                          Approve
+                        </button>
+                      </form>
+                      <form action={rejectJob}>
+                        <input type="hidden" name="job_id" value={listing.id} />
+                        <button
+                          type="submit"
+                          className="rounded-xl border-2 border-red-200 text-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          Reject
+                        </button>
+                      </form>
+                      <svg
+                        className="h-5 w-5 text-text-light transition-transform group-open:rotate-180 ml-1"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <form action={approveJob}>
-                      <input type="hidden" name="job_id" value={listing.id} />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Approve
-                      </button>
-                    </form>
-                    <form action={rejectJob}>
-                      <input type="hidden" name="job_id" value={listing.id} />
-                      <button
-                        type="submit"
-                        className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Reject
-                      </button>
-                    </form>
-                    <span className="text-text-light ml-2 text-xs group-open:rotate-180 transition-transform">
-                      &#9660;
-                    </span>
+                </summary>
+
+                {/* Expanded description */}
+                <div className="border-t border-border px-5 pb-5 pt-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-text-light">
+                    Full Description
+                  </h4>
+                  <div className="mt-2 text-sm text-text whitespace-pre-wrap leading-relaxed">
+                    {listing.description}
+                  </div>
+
+                  {/* View listing link */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <a
+                      href={`/jobs/${listing.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark transition-colors"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                      Preview Listing
+                    </a>
                   </div>
                 </div>
-              </summary>
-              <div className="px-5 pb-5 border-t border-border pt-4">
-                <h4 className="text-sm font-semibold text-text mb-2">Full Description</h4>
-                <div className="text-sm text-text-light whitespace-pre-wrap leading-relaxed">
-                  {listing.description}
-                </div>
-              </div>
-            </details>
-          ))}
+              </details>
+            )
+          })}
         </div>
       )}
     </div>

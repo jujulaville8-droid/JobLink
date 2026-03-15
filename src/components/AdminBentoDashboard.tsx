@@ -119,34 +119,36 @@ export default function AdminBentoDashboard({
 
       {/* Reports + This Week */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        <motion.div variants={item} className={cn(cardBase, "p-5 relative")}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-              Reported Listings
-            </span>
-            <HugeiconsIcon
-              icon={Alert01Icon}
-              size={16}
-              className={stats.totalReports > 0 ? "text-red-500" : "text-text-muted"}
-            />
-          </div>
-          <div className="flex items-end gap-2 mb-2">
-            <span className="text-3xl font-bold tracking-tight text-text">
-              {stats.totalReports}
-            </span>
-            <span className="text-xs text-text-muted mb-1">
-              total reports
-            </span>
-          </div>
-          <p className="text-xs text-text-muted">
-            {stats.totalReports > 0
-              ? "Review reported listings in the database."
-              : "No reports yet — all clear."}
-          </p>
-          <div className="absolute -right-4 -bottom-4 opacity-[0.04]">
-            <HugeiconsIcon icon={Alert01Icon} size={96} />
-          </div>
-        </motion.div>
+        <Link href="/admin/reports">
+          <motion.div variants={item} className={cn(cardBase, "p-5 relative group cursor-pointer")}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
+                Reported Listings
+              </span>
+              <HugeiconsIcon
+                icon={Alert01Icon}
+                size={16}
+                className={stats.totalReports > 0 ? "text-red-500" : "text-text-muted"}
+              />
+            </div>
+            <div className="flex items-end gap-2 mb-2">
+              <span className="text-3xl font-bold tracking-tight text-text">
+                {stats.totalReports}
+              </span>
+              <span className="text-xs text-text-muted mb-1">
+                total reports
+              </span>
+            </div>
+            <p className="text-xs text-text-muted">
+              {stats.totalReports > 0
+                ? "Click to review reported listings."
+                : "No reports yet — all clear."}
+            </p>
+            <div className="absolute -right-4 -bottom-4 opacity-[0.04]">
+              <HugeiconsIcon icon={Alert01Icon} size={96} />
+            </div>
+          </motion.div>
+        </Link>
 
         <motion.div variants={item} className={cn(cardBase, "p-5")}>
           <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
@@ -314,6 +316,7 @@ export default function AdminBentoDashboard({
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           {[
             { title: "Job Approvals", desc: "Review pending listings", href: "/admin/approvals", icon: Tick01Icon, color: "text-amber-600", bg: "bg-amber-50" },
+            { title: "Reports", desc: "Review flagged listings", href: "/admin/reports", icon: Alert01Icon, color: "text-red-600", bg: "bg-red-50" },
             { title: "User Management", desc: "Manage all accounts", href: "/admin/users", icon: UserGroupIcon, color: "text-primary", bg: "bg-primary/5" },
             { title: "Analytics", desc: "Platform-wide stats", href: "/admin/analytics", icon: BarChartIcon, color: "text-blue-600", bg: "bg-blue-50" },
             { title: "Featured Jobs", desc: "Curate top listings", href: "/admin/featured", icon: StarIcon, color: "text-purple-600", bg: "bg-purple-50" },

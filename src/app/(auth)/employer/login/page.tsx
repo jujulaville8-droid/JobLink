@@ -47,21 +47,21 @@ export default function EmployerLoginPage() {
     }
 
     // Ensure role metadata is set for reliable detection on the dashboard
+    let userRole = 'employer'
     if (signInData.user) {
       const currentMetaRole = signInData.user.user_metadata?.role
-      if (!currentMetaRole) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', signInData.user.id)
-          .single()
-        if (userData?.role) {
-          await supabase.auth.updateUser({ data: { role: userData.role } })
-        }
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', signInData.user.id)
+        .single()
+      userRole = userData?.role ?? currentMetaRole ?? 'employer'
+      if (!currentMetaRole && userData?.role) {
+        await supabase.auth.updateUser({ data: { role: userData.role } })
       }
     }
 
-    router.push('/post-job')
+    router.push(userRole === 'admin' ? '/dashboard' : '/post-job')
     router.refresh()
   }
 

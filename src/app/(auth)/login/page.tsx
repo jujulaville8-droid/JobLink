@@ -53,22 +53,27 @@ export default function LoginPage() {
     }
 
     // Ensure role metadata is set for reliable detection on the dashboard
+    let userRole = 'seeker'
     if (signInData.user) {
       const currentMetaRole = signInData.user.user_metadata?.role
-      if (!currentMetaRole) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', signInData.user.id)
-          .single()
-        if (userData?.role) {
-          await supabase.auth.updateUser({ data: { role: userData.role } })
-        }
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', signInData.user.id)
+        .single()
+      userRole = userData?.role ?? currentMetaRole ?? 'seeker'
+      if (!currentMetaRole && userData?.role) {
+        await supabase.auth.updateUser({ data: { role: userData.role } })
       }
     }
 
-    // Redirect to returnTo path (if it's a safe internal path) or dashboard
-    const dest = returnTo && returnTo.startsWith('/') ? returnTo : '/jobs'
+    // Redirect based on role
+    let dest = '/jobs'
+    if (returnTo && returnTo.startsWith('/')) {
+      dest = returnTo
+    } else if (userRole === 'admin') {
+      dest = '/dashboard'
+    }
     router.push(dest)
     router.refresh()
   }
