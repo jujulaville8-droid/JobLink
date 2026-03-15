@@ -16,13 +16,13 @@ export default function AuthLayout({
 
       <div className="w-full max-w-md relative">
         <div className="text-center mb-8">
-          <a href="/" className="inline-block rounded-2xl bg-white/90 dark:bg-white/95 backdrop-blur-sm px-6 py-4">
+          <a href="/" className="inline-block">
             <Image
               src="/company-logo.png"
               alt="JobLink — Antigua's Career Network"
               width={480}
               height={480}
-              className="h-56 w-auto"
+              className="h-64 w-auto"
             />
           </a>
         </div>
