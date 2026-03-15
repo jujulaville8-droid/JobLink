@@ -294,7 +294,7 @@ export default function ApplyPage() {
 
   // ─── Job header component (reused across states) ───
   const jobHeader = job && (
-    <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-bg-alt/30">
+    <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-white dark:bg-[--color-surface]">
       <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
         <HugeiconsIcon icon={Briefcase01Icon} size={18} className="text-primary" />
       </div>
@@ -534,7 +534,39 @@ export default function ApplyPage() {
           </div>
 
           <div className={cardBase}>
-            {jobHeader}
+            {/* Job header with light background for both modes */}
+            {job && (
+              <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-white dark:bg-[--color-surface]">
+                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
+                  <HugeiconsIcon icon={Briefcase01Icon} size={18} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-text truncate">{job.title}</p>
+                  <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
+                    {job.company?.company_name && (
+                      <span className="font-medium text-primary/80">{job.company.company_name}</span>
+                    )}
+                    {job.location && (
+                      <>
+                        <span>&middot;</span>
+                        <span className="inline-flex items-center gap-0.5">
+                          <HugeiconsIcon icon={Location01Icon} size={10} />
+                          {job.location}
+                        </span>
+                      </>
+                    )}
+                    {job.job_type && (
+                      <>
+                        <span>&middot;</span>
+                        <span className="capitalize">
+                          {job.job_type.replace("_", " ")}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="p-8 text-center">
               <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-5">
                 <HugeiconsIcon
@@ -560,7 +592,7 @@ export default function ApplyPage() {
               </p>
 
               {/* Progress indicator */}
-              <div className="mt-6 flex items-center justify-center gap-1.5 rounded-xl bg-bg-alt/60 border border-border/30 px-5 py-3.5 mx-auto max-w-xs">
+              <div className="mt-6 flex items-center justify-center gap-1.5 rounded-xl bg-white dark:bg-[--color-bg-alt] border border-border/30 px-5 py-3.5 mx-auto max-w-xs">
                 {["Applied", "Reviewed", "Decision"].map((step, i) => (
                   <div key={step} className="flex items-center gap-1.5">
                     <div
@@ -568,7 +600,7 @@ export default function ApplyPage() {
                         "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors",
                         i === 0
                           ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300"
-                          : "bg-bg-alt text-text-muted"
+                          : "bg-gray-100 dark:bg-[--color-bg-alt] text-text-muted"
                       )}
                     >
                       {i === 0 ? (

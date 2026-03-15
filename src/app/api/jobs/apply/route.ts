@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         const messageParts: string[] = []
         messageParts.push(`Hi, I've applied for the ${job.title} position.`)
         if (cover_letter_text?.trim()) {
-          messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
+          messageParts.push(`\n\n📝 Cover Letter\n${cover_letter_text.trim()}`)
         }
         const firstMessageBody = messageParts.join('\n')
 
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
         const messageParts: string[] = []
         messageParts.push(`Hi, I've applied for the ${job.title} position.`)
         if (cover_letter_text?.trim()) {
-          messageParts.push(`\n--- Cover Letter ---\n${cover_letter_text.trim()}`)
+          messageParts.push(`\n\n📝 Cover Letter\n${cover_letter_text.trim()}`)
         }
         const firstMessageBody = messageParts.join('\n')
 

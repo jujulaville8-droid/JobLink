@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * Serves CV/resume attachments from chat messages.
- * Verifies the user is authenticated and a participant in a conversation
- * that references this CV path.
+ * Verifies the user is authenticated and has a legitimate relationship
+ * to the CV (either they own it or they're an employer who received it).
  */
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.searchParams.get("path");
@@ -23,24 +23,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Verify user is a participant in a conversation that has a message with this attachment
-  const { data: hasAccess } = await supabase
-    .from("conversation_participants")
-    .select("id, conversations!inner(id, messages!inner(id))")
+  // Check 1: Is the user the owner of this CV?
+  const { data: ownProfile } = await supabase
+    .from("seeker_profiles")
+    .select("id")
     .eq("user_id", user.id)
-    .eq("conversations.messages.attachment_url", path)
-    .limit(1)
+    .eq("cv_url", path)
     .maybeSingle();
 
-  if (!hasAccess) {
-    // Fallback: also allow if user is an employer with an application from a seeker with this cv_url
+  if (!ownProfile) {
+    // Check 2: Is the user an employer who has an applicant with this CV?
     const { data: userData } = await supabase
       .from("users")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (userData?.role !== "employer") {
+    if (userData?.role !== "employer" && userData?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -48,40 +47,41 @@ export async function GET(request: NextRequest) {
       .from("companies")
       .select("id")
       .eq("user_id", user.id)
-      .single();
-
-    if (!company) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    // Check if any seeker with this CV applied to one of this employer's jobs
-    const { data: profile } = await supabase
-      .from("seeker_profiles")
-      .select("id")
-      .eq("cv_url", path)
       .maybeSingle();
 
-    if (!profile) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    if (company) {
+      // Find the seeker with this CV
+      const { data: profile } = await supabase
+        .from("seeker_profiles")
+        .select("id")
+        .eq("cv_url", path)
+        .maybeSingle();
 
-    const { data: hasApp } = await supabase
-      .from("applications")
-      .select("id, job_listings!inner(company_id)")
-      .eq("seeker_id", profile.id)
-      .eq("job_listings.company_id", company.id)
-      .limit(1)
-      .maybeSingle();
+      if (!profile) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
 
-    if (!hasApp) {
+      // Verify this seeker applied to one of the employer's jobs
+      const { data: hasApp } = await supabase
+        .from("applications")
+        .select("id, job_listings!inner(company_id)")
+        .eq("seeker_id", profile.id)
+        .eq("job_listings.company_id", company.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!hasApp) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } else if (userData?.role !== "admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
 
-  // Generate signed URL
+  // Generate signed download URL
   const { data: signedUrlData, error: signError } = await supabase.storage
     .from("cvs")
-    .createSignedUrl(path, 3600);
+    .createSignedUrl(path, 3600, { download: true });
 
   if (signError || !signedUrlData?.signedUrl) {
     return NextResponse.json(
