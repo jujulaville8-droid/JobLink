@@ -119,8 +119,8 @@ export default function AdminBentoDashboard({
 
       {/* Reports + This Week */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        <Link href="/admin/reports">
-          <motion.div variants={item} className={cn(cardBase, "p-5 relative group cursor-pointer")}>
+        <Link href="/admin/reports" className="block h-full">
+          <motion.div variants={item} className={cn(cardBase, "p-5 relative group cursor-pointer h-full flex flex-col")}>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
                 Reported Listings
@@ -139,7 +139,7 @@ export default function AdminBentoDashboard({
                 total reports
               </span>
             </div>
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-text-muted mt-auto">
               {stats.totalReports > 0
                 ? "Click to review reported listings."
                 : "No reports yet — all clear."}
