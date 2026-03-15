@@ -121,7 +121,7 @@ export default function CompanyProfilePage() {
       if (!user) return;
 
       const ext = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${ext}`;
+      const fileName = `${user.id}/${Date.now()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('company-logos')
