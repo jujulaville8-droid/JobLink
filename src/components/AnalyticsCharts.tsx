@@ -91,7 +91,7 @@ export default function AnalyticsCharts({
       {/* Summary stat cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard label="Total Users" value={totals.totalUsers} color="border-l-primary" />
-        <StatCard label="Total Jobs" value={totals.totalJobs} color="border-l-blue-500" />
+        <StatCard label="Active Jobs" value={totals.activeJobs} color="border-l-blue-500" />
         <StatCard label="Applications" value={totals.totalApplications} color="border-l-emerald-500" />
         <StatCard label="Reports" value={totals.totalReports} color="border-l-red-500" />
       </div>

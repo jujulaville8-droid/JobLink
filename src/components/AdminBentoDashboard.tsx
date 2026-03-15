@@ -92,8 +92,8 @@ export default function AdminBentoDashboard({
           borderColor="border-l-primary"
         />
         <AnimatedStat
-          label="Total Jobs"
-          value={stats.totalJobs}
+          label="Active Jobs"
+          value={stats.activeJobs}
           icon={Briefcase01Icon}
           color="text-blue-600"
           bgColor="bg-blue-50"
