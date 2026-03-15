@@ -673,6 +673,7 @@ async function AdminDashboard() {
     { count: activeJobs },
     { count: pendingApprovals },
     { count: totalApplications },
+    { count: totalReports },
   ] = await Promise.all([
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("users").select("id", { count: "exact", head: true }).eq("role", "seeker"),
@@ -681,6 +682,7 @@ async function AdminDashboard() {
     supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "pending_approval"),
     supabase.from("applications").select("id", { count: "exact", head: true }),
+    supabase.from("reported_listings").select("id", { count: "exact", head: true }),
   ]);
 
   const weekAgo = new Date();
@@ -711,6 +713,7 @@ async function AdminDashboard() {
     activeJobs: activeJobs ?? 0,
     pendingApprovals: pendingApprovals ?? 0,
     totalApplications: totalApplications ?? 0,
+    totalReports: totalReports ?? 0,
     newUsersThisWeek: newUsersThisWeek ?? 0,
   };
 

@@ -13,19 +13,17 @@ export async function GET(request: NextRequest) {
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
 
+      let userRole = signupRole === 'employer' ? 'employer' : 'seeker'
+
       if (user) {
-        // Always determine role from the database, never from URL parameters
         const { data: userData } = await supabase
           .from('users')
           .select('role')
           .eq('id', user.id)
           .single()
 
-        // Use DB role if it exists; for brand-new users the trigger sets the role
-        // from raw_user_meta_data, so fall back to a safe default
-        const userRole = userData?.role ?? (signupRole === 'employer' ? 'employer' : 'seeker')
+        userRole = userData?.role ?? userRole
 
-        // Sync role to user metadata for downstream detection
         const currentMetaRole = user.user_metadata?.role
         if (currentMetaRole !== userRole) {
           await supabase.auth.updateUser({
@@ -34,9 +32,10 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Redirect to returnTo path if provided and safe, otherwise dashboard
       const returnTo = searchParams.get('returnTo')
-      const dest = returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard'
+      const dest = returnTo && returnTo.startsWith('/')
+        ? returnTo
+        : userRole === 'employer' ? '/post-job' : '/jobs'
       return NextResponse.redirect(`${origin}${dest}`)
     }
   }

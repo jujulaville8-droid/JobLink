@@ -14,6 +14,7 @@ import {
   File01Icon,
   StarIcon,
   Settings02Icon,
+  Alert01Icon,
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -26,6 +27,7 @@ interface AdminStats {
   activeJobs: number;
   pendingApprovals: number;
   totalApplications: number;
+  totalReports: number;
   newUsersThisWeek: number;
 }
 
@@ -70,11 +72,6 @@ export default function AdminBentoDashboard({
   recentUsers,
   pendingJobs,
 }: Props) {
-  const approvalRate =
-    stats.totalJobs > 0
-      ? Math.round((stats.activeJobs / stats.totalJobs) * 100)
-      : 0;
-
   return (
     <motion.div
       variants={container}
@@ -118,37 +115,34 @@ export default function AdminBentoDashboard({
         />
       </div>
 
-      {/* Approval Rate + This Week */}
+      {/* Reports + This Week */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <motion.div variants={item} className={cn(cardBase, "p-5 relative")}>
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
-              Job Approval Rate
+              Reported Listings
             </span>
             <HugeiconsIcon
-              icon={CircleArrowUpRight02Icon}
+              icon={Alert01Icon}
               size={16}
-              className="text-primary"
+              className={stats.totalReports > 0 ? "text-red-500" : "text-text-muted"}
             />
           </div>
           <div className="flex items-end gap-2 mb-2">
             <span className="text-3xl font-bold tracking-tight text-text">
-              {approvalRate}%
+              {stats.totalReports}
             </span>
             <span className="text-xs text-text-muted mb-1">
-              ({stats.activeJobs} of {stats.totalJobs})
+              total reports
             </span>
           </div>
-          <div className="w-full h-2 bg-bg-alt rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${approvalRate}%` }}
-              transition={{ duration: 1, delay: 0.3, ease: [0.23, 1, 0.32, 1] }}
-              className="h-full bg-primary rounded-full"
-            />
-          </div>
+          <p className="text-xs text-text-muted">
+            {stats.totalReports > 0
+              ? "Review reported listings in the database."
+              : "No reports yet — all clear."}
+          </p>
           <div className="absolute -right-4 -bottom-4 opacity-[0.04]">
-            <HugeiconsIcon icon={BarChartIcon} size={96} />
+            <HugeiconsIcon icon={Alert01Icon} size={96} />
           </div>
         </motion.div>
 

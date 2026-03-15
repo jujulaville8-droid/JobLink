@@ -5,6 +5,7 @@ import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
+import ReportListingButton from "@/components/ReportListingButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -415,16 +416,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 <div className="flex-1" />
 
                 {/* Report */}
-                <a
-                  href={`mailto:support@joblinkantigua.com?subject=Report%20Job%20Listing%20${job.id}&body=I%20would%20like%20to%20report%20the%20following%20listing%3A%20${encodeURIComponent(job.title)}`}
-                  className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-red-500 transition-colors"
-                >
-                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                    <line x1="4" y1="22" x2="4" y2="15" />
-                  </svg>
-                  Report this listing
-                </a>
+                <ReportListingButton jobId={job.id} loggedIn={!!user} />
               </div>
             </div>
           </div>

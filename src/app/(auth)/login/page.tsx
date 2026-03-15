@@ -68,7 +68,7 @@ export default function LoginPage() {
     }
 
     // Redirect to returnTo path (if it's a safe internal path) or dashboard
-    const dest = returnTo && returnTo.startsWith('/') ? returnTo : '/dashboard'
+    const dest = returnTo && returnTo.startsWith('/') ? returnTo : '/jobs'
     router.push(dest)
     router.refresh()
   }

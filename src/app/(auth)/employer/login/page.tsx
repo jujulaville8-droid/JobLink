@@ -61,7 +61,7 @@ export default function EmployerLoginPage() {
       }
     }
 
-    router.push('/dashboard')
+    router.push('/post-job')
     router.refresh()
   }
 
