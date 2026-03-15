@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import SearchBar from "@/components/SearchBar";
 import { HeroCTAs, GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
-import JobCard, { type Job } from "@/components/JobCard";
+import { type Job } from "@/components/JobCard";
+import GatedJobGrid from "@/components/GatedJobGrid";
 import { createClient } from "@/lib/supabase/server";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
@@ -153,6 +154,10 @@ function formatCount(n: number): string {
 }
 
 export default async function Home() {
+  const supabaseAuth = await createClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  const isLoggedIn = !!user;
+
   const [featuredJobs, industries, stats, hiringCompanies] = await Promise.all([
     getFeaturedJobs(),
     getIndustryCounts(),
@@ -259,17 +264,7 @@ export default async function Home() {
           </Link>
         </div>
 
-        {featuredJobs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-children">
-            {featuredJobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
-            <p className="text-text-light">No jobs posted yet. Check back soon!</p>
-          </div>
-        )}
+        <GatedJobGrid jobs={featuredJobs} isLoggedIn={isLoggedIn} />
 
         <div className="mt-8 text-center sm:hidden">
           <Link
