@@ -1,5 +1,6 @@
 import JobResults from "@/components/JobResults";
 import JobFilters from "@/components/JobFilters";
+import JobSearchBar from "@/components/JobSearchBar";
 import { Suspense } from "react";
 
 interface PageProps {
@@ -23,12 +24,21 @@ export default async function JobsPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="font-display text-2xl sm:text-3xl text-text">
-          Browse Jobs
-        </h1>
-        <p className="mt-1 text-sm text-text-light">
-          Discover opportunities across Antigua and Barbuda
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="font-display text-2xl sm:text-3xl text-text">
+              Browse Jobs
+            </h1>
+            <p className="mt-1 text-sm text-text-light">
+              Discover opportunities across Antigua and Barbuda
+            </p>
+          </div>
+        </div>
+
+        {/* Search bar */}
+        <div className="mt-4">
+          <JobSearchBar defaultValue={params.q} />
+        </div>
       </div>
 
       {/* Search query indicator */}

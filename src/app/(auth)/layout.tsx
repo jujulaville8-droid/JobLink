@@ -22,7 +22,7 @@ export default function AuthLayout({
               alt="JobLink — Antigua's Career Network"
               width={480}
               height={480}
-              className="h-48 w-auto"
+              className="h-64 w-auto"
             />
           </a>
         </div>

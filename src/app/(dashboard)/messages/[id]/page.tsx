@@ -305,6 +305,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
                 conversationId={conversationId}
                 isArchived={meta?.is_archived || false}
                 onArchiveToggle={handleArchiveToggle}
+                onDelete={() => { router.push("/messages"); }}
                 onClose={() => setShowActions(false)}
               />
             )}

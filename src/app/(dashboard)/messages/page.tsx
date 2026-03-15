@@ -41,6 +41,7 @@ export default function MessagesPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<InboxTab>("active");
   const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const isEmployer = userRole === "employer";
   const pageTitle = isEmployer ? "Inbox" : "Messages";
@@ -97,6 +98,21 @@ export default function MessagesPage() {
       }
     } catch { /* ignore */ }
     finally { setArchivingId(null); }
+  }
+
+  async function handleDelete(e: React.MouseEvent, convId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm("Delete this conversation? This removes it from your inbox.")) return;
+    setDeletingId(convId);
+
+    try {
+      const res = await fetch(`/api/messages/conversations/${convId}/delete`, { method: "DELETE" });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== convId));
+      }
+    } catch { /* ignore */ }
+    finally { setDeletingId(null); }
   }
 
   if (authLoading) {
@@ -264,28 +280,45 @@ export default function MessagesPage() {
                   </div>
                 </div>
 
-                {/* Archive button */}
-                <button
-                  onClick={(e) => handleArchive(e, conv.id)}
-                  disabled={archivingId === conv.id}
-                  title={tab === "archived" ? "Move to inbox" : "Archive"}
-                  className="shrink-0 opacity-0 group-hover:opacity-100 flex items-center justify-center h-7 w-7 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-all duration-150"
-                >
-                  {archivingId === conv.id ? (
-                    <div className="h-3 w-3 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
-                  ) : tab === "archived" ? (
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="1 4 1 10 7 10" />
-                      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-                    </svg>
-                  ) : (
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="21 8 21 21 3 21 3 8" />
-                      <rect x="1" y="3" width="22" height="5" />
-                      <line x1="10" y1="12" x2="14" y2="12" />
-                    </svg>
-                  )}
-                </button>
+                {/* Archive & Delete buttons */}
+                <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-150">
+                  <button
+                    onClick={(e) => handleArchive(e, conv.id)}
+                    disabled={archivingId === conv.id}
+                    title={tab === "archived" ? "Move to inbox" : "Archive"}
+                    className="flex items-center justify-center h-7 w-7 rounded-md text-text-muted hover:text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    {archivingId === conv.id ? (
+                      <div className="h-3 w-3 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
+                    ) : tab === "archived" ? (
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="1 4 1 10 7 10" />
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                      </svg>
+                    ) : (
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8" />
+                        <rect x="1" y="3" width="22" height="5" />
+                        <line x1="10" y1="12" x2="14" y2="12" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(e, conv.id)}
+                    disabled={deletingId === conv.id}
+                    title="Delete conversation"
+                    className="flex items-center justify-center h-7 w-7 rounded-md text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                  >
+                    {deletingId === conv.id ? (
+                      <div className="h-3 w-3 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </Link>
             );
           })}

@@ -6,6 +6,7 @@ interface ThreadActionsProps {
   conversationId: string;
   isArchived: boolean;
   onArchiveToggle: () => void;
+  onDelete: () => void;
   onClose: () => void;
 }
 
@@ -13,13 +14,16 @@ export default function ThreadActions({
   conversationId,
   isArchived,
   onArchiveToggle,
+  onDelete,
   onClose,
 }: ThreadActionsProps) {
   const [showReport, setShowReport] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [reported, setReported] = useState(false);
   const [blocking, setBlocking] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleReport() {
     if (!reportReason.trim() || reporting) return;
@@ -49,6 +53,18 @@ export default function ThreadActions({
     finally { setBlocking(false); }
   }
 
+  async function handleDelete() {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/messages/conversations/${conversationId}/delete`, { method: "DELETE" });
+      if (res.ok) {
+        onDelete();
+      }
+    } catch { /* ignore */ }
+    finally { setDeleting(false); }
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -56,7 +72,27 @@ export default function ThreadActions({
 
       {/* Dropdown */}
       <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg border border-border shadow-lg z-50 py-1 overflow-hidden">
-        {showReport ? (
+        {showDeleteConfirm ? (
+          <div className="p-3">
+            <p className="text-xs font-medium text-text mb-2">Delete this conversation?</p>
+            <p className="text-[11px] text-text-muted mb-3">This removes it from your inbox. The other person keeps their copy.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 text-xs py-1.5 rounded-md border border-border text-text-light hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 text-xs py-1.5 rounded-md bg-red-600 text-white font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        ) : showReport ? (
           <div className="p-3">
             {reported ? (
               <div className="text-center py-2">
@@ -113,6 +149,17 @@ export default function ThreadActions({
                 <line x1="4" y1="22" x2="4" y2="15" />
               </svg>
               Report conversation
+            </button>
+
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+              Delete conversation
             </button>
 
             <div className="border-t border-border my-1" />
