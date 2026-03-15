@@ -65,6 +65,26 @@ export default async function JobResults({
 
   const { data: jobs, error } = await query;
 
+  // Fetch saved job IDs for the current user (if logged in)
+  let savedJobIds: Set<string> = new Set();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase
+      .from("seeker_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profile) {
+      const { data: savedJobs } = await supabase
+        .from("saved_jobs")
+        .select("job_id")
+        .eq("seeker_id", profile.id);
+      if (savedJobs) {
+        savedJobIds = new Set(savedJobs.map((s) => s.job_id));
+      }
+    }
+  }
+
   if (error) {
     return (
       <div className="rounded-[--radius-card] border border-red-200 bg-red-50 p-6 text-center">
@@ -129,7 +149,7 @@ export default async function JobResults({
       </p>
       <div className={`${gridClassName} stagger-children`}>
         {mappedJobs.map((job) => (
-          <JobCard key={job.id} job={job} />
+          <JobCard key={job.id} job={job} isSaved={savedJobIds.has(job.id)} loggedIn={!!user} />
         ))}
       </div>
     </div>
