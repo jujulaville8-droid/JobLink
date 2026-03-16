@@ -101,13 +101,7 @@ export default function EmployerSignupPage() {
         <p className="text-text-light mb-6">
           Click the link in your email to verify your account — you&apos;ll be signed in automatically.
         </p>
-        <a
-          href="/employer/login"
-          className="inline-block w-full btn-primary py-3 text-center"
-        >
-          Go to Employer Sign In
-        </a>
-        <p className="mt-4 text-xs text-text-muted">
+        <p className="text-xs text-text-muted">
           Didn&apos;t get the email? Check your spam folder or try signing up again.
         </p>
       </div>

@@ -49,28 +49,30 @@ export default function EmployerLoginPage() {
       return
     }
 
+    // Ensure role metadata is set for reliable detection on the dashboard
+    let userRole = 'employer'
+    let emailVerified = true
+    if (signInData.user) {
+      const currentMetaRole = signInData.user.user_metadata?.role
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role, email_verified')
+        .eq('id', signInData.user.id)
+        .single()
+      userRole = userData?.role ?? currentMetaRole ?? 'employer'
+      emailVerified = !!(signInData.user.email_confirmed_at && userData?.email_verified !== false)
+      if (!currentMetaRole && userData?.role) {
+        await supabase.auth.updateUser({ data: { role: userData.role } })
+      }
+    }
+
     // Block unverified email accounts
-    if (signInData.user && !signInData.user.email_confirmed_at) {
+    if (!emailVerified) {
       await supabase.auth.signOut()
       setUnverified(true)
       setError('Please verify your email before signing in.')
       setLoading(false)
       return
-    }
-
-    // Ensure role metadata is set for reliable detection on the dashboard
-    let userRole = 'employer'
-    if (signInData.user) {
-      const currentMetaRole = signInData.user.user_metadata?.role
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', signInData.user.id)
-        .single()
-      userRole = userData?.role ?? currentMetaRole ?? 'employer'
-      if (!currentMetaRole && userData?.role) {
-        await supabase.auth.updateUser({ data: { role: userData.role } })
-      }
     }
 
     router.push(userRole === 'admin' ? '/dashboard' : '/post-job')

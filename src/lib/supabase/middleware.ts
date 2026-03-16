@@ -49,10 +49,27 @@ export async function updateSession(request: NextRequest) {
   ]
   const isPublic = pathname === '/' || publicPaths.some(p => pathname.startsWith(p))
 
-  if (user && !user.email_confirmed_at && !isPublic) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/verify-email'
-    return NextResponse.redirect(url)
+  if (user && !isPublic) {
+    // Check both auth-level confirmation and database-level verification
+    let isVerified = !!user.email_confirmed_at
+
+    if (isVerified) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email_verified')
+        .eq('id', user.id)
+        .single()
+
+      if (userData?.email_verified === false) {
+        isVerified = false
+      }
+    }
+
+    if (!isVerified) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/verify-email'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
