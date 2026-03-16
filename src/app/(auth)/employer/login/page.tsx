@@ -12,6 +12,9 @@ export default function EmployerLoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [unverified, setUnverified] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resentSuccess, setResentSuccess] = useState(false)
 
   async function handleGoogleSignIn() {
     setError(null)
@@ -49,7 +52,8 @@ export default function EmployerLoginPage() {
     // Block unverified email accounts
     if (signInData.user && !signInData.user.email_confirmed_at) {
       await supabase.auth.signOut()
-      setError('Please verify your email before signing in. Check your inbox for the verification link.')
+      setUnverified(true)
+      setError('Please verify your email before signing in.')
       setLoading(false)
       return
     }
@@ -85,7 +89,24 @@ export default function EmployerLoginPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
-            {error}
+            <p>{error}</p>
+            {unverified && (
+              <button
+                type="button"
+                disabled={resending}
+                onClick={async () => {
+                  setResending(true)
+                  setResentSuccess(false)
+                  const supabase = createClient()
+                  await supabase.auth.resend({ type: 'signup', email })
+                  setResentSuccess(true)
+                  setResending(false)
+                }}
+                className="mt-2 text-sm font-medium text-primary hover:text-primary-dark underline underline-offset-2 disabled:opacity-50 cursor-pointer"
+              >
+                {resending ? 'Sending...' : resentSuccess ? 'Verification email sent!' : 'Resend verification email'}
+              </button>
+            )}
           </div>
         )}
 
