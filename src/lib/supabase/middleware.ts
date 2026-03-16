@@ -37,7 +37,23 @@ export async function updateSession(request: NextRequest) {
   )
 
   // Refresh the session — important for Server Components
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Redirect unverified users to /verify-email (except public & auth pages)
+  const pathname = request.nextUrl.pathname
+  const publicPaths = [
+    '/login', '/signup', '/employer/login', '/employer/signup',
+    '/forgot-password', '/reset-password', '/verify-email',
+    '/auth/', '/about', '/privacy', '/terms', '/explore',
+    '/api/', '/companies',
+  ]
+  const isPublic = pathname === '/' || publicPaths.some(p => pathname.startsWith(p))
+
+  if (user && !user.email_confirmed_at && !isPublic) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/verify-email'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
