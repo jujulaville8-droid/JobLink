@@ -27,6 +27,7 @@ export default function EmployerLoginPage() {
       },
     })
     if (error) {
+      console.error('[employer-login] Google OAuth error', { error: error.message })
       setError(error.message)
       setGoogleLoading(false)
     }
@@ -35,7 +36,11 @@ export default function EmployerLoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    setUnverified(false)
+    setResentSuccess(false)
     setLoading(true)
+
+    console.log('[employer-login] Sign-in attempt', { email })
 
     const supabase = createClient()
     const { data: signInData, error } = await supabase.auth.signInWithPassword({
@@ -44,39 +49,90 @@ export default function EmployerLoginPage() {
     })
 
     if (error) {
+      console.error('[employer-login] Sign-in failed', { email, error: error.message })
       setError(error.message)
       setLoading(false)
       return
     }
 
-    // Ensure role metadata is set for reliable detection on the dashboard
+    // Immediately check verification status
     let userRole = 'employer'
-    let emailVerified = true
+    let emailVerified = false
+
     if (signInData.user) {
-      const currentMetaRole = signInData.user.user_metadata?.role
+      const hasAuthVerification = !!signInData.user.email_confirmed_at
+
       const { data: userData } = await supabase
         .from('users')
         .select('role, email_verified')
         .eq('id', signInData.user.id)
         .single()
+
+      const currentMetaRole = signInData.user.user_metadata?.role
       userRole = userData?.role ?? currentMetaRole ?? 'employer'
-      emailVerified = !!(signInData.user.email_confirmed_at && userData?.email_verified !== false)
+
+      // Both auth-level and DB-level must be true
+      emailVerified = hasAuthVerification && userData?.email_verified === true
+
+      // Sync role metadata if needed
       if (!currentMetaRole && userData?.role) {
         await supabase.auth.updateUser({ data: { role: userData.role } })
       }
+
+      console.log('[employer-login] Verification check', {
+        email,
+        authVerified: hasAuthVerification,
+        dbVerified: userData?.email_verified,
+        combined: emailVerified,
+      })
     }
 
-    // Block unverified email accounts
+    // Block unverified users immediately
     if (!emailVerified) {
+      console.log('[employer-login] Blocking unverified user', { email })
       await supabase.auth.signOut()
       setUnverified(true)
-      setError('Please verify your email before signing in.')
+      setError('You need to verify your email before accessing your account.')
       setLoading(false)
       return
     }
 
+    console.log('[employer-login] Sign-in success, redirecting', { email, role: userRole })
     router.push(userRole === 'admin' ? '/dashboard' : '/post-job')
     router.refresh()
+  }
+
+  async function handleResendVerification() {
+    setResending(true)
+    setResentSuccess(false)
+    setError(null)
+
+    console.log('[employer-login] Resend verification requested', { email })
+
+    try {
+      const supabase = createClient()
+      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
+
+      if (resendError) {
+        console.error('[employer-login] Resend failed', { email, error: resendError.message })
+        if (resendError.message.includes('rate') || resendError.message.includes('limit')) {
+          setError('Too many requests. Please wait a few minutes before trying again.')
+        } else {
+          setError("We couldn't resend the verification email right now. Please try again in a moment.")
+        }
+        setUnverified(true)
+      } else {
+        console.log('[employer-login] Resend success', { email })
+        setResentSuccess(true)
+        setError('You need to verify your email before accessing your account.')
+        setUnverified(true)
+      }
+    } catch {
+      setError("We couldn't resend the verification email right now. Please try again in a moment.")
+      setUnverified(true)
+    }
+
+    setResending(false)
   }
 
   return (
@@ -93,21 +149,19 @@ export default function EmployerLoginPage() {
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
             <p>{error}</p>
             {unverified && (
-              <button
-                type="button"
-                disabled={resending}
-                onClick={async () => {
-                  setResending(true)
-                  setResentSuccess(false)
-                  const supabase = createClient()
-                  await supabase.auth.resend({ type: 'signup', email })
-                  setResentSuccess(true)
-                  setResending(false)
-                }}
-                className="mt-2 text-sm font-medium text-primary hover:text-primary-dark underline underline-offset-2 disabled:opacity-50 cursor-pointer"
-              >
-                {resending ? 'Sending...' : resentSuccess ? 'Verification email sent!' : 'Resend verification email'}
-              </button>
+              <div className="mt-2 space-y-1">
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={handleResendVerification}
+                  className="text-sm font-medium text-primary hover:text-primary-dark underline underline-offset-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {resending ? 'Sending...' : resentSuccess ? 'Verification email sent!' : 'Resend verification email'}
+                </button>
+                {resentSuccess && (
+                  <p className="text-xs text-text-muted">Check your inbox and spam folder.</p>
+                )}
+              </div>
             )}
           </div>
         )}

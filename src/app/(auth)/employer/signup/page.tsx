@@ -24,6 +24,7 @@ export default function EmployerSignupPage() {
       },
     })
     if (error) {
+      console.error('[employer-signup] Google OAuth error', { error: error.message })
       setError(error.message)
       setGoogleLoading(false)
     }
@@ -45,17 +46,20 @@ export default function EmployerSignupPage() {
 
     setLoading(true)
 
+    console.log('[employer-signup] Signup attempt', { email, role: 'employer' })
+
     const supabase = createClient()
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { role: 'employer' },
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=employer`,
+        emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup`,
       },
     })
 
     if (error) {
+      console.error('[employer-signup] Signup failed', { email, error: error.message })
       setError(error.message)
       setLoading(false)
       return
@@ -64,10 +68,20 @@ export default function EmployerSignupPage() {
     // Supabase returns a fake success with empty identities when the email
     // is already registered (to prevent enumeration). Detect and surface it.
     if (signUpData.user && signUpData.user.identities?.length === 0) {
+      console.log('[employer-signup] Duplicate email detected', { email })
       setError('Email already in use. Please sign in instead.')
       setLoading(false)
       return
     }
+
+    console.log('[employer-signup] Signup success, verification email should be sent', {
+      email,
+      role: 'employer',
+      userId: signUpData.user?.id,
+    })
+
+    // Sign out immediately so unverified session doesn't grant access
+    await supabase.auth.signOut()
 
     setSuccess(true)
     setLoading(false)
@@ -92,10 +106,10 @@ export default function EmployerSignupPage() {
           </svg>
         </div>
         <h2 className="font-display text-2xl text-text mb-2">
-          You&apos;re almost there!
+          Your account has been created
         </h2>
         <p className="text-text-light mb-2">
-          We&apos;ve sent a verification link to{' '}
+          Please verify your email before signing in. We&apos;ve sent a verification link to{' '}
           <span className="font-medium text-text">{email}</span>.
         </p>
         <p className="text-text-light mb-6">

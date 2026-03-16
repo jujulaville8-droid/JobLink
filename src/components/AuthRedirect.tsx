@@ -5,18 +5,24 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 /**
- * Wraps auth pages (login, signup). If the user is already authenticated,
- * redirects them to /dashboard. Otherwise renders children normally.
+ * Wraps auth pages (login, signup). Handles three states:
+ * - Authenticated + verified → redirect to dashboard
+ * - Authenticated + unverified → redirect to verify-email
+ * - Not authenticated → render children (login/signup form)
  */
 export default function AuthRedirect({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, userRole, isLoading } = useAuth();
+  const { isAuthenticated, isEmailVerified, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (isLoading) return;
+
+    if (isAuthenticated && isEmailVerified) {
       router.replace("/dashboard");
+    } else if (isAuthenticated && !isEmailVerified) {
+      router.replace("/verify-email");
     }
-  }, [isAuthenticated, userRole, isLoading, router]);
+  }, [isAuthenticated, isEmailVerified, isLoading, router]);
 
   // While loading auth state, show nothing (avoids flash of login form)
   if (isLoading) {
@@ -30,7 +36,7 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
     );
   }
 
-  // If authenticated, show nothing while redirect happens
+  // If authenticated (verified or not), show nothing while redirect happens
   if (isAuthenticated) {
     return null;
   }

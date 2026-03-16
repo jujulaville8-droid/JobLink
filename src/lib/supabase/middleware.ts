@@ -10,6 +10,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[auth-middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
     return supabaseResponse
   }
 
@@ -39,8 +40,9 @@ export async function updateSession(request: NextRequest) {
   // Refresh the session — important for Server Components
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Redirect unverified users to /verify-email (except public & auth pages)
   const pathname = request.nextUrl.pathname
+
+  // Public paths — no auth or verification required
   const publicPaths = [
     '/login', '/signup', '/employer/login', '/employer/signup',
     '/forgot-password', '/reset-password', '/verify-email',
@@ -49,18 +51,20 @@ export async function updateSession(request: NextRequest) {
   ]
   const isPublic = pathname === '/' || publicPaths.some(p => pathname.startsWith(p))
 
-  if (user && !isPublic) {
-    // Check both auth-level confirmation and database-level verification
+  if (!isPublic && user) {
+    // Check auth-level verification (primary source of truth)
     let isVerified = !!user.email_confirmed_at
 
     if (isVerified) {
+      // Also check database-level verification (synchronized on callback)
       const { data: userData } = await supabase
         .from('users')
         .select('email_verified')
         .eq('id', user.id)
         .single()
 
-      if (userData?.email_verified === false) {
+      // If no DB row exists or email_verified is not explicitly true, block
+      if (!userData || userData.email_verified !== true) {
         isVerified = false
       }
     }

@@ -37,6 +37,9 @@ export async function getUserRole() {
   return data.role as string
 }
 
+/**
+ * Requires authentication. Redirects to /login if not authenticated.
+ */
 export async function requireAuth() {
   const user = await getCurrentUser()
 
@@ -47,8 +50,35 @@ export async function requireAuth() {
   return user
 }
 
-export async function requireRole(role: string) {
+/**
+ * Requires authentication + verified email.
+ * Redirects to /login if not authenticated, /verify-email if not verified.
+ */
+export async function requireVerifiedAuth() {
   const user = await requireAuth()
+
+  // Check auth-level verification
+  if (!user.email_confirmed_at) {
+    redirect('/verify-email')
+  }
+
+  // Check DB-level verification
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('users')
+    .select('email_verified')
+    .eq('id', user.id)
+    .single()
+
+  if (!data || data.email_verified !== true) {
+    redirect('/verify-email')
+  }
+
+  return user
+}
+
+export async function requireRole(role: string) {
+  const user = await requireVerifiedAuth()
 
   // For admin role, check the is_admin flag (persists across role switches)
   if (role === 'admin') {

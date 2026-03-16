@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import type { AuthStatus } from "@/lib/auth-verify";
+import { getAuthStatus } from "@/lib/auth-verify";
 
 interface AuthState {
   user: User | null;
@@ -11,10 +13,18 @@ interface AuthState {
   isAdminUser: boolean;
   avatarUrl: string | null;
   isAuthenticated: boolean;
+  /** Whether the user's email has been verified (auth-level + DB-level) */
+  isEmailVerified: boolean;
+  /** Whether the user can access protected parts of the app */
+  canAccessApp: boolean;
+  /** Current auth status: anonymous | authenticating | authenticated_unverified | authenticated_verified */
+  authStatus: AuthStatus;
   isLoading: boolean;
   logout: () => Promise<void>;
   setAvatarUrl: (url: string | null) => void;
   setUserRole: (role: string | null) => void;
+  /** Re-check verification status from server (for "I've verified" button) */
+  refreshVerification: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -23,10 +33,14 @@ const AuthContext = createContext<AuthState>({
   isAdminUser: false,
   avatarUrl: null,
   isAuthenticated: false,
+  isEmailVerified: false,
+  canAccessApp: false,
+  authStatus: 'anonymous',
   isLoading: true,
   logout: async () => {},
   setAvatarUrl: () => {},
   setUserRole: () => {},
+  refreshVerification: async () => false,
 });
 
 export function useAuth() {
@@ -40,6 +54,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [seekerAvatarUrl, setSeekerAvatarUrl] = useState<string | null>(null);
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   // Derive avatarUrl from current role
   const avatarUrl = userRole === "employer" ? companyLogoUrl : seekerAvatarUrl;
@@ -51,15 +66,44 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [userRole]);
 
+  const isAuthenticated = !!user;
+  const canAccessApp = isAuthenticated && isEmailVerified;
+  const authStatus = getAuthStatus(user, isLoading, isEmailVerified);
+
   const logout = useCallback(async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
     setUserRole(null);
     setIsAdminUser(false);
+    setIsEmailVerified(false);
     setSeekerAvatarUrl(null);
     setCompanyLogoUrl(null);
     window.location.href = "/login";
+  }, []);
+
+  // Re-check verification status from server
+  const refreshVerification = useCallback(async (): Promise<boolean> => {
+    const supabase = createClient();
+    const { data: { user: freshUser } } = await supabase.auth.getUser();
+    if (!freshUser) return false;
+
+    // Update the user object with fresh data
+    setUser(freshUser);
+
+    // Check auth-level verification
+    if (!freshUser.email_confirmed_at) return false;
+
+    // Check DB-level verification
+    const { data } = await supabase
+      .from('users')
+      .select('email_verified')
+      .eq('id', freshUser.id)
+      .single();
+
+    const verified = !!(data?.email_verified === true);
+    setIsEmailVerified(verified);
+    return verified;
   }, []);
 
   useEffect(() => {
@@ -67,20 +111,28 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     let mounted = true;
     let initialized = false;
 
-    // Fetch role and avatar in the background — never blocks isLoading
-    async function fetchRoleInBackground(u: User) {
+    // Fetch role, verification status, and avatar in the background
+    async function fetchUserDataInBackground(u: User) {
+      // Check email verification
+      const authVerified = !!u.email_confirmed_at;
+
       try {
         const { data } = await supabase
           .from("users")
-          .select("role, is_admin")
+          .select("role, is_admin, email_verified")
           .eq("id", u.id)
           .maybeSingle();
         if (!mounted) return;
         setUserRole((data?.role as string) ?? (u.user_metadata?.role as string) ?? "seeker");
         setIsAdminUser(data?.is_admin === true);
+
+        // Both auth-level and DB-level must be true
+        const dbVerified = data?.email_verified === true;
+        setIsEmailVerified(authVerified && dbVerified);
       } catch {
         if (!mounted) return;
         setUserRole((u.user_metadata?.role as string) ?? "seeker");
+        setIsEmailVerified(authVerified);
       }
 
       // Fetch seeker avatar and company logo in parallel
@@ -107,7 +159,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
       if (session?.user) {
         setUser(session.user);
-        fetchRoleInBackground(session.user);
+        fetchUserDataInBackground(session.user);
       }
       setIsLoading(false);
     }
@@ -122,11 +174,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         } else if (event === "SIGNED_IN" && session?.user) {
           setUser(session.user);
           setIsLoading(false);
-          fetchRoleInBackground(session.user);
+          fetchUserDataInBackground(session.user);
         } else if (event === "SIGNED_OUT") {
           setUser(null);
           setUserRole(null);
           setIsAdminUser(false);
+          setIsEmailVerified(false);
           setSeekerAvatarUrl(null);
           setCompanyLogoUrl(null);
           setIsLoading(false);
@@ -137,8 +190,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
 
     // Safety net: if INITIAL_SESSION hasn't fired within 2 seconds,
-    // fall back to getSession(). Handles edge cases in certain
-    // Supabase SSR versions where INITIAL_SESSION may not fire reliably.
+    // fall back to getSession().
     const fallbackTimer = setTimeout(() => {
       if (!initialized && mounted) {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -155,7 +207,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userRole, isAdminUser, avatarUrl, isAuthenticated: !!user, isLoading, logout, setAvatarUrl, setUserRole }}>
+    <AuthContext.Provider value={{
+      user, userRole, isAdminUser, avatarUrl,
+      isAuthenticated, isEmailVerified, canAccessApp, authStatus,
+      isLoading, logout, setAvatarUrl, setUserRole, refreshVerification,
+    }}>
       {children}
     </AuthContext.Provider>
   );

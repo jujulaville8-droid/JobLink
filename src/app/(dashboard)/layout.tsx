@@ -47,17 +47,21 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // Block unverified email accounts
+  // Block unverified email accounts — check both auth-level and DB-level
   if (!user.email_confirmed_at) {
     redirect("/verify-email");
   }
 
-  // Get user role from users table
+  // Get user role and verification status from users table
   const { data: userData } = await supabase
     .from("users")
-    .select("role")
+    .select("role, email_verified")
     .eq("id", user.id)
     .single();
+
+  if (!userData || userData.email_verified !== true) {
+    redirect("/verify-email");
+  }
 
   const role = (userData?.role as string) ?? (user.user_metadata?.role as string) ?? "seeker";
 
