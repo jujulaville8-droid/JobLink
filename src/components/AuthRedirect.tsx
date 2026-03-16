@@ -1,30 +1,30 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 /**
- * Wraps auth pages (login, signup). Handles three states:
- * - Authenticated + verified → redirect to dashboard
- * - Authenticated + unverified → redirect to verify-email
- * - Not authenticated → render children (login/signup form)
+ * Wraps auth pages (login, signup, forgot-password, etc.).
+ *
+ * Only redirects VERIFIED users away from auth pages → dashboard.
+ * Does NOT redirect unverified users — the login/signup handlers manage
+ * unverified state directly (sign out, show error, resend link).
+ * This prevents a race condition where AuthRedirect fires before the
+ * form handler finishes its verification check.
  */
 export default function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isEmailVerified, isLoading } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
 
+    // Only redirect if fully verified — don't interfere with login/signup handlers
     if (isAuthenticated && isEmailVerified) {
-      router.replace("/dashboard");
-    } else if (isAuthenticated && !isEmailVerified) {
-      router.replace("/verify-email");
+      window.location.href = "/dashboard";
     }
-  }, [isAuthenticated, isEmailVerified, isLoading, router]);
+  }, [isAuthenticated, isEmailVerified, isLoading]);
 
-  // While loading auth state, show nothing (avoids flash of login form)
+  // While loading auth state, show spinner (avoids flash of login form)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -36,10 +36,11 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
     );
   }
 
-  // If authenticated (verified or not), show nothing while redirect happens
-  if (isAuthenticated) {
+  // Verified user — show nothing while redirect happens
+  if (isAuthenticated && isEmailVerified) {
     return null;
   }
 
+  // Not authenticated, or authenticated but unverified — show the page
   return <>{children}</>;
 }

@@ -2,11 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function EmployerLoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -87,19 +85,17 @@ export default function EmployerLoginPage() {
       })
     }
 
-    // Block unverified users immediately
+    // Block unverified users — redirect to verify-email (keep session so
+    // they can resend verification). Do NOT sign out.
     if (!emailVerified) {
-      console.log('[employer-login] Blocking unverified user', { email })
-      await supabase.auth.signOut()
-      setUnverified(true)
-      setError('You need to verify your email before accessing your account.')
+      console.log('[employer-login] Unverified user, redirecting to verify-email', { email })
       setLoading(false)
+      window.location.href = '/verify-email'
       return
     }
 
     console.log('[employer-login] Sign-in success, redirecting', { email, role: userRole })
-    router.push(userRole === 'admin' ? '/dashboard' : '/post-job')
-    router.refresh()
+    window.location.href = userRole === 'admin' ? '/dashboard' : '/post-job'
   }
 
   async function handleResendVerification() {

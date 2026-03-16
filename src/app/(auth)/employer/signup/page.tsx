@@ -69,7 +69,7 @@ export default function EmployerSignupPage() {
     // is already registered (to prevent enumeration). Detect and surface it.
     if (signUpData.user && signUpData.user.identities?.length === 0) {
       console.log('[employer-signup] Duplicate email detected', { email })
-      setError('Email already in use. Please sign in instead.')
+      setError('duplicate_email')
       setLoading(false)
       return
     }
@@ -132,9 +132,25 @@ export default function EmployerSignupPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {error && (
+        {error && error !== 'duplicate_email' && (
           <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
             {error}
+          </div>
+        )}
+        {error === 'duplicate_email' && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-[--radius-input] px-4 py-3">
+            <p className="font-medium mb-1">This email already has an account.</p>
+            <p className="mb-2">
+              If you haven&apos;t verified yet, sign in and we&apos;ll help you resend the verification email.
+            </p>
+            <div className="flex gap-3">
+              <a href="/employer/login" className="font-medium text-primary hover:text-primary-dark underline underline-offset-2">
+                Sign in
+              </a>
+              <a href="/forgot-password" className="font-medium text-primary hover:text-primary-dark underline underline-offset-2">
+                Forgot password?
+              </a>
+            </div>
           </div>
         )}
 
