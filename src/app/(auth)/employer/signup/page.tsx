@@ -80,9 +80,9 @@ export default function EmployerSignupPage() {
       userId: signUpData.user?.id,
     })
 
-    // Sign out immediately so unverified session doesn't grant access
-    await supabase.auth.signOut()
-
+    // Don't sign out — the middleware blocks unverified users from protected
+    // routes, and keeping the session means the verify-email page can access
+    // the user's email and resend verification without requiring re-login.
     setSuccess(true)
     setLoading(false)
   }

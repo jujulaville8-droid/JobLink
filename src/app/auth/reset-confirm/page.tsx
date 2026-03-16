@@ -14,7 +14,7 @@ function ResetConfirmContent() {
     const type = searchParams.get('type')
 
     if (!tokenHash || type !== 'recovery') {
-      router.replace('/login?error=auth')
+      window.location.href = '/login?error=auth'
       return
     }
 
@@ -23,10 +23,11 @@ function ResetConfirmContent() {
       if (error) {
         setError('This reset link has expired or is invalid. Please request a new one.')
       } else {
-        router.replace('/reset-password')
+        // Full page navigation to ensure cookies propagate to server
+        window.location.href = '/reset-password'
       }
     })
-  }, [router, searchParams])
+  }, [searchParams])
 
   if (error) {
     return (

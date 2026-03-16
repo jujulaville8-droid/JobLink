@@ -1,13 +1,13 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 function VerifyConfirmContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
+  const [status, setStatus] = useState<string>('Verifying your email...')
 
   useEffect(() => {
     const tokenHash = searchParams.get('token_hash')
@@ -35,10 +35,14 @@ function VerifyConfirmContent() {
             status: verifyError.status,
           })
 
-          if (verifyError.message.includes('expired')) {
-            setError('This verification link has expired. Please request a new verification email.')
+          if (verifyError.message.includes('expired') || verifyError.message.includes('invalid')) {
+            setError('This verification link has expired or is invalid. Please request a new verification email.')
           } else if (verifyError.message.includes('already')) {
-            setError('This email has already been verified. You can sign in now.')
+            // Already verified — just send them to login
+            setError(null)
+            setStatus('Already verified! Redirecting...')
+            window.location.href = '/login?verified=true'
+            return
           } else {
             setError('This verification link is invalid or has expired. Please request a new one.')
           }
@@ -57,6 +61,8 @@ function VerifyConfirmContent() {
           return
         }
 
+        setStatus('Email verified! Setting up your account...')
+
         let userRole = user.user_metadata?.role || 'seeker'
 
         try {
@@ -69,7 +75,6 @@ function VerifyConfirmContent() {
 
           if (existingUser) {
             userRole = existingUser.role || userRole
-            // Mark email as verified in public.users
             const { error: updateError } = await supabase
               .from('users')
               .update({ email_verified: true })
@@ -84,7 +89,6 @@ function VerifyConfirmContent() {
               console.log('[verify-confirm] Set email_verified=true', { userId: user.id })
             }
           } else {
-            // Create the user row if missing
             const { error: insertError } = await supabase.from('users').insert({
               id: user.id,
               email: user.email!,
@@ -103,18 +107,23 @@ function VerifyConfirmContent() {
           }
         } catch (err) {
           console.error('[verify-confirm] DB sync error', err)
-          // Continue anyway — the auth-level verification succeeded
         }
 
         const dest = userRole === 'employer' ? '/post-job' : userRole === 'admin' ? '/dashboard' : '/jobs'
-        console.log('[verify-confirm] Redirecting', { dest, role: userRole })
-        router.replace(dest)
+        console.log('[verify-confirm] Redirecting with full page load', { dest, role: userRole })
+
+        // Use full page navigation (not router.replace) to ensure the server
+        // receives the new session cookies set by verifyOtp. Client-side
+        // router.replace() can cause a soft navigation where the middleware
+        // doesn't see the updated cookies, leading to a redirect loop.
+        setStatus('Verification complete! Redirecting...')
+        window.location.href = dest
       })
       .catch((err) => {
         console.error('[verify-confirm] Unexpected error', err)
         setError('Something went wrong during verification. Please try again.')
       })
-  }, [router, searchParams])
+  }, [searchParams])
 
   if (error) {
     return (
@@ -146,7 +155,7 @@ function VerifyConfirmContent() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-        <p className="text-sm text-text-light">Verifying your email...</p>
+        <p className="text-sm text-text-light">{status}</p>
       </div>
     </div>
   )

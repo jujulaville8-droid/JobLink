@@ -1,29 +1,93 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const RESEND_COOLDOWN_SECONDS = 60
 
 export default function VerifyEmailPage() {
-  const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [checking, setChecking] = useState(false)
   const [cooldown, setCooldown] = useState(0)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [hasSession, setHasSession] = useState(false)
 
-  // Load user email on mount
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) {
-        setEmail(user.email)
+  // Check verification status — used on mount and by the "I've Verified" button
+  const checkVerification = useCallback(async (): Promise<boolean> => {
+    try {
+      const supabase = createClient()
+
+      // Try getSession first (reads from local storage, fast)
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        console.log('[verify-email] No session found')
+        setHasSession(false)
+        return false
       }
-    })
+
+      // Session exists — now get fresh user data from the server
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        console.log('[verify-email] getUser failed', { error: userError?.message })
+        setHasSession(false)
+        return false
+      }
+
+      setHasSession(true)
+      setEmail(user.email ?? null)
+
+      console.log('[verify-email] Checking verification', {
+        email: user.email,
+        emailConfirmedAt: user.email_confirmed_at,
+      })
+
+      // Check auth-level verification
+      if (!user.email_confirmed_at) {
+        return false
+      }
+
+      // Check DB-level verification
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email_verified, role')
+        .eq('id', user.id)
+        .single()
+
+      if (!userData || userData.email_verified !== true) {
+        // Auth says verified but DB doesn't — sync it
+        await supabase
+          .from('users')
+          .update({ email_verified: true })
+          .eq('id', user.id)
+        console.log('[verify-email] Synced email_verified=true in DB', { userId: user.id })
+      }
+
+      // User is verified — redirect to the app
+      console.log('[verify-email] User is verified, redirecting')
+
+      const role = userData?.role ?? user.user_metadata?.role ?? 'seeker'
+      const dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
+
+      // Full page navigation to ensure middleware sees updated session/cookies
+      window.location.href = dest
+      return true
+    } catch (err) {
+      console.error('[verify-email] Error checking verification', err)
+      return false
+    }
   }, [])
+
+  // Auto-check on mount
+  useEffect(() => {
+    checkVerification().finally(() => {
+      setInitialLoading(false)
+    })
+  }, [checkVerification])
 
   // Cooldown timer
   useEffect(() => {
@@ -40,6 +104,24 @@ export default function VerifyEmailPage() {
     return () => clearInterval(timer)
   }, [cooldown])
 
+  async function handleCheckVerification() {
+    setChecking(true)
+    setError(null)
+
+    const verified = await checkVerification()
+
+    if (!verified) {
+      if (!hasSession) {
+        // No session at all — they need to sign in
+        setError(null) // Don't show error, the UI below handles this
+      } else {
+        setError("Your email hasn't been verified yet. Please check your inbox and click the verification link.")
+      }
+    }
+
+    setChecking(false)
+  }
+
   async function handleResend() {
     if (cooldown > 0) return
     setResending(true)
@@ -51,7 +133,7 @@ export default function VerifyEmailPage() {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (!user?.email) {
-        setError('Unable to find your account. Please sign out and try again.')
+        setError('No active session. Please sign in first, then resend the verification email.')
         setResending(false)
         return
       }
@@ -59,7 +141,6 @@ export default function VerifyEmailPage() {
       console.log('[verify-email] Resend verification requested', {
         email: user.email,
         userId: user.id,
-        environment: process.env.NODE_ENV,
       })
 
       const { error: resendError } = await supabase.auth.resend({
@@ -74,15 +155,13 @@ export default function VerifyEmailPage() {
           status: resendError.status,
         })
 
-        // User-friendly error messages
         if (resendError.message.includes('rate') || resendError.message.includes('limit')) {
           setError('Too many requests. Please wait a few minutes before trying again.')
         } else if (resendError.message.includes('already confirmed')) {
-          // Email was already confirmed — refresh and redirect
           setError(null)
           const verified = await checkVerification()
           if (verified) return
-          setError('Your email appears verified but access is still pending. Please try refreshing.')
+          setError('Your email appears verified but access is still pending. Please try clicking "I\'ve Verified My Email".')
         } else {
           setError("We couldn't resend the verification email right now. Please try again in a moment.")
         }
@@ -99,76 +178,64 @@ export default function VerifyEmailPage() {
     setResending(false)
   }
 
-  async function checkVerification(): Promise<boolean> {
-    setChecking(true)
-    setError(null)
-
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      if (!user) {
-        setError('Session expired. Please sign in again.')
-        setChecking(false)
-        return false
-      }
-
-      console.log('[verify-email] Checking verification status', {
-        email: user.email,
-        emailConfirmedAt: user.email_confirmed_at,
-      })
-
-      if (!user.email_confirmed_at) {
-        setError("Your email hasn't been verified yet. Please check your inbox and click the verification link.")
-        setChecking(false)
-        return false
-      }
-
-      // Check DB-level too
-      const { data: userData } = await supabase
-        .from('users')
-        .select('email_verified')
-        .eq('id', user.id)
-        .single()
-
-      if (!userData || userData.email_verified !== true) {
-        // Auth says verified but DB doesn't — sync it
-        await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('id', user.id)
-
-        console.log('[verify-email] Synced email_verified=true in DB', { userId: user.id })
-      }
-
-      // Verified — redirect to app
-      console.log('[verify-email] User verified, redirecting', { email: user.email })
-
-      const { data: roleData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      const role = roleData?.role ?? user.user_metadata?.role ?? 'seeker'
-      const dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
-      router.push(dest)
-      router.refresh()
-      return true
-    } catch (err) {
-      console.error('[verify-email] Error checking verification', err)
-      setError('Something went wrong. Please try again.')
-      setChecking(false)
-      return false
-    }
-  }
-
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
+  // Show loading while checking initial verification status
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-mesh-teal flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+          <p className="text-sm text-text-light">Checking verification status...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No session — show sign-in prompt instead of "Session expired"
+  if (!hasSession) {
+    return (
+      <div className="min-h-screen bg-mesh-teal flex items-center justify-center px-4">
+        <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-5">
+            <svg
+              className="w-8 h-8 text-amber-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+              />
+            </svg>
+          </div>
+
+          <h2 className="font-display text-2xl text-text mb-2">
+            Sign In Required
+          </h2>
+          <p className="text-text-light mb-6">
+            Please sign in to check your verification status or access your account.
+          </p>
+
+          <a
+            href="/login"
+            className="inline-block w-full btn-primary py-3 text-center"
+          >
+            Go to Sign In
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  // Has session but unverified — show verification prompt
   return (
     <div className="min-h-screen bg-mesh-teal flex items-center justify-center px-4">
       <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 max-w-md w-full text-center">
@@ -211,30 +278,17 @@ export default function VerifyEmailPage() {
         )}
 
         {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
+          <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-[--radius-input] px-4 py-3">
             {error}
           </div>
         )}
 
         <div className="space-y-3">
-          {/* Resend verification */}
-          <button
-            onClick={handleResend}
-            disabled={resending || cooldown > 0}
-            className="w-full btn-primary py-3 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {resending
-              ? 'Sending...'
-              : cooldown > 0
-                ? `Resend available in ${cooldown}s`
-                : 'Resend Verification Email'}
-          </button>
-
           {/* Check verification status */}
           <button
-            onClick={() => checkVerification()}
+            onClick={handleCheckVerification}
             disabled={checking}
-            className="w-full rounded-[--radius-button] border-2 border-border bg-white px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full btn-primary py-3 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {checking ? (
               <span className="inline-flex items-center gap-2 justify-center">
@@ -247,6 +301,19 @@ export default function VerifyEmailPage() {
             ) : (
               "I've Verified My Email"
             )}
+          </button>
+
+          {/* Resend verification */}
+          <button
+            onClick={handleResend}
+            disabled={resending || cooldown > 0}
+            className="w-full rounded-[--radius-button] border-2 border-border bg-white px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {resending
+              ? 'Sending...'
+              : cooldown > 0
+                ? `Resend available in ${cooldown}s`
+                : 'Resend Verification Email'}
           </button>
         </div>
 
