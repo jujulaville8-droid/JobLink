@@ -405,6 +405,31 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {isAuthenticated && !isLoading && (
+                <div className="mt-3 pt-3 border-t border-border/40 space-y-1 px-3">
+                  <Link
+                    href={isEmployer ? "/company-profile" : "/profile"}
+                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors"
+                  >
+                    {isEmployer ? <Building className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    {isEmployer ? "Company Profile" : "Profile"}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </Link>
+                  <button
+                    onClick={() => logout()}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-red-500 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </button>
+                </div>
+              )}
               {!isAuthenticated && !isLoading && (
                 <div className="mt-3 pt-3 border-t border-border/40 flex gap-2 px-3">
                   <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-[--color-surface]/50 transition-all duration-200">
