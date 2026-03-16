@@ -24,12 +24,18 @@ export async function GET(request: NextRequest) {
 
         if (userData) {
           userRole = userData.role ?? userRole
+          // Ensure email_verified is true (OAuth users are always verified)
+          await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('id', user.id)
         } else {
           // public.users row missing (trigger may have failed) — create it now
           await supabase.from('users').insert({
             id: user.id,
             email: user.email!,
             role: userRole,
+            email_verified: true,
           })
         }
 

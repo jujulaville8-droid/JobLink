@@ -41,11 +41,17 @@ function VerifyConfirmContent() {
 
         if (existingUser) {
           userRole = existingUser.role || userRole
+          // Mark email as verified in public.users
+          await supabase
+            .from('users')
+            .update({ email_verified: true })
+            .eq('id', user.id)
         } else {
           await supabase.from('users').insert({
             id: user.id,
             email: user.email!,
             role: userRole,
+            email_verified: true,
           })
         }
       }
