@@ -8,7 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import ThemeSwitch from "@/components/ui/theme-switch";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, MessageCircle, ArrowRightLeft } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, ArrowRightLeft } from "lucide-react";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
 
 export default function Navbar() {
@@ -250,7 +250,9 @@ export default function Navbar() {
                       className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors"
                       aria-label="Messages"
                     >
-                      <MessageCircle className="h-[18px] w-[18px] text-text-light" />
+                      <svg className="h-[18px] w-[18px] text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                      </svg>
                       <span className="absolute -top-0.5 -right-0.5">
                         <UnreadBadge />
                       </span>
@@ -299,7 +301,9 @@ export default function Navbar() {
                       className="relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors"
                       aria-label="Messages"
                     >
-                      <MessageCircle className="h-4 w-4 text-text-light" />
+                      <svg className="h-4 w-4 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+                      </svg>
                       <span className="absolute -top-0.5 -right-0.5">
                         <UnreadBadge />
                       </span>
