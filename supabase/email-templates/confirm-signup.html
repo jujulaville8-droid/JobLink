@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verify your email</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f0ea;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f0ea;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="max-width:480px;width:100%;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#0d7377;padding:32px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">JobLinks</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.8);">Antigua's Job Platform</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <!-- Icon -->
+              <div style="text-align:center;margin-bottom:24px;">
+                <div style="display:inline-block;width:56px;height:56px;background-color:#e6f4f4;border-radius:50%;line-height:56px;text-align:center;">
+                  <span style="font-size:28px;">&#9993;</span>
+                </div>
+              </div>
+              <h2 style="margin:0 0 8px;font-size:20px;font-weight:600;color:#1a1a1a;text-align:center;">Verify your email address</h2>
+              <p style="margin:0 0 28px;font-size:15px;color:#71717a;text-align:center;line-height:1.6;">
+                Thanks for signing up for JobLinks! Please confirm your email address to get started.
+              </p>
+              <!-- Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display:inline-block;padding:14px 36px;background-color:#0d7377;color:#ffffff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;letter-spacing:0.2px;">
+                      Verify Email Address
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <!-- Divider -->
+              <div style="margin:32px 0;border-top:1px solid #e8e3db;"></div>
+              <!-- Secondary text -->
+              <p style="margin:0 0 12px;font-size:13px;color:#a1a1aa;text-align:center;line-height:1.5;">
+                If the button doesn't work, copy and paste this link into your browser:
+              </p>
+              <p style="margin:0 0 24px;font-size:12px;color:#0d7377;text-align:center;word-break:break-all;line-height:1.5;">
+                {{ .ConfirmationURL }}
+              </p>
+              <p style="margin:0;font-size:13px;color:#a1a1aa;text-align:center;line-height:1.5;">
+                If you didn't create a JobLinks account, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#faf8f5;padding:24px 40px;border-top:1px solid #e8e3db;">
+              <p style="margin:0;font-size:12px;color:#a1a1aa;text-align:center;line-height:1.5;">
+                &copy; {{ .SiteURL }} &mdash; JobLinks, Antigua &amp; Barbuda
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
