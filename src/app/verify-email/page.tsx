@@ -59,18 +59,31 @@ export default function VerifyEmailPage() {
         .single()
 
       if (!userData || userData.email_verified !== true) {
-        // Auth says verified but DB doesn't — sync it
-        await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('id', user.id)
-        console.log('[verify-email] Synced email_verified=true in DB', { userId: user.id })
+        // Auth says verified but DB doesn't — sync via server API (bypasses RLS)
+        try {
+          const res = await fetch('/api/auth/sync-verification', { method: 'POST' })
+          if (res.ok) {
+            const syncData = await res.json()
+            console.log('[verify-email] Server sync succeeded', { role: syncData.role })
+          } else {
+            console.error('[verify-email] Server sync failed', { status: res.status })
+          }
+        } catch (syncErr) {
+          console.error('[verify-email] Server sync request failed', syncErr)
+        }
       }
+
+      // Re-read the role after sync (may have been set by server)
+      const { data: freshUserData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
 
       // User is verified — redirect to the app
       console.log('[verify-email] User is verified, redirecting')
 
-      const role = userData?.role ?? user.user_metadata?.role ?? 'seeker'
+      const role = freshUserData?.role ?? userData?.role ?? user.user_metadata?.role ?? 'seeker'
       const dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
 
       // Full page navigation to ensure middleware sees updated session/cookies

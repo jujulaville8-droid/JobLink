@@ -66,7 +66,7 @@ function VerifyConfirmContent() {
         return
       }
 
-      await finalizeVerification(supabase, data?.user)
+      await finalizeVerification(data?.user)
     } catch (err) {
       console.error('[verify-confirm] Unexpected error in verifyWithToken', err)
       setError('Something went wrong during verification. Please try signing in.')
@@ -93,7 +93,7 @@ function VerifyConfirmContent() {
       }
 
       const { data: { user } } = await supabase.auth.getUser()
-      await finalizeVerification(supabase, user)
+      await finalizeVerification(user)
     } catch (err) {
       console.error('[verify-confirm] Unexpected error in verifyWithCode', err)
       setError('Something went wrong during verification. Please try signing in.')
@@ -117,7 +117,7 @@ function VerifyConfirmContent() {
       if (user.email_confirmed_at) {
         // User IS verified at auth level — finalize and redirect
         setStatus('Email already verified! Redirecting...')
-        await finalizeVerification(supabase, user)
+        await finalizeVerification(user)
         return true
       }
 
@@ -128,7 +128,6 @@ function VerifyConfirmContent() {
   }
 
   async function finalizeVerification(
-    supabase: ReturnType<typeof createClient>,
     user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null | undefined
   ) {
     if (!user) {
@@ -143,43 +142,28 @@ function VerifyConfirmContent() {
 
     setStatus('Email verified! Setting up your account...')
 
+    // Call the server API to sync email_verified in the DB.
+    // This uses the admin client server-side to bypass RLS —
+    // the browser client can't update email_verified due to RLS policies.
     let userRole = (user.user_metadata?.role as string) || 'seeker'
 
     try {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id, role')
-        .eq('id', user.id)
-        .single()
+      const res = await fetch('/api/auth/sync-verification', { method: 'POST' })
 
-      if (existingUser) {
-        userRole = existingUser.role || userRole
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ email_verified: true })
-          .eq('id', user.id)
-
-        if (updateError) {
-          console.error('[verify-confirm] Failed to update email_verified', { error: updateError.message })
-        } else {
-          console.log('[verify-confirm] Set email_verified=true')
-        }
+      if (res.ok) {
+        const data = await res.json()
+        userRole = data.role || userRole
+        console.log('[verify-confirm] Server sync succeeded', { role: userRole })
       } else {
-        const { error: insertError } = await supabase.from('users').insert({
-          id: user.id,
-          email: user.email!,
-          role: userRole,
-          email_verified: true,
+        const errData = await res.json().catch(() => ({}))
+        console.error('[verify-confirm] Server sync failed', {
+          status: res.status,
+          error: errData.error,
         })
-
-        if (insertError) {
-          console.error('[verify-confirm] Failed to insert user row', { error: insertError.message })
-        } else {
-          console.log('[verify-confirm] Created user row with email_verified=true')
-        }
+        // Don't block — the verify-email page can also attempt sync
       }
     } catch (err) {
-      console.error('[verify-confirm] DB sync error', err)
+      console.error('[verify-confirm] Server sync request failed', err)
     }
 
     const dest = userRole === 'employer' ? '/post-job' : userRole === 'admin' ? '/dashboard' : '/jobs'

@@ -1,16 +1,43 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function ResetPasswordPage() {
-  const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [hasSession, setHasSession] = useState<boolean | null>(null)
+
+  // Validate that we have a valid recovery session on mount
+  useEffect(() => {
+    async function checkSession() {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        console.log('[reset-password] No session found')
+        setHasSession(false)
+        return
+      }
+
+      // Verify the session is real (getUser hits the server)
+      const { data: { user }, error } = await supabase.auth.getUser()
+
+      if (error || !user) {
+        console.log('[reset-password] Session invalid', { error: error?.message })
+        setHasSession(false)
+        return
+      }
+
+      console.log('[reset-password] Valid session', { email: user.email })
+      setHasSession(true)
+    }
+
+    checkSession()
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -32,15 +59,72 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      setError(error.message)
+      console.error('[reset-password] Update failed', { error: error.message })
+      if (error.message.includes('session') || error.message.includes('not authenticated')) {
+        setError('Your reset session has expired. Please request a new password reset link.')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
       return
     }
 
+    console.log('[reset-password] Password updated successfully')
     setSuccess(true)
+
+    // Redirect based on user role
+    const { data: { user } } = await supabase.auth.getUser()
+    let dest = '/jobs'
+
+    if (user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      const role = userData?.role ?? user.user_metadata?.role ?? 'seeker'
+      dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
+    }
+
     setTimeout(() => {
-      router.push('/dashboard')
+      window.location.href = dest
     }, 2000)
+  }
+
+  // Loading state while checking session
+  if (hasSession === null) {
+    return (
+      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
+        <p className="text-sm text-text-light">Verifying your reset link...</p>
+      </div>
+    )
+  }
+
+  // No valid session — show error with link to request a new reset
+  if (!hasSession) {
+    return (
+      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center">
+        <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-6 h-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <h2 className="font-display text-xl text-text mb-2">Reset Link Expired</h2>
+        <p className="text-sm text-text-light mb-6">
+          This password reset link is no longer valid. Reset links expire after 1 hour and can only be used once.
+        </p>
+        <a
+          href="/forgot-password"
+          className="inline-block w-full btn-primary py-3 text-center"
+        >
+          Request New Reset Link
+        </a>
+      </div>
+    )
   }
 
   return (
@@ -61,7 +145,7 @@ export default function ResetPasswordPage() {
             </svg>
           </div>
           <p className="text-sm text-text-light">
-            Password updated! Redirecting to dashboard...
+            Password updated! Redirecting...
           </p>
         </div>
       ) : (

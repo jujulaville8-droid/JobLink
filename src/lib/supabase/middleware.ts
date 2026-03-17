@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createAdminClientRaw } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
@@ -63,9 +64,39 @@ export async function updateSession(request: NextRequest) {
         .eq('id', user.id)
         .single()
 
-      // If no DB row exists or email_verified is not explicitly true, block
       if (!userData || userData.email_verified !== true) {
-        isVerified = false
+        // Auth says verified but DB doesn't — try to auto-sync using admin client.
+        // This is a safety net for when the verify-confirm page's sync failed
+        // (e.g., RLS blocked it or network error).
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (serviceKey && supabaseUrl) {
+          try {
+            const admin = createAdminClientRaw(supabaseUrl, serviceKey, {
+              auth: { autoRefreshToken: false, persistSession: false },
+            })
+
+            if (userData) {
+              await admin
+                .from('users')
+                .update({ email_verified: true })
+                .eq('id', user.id)
+            } else {
+              await admin.from('users').insert({
+                id: user.id,
+                email: user.email!,
+                role: (user.user_metadata?.role as string) || 'seeker',
+                email_verified: true,
+              })
+            }
+            console.log('[auth-middleware] Auto-synced email_verified for user', user.id)
+            // Sync succeeded — user is verified, don't block
+          } catch (syncErr) {
+            console.error('[auth-middleware] Auto-sync failed', syncErr)
+            isVerified = false
+          }
+        } else {
+          isVerified = false
+        }
       }
     }
 
