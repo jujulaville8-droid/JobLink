@@ -8,7 +8,7 @@ import { useAuth } from "@/components/AuthProvider";
 import ThemeSwitch from "@/components/ui/theme-switch";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
-import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, MessageCircle } from "lucide-react";
+import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, MessageCircle, ArrowRightLeft } from "lucide-react";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
 
 export default function Navbar() {
@@ -122,112 +122,24 @@ export default function Navbar() {
     </>
   );
 
-  // ── Role switcher (desktop) ──
-  const roleSwitcher = isAuthenticated && !isLoading && (
-    <div className="flex items-center rounded-full bg-bg-alt/80 border border-border/60 p-[3px]">
-      {/* Job Seeker toggle */}
-      <button
-        onClick={() => !switching && userRole !== "seeker" && handleSwitchRole("seeker")}
-        disabled={switching}
-        className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
-          userRole === "seeker"
-            ? "bg-[--color-surface] text-primary shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Search className="h-3 w-3" />
-        <span className="hidden lg:inline">Job Seeker</span>
-      </button>
+  // ── Dropdown options (with role switching) ──
+  const switchLabel = isEmployer
+    ? "Switch to Job Seeker"
+    : isAdmin
+    ? "Switch to Job Seeker"
+    : "Switch to Employer";
 
-      {/* Employer toggle */}
-      <button
-        onClick={() => !switching && userRole !== "employer" && handleSwitchRole("employer")}
-        disabled={switching}
-        className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
-          userRole === "employer"
-            ? "bg-[--color-surface] text-primary shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Building className="h-3 w-3" />
-        <span className="hidden lg:inline">Employer</span>
-      </button>
-
-      {/* Admin toggle (only for admin users) */}
-      {canBeAdmin && (
-        <button
-          onClick={() => !switching && userRole !== "admin" && handleSwitchRole("admin")}
-          disabled={switching}
-          className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all duration-200 ${
-            userRole === "admin"
-              ? "bg-[--color-surface] text-amber-600 shadow-sm"
-              : "text-text-muted hover:text-text"
-          }`}
-        >
-          <Shield className="h-3 w-3" />
-          <span className="hidden lg:inline">Admin</span>
-        </button>
-      )}
-
-      {switching && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-full bg-[--color-surface]/60 backdrop-blur-sm">
-          <div className="h-3.5 w-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
-      )}
-    </div>
-  );
-
-  // ── Mobile role switcher ──
-  const mobileRoleSwitcher = isAuthenticated && !isLoading && (
-    <div className="flex items-center rounded-full bg-bg-alt/80 border border-border/60 p-[3px]">
-      <button
-        onClick={() => !switching && userRole !== "seeker" && handleSwitchRole("seeker")}
-        disabled={switching}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
-          userRole === "seeker"
-            ? "bg-[--color-surface] text-primary shadow-sm"
-            : "text-text-muted"
-        }`}
-      >
-        <Search className="h-3 w-3" />
-        Seeker
-      </button>
-      <button
-        onClick={() => !switching && userRole !== "employer" && handleSwitchRole("employer")}
-        disabled={switching}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
-          userRole === "employer"
-            ? "bg-[--color-surface] text-primary shadow-sm"
-            : "text-text-muted"
-        }`}
-      >
-        <Building className="h-3 w-3" />
-        Employer
-      </button>
-      {canBeAdmin && (
-        <button
-          onClick={() => !switching && userRole !== "admin" && handleSwitchRole("admin")}
-          disabled={switching}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-200 ${
-            userRole === "admin"
-              ? "bg-[--color-surface] text-amber-600 shadow-sm"
-              : "text-text-muted"
-          }`}
-        >
-          <Shield className="h-3 w-3" />
-          Admin
-        </button>
-      )}
-    </div>
-  );
-
-  // ── Dropdown options (account actions only, no role switching) ──
   const dropdownOptions = isAdmin
     ? [
         {
           label: "Admin Dashboard",
           onClick: () => router.push("/dashboard"),
           Icon: <LayoutGrid className="h-4 w-4 text-text-muted" />,
+        },
+        {
+          label: "Switch to Job Seeker",
+          onClick: () => handleSwitchRole("seeker"),
+          Icon: <ArrowRightLeft className="h-4 w-4 text-text-muted" />,
         },
         {
           label: "Settings",
@@ -252,6 +164,16 @@ export default function Navbar() {
           onClick: () => router.push(isEmployer ? "/company-profile" : "/profile"),
           Icon: isEmployer ? <Building className="h-4 w-4 text-text-muted" /> : <User className="h-4 w-4 text-text-muted" />,
         },
+        {
+          label: switchLabel,
+          onClick: () => handleSwitchRole(isEmployer ? "seeker" : "employer"),
+          Icon: <ArrowRightLeft className="h-4 w-4 text-text-muted" />,
+        },
+        ...(canBeAdmin ? [{
+          label: "Switch to Admin",
+          onClick: () => handleSwitchRole("admin"),
+          Icon: <Shield className="h-4 w-4 text-text-muted" />,
+        }] : []),
         {
           label: "Settings",
           onClick: () => router.push("/settings"),
@@ -321,11 +243,6 @@ export default function Navbar() {
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
                 <>
-                  {/* Role switcher */}
-                  <div className="relative">
-                    {roleSwitcher}
-                  </div>
-
                   {/* Messages icon */}
                   {userRole !== "admin" && (
                     <Link
@@ -345,7 +262,7 @@ export default function Navbar() {
                     header={
                       <p className="text-[13px] font-medium text-text truncate">{user?.email}</p>
                     }
-                    dividerAfter={[isAdmin ? 1 : 2]}
+                    dividerAfter={isAdmin ? [0, 1] : [1, canBeAdmin ? 3 : 2]}
                     options={dropdownOptions}
                   >
                     {avatarElement}
@@ -376,7 +293,6 @@ export default function Navbar() {
             <div className="flex md:hidden items-center gap-2">
               {isAuthenticated && !isLoading && (
                 <>
-                  {mobileRoleSwitcher}
                   {userRole !== "admin" && (
                     <Link
                       href="/messages"
@@ -441,6 +357,24 @@ export default function Navbar() {
                     {isEmployer ? <Building className="h-4 w-4" /> : <User className="h-4 w-4" />}
                     {isEmployer ? "Company Profile" : "Profile"}
                   </Link>
+                  <button
+                    onClick={() => handleSwitchRole(isEmployer ? "seeker" : isAdmin ? "seeker" : "employer")}
+                    disabled={switching}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <ArrowRightLeft className="h-4 w-4" />
+                    {switching ? "Switching..." : switchLabel}
+                  </button>
+                  {canBeAdmin && !isAdmin && (
+                    <button
+                      onClick={() => handleSwitchRole("admin")}
+                      disabled={switching}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-amber-600 hover:bg-amber-500/10 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Shield className="h-4 w-4" />
+                      Switch to Admin
+                    </button>
+                  )}
                   <Link
                     href="/settings"
                     className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors"
