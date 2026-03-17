@@ -39,7 +39,10 @@ export async function POST() {
       .eq('id', user.id)
       .single()
 
+    let finalRole = role
+
     if (existingUser) {
+      finalRole = existingUser.role || role
       const { error: updateError } = await admin
         .from('users')
         .update({ email_verified: true })
@@ -49,8 +52,6 @@ export async function POST() {
         console.error('[sync-verification] Update failed', updateError.message)
         return NextResponse.json({ error: 'Failed to sync verification' }, { status: 500 })
       }
-
-      return NextResponse.json({ role: existingUser.role || role })
     } else {
       // User row missing (trigger may have failed) — create it
       const { error: insertError } = await admin.from('users').insert({
@@ -64,9 +65,27 @@ export async function POST() {
         console.error('[sync-verification] Insert failed', insertError.message)
         return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 })
       }
-
-      return NextResponse.json({ role })
     }
+
+    // Check if the user has created a profile yet
+    let hasProfile = false
+    if (finalRole === 'employer') {
+      const { data: company } = await admin
+        .from('companies')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+      hasProfile = !!company
+    } else {
+      const { data: seeker } = await admin
+        .from('seeker_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+      hasProfile = !!seeker
+    }
+
+    return NextResponse.json({ role: finalRole, hasProfile })
   } catch (err) {
     console.error('[sync-verification] Unexpected error', err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

@@ -146,6 +146,7 @@ function VerifyConfirmContent() {
     // This uses the admin client server-side to bypass RLS —
     // the browser client can't update email_verified due to RLS policies.
     let userRole = (user.user_metadata?.role as string) || 'seeker'
+    let hasProfile = false
 
     try {
       const res = await fetch('/api/auth/sync-verification', { method: 'POST' })
@@ -153,7 +154,8 @@ function VerifyConfirmContent() {
       if (res.ok) {
         const data = await res.json()
         userRole = data.role || userRole
-        console.log('[verify-confirm] Server sync succeeded', { role: userRole })
+        hasProfile = data.hasProfile === true
+        console.log('[verify-confirm] Server sync succeeded', { role: userRole, hasProfile })
       } else {
         const errData = await res.json().catch(() => ({}))
         console.error('[verify-confirm] Server sync failed', {
@@ -166,7 +168,13 @@ function VerifyConfirmContent() {
       console.error('[verify-confirm] Server sync request failed', err)
     }
 
-    const dest = userRole === 'employer' ? '/post-job' : userRole === 'admin' ? '/dashboard' : '/jobs'
+    // New users without a profile go to profile creation first
+    let dest: string
+    if (!hasProfile) {
+      dest = userRole === 'employer' ? '/company-profile' : '/profile'
+    } else {
+      dest = userRole === 'employer' ? '/post-job' : userRole === 'admin' ? '/dashboard' : '/jobs'
+    }
     console.log('[verify-confirm] Redirecting', { dest, role: userRole })
     setStatus('Verification complete! Redirecting...')
     window.location.href = dest

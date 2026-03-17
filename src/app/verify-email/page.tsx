@@ -80,11 +80,35 @@ export default function VerifyEmailPage() {
         .eq('id', user.id)
         .single()
 
-      // User is verified — redirect to the app
+      // User is verified — check if they have a profile, then redirect
       console.log('[verify-email] User is verified, redirecting')
 
       const role = freshUserData?.role ?? userData?.role ?? user.user_metadata?.role ?? 'seeker'
-      const dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
+
+      // Check if user has created a profile yet
+      let hasProfile = false
+      if (role === 'employer') {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+        hasProfile = !!company
+      } else if (role !== 'admin') {
+        const { data: seeker } = await supabase
+          .from('seeker_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+        hasProfile = !!seeker
+      }
+
+      let dest: string
+      if (!hasProfile && role !== 'admin') {
+        dest = role === 'employer' ? '/company-profile' : '/profile'
+      } else {
+        dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
+      }
 
       // Full page navigation to ensure middleware sees updated session/cookies
       window.location.href = dest

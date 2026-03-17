@@ -98,11 +98,37 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Check if user has created a profile yet
+    let hasProfile = false
+    if (user && userRole !== 'admin') {
+      if (userRole === 'employer') {
+        const { data: company } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+        hasProfile = !!company
+      } else {
+        const { data: seeker } = await supabase
+          .from('seeker_profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .single()
+        hasProfile = !!seeker
+      }
+    }
+
     const returnTo = searchParams.get('returnTo')
-    const dest = returnTo && returnTo.startsWith('/')
-      ? returnTo
-      : userRole === 'admin' ? '/dashboard'
-      : userRole === 'employer' ? '/post-job' : '/jobs'
+    let dest: string
+    if (returnTo && returnTo.startsWith('/')) {
+      dest = returnTo
+    } else if (!hasProfile && userRole !== 'admin') {
+      // New users go to profile creation first
+      dest = userRole === 'employer' ? '/company-profile' : '/profile'
+    } else {
+      dest = userRole === 'admin' ? '/dashboard'
+        : userRole === 'employer' ? '/post-job' : '/jobs'
+    }
 
     console.log('[auth-callback] Redirecting', { dest, role: userRole })
     return NextResponse.redirect(`${origin}${dest}`)
