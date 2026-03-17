@@ -11,7 +11,7 @@ interface GatedJobGridProps {
 export default function GatedJobGrid({ jobs, isLoggedIn }: GatedJobGridProps) {
   if (jobs.length === 0) {
     return (
-      <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
+      <div className="rounded-[--radius-card] border border-border bg-white dark:bg-surface p-10 text-center">
         <p className="text-text-light">No jobs posted yet. Check back soon!</p>
       </div>
     );

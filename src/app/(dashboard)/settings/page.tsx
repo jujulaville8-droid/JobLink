@@ -325,7 +325,7 @@ export default function SettingsPage() {
                 key={opt.value}
                 className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                   visibility === opt.value
-                    ? "border-[#0d7377] bg-blue-50"
+                    ? "border-primary bg-blue-50 dark:bg-blue-500/10"
                     : "border-border hover:border-border"
                 }`}
               >
@@ -476,7 +476,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Delete Account */}
-      <section className="mt-6 mb-12 rounded-[--radius-card] border border-red-200 bg-red-50 p-6">
+      <section className="mt-6 mb-12 rounded-[--radius-card] border border-red-200 bg-red-50 dark:bg-red-500/10 p-6">
         <h2 className="text-lg font-semibold text-red-800">
           Delete Account
         </h2>
@@ -489,12 +489,12 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
-            className="mt-4 rounded-lg border border-red-300 bg-white px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
+            className="mt-4 rounded-lg border border-red-300 bg-white dark:bg-surface px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition-colors"
           >
             Delete My Account
           </button>
         ) : (
-          <div className="mt-4 rounded-lg border border-red-300 bg-white p-4">
+          <div className="mt-4 rounded-lg border border-red-300 bg-white dark:bg-surface p-4">
             <p className="text-sm font-medium text-red-800">
               Are you sure you want to delete your account?
             </p>

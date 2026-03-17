@@ -281,7 +281,7 @@ export default async function Home() {
       </section>
 
       {/* ===== BROWSE BY INDUSTRY ===== */}
-      <section className="bg-white py-20 sm:py-24">
+      <section className="bg-white dark:bg-bg-dark py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
@@ -377,7 +377,7 @@ export default async function Home() {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="bg-white py-20 sm:py-24">
+      <section className="bg-white dark:bg-bg-dark py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">

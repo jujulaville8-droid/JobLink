@@ -131,7 +131,7 @@ export default function MessagesPage() {
           onClick={() => setTab("active")}
           className={`rounded-[5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
             tab === "active"
-              ? "bg-white text-text shadow-sm"
+              ? "bg-white dark:bg-surface text-text shadow-sm"
               : "text-text-light hover:text-text"
           }`}
         >
@@ -141,7 +141,7 @@ export default function MessagesPage() {
           onClick={() => setTab("archived")}
           className={`rounded-[5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
             tab === "archived"
-              ? "bg-white text-text shadow-sm"
+              ? "bg-white dark:bg-surface text-text shadow-sm"
               : "text-text-light hover:text-text"
           }`}
         >
@@ -151,7 +151,7 @@ export default function MessagesPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 dark:bg-red-500/10 p-4 text-center">
           <p className="text-[13px] text-red-600">{error}</p>
           <button
             onClick={() => fetchInbox(tab === "archived")}
@@ -166,7 +166,7 @@ export default function MessagesPage() {
       {loading && !error && (
         <div className="mt-5 space-y-1">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-lg border border-border bg-white px-4 py-3.5 animate-pulse">
+            <div key={i} className="rounded-lg border border-border bg-white dark:bg-surface px-4 py-3.5 animate-pulse">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-md skeleton" />
                 <div className="flex-1 space-y-1.5">
@@ -211,7 +211,7 @@ export default function MessagesPage() {
 
       {/* Conversation list */}
       {!loading && !error && conversations.length > 0 && (
-        <div className="mt-4 border border-border rounded-lg bg-white overflow-hidden divide-y divide-border">
+        <div className="mt-4 border border-border rounded-lg bg-white dark:bg-surface overflow-hidden divide-y divide-border">
           {conversations.map((conv) => {
             const appStatus = conv.application_context.application_status as ApplicationStatus;
             const isUnread = conv.unread_count > 0;
@@ -220,7 +220,7 @@ export default function MessagesPage() {
               <Link
                 key={conv.id}
                 href={`/messages/${conv.id}`}
-                className={`group relative flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 ${
+                className={`group relative flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 dark:hover:bg-white/5 ${
                   isUnread ? "bg-primary/[0.02]" : ""
                 }`}
               >
@@ -307,7 +307,7 @@ export default function MessagesPage() {
                     onClick={(e) => handleDelete(e, conv.id)}
                     disabled={deletingId === conv.id}
                     title="Delete conversation"
-                    className="flex items-center justify-center h-7 w-7 rounded-md text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="flex items-center justify-center h-7 w-7 rounded-md text-text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                   >
                     {deletingId === conv.id ? (
                       <div className="h-3 w-3 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
@@ -332,7 +332,7 @@ function InboxSkeleton({ title }: { title: string }) {
   return (
     <div>
       <h1 className="text-xl font-semibold font-display text-text sm:text-2xl">{title}</h1>
-      <div className="mt-5 border border-border rounded-lg bg-white overflow-hidden divide-y divide-border">
+      <div className="mt-5 border border-border rounded-lg bg-white dark:bg-surface overflow-hidden divide-y divide-border">
         {[1, 2, 3].map((i) => (
           <div key={i} className="px-4 py-3.5 animate-pulse">
             <div className="flex items-center gap-3">
