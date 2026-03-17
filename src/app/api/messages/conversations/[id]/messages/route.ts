@@ -40,7 +40,10 @@ export async function GET(
 
     const { data: messages, error } = await query
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[messages] Fetch error:', error.message)
+      return NextResponse.json({ error: 'Failed to load messages' }, { status: 500 })
+    }
 
     // Reverse to ascending order for display
     const sorted = (messages || []).reverse()
@@ -125,7 +128,10 @@ export async function POST(
       .select()
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[messages] Send error:', error.message)
+      return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
+    }
 
     // Send notification to other participant (fire-and-forget)
     const { data: otherPart } = await supabase

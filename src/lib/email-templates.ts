@@ -1,8 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { Resend } from 'resend'
-
-const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
-
 type EmailType =
   | 'application_confirmation'
   | 'new_applicant'
@@ -29,7 +24,20 @@ interface EmailData {
   admin_message?: string
 }
 
-function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; html: string } {
+/** Escape HTML entities to prevent XSS in email content */
+function esc(str: string | undefined | null): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+export function buildEmailHtml(type: string, data: Record<string, unknown>): { subject: string; html: string } {
+  const d = data as unknown as EmailData
+  const emailType = type as EmailType
+
   const wrapper = (content: string) => `
     <!DOCTYPE html>
     <html>
@@ -64,14 +72,14 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
     hold: { text: 'On Hold', color: '#0d7377' },
   }
 
-  switch (type) {
+  switch (emailType) {
     case 'application_confirmation':
       return {
-        subject: `You applied for ${data.job_title} — we'll keep you posted`,
+        subject: `You applied for ${esc(d.job_title)} — we'll keep you posted`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Application Sent!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Nice one — your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has been submitted.
+            Nice one — your application for <strong>${esc(d.job_title)}</strong> at <strong>${esc(d.company_name)}</strong> has been submitted.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             The employer will review it and you'll get an email as soon as your status changes. In the meantime, you can track everything from your dashboard.
@@ -83,11 +91,11 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'new_applicant':
       return {
-        subject: `${data.applicant_name} just applied for ${data.job_title}`,
+        subject: `${esc(d.applicant_name)} just applied for ${esc(d.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">You Have a New Applicant</h2>
           <p style="color: #374151; line-height: 1.6;">
-            <strong>${data.applicant_name}</strong> has applied for <strong>${data.job_title}</strong>. Their profile, CV, and cover letter are ready for you to review.
+            <strong>${esc(d.applicant_name)}</strong> has applied for <strong>${esc(d.job_title)}</strong>. Their profile, CV, and cover letter are ready for you to review.
           </p>
           ${btn('Review Applicant', '/my-listings')}
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>
@@ -95,21 +103,21 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
       }
 
     case 'status_update': {
-      const info = statusLabel[data.status || ''] || { text: data.status || 'Updated', color: '#14919b' }
-      const isInterview = data.status === 'Interview'
-      const isRejected = data.status === 'rejected' || data.status === 'Not Selected'
-      const isHold = data.status === 'On Hold' || data.status === 'hold'
+      const info = statusLabel[d.status || ''] || { text: d.status || 'Updated', color: '#14919b' }
+      const isInterview = d.status === 'Interview'
+      const isRejected = d.status === 'rejected' || d.status === 'Not Selected'
+      const isHold = d.status === 'On Hold' || d.status === 'hold'
       return {
         subject: isInterview
-          ? `Interview request for ${data.job_title}`
-          : `Update on your application: ${data.job_title}`,
+          ? `Interview request for ${esc(d.job_title)}`
+          : `Update on your application: ${esc(d.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">${isInterview ? 'Interview Invitation' : 'Application Update'}</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your application for <strong>${data.job_title}</strong> at <strong>${data.company_name}</strong> has a new status:
+            Your application for <strong>${esc(d.job_title)}</strong> at <strong>${esc(d.company_name)}</strong> has a new status:
           </p>
           <div style="background-color: ${info.color}10; border-left: 4px solid ${info.color}; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
-            <p style="color: ${info.color}; font-weight: 700; margin: 0; font-size: 16px;">${info.text}</p>
+            <p style="color: ${info.color}; font-weight: 700; margin: 0; font-size: 16px;">${esc(info.text)}</p>
           </div>
           ${isInterview ? `<p style="color: #374151; line-height: 1.6;">The employer would like to interview you. Expect to hear from them shortly with details.</p>` : ''}
           ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLinks.</p>` : ''}
@@ -129,12 +137,12 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
             Here are fresh opportunities that match what you're looking for:
           </p>
           ${
-            data.jobs
+            d.jobs
               ?.map(
                 (job) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-                <h3 style="color: #0d7377; margin: 0 0 4px 0; font-size: 16px;">${job.title}</h3>
-                <p style="color: #6b7280; margin: 0; font-size: 14px;">${job.company}</p>
+                <h3 style="color: #0d7377; margin: 0 0 4px 0; font-size: 16px;">${esc(job.title)}</h3>
+                <p style="color: #6b7280; margin: 0; font-size: 14px;">${esc(job.company)}</p>
                 <a href="${job.url || `${SITE}/jobs`}" style="color: #14919b; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">View &amp; Apply &rarr;</a>
               </div>
             `
@@ -148,11 +156,11 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'listing_expiry':
       return {
-        subject: `Heads up: "${data.listing_title}" expires soon`,
+        subject: `Heads up: "${esc(d.listing_title)}" expires soon`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Your Listing Is Expiring</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${data.listing_title}</strong> expires on <strong>${data.expires_at}</strong>.
+            Your job listing <strong>${esc(d.listing_title)}</strong> expires on <strong>${esc(d.expires_at)}</strong>.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Still hiring? Repost or extend the listing from your dashboard to keep receiving applications.
@@ -163,11 +171,11 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'listing_approved':
       return {
-        subject: `Your listing "${data.listing_title}" is now live!`,
+        subject: `Your listing "${esc(d.listing_title)}" is now live!`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">You're Live!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${data.listing_title}</strong> has been approved and is now visible to job seekers across Antigua and Barbuda.
+            Your job listing <strong>${esc(d.listing_title)}</strong> has been approved and is now visible to job seekers across Antigua and Barbuda.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             You'll receive an email each time someone applies. You can also check applicants anytime from your dashboard.
@@ -178,11 +186,11 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'listing_rejected':
       return {
-        subject: `Your listing "${data.listing_title}" needs changes`,
+        subject: `Your listing "${esc(d.listing_title)}" needs changes`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Listing Needs Revision</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${data.listing_title}</strong> wasn't approved this time. This is usually because of missing details or a content issue.
+            Your job listing <strong>${esc(d.listing_title)}</strong> wasn't approved this time. This is usually because of missing details or a content issue.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Please review it and resubmit. If you're unsure what to change, reply to this email and we'll help.
@@ -193,14 +201,14 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'report_response':
       return {
-        subject: `Update on your report — ${data.job_title}`,
+        subject: `Update on your report — ${esc(d.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Report Update</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Thank you for reporting <strong>${data.job_title}</strong>. Our team has reviewed it and here's our response:
+            Thank you for reporting <strong>${esc(d.job_title)}</strong>. Our team has reviewed it and here's our response:
           </p>
           <div style="background-color: #f9fafb; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
-            <p style="color: #374151; margin: 0; white-space: pre-wrap;">${data.admin_message}</p>
+            <p style="color: #374151; margin: 0; white-space: pre-wrap;">${esc(d.admin_message)}</p>
           </div>
           <p style="color: #374151; line-height: 1.6;">
             We appreciate you helping keep JobLinks safe and trustworthy for everyone.
@@ -211,14 +219,14 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
 
     case 'new_message':
       return {
-        subject: `New message from ${data.sender_name} about ${data.job_title}`,
+        subject: `New message from ${esc(d.sender_name)} about ${esc(d.job_title)}`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">You Have a New Message</h2>
           <p style="color: #374151; line-height: 1.6;">
-            <strong>${data.sender_name}</strong> sent you a message about <strong>${data.job_title}</strong>:
+            <strong>${esc(d.sender_name)}</strong> sent you a message about <strong>${esc(d.job_title)}</strong>:
           </p>
           <div style="background-color: #f9fafb; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
-            <p style="color: #374151; margin: 0; font-style: italic;">"${data.message_preview}${(data.message_preview?.length || 0) >= 100 ? '...' : ''}"</p>
+            <p style="color: #374151; margin: 0; font-style: italic;">"${esc(d.message_preview)}${(d.message_preview?.length || 0) >= 100 ? '...' : ''}"</p>
           </div>
           ${btn('View Conversation', '/messages')}
         `),
@@ -232,44 +240,5 @@ function buildEmailHtml(type: EmailType, data: EmailData): { subject: string; ht
           ${btn('Go to JobLinks', '/dashboard')}
         `),
       }
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { to, type, data } = body as { to: string; type: EmailType; data?: EmailData }
-
-    if (!to || !type) {
-      return NextResponse.json({ error: 'to and type are required' }, { status: 400 })
-    }
-
-    const { subject, html } = buildEmailHtml(type, data || {})
-
-    const apiKey = process.env.RESEND_API_KEY
-    if (!apiKey) {
-      console.warn(`[Email] RESEND_API_KEY not set — skipping "${type}" email to ${to}`)
-      return NextResponse.json({ success: true, id: 'no-api-key', message: 'RESEND_API_KEY not configured' })
-    }
-
-    const resend = new Resend(apiKey)
-
-    const { data: result, error } = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to,
-      subject,
-      html,
-    })
-
-    if (error) {
-      console.error(`[Email] Failed to send "${type}" to ${to}:`, error)
-      return NextResponse.json({ error: 'Failed to send email', details: error.message }, { status: 500 })
-    }
-
-    console.log(`[Email] Sent "${type}" to ${to} — id: ${result?.id}`)
-    return NextResponse.json({ success: true, id: result?.id })
-  } catch (err) {
-    console.error('[Email] Unexpected error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -18,7 +18,10 @@ export async function POST(
       .eq('conversation_id', conversationId)
       .eq('user_id', user.id)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[archive] DB error:', error.message)
+      return NextResponse.json({ error: 'Failed to update archive status' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch {
@@ -43,7 +46,10 @@ export async function DELETE(
       .eq('conversation_id', conversationId)
       .eq('user_id', user.id)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error('[archive] DB error:', error.message)
+      return NextResponse.json({ error: 'Failed to update archive status' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch {

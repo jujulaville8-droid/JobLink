@@ -1,4 +1,8 @@
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://joblinkantigua.com'
+import { Resend } from 'resend'
+
+const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+
+export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://joblinkantigua.com'
 
 interface SendEmailParams {
   to: string
@@ -8,24 +12,34 @@ interface SendEmailParams {
 
 /**
  * Fire-and-forget email helper.
- * Calls the internal /api/send-email route.
+ * Calls Resend directly (server-side only).
  * Never throws — logs errors instead so email failures don't break user flows.
  */
 export async function sendEmail({ to, type, data }: SendEmailParams): Promise<void> {
   try {
-    const res = await fetch(`${BASE_URL}/api/send-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to, type, data }),
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) {
+      console.warn(`[sendEmail] RESEND_API_KEY not set — skipping "${type}" email to ${to}`)
+      return
+    }
+
+    // Dynamic import to keep the email builder co-located with the helper
+    const { buildEmailHtml } = await import('./email-templates')
+
+    const { subject, html } = buildEmailHtml(type, data || {})
+
+    const resend = new Resend(apiKey)
+    const { error } = await resend.emails.send({
+      from: FROM_ADDRESS,
+      to,
+      subject,
+      html,
     })
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      console.error(`[sendEmail] ${type} to ${to} failed:`, body)
+    if (error) {
+      console.error(`[sendEmail] Failed "${type}" to ${to}:`, error.message)
     }
   } catch (err) {
     console.error(`[sendEmail] ${type} to ${to} error:`, err)
   }
 }
-
-export { BASE_URL }

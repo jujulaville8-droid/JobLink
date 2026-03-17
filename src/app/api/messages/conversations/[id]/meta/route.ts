@@ -19,7 +19,7 @@ export async function GET(
 
     if (error) {
       console.error('[meta] RPC error:', error.message, error.details, error.hint)
-      return NextResponse.json({ error: 'Conversation not found', details: error.message }, { status: 404 })
+      return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
     }
     if (!data || data.length === 0) {
       console.error('[meta] No data returned for conversation:', conversationId, 'user:', user.id)

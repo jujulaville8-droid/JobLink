@@ -39,7 +39,8 @@ export async function POST(
       if (error.code === '23505') {
         return NextResponse.json({ error: 'You have already reported this conversation' }, { status: 409 })
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error('[report] DB error:', error.message)
+      return NextResponse.json({ error: 'Failed to submit report' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true }, { status: 201 })
