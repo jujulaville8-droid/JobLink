@@ -135,11 +135,19 @@ export default async function CompanyPage({ params }: PageProps) {
       <div className="rounded-[--radius-card] border border-border bg-white p-6 sm:p-8 mb-8">
         <div className="flex flex-col sm:flex-row items-start gap-5">
           {/* Logo / initial */}
-          <div
-            className={`shrink-0 h-20 w-20 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-3xl`}
-          >
-            {initial}
-          </div>
+          {company.logo_url ? (
+            <img
+              src={company.logo_url}
+              alt={company.company_name}
+              className="shrink-0 h-20 w-20 rounded-xl object-cover"
+            />
+          ) : (
+            <div
+              className={`shrink-0 h-20 w-20 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-3xl`}
+            >
+              {initial}
+            </div>
+          )}
 
           <div className="flex-1 min-w-0">
             {/* Name + verified badge */}

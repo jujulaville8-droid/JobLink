@@ -26,7 +26,14 @@ export async function GET(
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
     }
 
-    return NextResponse.json(data[0])
+    // Also fetch application_id from the conversation row
+    const { data: convRow } = await supabase
+      .from('conversations')
+      .select('application_id')
+      .eq('id', conversationId)
+      .single()
+
+    return NextResponse.json({ ...data[0], application_id: convRow?.application_id ?? null })
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }

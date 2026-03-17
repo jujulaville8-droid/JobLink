@@ -175,6 +175,7 @@ export interface ConversationMeta {
   job_title: string;
   company_name: string;
   application_status: ApplicationStatus;
+  application_id: string | null;
   is_archived: boolean;
   is_blocked: boolean;
   dialogue_open: boolean;

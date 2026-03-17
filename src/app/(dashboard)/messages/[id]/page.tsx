@@ -9,6 +9,7 @@ import MessageThread from "@/components/messaging/MessageThread";
 import ComposeBox from "@/components/messaging/ComposeBox";
 import TemplateDrawer from "@/components/messaging/TemplateDrawer";
 import ThreadActions from "@/components/messaging/ThreadActions";
+import StatusChangeModal from "@/components/StatusChangeModal";
 import type { Message, ConversationMeta, ApplicationStatus } from "@/lib/types";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -239,9 +240,18 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
     );
   }
 
+  const [modalStatus, setModalStatus] = useState<string | null>(null);
+
   const isBlocked = meta?.is_blocked ?? false;
+  const isEmployer = meta ? user?.id !== meta.seeker_user_id : false;
   const isSeekerAwaitingReply = meta ? (user?.id === meta.seeker_user_id && !meta.dialogue_open) : false;
   const isSeekerRejected = meta ? (user?.id === meta.seeker_user_id && meta.application_status === 'rejected') : false;
+
+  function handleStatusChanged(newStatus: string) {
+    setMeta((prev) => prev ? { ...prev, application_status: newStatus as ApplicationStatus } : prev);
+    // Refresh messages to pick up system message
+    fetchMessages();
+  }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
@@ -312,6 +322,37 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
             )}
           </div>
         </div>
+
+        {/* Employer status actions */}
+        {isEmployer && meta?.application_id && (
+          <div className="shrink-0 flex items-center gap-2 px-5 py-2 border-b border-border bg-bg-alt/50">
+            <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider mr-1">Status:</span>
+            {([
+              { key: "interview", label: "Interview", style: "border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/20" },
+              { key: "hold", label: "Hold", style: "border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/20" },
+              { key: "rejected", label: "Reject", style: "border-red-200 bg-red-50/50 text-red-600 hover:bg-red-100 hover:border-red-300 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/20" },
+            ] as const).map(({ key, label, style }) => {
+              const isActive = meta.application_status === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => !isActive && setModalStatus(key)}
+                  disabled={isActive}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-all duration-200 cursor-pointer disabled:cursor-default ${
+                    isActive ? style + " ring-1 ring-current/20 opacity-90" : style
+                  }`}
+                >
+                  {isActive && (
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Archive banner */}
         {meta?.is_archived && (
@@ -392,6 +433,16 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
           </div>
         )}
       </div>
+
+      {/* Status change modal */}
+      {modalStatus && meta?.application_id && (
+        <StatusChangeModal
+          applicationId={meta.application_id}
+          status={modalStatus}
+          onClose={() => setModalStatus(null)}
+          onStatusChanged={handleStatusChanged}
+        />
+      )}
     </div>
   );
 }

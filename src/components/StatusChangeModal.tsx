@@ -82,15 +82,17 @@ function clearTemplate(status: string) {
 
 interface StatusChangeModalProps {
   applicationId: string;
-  jobId: string;
+  jobId?: string;
   status: string;
   onClose: () => void;
+  onStatusChanged?: (newStatus: string) => void;
 }
 
 export default function StatusChangeModal({
   applicationId,
   status,
   onClose,
+  onStatusChanged,
 }: StatusChangeModalProps) {
   const router = useRouter();
   const config = STATUS_CONFIG[status];
@@ -145,7 +147,11 @@ export default function StatusChangeModal({
         return;
       }
 
-      router.refresh();
+      if (onStatusChanged) {
+        onStatusChanged(status);
+      } else {
+        router.refresh();
+      }
       onClose();
     } catch {
       setError("Something went wrong. Please try again.");

@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
-import ThemeSwitch from "@/components/ui/theme-switch";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
 import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, ArrowRightLeft } from "lucide-react";
@@ -287,8 +286,6 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* Theme toggle — far right */}
-              <ThemeSwitch className="-mr-1.5" />
             </div>
 
             {/* ── Mobile: Role switcher + Avatar + Hamburger + Theme toggle ── */}
@@ -331,8 +328,6 @@ export default function Navbar() {
                   <svg className="h-5 w-5 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
                 )}
               </button>
-              {/* Theme toggle — far right */}
-              <ThemeSwitch className="h-7 w-12 -mr-1.5 [&>span:first-child]:h-5 [&>span:first-child]:w-5" />
             </div>
           </div>
 
