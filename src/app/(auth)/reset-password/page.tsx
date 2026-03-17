@@ -72,23 +72,11 @@ export default function ResetPasswordPage() {
     console.log('[reset-password] Password updated successfully')
     setSuccess(true)
 
-    // Redirect based on user role
-    const { data: { user } } = await supabase.auth.getUser()
-    let dest = '/jobs'
-
-    if (user) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      const role = userData?.role ?? user.user_metadata?.role ?? 'seeker'
-      dest = role === 'employer' ? '/post-job' : role === 'admin' ? '/dashboard' : '/jobs'
-    }
+    // Sign out and redirect to login so the user logs in with their new password
+    await supabase.auth.signOut()
 
     setTimeout(() => {
-      window.location.href = dest
+      window.location.href = '/login'
     }, 2000)
   }
 
@@ -145,7 +133,7 @@ export default function ResetPasswordPage() {
             </svg>
           </div>
           <p className="text-sm text-text-light">
-            Password updated! Redirecting...
+            Password updated! Redirecting to sign in...
           </p>
         </div>
       ) : (
