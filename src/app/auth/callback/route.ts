@@ -5,10 +5,12 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const signupRole = searchParams.get('role')
+  const flow = searchParams.get('flow')
 
   console.log('[auth-callback] Received', {
     hasCode: !!code,
     signupRole,
+    flow,
     url: request.url,
   })
 
@@ -21,7 +23,20 @@ export async function GET(request: NextRequest) {
         error: error.message,
         status: error.status,
       })
+      // If this was a password reset flow, redirect to forgot-password with error
+      if (flow === 'recovery') {
+        return NextResponse.redirect(
+          `${origin}/forgot-password?error=${encodeURIComponent('Reset link is invalid or expired. Please request a new one.')}`
+        )
+      }
       return NextResponse.redirect(`${origin}/login?error=auth`)
+    }
+
+    // Password recovery flow — redirect straight to reset-password form.
+    // Don't do any role/user setup, just let them set their new password.
+    if (flow === 'recovery') {
+      console.log('[auth-callback] Recovery flow detected, redirecting to /reset-password')
+      return NextResponse.redirect(`${origin}/reset-password`)
     }
 
     const { data: { user } } = await supabase.auth.getUser()
