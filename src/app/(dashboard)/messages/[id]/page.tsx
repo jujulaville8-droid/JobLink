@@ -46,6 +46,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   const [showTemplates, setShowTemplates] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [modalStatus, setModalStatus] = useState<string | null>(null);
   const optimisticIdRef = useRef(0);
 
   // Resolve params
@@ -239,8 +240,6 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
       </div>
     );
   }
-
-  const [modalStatus, setModalStatus] = useState<string | null>(null);
 
   const isBlocked = meta?.is_blocked ?? false;
   const isEmployer = meta ? user?.id !== meta.seeker_user_id : false;
