@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
 /**
@@ -11,18 +12,26 @@ import { useAuth } from "@/components/AuthProvider";
  * unverified state directly (sign out, show error, resend link).
  * This prevents a race condition where AuthRedirect fires before the
  * form handler finishes its verification check.
+ *
+ * Exception: /reset-password is never redirected — the user arrives here
+ * with a valid recovery session and must be allowed to set a new password.
  */
 export default function AuthRedirect({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isEmailVerified, isLoading } = useAuth();
+  const pathname = usePathname();
+
+  // Never redirect away from the reset-password page — the user has a
+  // recovery session and needs to set their new password.
+  const isResetPassword = pathname === "/reset-password";
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || isResetPassword) return;
 
     // Only redirect if fully verified — don't interfere with login/signup handlers
     if (isAuthenticated && isEmailVerified) {
       window.location.href = "/dashboard";
     }
-  }, [isAuthenticated, isEmailVerified, isLoading]);
+  }, [isAuthenticated, isEmailVerified, isLoading, isResetPassword]);
 
   // While loading auth state, show spinner (avoids flash of login form)
   if (isLoading) {
@@ -36,8 +45,8 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
     );
   }
 
-  // Verified user — show nothing while redirect happens
-  if (isAuthenticated && isEmailVerified) {
+  // Verified user — show nothing while redirect happens (except on reset-password)
+  if (isAuthenticated && isEmailVerified && !isResetPassword) {
     return null;
   }
 
