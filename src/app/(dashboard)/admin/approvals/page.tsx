@@ -3,8 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
 import { sendEmail, BASE_URL } from '@/lib/email'
+import RejectJobButton from '@/components/RejectJobButton'
 
-async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>, jobId: string, type: 'listing_approved' | 'listing_rejected') {
+async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>, jobId: string, type: 'listing_approved' | 'listing_rejected', rejectionReason?: string) {
   const { data: job } = await supabase
     .from('job_listings')
     .select('title, companies(user_id)')
@@ -30,6 +31,7 @@ async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>
     data: {
       listing_title: job.title,
       dashboard_url: `${BASE_URL}/my-listings`,
+      rejection_reason: rejectionReason || '',
     },
   })
 }
@@ -52,13 +54,14 @@ async function rejectJob(formData: FormData) {
   'use server'
   const supabase = await createClient()
   const jobId = formData.get('job_id') as string
+  const rejectionReason = formData.get('rejection_reason') as string
 
   await supabase
     .from('job_listings')
     .update({ status: 'closed' })
     .eq('id', jobId)
 
-  await notifyEmployer(supabase, jobId, 'listing_rejected')
+  await notifyEmployer(supabase, jobId, 'listing_rejected', rejectionReason)
   revalidatePath('/admin/approvals')
 }
 
@@ -218,15 +221,7 @@ export default async function AdminApprovalsPage() {
                           Approve
                         </button>
                       </form>
-                      <form action={rejectJob}>
-                        <input type="hidden" name="job_id" value={listing.id} />
-                        <button
-                          type="submit"
-                          className="rounded-xl border-2 border-red-200 text-red-600 px-4 py-2 text-sm font-semibold hover:bg-red-50 transition-colors cursor-pointer"
-                        >
-                          Reject
-                        </button>
-                      </form>
+                      <RejectJobButton jobId={listing.id} rejectAction={rejectJob} />
                       <svg
                         className="h-5 w-5 text-text-light transition-transform group-open:rotate-180 ml-1"
                         viewBox="0 0 24 24"

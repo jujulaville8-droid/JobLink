@@ -22,6 +22,7 @@ interface EmailData {
   sender_name?: string
   message_preview?: string
   admin_message?: string
+  rejection_reason?: string
 }
 
 /** Escape HTML entities to prevent XSS in email content */
@@ -190,8 +191,18 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Listing Needs Revision</h2>
           <p style="color: #374151; line-height: 1.6;">
-            Your job listing <strong>${esc(d.listing_title)}</strong> wasn't approved this time. This is usually because of missing details or a content issue.
+            Your job listing <strong>${esc(d.listing_title)}</strong> wasn't approved this time.
           </p>
+          ${d.rejection_reason ? `
+          <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
+            <p style="color: #92400e; margin: 0 0 4px 0; font-weight: 600; font-size: 13px;">Reason:</p>
+            <p style="color: #78350f; margin: 0; white-space: pre-wrap;">${esc(d.rejection_reason)}</p>
+          </div>
+          ` : `
+          <p style="color: #374151; line-height: 1.6;">
+            This is usually because of missing details or a content issue.
+          </p>
+          `}
           <p style="color: #374151; line-height: 1.6;">
             Please review it and resubmit. If you're unsure what to change, reply to this email and we'll help.
           </p>
