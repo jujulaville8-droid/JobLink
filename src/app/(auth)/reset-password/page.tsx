@@ -116,7 +116,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8">
+    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 mx-auto max-w-md">
       <h1 className="font-display text-2xl text-text text-center mb-2">
         Set new password
       </h1>
