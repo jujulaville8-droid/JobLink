@@ -190,8 +190,8 @@ async function GatedCandidatePreview() {
 
       {/* Lock overlay */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="mx-4 max-w-md rounded-2xl border border-border bg-white/95 p-8 text-center shadow-xl backdrop-blur-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+        <div className="mx-4 max-w-md rounded-2xl border border-border bg-white/95 dark:bg-card/95 p-8 text-center shadow-xl backdrop-blur-sm">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20">
             <svg
               className="h-7 w-7 text-primary"
               viewBox="0 0 24 24"
@@ -205,10 +205,10 @@ async function GatedCandidatePreview() {
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <h2 className="mt-5 text-xl font-bold font-display text-text">
+          <h2 className="mt-5 text-xl font-bold font-display text-text dark:text-white">
             You&apos;re one step away from finding your next hire
           </h2>
-          <p className="mt-2 text-sm text-text-light leading-relaxed">
+          <p className="mt-2 text-sm text-text-light dark:text-gray-400 leading-relaxed">
             Browse all active candidates in Antigua &amp; Barbuda with a JobLink Pro subscription.
           </p>
           <Link
