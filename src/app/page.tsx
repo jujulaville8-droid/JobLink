@@ -1,10 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import SearchBar from "@/components/SearchBar";
-import { GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
+import { HeroCTAs, GetStartedCTA, EmployerCTAs } from "@/components/HomeCTA";
 import { type Job } from "@/components/JobCard";
 import GatedJobGrid from "@/components/GatedJobGrid";
-import GlassmorphismHero from "@/components/ui/glassmorphism-trust-hero";
 import { createClient } from "@/lib/supabase/server";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
@@ -129,43 +128,80 @@ async function getHiringCompanies(): Promise<string[]> {
   }
 }
 
-async function getHeroStats(): Promise<{ activeJobs: number; companies: number; applicants: number }> {
-  try {
-    const supabase = await createClient();
-    const [jobsRes, companiesRes, applicantsRes] = await Promise.all([
-      supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("companies").select("id", { count: "exact", head: true }),
-      supabase.from("applications").select("id", { count: "exact", head: true }),
-    ]);
-    return {
-      activeJobs: jobsRes.count || 0,
-      companies: companiesRes.count || 0,
-      applicants: applicantsRes.count || 0,
-    };
-  } catch {
-    return { activeJobs: 0, companies: 0, applicants: 0 };
-  }
-}
-
 export default async function Home() {
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   const isLoggedIn = !!user;
 
-  const [featuredJobs, industries, hiringCompanies, heroStats] = await Promise.all([
+  const [featuredJobs, industries, hiringCompanies] = await Promise.all([
     getFeaturedJobs(),
     getIndustryCounts(),
     getHiringCompanies(),
-    getHeroStats(),
   ]);
 
   return (
     <>
       {/* ===== HERO ===== */}
-      <GlassmorphismHero stats={heroStats} hiringCompanies={hiringCompanies} />
+      <section className="relative overflow-hidden flex items-center grain-overlay">
+        <div className="absolute inset-0">
+          <Image
+            src="/images/colorful-buildings.avif"
+            alt="Colorful buildings in St. John's, Antigua"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a2e2f]/80 via-black/60 to-[#0a2e2f]/75" />
+        </div>
 
-      {/* ===== FEATURED JOBS ===== */}
-      <section className="bg-bg py-16 sm:py-20">
+        <div className="relative mx-auto max-w-3xl px-6 sm:px-8 pt-24 sm:pt-32 lg:pt-36 pb-16 sm:pb-20 lg:pb-24 w-full">
+          <div className="text-center">
+            <h1 className="animate-fade-up font-display text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] text-white leading-[1.12] tracking-tight">
+              Get hired today!
+            </h1>
+
+            <p className="animate-fade-up mt-6 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: "100ms" }}>
+              Connecting job seekers with employers across Antigua and Barbuda.
+              <br className="hidden sm:block" />
+              Browse opportunities and apply in minutes.
+            </p>
+
+            <div className="animate-fade-up mt-8" style={{ animationDelay: "200ms" }}>
+              <SearchBar />
+            </div>
+
+            <div className="animate-fade-up" style={{ animationDelay: "300ms" }}>
+              <HeroCTAs />
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      {/* ===== COMPANIES HIRING + FEATURED JOBS ===== */}
+      <section className="relative bg-bg">
+        {/* Overlap container — pulls up into the hero */}
+        {hiringCompanies.length > 0 && (
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 -mt-6 relative z-10">
+            <div className="rounded-2xl bg-white border border-border/60 shadow-lg shadow-black/[0.04] px-6 sm:px-8 py-5">
+              <p className="text-center text-text-muted/60 text-[10px] font-semibold uppercase tracking-[0.25em] mb-3">
+                Companies hiring now
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
+                {hiringCompanies.map((name) => (
+                  <span
+                    key={name}
+                    className="text-text/60 font-bold text-[13px] tracking-wide"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className={hiringCompanies.length > 0 ? "pt-12 sm:pt-14 pb-16 sm:pb-20" : "py-16 sm:py-20"}>
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -203,6 +239,7 @@ export default async function Home() {
               </svg>
             </Link>
           </div>
+        </div>
         </div>
       </section>
 
