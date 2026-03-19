@@ -5,18 +5,6 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { INDUSTRIES } from '@/lib/types';
 
-async function handleUpgradeClick(userId: string) {
-  const res = await fetch('/api/stripe/create-checkout-session', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId }),
-  });
-  const data = await res.json();
-  if (data.url) {
-    window.location.href = data.url;
-  }
-}
-
 interface CompanyForm {
   company_name: string;
   industry: string;
@@ -38,8 +26,6 @@ export default function CompanyProfilePage() {
     type: 'success' | 'error';
     text: string;
   } | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [upgrading, setUpgrading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [form, setForm] = useState<CompanyForm>({
     company_name: '',
@@ -70,8 +56,6 @@ export default function CompanyProfilePage() {
         .select('*')
         .eq('user_id', user.id)
         .single();
-
-      setUserId(user.id);
 
       if (company) {
         setCompanyId(company.id);
@@ -309,16 +293,9 @@ export default function CompanyProfilePage() {
             Pro Member
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={async () => {
-              if (!userId) return;
-              setUpgrading(true);
-              await handleUpgradeClick(userId);
-              setUpgrading(false);
-            }}
-            disabled={upgrading}
-            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
+          <a
+            href="/employers/upgrade"
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
           >
             <svg
               className="h-4 w-4"
@@ -329,8 +306,8 @@ export default function CompanyProfilePage() {
             >
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
-            {upgrading ? 'Redirecting...' : 'Upgrade to Pro'}
-          </button>
+            Upgrade to Pro
+          </a>
         )}
       </div>
 
