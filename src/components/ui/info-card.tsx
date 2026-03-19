@@ -41,13 +41,13 @@ export default function CandidateProfileCard({
 
   return (
     <Link href={`/candidates/${id}`} className="block h-full">
-      <div className="group relative overflow-hidden rounded-3xl bg-white dark:bg-surface p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.08),-8px_-8px_16px_rgba(255,255,255,0.9)] dark:shadow-[4px_4px_12px_rgba(0,0,0,0.4)] transition-all duration-500 hover:shadow-[12px_12px_24px_rgba(0,0,0,0.12),-12px_-12px_24px_rgba(255,255,255,1)] dark:hover:shadow-[6px_6px_20px_rgba(0,0,0,0.5)] hover:scale-[1.02] hover:-translate-y-1 h-[340px] flex flex-col">
+      <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.08),-8px_-8px_16px_rgba(255,255,255,0.9)] transition-all duration-500 hover:shadow-[12px_12px_24px_rgba(0,0,0,0.12),-12px_-12px_24px_rgba(255,255,255,1)] hover:scale-[1.02] hover:-translate-y-1 h-[340px] flex flex-col">
         {/* Status indicator */}
         <div className="absolute right-4 top-4 z-10">
           <div className="relative">
             <div
               className={cn(
-                "h-3 w-3 rounded-full border-2 border-white dark:border-surface transition-all duration-300 group-hover:scale-125",
+                "h-3 w-3 rounded-full border-2 border-white transition-all duration-300 group-hover:scale-125",
                 status === "actively_looking"
                   ? "bg-green-500 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
                   : status === "open"
@@ -64,7 +64,7 @@ export default function CandidateProfileCard({
         {/* Profile Photo */}
         <div className="mb-4 flex justify-center relative z-10">
           <div className="relative">
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-white dark:bg-surface p-1 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.9)] dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.3)] transition-all duration-500 group-hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,1)] dark:group-hover:shadow-[inset_3px_3px_8px_rgba(0,0,0,0.4)] group-hover:scale-110">
+            <div className="h-24 w-24 overflow-hidden rounded-full bg-white p-1 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-500 group-hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,1)] group-hover:scale-110">
               {avatar ? (
                 <img
                   src={avatar}
@@ -114,7 +114,7 @@ export default function CandidateProfileCard({
             ? tags.map((tag, i) => (
                 <span
                   key={i}
-                  className="inline-block rounded-full bg-white dark:bg-bg-alt px-2.5 py-1 text-[11px] font-medium text-text-light shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:shadow-[1px_1px_3px_rgba(0,0,0,0.3)] transition-all duration-300 group-hover:scale-105 truncate max-w-[120px]"
+                  className="inline-block rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-light shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] transition-all duration-300 group-hover:scale-105 truncate max-w-[120px]"
                 >
                   {tag}
                 </span>
@@ -125,11 +125,11 @@ export default function CandidateProfileCard({
 
         {/* Action Buttons */}
         <div className="mt-auto pt-4 flex gap-2 relative z-10">
-          <span className="flex-1 flex items-center justify-center rounded-full bg-white dark:bg-bg-alt py-3 text-sm font-medium text-primary shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] dark:shadow-[2px_2px_6px_rgba(0,0,0,0.3)] transition-all duration-300 group-hover:bg-primary/5 group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:group-hover:shadow-[1px_1px_4px_rgba(0,0,0,0.4)]">
+          <span className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-primary shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:bg-primary/5 group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]">
             <UserPlus className="h-4 w-4 mr-1.5" />
             <span className="text-xs">View Profile</span>
           </span>
-          <span className="flex-1 flex items-center justify-center rounded-full bg-white dark:bg-bg-alt py-3 text-sm font-medium text-text-light shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] dark:shadow-[2px_2px_6px_rgba(0,0,0,0.3)] transition-all duration-300 group-hover:bg-gray-50 dark:group-hover:bg-surface group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] dark:group-hover:shadow-[1px_1px_4px_rgba(0,0,0,0.4)]">
+          <span className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-text-light shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:bg-gray-50 group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]">
             <MessageCircle className="h-4 w-4 mr-1.5" />
             <span className="text-xs">Contact</span>
           </span>

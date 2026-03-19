@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
 import AuthProvider from "@/components/AuthProvider";
-import { ThemeProvider } from "next-themes";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
@@ -39,14 +38,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased font-sans`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="joblink-theme">
-          <AuthProvider>
-            <Navbar />
-            <main className="min-h-screen pb-20 md:pb-0">{children}</main>
-            <Footer />
-            <BottomNav />
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <Navbar />
+          <main className="min-h-screen pb-20 md:pb-0">{children}</main>
+          <Footer />
+          <BottomNav />
+        </AuthProvider>
       </body>
     </html>
   );

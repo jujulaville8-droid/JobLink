@@ -71,7 +71,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
               return (
                 <div
                   key={item.id as string}
-                  className="relative rounded-[--radius-card] border border-border bg-white dark:bg-card p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="relative rounded-[--radius-card] border border-border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="absolute top-3 right-3">
                     <UnsaveButton savedJobId={item.id as string} />
@@ -99,12 +99,12 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
                         </span>
                       ) : null}
                       {(job.job_type as string) ? (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-500/15 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-400 capitalize">
+                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 capitalize">
                           {((job.job_type as string) ?? "").replace("_", " ")}
                         </span>
                       ) : null}
                       {salaryVisible && (salaryMin || salaryMax) && (
-                        <span className="inline-flex items-center rounded-full bg-green-50 dark:bg-green-500/15 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-400">
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
                           {salaryMin && salaryMax
                             ? `EC$${salaryMin.toLocaleString()} - EC$${salaryMax.toLocaleString()}`
                             : salaryMin

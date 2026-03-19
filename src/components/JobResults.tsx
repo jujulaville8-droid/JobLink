@@ -109,7 +109,7 @@ export default async function JobResults({
 
   if (!jobs || jobs.length === 0) {
     return (
-      <div className="rounded-[--radius-card] border border-border bg-white dark:bg-card p-10 text-center">
+      <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
         <svg
           className="mx-auto h-12 w-12 text-text-muted/50"
           viewBox="0 0 24 24"

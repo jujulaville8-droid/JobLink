@@ -81,7 +81,7 @@ export default function ExplorePage() {
             <Link
               key={href}
               href={href}
-              className="group rounded-[--radius-card] border border-border bg-white dark:bg-card p-5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/[0.04] transition-all hover-lift"
+              className="group rounded-[--radius-card] border border-border bg-white p-5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/[0.04] transition-all hover-lift"
             >
               <div className="flex items-start gap-4">
                 <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-primary/8 text-primary group-hover:bg-accent-warm group-hover:text-white transition-all duration-300">

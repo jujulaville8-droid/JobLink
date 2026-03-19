@@ -33,7 +33,7 @@ export default function HireButton({ applicationId, jobId }: HireButtonProps) {
   if (showPrompt) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-        <div className="bg-white dark:bg-card rounded-2xl border border-border shadow-xl max-w-sm w-full p-6">
+        <div className="bg-white rounded-2xl border border-border shadow-xl max-w-sm w-full p-6">
           <h3 className="font-display text-lg text-text mb-2">Hire this applicant?</h3>
           <p className="text-sm text-text-light mb-5">
             Would you also like to close this job listing so it no longer accepts new applications?

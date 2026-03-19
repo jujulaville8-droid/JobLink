@@ -148,7 +148,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white dark:bg-surface rounded-[--radius-card] shadow-md border border-border p-8">
+    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8">
       <h1 className="font-display text-2xl text-text text-center mb-6">
         Welcome back
       </h1>
@@ -264,7 +264,7 @@ export default function LoginPage() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white dark:bg-bg px-3 text-text-muted">or</span>
+          <span className="bg-white px-3 text-text-muted">or</span>
         </div>
       </div>
 
@@ -272,7 +272,7 @@ export default function LoginPage() {
         type="button"
         onClick={handleGoogleSignIn}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 rounded-[--radius-button] border-2 border-border bg-white dark:bg-surface px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 rounded-[--radius-button] border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {googleLoading ? (
           <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">

@@ -185,7 +185,7 @@ export default async function Home() {
 
       {/* ===== COMPANIES HIRING ===== */}
       {hiringCompanies.length > 0 && (
-        <div className="bg-bg border-b border-border/50">
+        <div className="bg-bg">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
             <p className="text-center text-text-muted/60 text-[10px] font-semibold uppercase tracking-[0.25em] mb-4">
               Companies hiring now
@@ -288,7 +288,7 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Image */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-xl shadow-black/10 dark:shadow-black/30">
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-xl shadow-black/10">
               <Image
                 src="/images/people-sitting.webp"
                 alt="People at a job fair in Antigua"

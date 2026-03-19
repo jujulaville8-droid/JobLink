@@ -90,7 +90,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
   );
 
   return (
-    <div className="group relative bg-white dark:bg-card rounded-[--radius-card] border border-border hover:border-primary/20 transition-all duration-300 p-5 hover-lift">
+    <div className="group relative bg-white rounded-[--radius-card] border border-border hover:border-primary/20 transition-all duration-300 p-5 hover-lift">
       <Link href={`/jobs/${job.id}`} className="block">
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (

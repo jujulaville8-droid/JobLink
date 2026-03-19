@@ -57,7 +57,7 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
             animate={{ y: 0, scale: 1, opacity: 1, filter: "blur(0px)" }}
             exit={{ y: -5, scale: 0.95, opacity: 0, filter: "blur(10px)" }}
             transition={{ duration: 0.6, ease: "circInOut", type: "spring" }}
-            className="absolute right-0 z-50 w-56 mt-2.5 py-1.5 rounded-xl border border-border shadow-lg shadow-black/10 dark:shadow-black/50 flex flex-col"
+            className="absolute right-0 z-50 w-56 mt-2.5 py-1.5 rounded-xl border border-border shadow-lg shadow-black/10 flex flex-col"
             style={{ backgroundColor: "var(--color-surface)" }}
           >
             {header && (

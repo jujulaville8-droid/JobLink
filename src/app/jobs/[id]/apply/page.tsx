@@ -269,7 +269,7 @@ export default function ApplyPage() {
             variants={item}
             className={cn(cardBase, "p-8 text-center")}
           >
-            <div className="w-14 h-14 rounded-xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center mx-auto mb-4">
               <HugeiconsIcon
                 icon={Cancel01Icon}
                 size={24}
@@ -294,7 +294,7 @@ export default function ApplyPage() {
 
   // ─── Job header component (reused across states) ───
   const jobHeader = job && (
-    <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-white dark:bg-[--color-surface]">
+    <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-white">
       <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
         <HugeiconsIcon icon={Briefcase01Icon} size={18} className="text-primary" />
       </div>
@@ -339,7 +339,7 @@ export default function ApplyPage() {
           <motion.div variants={item} className={cardBase}>
             {jobHeader}
             <div className="p-8 text-center">
-              <div className="w-14 h-14 rounded-xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-xl bg-red-50 flex items-center justify-center mx-auto mb-4">
                 <HugeiconsIcon
                   icon={Clock01Icon}
                   size={24}
@@ -376,11 +376,11 @@ export default function ApplyPage() {
           <motion.div variants={item} className={cardBase}>
             {jobHeader}
             <div className="p-8 text-center">
-              <div className="w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
                 <HugeiconsIcon
                   icon={UserIcon}
                   size={24}
-                  className="text-blue-600 dark:text-blue-400"
+                  className="text-blue-600"
                 />
               </div>
               <h1 className="font-display text-xl font-bold text-text">
@@ -413,11 +413,11 @@ export default function ApplyPage() {
           <motion.div variants={item} className={cardBase}>
             {jobHeader}
             <div className="p-8 text-center">
-              <div className="w-14 h-14 rounded-xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
                 <HugeiconsIcon
                   icon={Alert01Icon}
                   size={24}
-                  className="text-amber-600 dark:text-amber-400"
+                  className="text-amber-600"
                 />
               </div>
               <h1 className="font-display text-xl font-bold text-text">
@@ -434,16 +434,16 @@ export default function ApplyPage() {
                     initial={{ opacity: 0, x: -12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 * i, duration: 0.3 }}
-                    className="flex items-center gap-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/40 dark:border-amber-800/30 px-4 py-2.5 mx-auto max-w-xs"
+                    className="flex items-center gap-2.5 rounded-xl bg-amber-50/60 border border-amber-200/40 px-4 py-2.5 mx-auto max-w-xs"
                   >
-                    <div className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                       <HugeiconsIcon
                         icon={Alert01Icon}
                         size={12}
-                        className="text-amber-600 dark:text-amber-400"
+                        className="text-amber-600"
                       />
                     </div>
-                    <span className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                    <span className="text-sm font-medium text-amber-800">
                       {field}
                     </span>
                   </motion.div>
@@ -519,15 +519,15 @@ export default function ApplyPage() {
       <div className="mx-auto max-w-2xl px-4 py-16 animate-in fade-in duration-500">
         <div className="space-y-4">
           {/* Success banner */}
-          <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/30 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center shrink-0">
-              <HugeiconsIcon icon={Tick01Icon} size={20} className="text-emerald-600 dark:text-emerald-400" />
+          <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+              <HugeiconsIcon icon={Tick01Icon} size={20} className="text-emerald-600" />
             </div>
             <div>
-              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
+              <p className="text-sm font-bold text-emerald-800">
                 Success! Your application has been sent.
               </p>
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <p className="text-xs text-emerald-600 mt-0.5">
                 The employer has been notified.
               </p>
             </div>
@@ -536,7 +536,7 @@ export default function ApplyPage() {
           <div className={cardBase}>
             {/* Job header with light background for both modes */}
             {job && (
-              <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-white dark:bg-[--color-surface]">
+              <div className="px-5 py-4 border-b border-border/40 flex items-center gap-3 bg-white">
                 <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center shrink-0">
                   <HugeiconsIcon icon={Briefcase01Icon} size={18} className="text-primary" />
                 </div>
@@ -568,11 +568,11 @@ export default function ApplyPage() {
               </div>
             )}
             <div className="p-8 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center mx-auto mb-5">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-5">
                 <HugeiconsIcon
                   icon={SentIcon}
                   size={28}
-                  className="text-emerald-600 dark:text-emerald-400"
+                  className="text-emerald-600"
                 />
               </div>
               <h1 className="font-display text-xl font-bold text-text">
@@ -592,15 +592,15 @@ export default function ApplyPage() {
               </p>
 
               {/* Progress indicator */}
-              <div className="mt-6 flex items-center justify-center gap-1.5 rounded-xl bg-white dark:bg-[--color-bg-alt] border border-border/30 px-5 py-3.5 mx-auto max-w-xs">
+              <div className="mt-6 flex items-center justify-center gap-1.5 rounded-xl bg-white border border-border/30 px-5 py-3.5 mx-auto max-w-xs">
                 {["Applied", "Reviewed", "Decision"].map((step, i) => (
                   <div key={step} className="flex items-center gap-1.5">
                     <div
                       className={cn(
                         "w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors",
                         i === 0
-                          ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300"
-                          : "bg-gray-100 dark:bg-[--color-bg-alt] text-text-muted"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-gray-100 text-text-muted"
                       )}
                     >
                       {i === 0 ? (
@@ -612,7 +612,7 @@ export default function ApplyPage() {
                     <span
                       className={cn(
                         "text-xs font-medium",
-                        i === 0 ? "text-emerald-700 dark:text-emerald-300" : "text-text-muted"
+                        i === 0 ? "text-emerald-700" : "text-text-muted"
                       )}
                     >
                       {step}
@@ -666,19 +666,19 @@ export default function ApplyPage() {
           <motion.div variants={item} className={cardBase}>
             {jobHeader}
             <div className="p-6">
-              <div className="flex items-start gap-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200/40 dark:border-red-800/30 p-4 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200/40 p-4 mb-5">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
                   <HugeiconsIcon
                     icon={Cancel01Icon}
                     size={14}
-                    className="text-red-600 dark:text-red-400"
+                    className="text-red-600"
                   />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                  <p className="text-sm font-medium text-red-800">
                     Submission Failed
                   </p>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{errorMessage}</p>
+                  <p className="text-xs text-red-600 mt-0.5">{errorMessage}</p>
                 </div>
               </div>
               <button
@@ -829,7 +829,7 @@ export default function ApplyPage() {
                   className={cn(
                     "text-xs tabular-nums transition-colors",
                     coverLetter.length > 1800
-                      ? "text-amber-600 dark:text-amber-400"
+                      ? "text-amber-600"
                       : "text-text-muted"
                   )}
                 >

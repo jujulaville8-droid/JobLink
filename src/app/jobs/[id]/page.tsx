@@ -221,7 +221,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50/60 dark:bg-transparent">
+    <div className="min-h-screen bg-gray-50/60">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-fade-up">
         {/* Back link */}
         <Link
@@ -241,7 +241,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         </Link>
 
         {/* ─── Hero header card ─── */}
-        <div className="rounded-2xl border border-border/60 bg-white dark:bg-card shadow-sm p-6 sm:p-8 mb-6">
+        <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
             {/* Company logo */}
             {company?.logo_url ? (
@@ -295,7 +295,7 @@ export default async function JobDetailPage({ params }: PageProps) {
               {/* Pills row */}
               <div className="mt-3 flex flex-wrap items-center gap-2.5">
                 {/* Location */}
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-white/10 px-3 py-1 text-xs font-medium text-text-light">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-text-light">
                   <svg
                     className="h-3.5 w-3.5"
                     viewBox="0 0 24 24"
@@ -312,13 +312,13 @@ export default async function JobDetailPage({ params }: PageProps) {
                 </span>
 
                 {/* Employment type */}
-                <span className="inline-flex items-center rounded-full bg-primary/8 dark:bg-primary/20 px-3 py-1 text-xs font-semibold text-primary">
+                <span className="inline-flex items-center rounded-full bg-primary/8 px-3 py-1 text-xs font-semibold text-primary">
                   {jobTypeLabel}
                 </span>
 
                 {/* Salary pill */}
                 {salary && (
-                  <span className="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     {salary}
                   </span>
                 )}
@@ -373,7 +373,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           {/* Main content */}
           <div className="flex-1 min-w-0 space-y-6">
             {/* Job Description card */}
-            <div className="rounded-2xl border border-border/60 bg-white dark:bg-card shadow-sm p-6 sm:p-8">
+            <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8">
               <h2 className="font-display text-lg text-text mb-5 flex items-center gap-2">
                 <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -390,14 +390,14 @@ export default async function JobDetailPage({ params }: PageProps) {
             </div>
 
             {/* Actions row */}
-            <div className="rounded-2xl border border-border/60 bg-white dark:bg-card shadow-sm px-6 py-4">
+            <div className="rounded-2xl border border-border/60 bg-white shadow-sm px-6 py-4">
               <div className="flex flex-wrap items-center gap-3">
                 {/* WhatsApp share */}
                 <a
                   href={`https://wa.me/?text=${whatsappText}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-white dark:bg-card px-4 py-2 text-sm font-medium text-text-light hover:text-green-600 hover:border-green-200 dark:hover:border-green-500/30 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-white px-4 py-2 text-sm font-medium text-text-light hover:text-green-600 hover:border-green-200 transition-colors"
                 >
                   <svg
                     className="h-4 w-4 text-green-600 shrink-0"
@@ -425,7 +425,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           <div className="w-full lg:w-[340px] shrink-0">
             <div className="lg:sticky lg:top-20 space-y-5">
               {/* Apply card */}
-              <div className="rounded-2xl border border-border/60 bg-white dark:bg-card shadow-sm p-6">
+              <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6">
                 <h2 className="font-display text-lg text-text mb-1">
                   Apply for this job
                 </h2>
@@ -443,7 +443,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                   <div className="mt-4 pt-4 border-t border-border/60">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-text-muted">Salary</span>
-                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span className="text-sm font-semibold text-emerald-700">
                         {salary}
                       </span>
                     </div>
@@ -453,7 +453,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
               {/* Company card */}
               {company && (
-                <div className="rounded-2xl border border-border/60 bg-white dark:bg-card shadow-sm p-6">
+                <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6">
                   <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-4">
                     About the Company
                   </h3>
@@ -540,7 +540,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         <div className="h-20 lg:hidden" />
 
         {/* Mobile sticky apply button */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white dark:bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
           <ApplyButton jobId={job.id} state={applyState} />
         </div>
       </div>

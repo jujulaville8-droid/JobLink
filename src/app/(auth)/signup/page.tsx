@@ -100,7 +100,7 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="animate-scale-in bg-white dark:bg-surface rounded-[--radius-card] shadow-md border border-border p-8 text-center">
+      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center">
         <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
           <svg
             className="w-8 h-8 text-emerald-600"
@@ -134,7 +134,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white dark:bg-surface rounded-[--radius-card] shadow-md border border-border p-8">
+    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8">
       <h1 className="font-display text-2xl text-text text-center mb-6">
         Create your JobLinks account
       </h1>
@@ -174,7 +174,7 @@ export default function SignupPage() {
               className={`relative rounded-[--radius-button] border-2 p-4 text-center transition cursor-pointer ${
                 role === 'seeker'
                   ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
-                  : 'border-border hover:border-primary/30 bg-white dark:bg-surface'
+                  : 'border-border hover:border-primary/30 bg-white'
               }`}
             >
               <div className="text-2xl mb-1.5">
@@ -220,7 +220,7 @@ export default function SignupPage() {
               className={`relative rounded-[--radius-button] border-2 p-4 text-center transition cursor-pointer ${
                 role === 'employer'
                   ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
-                  : 'border-border hover:border-primary/30 bg-white dark:bg-surface'
+                  : 'border-border hover:border-primary/30 bg-white'
               }`}
             >
               <div className="text-2xl mb-1.5">
@@ -355,7 +355,7 @@ export default function SignupPage() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="bg-white dark:bg-bg px-3 text-text-muted">or</span>
+          <span className="bg-white px-3 text-text-muted">or</span>
         </div>
       </div>
 
@@ -363,7 +363,7 @@ export default function SignupPage() {
         type="button"
         onClick={handleGoogleSignUp}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 rounded-[--radius-button] border-2 border-border bg-white dark:bg-surface px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 rounded-[--radius-button] border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {googleLoading ? (
           <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">

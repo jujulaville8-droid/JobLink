@@ -228,7 +228,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   if (loading || authLoading) {
     return (
       <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
-        <div className="border border-border rounded-lg bg-white dark:bg-surface flex flex-col h-full mx-2 sm:mx-4 my-2 overflow-hidden">
+        <div className="border border-border rounded-lg bg-white flex flex-col h-full mx-2 sm:mx-4 my-2 overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
             <div className="h-5 w-40 skeleton rounded" />
             <div className="h-3 w-60 skeleton rounded mt-2" />
@@ -255,9 +255,9 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
       {/* Desktop container card */}
-      <div className="flex flex-col h-full mx-0 sm:mx-3 my-0 sm:my-2 border-0 sm:border border-border sm:rounded-lg bg-white dark:bg-surface overflow-hidden">
+      <div className="flex flex-col h-full mx-0 sm:mx-3 my-0 sm:my-2 border-0 sm:border border-border sm:rounded-lg bg-white overflow-hidden">
         {/* Header */}
-        <div className="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-border bg-white dark:bg-surface relative z-10">
+        <div className="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-border bg-white relative z-10">
           <Link
             href="/messages"
             className="shrink-0 flex items-center justify-center h-8 w-8 rounded-md border border-border text-text-light hover:border-primary/30 hover:text-primary transition-colors sm:hidden"
@@ -327,9 +327,9 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
           <div className="shrink-0 flex items-center gap-2 px-5 py-2 border-b border-border bg-bg-alt/50">
             <span className="text-[11px] font-medium text-text-muted uppercase tracking-wider mr-1">Status:</span>
             {([
-              { key: "interview", label: "Interview", style: "border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/20" },
-              { key: "hold", label: "Hold", style: "border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100 hover:border-amber-300 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400 dark:hover:bg-amber-500/20" },
-              { key: "rejected", label: "Reject", style: "border-red-200 bg-red-50/50 text-red-600 hover:bg-red-100 hover:border-red-300 dark:bg-red-500/10 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/20" },
+              { key: "interview", label: "Interview", style: "border-emerald-200 bg-emerald-50/50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300" },
+              { key: "hold", label: "Hold", style: "border-amber-200 bg-amber-50/50 text-amber-700 hover:bg-amber-100 hover:border-amber-300" },
+              { key: "rejected", label: "Reject", style: "border-red-200 bg-red-50/50 text-red-600 hover:bg-red-100 hover:border-red-300" },
             ] as const).map(({ key, label, style }) => {
               const isActive = meta.application_status === key;
               return (
@@ -355,11 +355,11 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
         {/* Archive banner */}
         {meta?.is_archived && (
-          <div className="flex items-center justify-between px-5 py-2 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20">
-            <p className="text-xs text-amber-700 dark:text-amber-400">This conversation is archived.</p>
+          <div className="flex items-center justify-between px-5 py-2 bg-amber-50 border-b border-amber-200">
+            <p className="text-xs text-amber-700">This conversation is archived.</p>
             <button
               onClick={handleArchiveToggle}
-              className="text-xs font-medium text-amber-700 dark:text-amber-400 underline hover:no-underline"
+              className="text-xs font-medium text-amber-700 underline hover:no-underline"
             >
               Move to inbox
             </button>
@@ -392,24 +392,24 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
         {/* Rejected banner (seeker only) */}
         {!isBlocked && isSeekerRejected && (
-          <div className="px-5 py-3 bg-red-50 dark:bg-red-500/10 border-t border-red-200 dark:border-red-500/20 text-center">
+          <div className="px-5 py-3 bg-red-50 border-t border-red-200 text-center">
             <div className="flex items-center justify-center gap-2">
               <svg className="h-4 w-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
               </svg>
-              <p className="text-sm text-red-600 dark:text-red-400">Your application was not selected. You can no longer send messages in this conversation.</p>
+              <p className="text-sm text-red-600">Your application was not selected. You can no longer send messages in this conversation.</p>
             </div>
           </div>
         )}
 
         {/* Awaiting employer reply banner (seeker only) */}
         {!isBlocked && !isSeekerRejected && isSeekerAwaitingReply && (
-          <div className="px-5 py-3 bg-amber-50 dark:bg-amber-500/10 border-t border-amber-200 dark:border-amber-500/20 text-center">
+          <div className="px-5 py-3 bg-amber-50 border-t border-amber-200 text-center">
             <div className="flex items-center justify-center gap-2">
-              <svg className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="h-4 w-4 text-amber-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
               </svg>
-              <p className="text-sm text-amber-700 dark:text-amber-400">Your application has been sent. You&apos;ll be able to continue the conversation once the employer responds.</p>
+              <p className="text-sm text-amber-700">Your application has been sent. You&apos;ll be able to continue the conversation once the employer responds.</p>
             </div>
           </div>
         )}

@@ -166,7 +166,7 @@ export default function StatusChangeModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white dark:bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
+      <div className="bg-white rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 pt-6 pb-4">
           <div className={`w-10 h-10 rounded-xl ${colors.iconBg} flex items-center justify-center ${colors.iconText}`}>

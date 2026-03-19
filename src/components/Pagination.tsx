@@ -44,14 +44,14 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {currentPage > 1 ? (
         <Link
           href={buildHref(currentPage - 1)}
-          className={`${baseBtn} border border-border bg-white dark:bg-card text-text-light hover:text-primary hover:border-primary/30`}
+          className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </Link>
       ) : (
-        <span className={`${baseBtn} border border-border bg-white dark:bg-card text-text-muted/40 cursor-not-allowed`}>
+        <span className={`${baseBtn} border border-border bg-white text-text-muted/40 cursor-not-allowed`}>
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -61,7 +61,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {/* First page + ellipsis */}
       {start > 1 && (
         <>
-          <Link href={buildHref(1)} className={`${baseBtn} border border-border bg-white dark:bg-card text-text-light hover:text-primary hover:border-primary/30`}>
+          <Link href={buildHref(1)} className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}>
             1
           </Link>
           {start > 2 && <span className="text-text-muted px-1">...</span>}
@@ -76,7 +76,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
           className={`${baseBtn} ${
             p === currentPage
               ? "bg-primary text-white border border-primary shadow-sm"
-              : "border border-border bg-white dark:bg-card text-text-light hover:text-primary hover:border-primary/30"
+              : "border border-border bg-white text-text-light hover:text-primary hover:border-primary/30"
           }`}
         >
           {p}
@@ -87,7 +87,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {end < totalPages && (
         <>
           {end < totalPages - 1 && <span className="text-text-muted px-1">...</span>}
-          <Link href={buildHref(totalPages)} className={`${baseBtn} border border-border bg-white dark:bg-card text-text-light hover:text-primary hover:border-primary/30`}>
+          <Link href={buildHref(totalPages)} className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}>
             {totalPages}
           </Link>
         </>
@@ -97,14 +97,14 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {currentPage < totalPages ? (
         <Link
           href={buildHref(currentPage + 1)}
-          className={`${baseBtn} border border-border bg-white dark:bg-card text-text-light hover:text-primary hover:border-primary/30`}
+          className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>
         </Link>
       ) : (
-        <span className={`${baseBtn} border border-border bg-white dark:bg-card text-text-muted/40 cursor-not-allowed`}>
+        <span className={`${baseBtn} border border-border bg-white text-text-muted/40 cursor-not-allowed`}>
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>

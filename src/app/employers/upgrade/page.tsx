@@ -102,10 +102,10 @@ export default function UpgradePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#e8f5f5] dark:from-[#111318] dark:to-[#151d1d]">
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#e8f5f5]">
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#095355] via-[#0d7377] to-[#14919b] dark:from-[#071f20] dark:via-[#0a3a3c] dark:to-[#0d5052]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#095355] via-[#0d7377] to-[#14919b]">
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20 text-center">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
@@ -121,7 +121,7 @@ export default function UpgradePage() {
       <section className="mx-auto max-w-3xl px-4 -mt-8 relative z-10">
         <div className="grid sm:grid-cols-2 gap-4 sm:gap-0">
           {/* Free Column */}
-          <div className="rounded-2xl sm:rounded-r-none border border-border bg-white dark:bg-[#191d24] p-6 sm:p-8">
+          <div className="rounded-2xl sm:rounded-r-none border border-border bg-white p-6 sm:p-8">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Free</h3>
             <div className="mt-3 flex items-baseline gap-0.5">
               <span className="text-3xl font-bold font-display text-text">$0</span>
@@ -145,9 +145,9 @@ export default function UpgradePage() {
           </div>
 
           {/* Pro Column */}
-          <div className="relative rounded-2xl sm:rounded-l-none border-2 border-primary bg-white dark:bg-[#191d24] p-6 sm:p-8 shadow-lg shadow-primary/10 dark:shadow-primary/5">
+          <div className="relative rounded-2xl sm:rounded-l-none border-2 border-primary bg-white p-6 sm:p-8 shadow-lg shadow-primary/10">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white dark:text-[#111318] shadow-md">
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-md">
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
@@ -178,10 +178,10 @@ export default function UpgradePage() {
 
       {/* ─── Pricing CTA Card ─── */}
       <section className="mx-auto max-w-md px-4 py-16">
-        <div className="rounded-2xl border border-primary/20 dark:border-primary/30 p-8 shadow-lg sm:p-10 bg-gradient-to-br from-[#f0fafa] via-[#e0f4f4] to-[#d5efef] dark:from-[#141f1f] dark:via-[#162525] dark:to-[#182a2a]">
+        <div className="rounded-2xl border border-primary/20 p-8 shadow-lg sm:p-10 bg-gradient-to-br from-[#f0fafa] via-[#e0f4f4] to-[#d5efef]">
           {/* Badge */}
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 dark:bg-primary/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
               <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
@@ -199,7 +199,7 @@ export default function UpgradePage() {
             <p className="mt-1.5 text-sm text-text-muted">Billed as EC$97 &middot; Cancel anytime.</p>
           </div>
 
-          <div className="my-8 border-t border-primary/15 dark:border-primary/25" />
+          <div className="my-8 border-t border-primary/15" />
 
           {/* Features */}
           <ul className="space-y-4">
@@ -211,17 +211,17 @@ export default function UpgradePage() {
             ))}
           </ul>
 
-          <div className="my-8 border-t border-primary/15 dark:border-primary/25" />
+          <div className="my-8 border-t border-primary/15" />
 
           {/* CTA */}
           {isPro ? (
-            <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 px-6 py-4 text-center">
-              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+            <div className="rounded-xl bg-emerald-50 px-6 py-4 text-center">
+              <p className="text-sm font-semibold text-emerald-700">
                 You&apos;re already a Pro member
               </p>
               <a
                 href="/dashboard"
-                className="mt-1 inline-block text-sm text-emerald-600 dark:text-emerald-500 underline underline-offset-2 hover:text-emerald-800 dark:hover:text-emerald-300"
+                className="mt-1 inline-block text-sm text-emerald-600 underline underline-offset-2 hover:text-emerald-800"
               >
                 Back to dashboard
               </a>
@@ -234,11 +234,11 @@ export default function UpgradePage() {
               <button
                 onClick={handleUpgrade}
                 disabled={upgrading || !userId}
-                className="w-full rounded-xl bg-accent px-6 py-4 text-base font-semibold text-white dark:text-[#111318] transition-all duration-300 hover:bg-accent-hover hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-1 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
+                className="w-full rounded-xl bg-accent px-6 py-4 text-base font-semibold text-white transition-all duration-300 hover:bg-accent-hover hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-1 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
               >
                 {upgrading ? (
                   <span className="inline-flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 dark:border-[#111318]/30 border-t-white dark:border-t-[#111318] " />
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white " />
                     Redirecting to checkout...
                   </span>
                 ) : (
@@ -259,9 +259,9 @@ export default function UpgradePage() {
           <p className="mb-4 text-center text-sm font-medium text-text-muted">
             This is how your listings will appear to job seekers
           </p>
-          <div className="rounded-[--radius-card] border border-border bg-white dark:bg-[#191d24] p-5 shadow-sm">
+          <div className="rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
             <div className="flex items-start gap-3.5">
-              <div className="shrink-0 h-11 w-11 rounded-xl bg-primary flex items-center justify-center text-white dark:text-[#111318] font-semibold text-sm">
+              <div className="shrink-0 h-11 w-11 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-sm">
                 {companyName.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
@@ -282,7 +282,7 @@ export default function UpgradePage() {
                     </svg>
                     St. John&apos;s, Antigua
                   </span>
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                     Full Time
                   </span>
                 </div>
