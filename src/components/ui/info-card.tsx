@@ -129,19 +129,18 @@ export default function CandidateProfileCard({
       )}
 
       {/* Skill Tags */}
-      <div className="mt-3 flex justify-center flex-wrap gap-1.5 relative z-10 min-h-[28px]">
-        {tags.length > 0
-          ? tags.map((tag, i) => (
-              <span
-                key={i}
-                className="inline-block rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-light shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] transition-all duration-300 group-hover:scale-105 truncate max-w-[120px]"
-              >
-                {tag}
-              </span>
-            ))
-          : null
-        }
-      </div>
+      {tags.length > 0 && (
+        <div className="mt-3 flex justify-center flex-wrap gap-1.5 relative z-10">
+          {tags.map((tag, i) => (
+            <span
+              key={i}
+              className="inline-block rounded-lg bg-primary/8 border border-primary/15 px-2.5 py-1 text-[11px] font-medium text-primary truncate max-w-[120px]"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="mt-auto pt-5 flex flex-col gap-2 relative z-10">
