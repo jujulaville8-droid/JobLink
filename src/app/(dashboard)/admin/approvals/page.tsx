@@ -86,7 +86,7 @@ interface PendingListing {
   salary_min: number | null
   salary_max: number | null
   created_at: string
-  companies: PendingCompany[] | null
+  companies: PendingCompany | PendingCompany[] | null
 }
 
 export default async function AdminApprovalsPage() {
@@ -128,7 +128,10 @@ export default async function AdminApprovalsPage() {
         </div>
         <div className="rounded-2xl border border-border bg-white p-4 text-center">
           <p className="text-2xl font-bold text-text">
-            {new Set(pendingListings.map(l => l.companies?.[0]?.company_name).filter(Boolean)).size}
+            {new Set(pendingListings.map(l => {
+              const c = l.companies;
+              return c ? (Array.isArray(c) ? c[0]?.company_name : c.company_name) : null;
+            }).filter(Boolean)).size}
           </p>
           <p className="mt-0.5 text-xs font-medium text-text-muted">Companies</p>
         </div>
@@ -153,7 +156,10 @@ export default async function AdminApprovalsPage() {
       ) : (
         <div className="mt-6 space-y-4">
           {pendingListings.map((listing) => {
-            const company = listing.companies?.[0]
+            const rawCompany = listing.companies
+            const company: PendingCompany | null = rawCompany
+              ? (Array.isArray(rawCompany) ? rawCompany[0] : rawCompany)
+              : null
             const companyName = company?.company_name || 'Unknown Company'
             const initials = companyName.charAt(0).toUpperCase()
 
