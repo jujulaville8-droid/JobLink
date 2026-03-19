@@ -235,7 +235,7 @@ export default function PostJobPage() {
           .eq('status', 'active');
 
         if ((count ?? 0) >= 1) {
-          setServerError('Free accounts are limited to 1 active listing. Upgrade to Pro for unlimited postings.');
+          setListingGated(true);
           setSubmitting(false);
           return;
         }
@@ -320,30 +320,31 @@ export default function PostJobPage() {
   if (listingGated) {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <div className="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50 to-orange-50 p-10 shadow-sm">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
-            <svg className="h-8 w-8 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        <div className="rounded-2xl border border-border bg-white p-10 shadow-lg">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
             </svg>
           </div>
           <h2 className="mt-6 text-xl font-bold font-display text-text">
-            Listing Limit Reached
+            Your next listing is ready to go
           </h2>
-          <p className="mt-2 text-sm text-text-light">
-            Free accounts are limited to 1 active listing at a time. Upgrade to Pro for unlimited job postings.
+          <p className="mt-2 text-sm text-text-light leading-relaxed">
+            Upgrade to JobLink Pro to post unlimited active listings and get featured placement across the platform.
           </p>
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="/company-profile"
+              href="/employers/upgrade"
               className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
             >
               Upgrade to Pro
             </a>
             <a
-              href="/my-listings"
+              href="/employers/listings"
               className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-text transition-colors hover:bg-bg-alt"
             >
-              Manage Listings
+              Manage Existing Listings
             </a>
           </div>
         </div>
