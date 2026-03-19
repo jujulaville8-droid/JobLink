@@ -204,9 +204,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
-    const inbox = (data || []).map((row: {
+    const rows = data || []
+
+    // For conversations without an application (invites), enrich with company info
+    const otherUserIds = rows
+      .filter((r: { application_id: string | null }) => !r.application_id)
+      .map((r: { other_user_id: string }) => r.other_user_id)
+
+    let companyMap: Record<string, { company_name: string; logo_url: string | null }> = {}
+    if (otherUserIds.length > 0) {
+      const { data: companies } = await supabase
+        .from('companies')
+        .select('user_id, company_name, logo_url')
+        .in('user_id', otherUserIds)
+
+      if (companies) {
+        for (const c of companies) {
+          companyMap[c.user_id] = { company_name: c.company_name, logo_url: c.logo_url }
+        }
+      }
+    }
+
+    const inbox = rows.map((row: {
       conversation_id: string
-      application_id: string
+      application_id: string | null
       last_message_text: string | null
       last_message_at: string
       last_message_sender_id: string | null
@@ -216,29 +237,43 @@ export async function GET(request: NextRequest) {
       other_user_id: string
       other_display_name: string
       other_avatar_url: string | null
-      job_title: string
-      company_name: string
-      application_status: string
-    }) => ({
-      id: row.conversation_id,
-      application_id: row.application_id,
-      last_message_text: row.last_message_text,
-      last_message_at: row.last_message_at,
-      last_message_sender_id: row.last_message_sender_id,
-      created_at: row.conversation_created_at,
-      unread_count: Number(row.unread_count),
-      is_archived: row.is_archived,
-      other_participant: {
-        user_id: row.other_user_id,
-        display_name: row.other_display_name || 'Unknown',
-        avatar_url: row.other_avatar_url,
-      },
-      application_context: {
-        job_title: row.job_title,
-        company_name: row.company_name,
-        application_status: row.application_status || 'applied',
-      },
-    }))
+      job_title: string | null
+      company_name: string | null
+      application_status: string | null
+    }) => {
+      const isInvite = !row.application_id
+      const otherCompany = companyMap[row.other_user_id]
+
+      // For invites from employers, show the company name instead of personal name
+      const displayName = isInvite && otherCompany
+        ? otherCompany.company_name
+        : (row.other_display_name || 'Unknown')
+
+      const avatarUrl = isInvite && otherCompany?.logo_url
+        ? otherCompany.logo_url
+        : row.other_avatar_url
+
+      return {
+        id: row.conversation_id,
+        application_id: row.application_id,
+        last_message_text: row.last_message_text,
+        last_message_at: row.last_message_at,
+        last_message_sender_id: row.last_message_sender_id,
+        created_at: row.conversation_created_at,
+        unread_count: Number(row.unread_count),
+        is_archived: row.is_archived,
+        other_participant: {
+          user_id: row.other_user_id,
+          display_name: displayName,
+          avatar_url: avatarUrl,
+        },
+        application_context: {
+          job_title: isInvite ? 'Invitation' : (row.job_title || 'Unknown Position'),
+          company_name: isInvite && otherCompany ? otherCompany.company_name : (row.company_name || 'Unknown'),
+          application_status: isInvite ? 'invited' : (row.application_status || 'applied'),
+        },
+      }
+    })
 
     return NextResponse.json(inbox)
   } catch {

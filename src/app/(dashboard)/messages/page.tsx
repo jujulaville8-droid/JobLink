@@ -6,18 +6,20 @@ import { useAuth } from "@/components/AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import type { InboxConversation, ApplicationStatus } from "@/lib/types";
 
-const STATUS_COLORS: Record<ApplicationStatus, string> = {
+const STATUS_COLORS: Record<string, string> = {
   applied: "bg-primary/10 text-primary",
   interview: "bg-emerald-50 text-emerald-700",
   rejected: "bg-red-50 text-red-600",
   hold: "bg-accent-warm/10 text-amber-700",
+  invited: "bg-purple-50 text-purple-700",
 };
 
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
+const STATUS_LABELS: Record<string, string> = {
   applied: "Applied",
   interview: "Interview",
   rejected: "Rejected",
   hold: "On Hold",
+  invited: "Invited",
 };
 
 type InboxTab = "active" | "archived";

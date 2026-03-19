@@ -33,7 +33,25 @@ export async function GET(
       .eq('id', conversationId)
       .single()
 
-    return NextResponse.json({ ...data[0], application_id: convRow?.application_id ?? null })
+    const meta = { ...data[0], application_id: convRow?.application_id ?? null }
+
+    // For invite conversations (no application), enrich with company info
+    if (!convRow?.application_id && meta.other_user_id) {
+      const { data: company } = await supabase
+        .from('companies')
+        .select('company_name, logo_url')
+        .eq('user_id', meta.other_user_id)
+        .maybeSingle()
+
+      if (company) {
+        meta.other_display_name = company.company_name
+        meta.other_avatar_url = company.logo_url || meta.other_avatar_url
+        meta.job_title = 'Invitation'
+        meta.company_name = company.company_name
+      }
+    }
+
+    return NextResponse.json(meta)
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
