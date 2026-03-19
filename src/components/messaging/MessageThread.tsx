@@ -1,8 +1,34 @@
 "use client";
 
+import React from "react";
 import { useEffect, useRef, useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message } from "@/lib/types";
+
+const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function Linkify({ children }: { children: string }) {
+  const parts = children.split(URL_REGEX);
+  return (
+    <>
+      {parts.map((part, i) =>
+        URL_REGEX.test(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline underline-offset-2 hover:text-primary-dark break-all"
+          >
+            {part}
+          </a>
+        ) : (
+          <React.Fragment key={i}>{part}</React.Fragment>
+        )
+      )}
+    </>
+  );
+}
 
 interface MessageThreadProps {
   messages: Message[];
@@ -159,7 +185,7 @@ function MessageBubble({
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] leading-[1.5] text-text whitespace-pre-wrap break-words">{msg.body}</p>
+                <p className="text-[13px] leading-[1.5] text-text whitespace-pre-wrap break-words"><Linkify>{msg.body}</Linkify></p>
                 {hasAttachment && <AttachmentCard url={msg.attachment_url!} name={msg.attachment_name} />}
               </div>
             </div>
@@ -218,7 +244,7 @@ function MessageBubble({
           }}
           className={`max-w-[70%] px-3 py-2 text-[13px] leading-[1.5] ${bubbleRadius} ${bubbleColor}`}
         >
-          <p className="whitespace-pre-wrap break-words">{msg.body}</p>
+          <p className="whitespace-pre-wrap break-words"><Linkify>{msg.body}</Linkify></p>
           {hasAttachment && <AttachmentCard url={msg.attachment_url!} name={msg.attachment_name} isMine={isMine} />}
           {msg._optimistic && !msg._failed && (
             <motion.p
