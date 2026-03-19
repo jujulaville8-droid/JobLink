@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/SidebarNav";
 import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
+import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
 
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
@@ -72,12 +73,12 @@ export default async function DashboardLayout({
         ? employerLinks
         : seekerLinks;
 
-  // Inject unread badge into the messages/inbox sidebar link
-  const navLinks = baseLinks.map((link) =>
-    link.href === "/messages"
-      ? { ...link, badge: <UnreadBadge /> }
-      : link
-  );
+  // Inject badges into sidebar links
+  const navLinks = baseLinks.map((link) => {
+    if (link.href === "/messages") return { ...link, badge: <UnreadBadge /> };
+    if (link.href === "/admin/approvals") return { ...link, badge: <PendingApprovalsBadge /> };
+    return link;
+  });
 
   return (
     <div className="flex min-h-screen">
