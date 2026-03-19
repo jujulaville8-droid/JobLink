@@ -144,10 +144,14 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
               </span>
             </div>
 
-            {salary && (
+            {salary ? (
               <p className="text-[13px] font-semibold text-text mt-2.5">
                 {salary}
                 <span className="text-text-muted font-normal text-[11px] ml-1">/mo</span>
+              </p>
+            ) : (
+              <p className="text-[12px] text-text-muted italic mt-2.5">
+                Salary discussed after application
               </p>
             )}
           </div>
