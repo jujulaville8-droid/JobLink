@@ -29,7 +29,7 @@ async function CandidateResults({
   let query = supabase
     .from("seeker_profiles")
     .select("*")
-    .in("visibility", ["actively_looking", "open"])
+    .eq("visibility", "actively_looking")
     .gte("profile_complete_pct", 50)
     .not("first_name", "is", null)
     .order("updated_at", { ascending: false });
@@ -143,7 +143,7 @@ async function GatedCandidatePreview() {
   const { data: profiles } = await supabase
     .from("seeker_profiles")
     .select("*")
-    .in("visibility", ["actively_looking", "open"])
+    .eq("visibility", "actively_looking")
     .gte("profile_complete_pct", 50)
     .not("first_name", "is", null)
     .order("updated_at", { ascending: false })
