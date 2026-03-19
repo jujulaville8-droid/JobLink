@@ -237,7 +237,7 @@ function ProfileView({
   profileId: string;
   email: string;
   userId: string;
-  onEdit: () => void;
+  onEdit: (step?: number) => void;
   onAvatarChange: (url: string) => void;
   onVisibilityChange: (value: VisibilityMode) => void;
 }) {
@@ -424,7 +424,7 @@ function ProfileView({
                 uploading={avatarUploading}
               />
               <button
-                onClick={onEdit}
+                onClick={() => onEdit(1)}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0d7377] hover:text-[#095355] transition-colors"
               >
                 <IconPen className="h-3.5 w-3.5" />
@@ -442,7 +442,7 @@ function ProfileView({
           <div className="border-t border-border px-6 py-3 bg-bg-alt/50">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-text-light">Profile {percentage}% complete</span>
-              <button onClick={onEdit} className="font-medium text-[#14919b] hover:underline">
+              <button onClick={() => onEdit(1)} className="font-medium text-[#14919b] hover:underline">
                 Complete profile
               </button>
             </div>
@@ -534,7 +534,7 @@ function ProfileView({
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Resume</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(3)} className="text-sm font-medium text-[#0d7377] hover:underline">
             {profile.cv_url ? "Update" : "Upload"}
           </button>
         </div>
@@ -563,7 +563,7 @@ function ProfileView({
               <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
             </button>
           ) : (
-            <button onClick={onEdit} className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
+            <button onClick={() => onEdit(3)} className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-border">
                 <IconUpload className="h-5 w-5 text-text-muted" />
               </div>
@@ -584,7 +584,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Qualifications</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(2)} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
@@ -636,7 +636,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">About</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(1)} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
@@ -653,7 +653,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Contact Information</h2>
-          <button onClick={onEdit} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(1)} className="text-sm font-medium text-[#0d7377] hover:underline">
             Edit
           </button>
         </div>
@@ -697,6 +697,7 @@ function ProfileEditForm({
   initialProfileId,
   userId,
   isNewProfile,
+  initialStep = 1,
   onSaved,
   onCancel,
 }: {
@@ -704,10 +705,11 @@ function ProfileEditForm({
   initialProfileId: string | null;
   userId: string;
   isNewProfile: boolean;
+  initialStep?: number;
   onSaved: (profile: ProfileData, profileId: string) => void;
   onCancel: () => void;
 }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(initialStep);
   const [profile, setProfile] = useState<ProfileData>(initialProfile);
   const [profileId, setProfileId] = useState<string | null>(initialProfileId);
   const [saving, setSaving] = useState(false);
@@ -1226,6 +1228,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mode, setMode] = useState<"view" | "edit">("edit");
+  const [editStep, setEditStep] = useState(1);
 
   useEffect(() => {
     // Wait for AuthProvider to finish loading
@@ -1325,7 +1328,7 @@ export default function ProfilePage() {
         profileId={profileId!}
         email={email}
         userId={userId!}
-        onEdit={() => setMode("edit")}
+        onEdit={(step) => { setEditStep(step ?? 1); setMode("edit"); }}
         onAvatarChange={(url) => {
           setProfile((p) => ({ ...p, avatar_url: url }));
           setGlobalAvatarUrl(url);
@@ -1337,10 +1340,12 @@ export default function ProfilePage() {
 
   return (
     <ProfileEditForm
+      key={editStep}
       initialProfile={profile}
       initialProfileId={profileId}
       userId={userId!}
       isNewProfile={isNewProfile}
+      initialStep={editStep}
       onSaved={(savedProfile, savedId) => {
         setProfile(savedProfile);
         setProfileId(savedId);

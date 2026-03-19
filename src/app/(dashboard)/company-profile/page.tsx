@@ -90,8 +90,6 @@ export default function CompanyProfilePage() {
     const errs: Record<string, string> = {};
     if (!form.company_name.trim())
       errs.company_name = 'Company name is required';
-    if (form.website && !/^https?:\/\/.+/.test(form.website))
-      errs.website = 'Please enter a valid URL starting with http:// or https://';
     return errs;
   }
 
@@ -460,7 +458,7 @@ export default function CompanyProfilePage() {
             type="url"
             value={form.website}
             onChange={(e) => updateField('website', e.target.value)}
-            placeholder="https://www.example.com"
+            placeholder="www.example.com"
             className={`mt-1 block w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary ${
               errors.website ? 'border-red-400 bg-red-50' : 'border-border'
             }`}
