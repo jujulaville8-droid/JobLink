@@ -28,6 +28,77 @@ const VISIBILITY_OPTIONS: {
   },
 ];
 
+function SubscriptionSection() {
+  const [isPro, setIsPro] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [canceled, setCanceled] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  useEffect(() => {
+    async function check() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: company } = await supabase
+        .from("companies")
+        .select("is_pro")
+        .eq("user_id", user.id)
+        .single();
+      if (company?.is_pro) setIsPro(true);
+    }
+    check();
+  }, []);
+
+  async function handleCancel() {
+    setCanceling(true);
+    try {
+      const res = await fetch("/api/stripe/cancel-subscription", { method: "POST" });
+      if (res.ok) setCanceled(true);
+    } catch { /* ignore */ }
+    setCanceling(false);
+    setShowConfirm(false);
+  }
+
+  if (!isPro) return null;
+
+  return (
+    <section className="mt-6 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">
+      <h2 className="text-sm font-semibold text-text">Subscription</h2>
+      <p className="mt-1 text-xs text-text-muted">
+        You&apos;re on the <span className="font-medium text-primary">JobLink Pro</span> plan.
+      </p>
+      {canceled ? (
+        <p className="mt-3 text-xs text-text-muted">
+          Your subscription will end at the current billing period. You&apos;ll keep Pro access until then.
+        </p>
+      ) : !showConfirm ? (
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="mt-3 text-xs text-text-muted hover:text-red-500 transition-colors"
+        >
+          Cancel subscription
+        </button>
+      ) : (
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            onClick={handleCancel}
+            disabled={canceling}
+            className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors disabled:opacity-50"
+          >
+            {canceling ? "Canceling..." : "Yes, cancel"}
+          </button>
+          <button
+            onClick={() => setShowConfirm(false)}
+            className="text-xs text-text-muted hover:text-text transition-colors"
+          >
+            Never mind
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const { user: authUser, isLoading: authLoading } = useAuth();
@@ -426,6 +497,11 @@ export default function SettingsPage() {
           </button>
         </div>
       </section>
+
+      {/* Subscription — only for Pro employers */}
+      {role === "employer" && (
+        <SubscriptionSection />
+      )}
 
       {/* Delete Account */}
       <section className="mt-6 mb-12 rounded-[--radius-card] border border-red-200 bg-red-50 p-6">
