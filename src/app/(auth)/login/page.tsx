@@ -148,8 +148,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 mx-auto max-w-md">
-      <h1 className="font-display text-2xl text-text text-center mb-6">
+    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14 mx-auto max-w-lg">
+      <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-8">
         Welcome back
       </h1>
 
