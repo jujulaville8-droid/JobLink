@@ -21,7 +21,7 @@ import {
   type JobType,
 } from '@/lib/types';
 
-type SalaryType = 'monthly' | 'hourly';
+type SalaryType = 'hourly' | 'weekly' | 'biweekly' | 'monthly';
 
 interface FormData {
   title: string;
@@ -609,8 +609,10 @@ export default function PostJobPage() {
                 </label>
                 <div className="flex gap-2">
                   {([
-                    { value: 'monthly' as SalaryType, label: 'Monthly' },
                     { value: 'hourly' as SalaryType, label: 'Hourly' },
+                    { value: 'weekly' as SalaryType, label: 'Weekly' },
+                    { value: 'biweekly' as SalaryType, label: 'Bi-Weekly' },
+                    { value: 'monthly' as SalaryType, label: 'Monthly' },
                   ]).map(({ value, label }) => (
                     <label
                       key={value}
@@ -638,12 +640,12 @@ export default function PostJobPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                    {form.salary_type === 'hourly' ? 'Min Rate (XCD/hr)' : 'Min Salary (XCD)'}
+                    {form.salary_type === 'hourly' ? 'Min Rate (XCD/hr)' : form.salary_type === 'weekly' ? 'Min Pay (XCD/wk)' : form.salary_type === 'biweekly' ? 'Min Pay (XCD/2wk)' : 'Min Salary (XCD/mo)'}
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
-                    placeholder={form.salary_type === 'hourly' ? 'e.g. 25' : 'e.g. 2000'}
+                    placeholder={form.salary_type === 'hourly' ? 'e.g. 25' : form.salary_type === 'weekly' ? 'e.g. 500' : form.salary_type === 'biweekly' ? 'e.g. 1000' : 'e.g. 2000'}
                     value={form.salary_min}
                     onChange={(e) => {
                       const v = e.target.value.replace(/[^0-9]/g, '');
@@ -664,12 +666,12 @@ export default function PostJobPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                    {form.salary_type === 'hourly' ? 'Max Rate (XCD/hr)' : 'Max Salary (XCD)'}
+                    {form.salary_type === 'hourly' ? 'Max Rate (XCD/hr)' : form.salary_type === 'weekly' ? 'Max Pay (XCD/wk)' : form.salary_type === 'biweekly' ? 'Max Pay (XCD/2wk)' : 'Max Salary (XCD/mo)'}
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
-                    placeholder={form.salary_type === 'hourly' ? 'e.g. 50' : 'e.g. 5000'}
+                    placeholder={form.salary_type === 'hourly' ? 'e.g. 50' : form.salary_type === 'weekly' ? 'e.g. 1000' : form.salary_type === 'biweekly' ? 'e.g. 2000' : 'e.g. 5000'}
                     value={form.salary_max}
                     onChange={(e) => {
                       const v = e.target.value.replace(/[^0-9]/g, '');
@@ -820,7 +822,7 @@ export default function PostJobPage() {
                     <p className="text-sm font-semibold text-emerald-600">
                       {formatSalaryPreview(form.salary_min, form.salary_max)}
                       <span className="text-emerald-500 font-normal text-xs ml-1">
-                        {form.salary_type === 'hourly' ? '/hr' : '/mo'}
+                        {{ hourly: '/hr', weekly: '/wk', biweekly: '/2wk', monthly: '/mo' }[form.salary_type]}
                       </span>
                     </p>
                   </div>
