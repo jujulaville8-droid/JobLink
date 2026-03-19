@@ -1,6 +1,6 @@
 "use client"
 
-import { Star, MessageCircle, UserPlus, MapPin } from "lucide-react"
+import { Star, MessageCircle, UserPlus, MapPin, Briefcase, GraduationCap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
@@ -14,6 +14,9 @@ type ProfileCardProps = {
   isVerified?: boolean
   location?: string | null
   experienceYears?: number | null
+  bio?: string | null
+  education?: string | null
+  userId?: string | null
 }
 
 export default function CandidateProfileCard({
@@ -25,6 +28,9 @@ export default function CandidateProfileCard({
   tags = [],
   location,
   experienceYears,
+  bio,
+  education,
+  userId,
 }: ProfileCardProps) {
   const initial = name.charAt(0).toUpperCase() || "?"
 
@@ -40,104 +46,127 @@ export default function CandidateProfileCard({
     name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % colors.length
 
   return (
-    <Link href={`/candidates/${id}`} className="block h-full">
-      <div className="group relative overflow-hidden rounded-3xl bg-white p-6 shadow-[8px_8px_16px_rgba(0,0,0,0.08),-8px_-8px_16px_rgba(255,255,255,0.9)] transition-all duration-500 hover:shadow-[12px_12px_24px_rgba(0,0,0,0.12),-12px_-12px_24px_rgba(255,255,255,1)] hover:scale-[1.02] hover:-translate-y-1 h-[340px] flex flex-col">
-        {/* Status indicator */}
-        <div className="absolute right-4 top-4 z-10">
-          <div className="relative">
-            <div
-              className={cn(
-                "h-3 w-3 rounded-full border-2 border-white transition-all duration-300 group-hover:scale-125",
-                status === "actively_looking"
-                  ? "bg-green-500 group-hover:shadow-[0_0_20px_rgba(34,197,94,0.6)]"
-                  : status === "open"
-                    ? "bg-amber-500"
-                    : "bg-gray-400",
-              )}
-            />
-            {status === "actively_looking" && (
-              <div className="absolute inset-0 h-3 w-3 rounded-full bg-green-500 animate-ping opacity-30" />
+    <div className="group relative overflow-hidden rounded-2xl bg-white border border-border transition-all duration-300 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5 flex flex-col">
+      {/* Status indicator */}
+      <div className="absolute right-3 top-3 z-10">
+        <div className="relative">
+          <div
+            className={cn(
+              "h-2.5 w-2.5 rounded-full border-2 border-white transition-all duration-300",
+              status === "actively_looking"
+                ? "bg-green-500"
+                : status === "open"
+                  ? "bg-amber-500"
+                  : "bg-gray-400",
+            )}
+          />
+          {status === "actively_looking" && (
+            <div className="absolute inset-0 h-2.5 w-2.5 rounded-full bg-green-500 animate-ping opacity-30" />
+          )}
+        </div>
+      </div>
+
+      {/* Top section — avatar + name */}
+      <div className="px-5 pt-5 pb-3">
+        <div className="flex items-center gap-3.5">
+          <div className="shrink-0">
+            {avatar ? (
+              <img
+                src={avatar}
+                alt={name}
+                className="h-14 w-14 rounded-full object-cover ring-2 ring-border"
+              />
+            ) : (
+              <div
+                className={`h-14 w-14 rounded-full ${colors[colorIndex]} flex items-center justify-center text-white text-lg font-bold ring-2 ring-white`}
+              >
+                {initial}
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Profile Photo */}
-        <div className="mb-4 flex justify-center relative z-10">
-          <div className="relative">
-            <div className="h-24 w-24 overflow-hidden rounded-full bg-white p-1 shadow-[inset_4px_4px_8px_rgba(0,0,0,0.08),inset_-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-500 group-hover:shadow-[inset_6px_6px_12px_rgba(0,0,0,0.1),inset_-6px_-6px_12px_rgba(255,255,255,1)] group-hover:scale-110">
-              {avatar ? (
-                <img
-                  src={avatar}
-                  alt={name}
-                  className="h-full w-full rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <div
-                  className={`h-full w-full rounded-full ${colors[colorIndex]} flex items-center justify-center text-white text-2xl font-bold`}
-                >
-                  {initial}
-                </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold text-text truncate group-hover:text-primary transition-colors">
+              {name}
+            </h3>
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-text-muted">
+              {location && (
+                <span className="flex items-center gap-0.5 truncate">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  {location}
+                </span>
+              )}
+              {experienceYears != null && (
+                <span className="flex items-center gap-0.5 shrink-0">
+                  <Briefcase className="h-3 w-3" />
+                  {experienceYears} {experienceYears === 1 ? "yr" : "yrs"}
+                </span>
               )}
             </div>
-            <div className="absolute inset-0 rounded-full border-2 border-primary/40 opacity-0 group-hover:opacity-100 transition-all duration-500" />
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium mt-1.5",
+                status === "actively_looking"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-blue-50 text-blue-700"
+              )}
+            >
+              {status === "actively_looking" ? "Actively Looking" : "Open"}
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Profile Info */}
-        <div className="text-center relative z-10 transition-transform duration-300 group-hover:-translate-y-1">
-          <h3 className="text-base font-semibold text-text transition-colors duration-300 group-hover:text-primary truncate">
-            {name}
-          </h3>
-
-          {/* Location + experience */}
-          <div className="mt-1.5 flex items-center justify-center gap-3 text-sm text-text-light min-h-[20px]">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
-              {location || "—"}
-            </span>
-            <span>
-              {experienceYears != null
-                ? `${experienceYears} ${experienceYears === 1 ? "yr" : "yrs"} exp`
-                : "—"}
-            </span>
-          </div>
-
-          {/* Status label */}
-          <p className="mt-2 text-xs text-text-muted transition-all duration-300 group-hover:text-primary group-hover:font-medium">
-            {status === "actively_looking" ? "Actively Looking" : "Open to Opportunities"}
+      {/* Bio snippet */}
+      {bio && (
+        <div className="px-5 pb-2">
+          <p className="text-xs text-text-light leading-relaxed line-clamp-2">
+            {bio}
           </p>
         </div>
+      )}
 
-        {/* Skill Tags */}
-        <div className="mt-4 flex justify-center flex-wrap gap-1.5 relative z-10 min-h-[28px]">
-          {tags.length > 0
-            ? tags.map((tag, i) => (
-                <span
-                  key={i}
-                  className="inline-block rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-text-light shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)] transition-all duration-300 group-hover:scale-105 truncate max-w-[120px]"
-                >
-                  {tag}
-                </span>
-              ))
-            : <span className="text-[11px] text-text-muted">—</span>
-          }
+      {/* Education */}
+      {education && (
+        <div className="px-5 pb-2">
+          <div className="flex items-center gap-1.5 text-xs text-text-muted">
+            <GraduationCap className="h-3 w-3 shrink-0" />
+            <span className="truncate">{education}</span>
+          </div>
         </div>
+      )}
 
-        {/* Action Buttons */}
-        <div className="mt-auto pt-4 flex gap-2 relative z-10">
-          <span className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-primary shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:bg-primary/5 group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]">
-            <UserPlus className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">View Profile</span>
-          </span>
-          <span className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-text-light shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 group-hover:bg-gray-50 group-hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]">
-            <MessageCircle className="h-4 w-4 mr-1.5" />
-            <span className="text-xs">Contact</span>
-          </span>
-        </div>
-
-        {/* Animated border on hover */}
-        <div className="absolute inset-0 rounded-3xl border border-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      {/* Skills */}
+      <div className="px-5 pb-3 flex flex-wrap gap-1 min-h-[24px]">
+        {tags.length > 0
+          ? tags.map((tag, i) => (
+              <span
+                key={i}
+                className="inline-block rounded-md bg-bg-alt px-2 py-0.5 text-[10px] font-medium text-text-muted truncate max-w-[100px]"
+              >
+                {tag}
+              </span>
+            ))
+          : null
+        }
       </div>
-    </Link>
+
+      {/* Actions */}
+      <div className="mt-auto border-t border-border flex">
+        <Link
+          href={`/candidates/${id}`}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium text-text-light hover:text-primary hover:bg-primary/5 transition-colors border-r border-border"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          View Profile
+        </Link>
+        <Link
+          href={`/candidates/${id}?invite=true`}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium text-primary hover:bg-primary/5 transition-colors"
+        >
+          <MessageCircle className="h-3.5 w-3.5" />
+          Invite to Apply
+        </Link>
+      </div>
+    </div>
   )
 }

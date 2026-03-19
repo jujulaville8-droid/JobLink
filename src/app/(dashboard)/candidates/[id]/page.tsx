@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import InviteToApplyButton from "@/components/InviteToApplyButton";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -86,6 +87,9 @@ export default async function CandidateProfilePage({ params }: PageProps) {
                     ? "Actively Looking"
                     : "Open to Opportunities"}
                 </span>
+              </div>
+              <div className="mt-3">
+                <InviteToApplyButton candidateName={fullName} candidateUserId={profile.user_id} />
               </div>
             </div>
           </div>

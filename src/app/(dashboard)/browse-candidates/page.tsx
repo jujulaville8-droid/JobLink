@@ -129,6 +129,9 @@ async function CandidateResults({
               tags={skills}
               location={profile.location}
               experienceYears={profile.experience_years}
+              bio={profile.bio}
+              education={profile.education}
+              userId={profile.user_id}
             />
           );
         })}
