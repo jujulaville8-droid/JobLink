@@ -32,7 +32,7 @@ interface FormData {
   salary_max: string;
   salary_type: SalaryType;
   salary_visible: boolean;
-  duration: '30' | '60';
+  duration: '7' | 'unlimited';
 }
 
 interface FormErrors {
@@ -74,6 +74,7 @@ export default function PostJobPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(true);
   const [listingGated, setListingGated] = useState(false);
+  const [isPro, setIsPro] = useState(false);
   const [form, setForm] = useState<FormData>({
     title: '',
     description: '',
@@ -83,7 +84,7 @@ export default function PostJobPage() {
     salary_max: '',
     salary_type: 'monthly' as SalaryType,
     salary_visible: true,
-    duration: '30',
+    duration: '7',
   });
 
   // Load data: check Pro status + active listing count, and load edit data if needed
@@ -111,6 +112,8 @@ export default function PostJobPage() {
         setLoading(false);
         return;
       }
+
+      if (company.is_pro) setIsPro(true);
 
       // For new listings: check if non-Pro employer already has an active listing
       if (!editId && !company.is_pro) {
@@ -152,7 +155,7 @@ export default function PostJobPage() {
           salary_max: listing.salary_max ? String(listing.salary_max) : '',
           salary_type: (listing.salary_type as SalaryType) || 'monthly',
           salary_visible: listing.salary_visible ?? true,
-          duration: '30',
+          duration: '7',
         });
       }
 
@@ -273,9 +276,13 @@ export default function PostJobPage() {
         }
       } else {
         // Create new listing
-        const now = new Date();
-        const expiresAt = new Date(now);
-        expiresAt.setDate(expiresAt.getDate() + Number(form.duration));
+        let expiresAtStr: string | null = null;
+        if (form.duration !== 'unlimited') {
+          const now = new Date();
+          const expiresAt = new Date(now);
+          expiresAt.setDate(expiresAt.getDate() + Number(form.duration));
+          expiresAtStr = expiresAt.toISOString();
+        }
 
         const { error: insertError } = await supabase
           .from('job_listings')
@@ -284,7 +291,7 @@ export default function PostJobPage() {
             ...listingData,
             requires_work_permit: false,
             status: 'pending_approval',
-            expires_at: expiresAt.toISOString(),
+            expires_at: expiresAtStr,
           });
 
         if (insertError) {
@@ -733,29 +740,64 @@ export default function PostJobPage() {
               </div>
 
               <div className="flex gap-3">
-                {(['30', '60'] as const).map((d) => (
-                  <label
-                    key={d}
-                    className={cn(
-                      'cursor-pointer rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
-                      form.duration === d
-                        ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                        : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="duration"
-                      value={d}
-                      checked={form.duration === d}
-                      onChange={() => updateField('duration', d)}
-                      className="sr-only"
-                    />
-                    <span className="text-lg font-bold block">{d}</span>
-                    <span className="text-xs">days</span>
-                  </label>
-                ))}
+                {/* 7 days — free */}
+                <label
+                  className={cn(
+                    'cursor-pointer rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
+                    form.duration === '7'
+                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
+                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="duration"
+                    value="7"
+                    checked={form.duration === '7'}
+                    onChange={() => updateField('duration', '7')}
+                    className="sr-only"
+                  />
+                  <span className="text-lg font-bold block">7</span>
+                  <span className="text-xs">days</span>
+                </label>
+
+                {/* Unlimited — Pro only */}
+                <label
+                  className={cn(
+                    'relative rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
+                    !isPro && 'opacity-60 cursor-not-allowed',
+                    isPro && 'cursor-pointer',
+                    form.duration === 'unlimited'
+                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
+                      : isPro
+                        ? 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
+                        : 'border-border/60 text-text-muted'
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="duration"
+                    value="unlimited"
+                    checked={form.duration === 'unlimited'}
+                    onChange={() => { if (isPro) updateField('duration', 'unlimited'); }}
+                    disabled={!isPro}
+                    className="sr-only"
+                  />
+                  <span className="text-lg font-bold block">&infin;</span>
+                  <span className="text-xs">unlimited</span>
+                  {!isPro && (
+                    <span className="absolute -top-2 -right-2 rounded-full bg-amber-400 text-amber-950 text-[9px] font-bold uppercase px-1.5 py-0.5 tracking-wider">
+                      Pro
+                    </span>
+                  )}
+                </label>
               </div>
+
+              {!isPro && form.duration === '7' && (
+                <p className="mt-3 text-xs text-text-muted">
+                  <a href="/employers/upgrade" className="text-primary font-medium hover:underline">Upgrade to Pro</a> for unlimited listing duration.
+                </p>
+              )}
             </motion.div>
           )}
 
@@ -840,7 +882,7 @@ export default function PostJobPage() {
               <div className="mt-4 flex items-center gap-2 border-t border-border/40 pt-4">
                 <HugeiconsIcon icon={Clock01Icon} size={12} className="text-text-muted" />
                 <span className="text-xs text-text-muted">
-                  {editId ? 'Editing listing' : `Listing expires after ${form.duration} days`}
+                  {editId ? 'Editing listing' : form.duration === 'unlimited' ? 'Listing stays active until you close it' : `Listing expires after ${form.duration} days`}
                 </span>
               </div>
             </div>
