@@ -154,7 +154,7 @@ export default async function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a2e2f]/80 via-black/60 to-[#0a2e2f]/75" />
         </div>
 
-        <div className="relative mx-auto max-w-3xl px-6 sm:px-8 py-24 sm:py-32 lg:py-36 w-full">
+        <div className="relative mx-auto max-w-3xl px-6 sm:px-8 pt-24 sm:pt-32 lg:pt-36 pb-16 sm:pb-20 lg:pb-24 w-full">
           <div className="text-center">
             <h1 className="animate-fade-up font-display text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] text-white leading-[1.12] tracking-tight">
               Get hired today!
@@ -176,36 +176,32 @@ export default async function Home() {
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full h-auto">
-            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="var(--color-bg)" />
-          </svg>
-        </div>
       </section>
 
-      {/* ===== COMPANIES HIRING ===== */}
-      {hiringCompanies.length > 0 && (
-        <div className="bg-bg">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
-            <p className="text-center text-text-muted/60 text-[10px] font-semibold uppercase tracking-[0.25em] mb-4">
-              Companies hiring now
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-3">
-              {hiringCompanies.map((name) => (
-                <span
-                  key={name}
-                  className="text-text-muted/70 font-bold text-[13px] tracking-wide"
-                >
-                  {name}
-                </span>
-              ))}
+      {/* ===== COMPANIES HIRING + FEATURED JOBS ===== */}
+      <section className="relative bg-bg">
+        {/* Overlap container — pulls up into the hero */}
+        {hiringCompanies.length > 0 && (
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 -mt-6 relative z-10">
+            <div className="rounded-2xl bg-white border border-border/60 shadow-lg shadow-black/[0.04] px-6 sm:px-8 py-5">
+              <p className="text-center text-text-muted/60 text-[10px] font-semibold uppercase tracking-[0.25em] mb-3">
+                Companies hiring now
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
+                {hiringCompanies.map((name) => (
+                  <span
+                    key={name}
+                    className="text-text/60 font-bold text-[13px] tracking-wide"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ===== FEATURED JOBS ===== */}
-      <section className="bg-bg py-16 sm:py-20">
+        <div className={hiringCompanies.length > 0 ? "pt-12 sm:pt-14 pb-16 sm:pb-20" : "py-16 sm:py-20"}>
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -243,6 +239,7 @@ export default async function Home() {
               </svg>
             </Link>
           </div>
+        </div>
         </div>
       </section>
 
