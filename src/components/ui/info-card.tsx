@@ -144,20 +144,20 @@ export default function CandidateProfileCard({
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-auto pt-4 flex gap-2 relative z-10">
+      <div className="mt-auto pt-5 flex flex-col gap-2 relative z-10">
         <Link
           href={`/candidates/${id}`}
-          className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-primary shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 hover:bg-primary/5 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]"
+          className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white transition-all duration-200 hover:bg-primary-dark hover:shadow-md"
         >
-          <UserPlus className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">View Profile</span>
+          <UserPlus className="h-3.5 w-3.5" />
+          View Profile
         </Link>
         <Link
           href={`/candidates/${id}?invite=true`}
-          className="flex-1 flex items-center justify-center rounded-full bg-white py-3 text-sm font-medium text-text-light shadow-[4px_4px_8px_rgba(0,0,0,0.08),-4px_-4px_8px_rgba(255,255,255,0.9)] transition-all duration-300 hover:bg-gray-50 hover:shadow-[2px_2px_4px_rgba(0,0,0,0.05),-2px_-2px_4px_rgba(255,255,255,0.8)]"
+          className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-text-light transition-all duration-200 hover:border-primary/30 hover:text-primary hover:bg-primary/5"
         >
-          <MessageCircle className="h-4 w-4 mr-1.5" />
-          <span className="text-xs">Invite to Apply</span>
+          <MessageCircle className="h-3.5 w-3.5" />
+          Invite to Apply
         </Link>
       </div>
 
