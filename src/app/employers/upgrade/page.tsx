@@ -96,13 +96,12 @@ export default function UpgradePage() {
 
           {/* Price */}
           <div className="mt-6 text-center">
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-5xl font-bold font-display text-text">
-                $97
-              </span>
-              <span className="text-lg text-text-light">XCD/mo</span>
+            <div className="flex items-baseline justify-center gap-0.5">
+              <span className="text-2xl font-semibold text-text-muted align-top leading-none translate-y-1">$</span>
+              <span className="text-5xl font-bold font-display text-text leading-none">97</span>
+              <span className="ml-1.5 text-base text-text-muted">XCD / mo</span>
             </div>
-            <p className="mt-1.5 text-sm text-text-muted">Cancel anytime.</p>
+            <p className="mt-2 text-sm text-text-muted">Cancel anytime.</p>
           </div>
 
           {/* Divider */}
