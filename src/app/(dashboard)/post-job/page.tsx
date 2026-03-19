@@ -75,6 +75,8 @@ export default function PostJobPage() {
   const [loading, setLoading] = useState(true);
   const [listingGated, setListingGated] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
     title: '',
     description: '',
@@ -103,7 +105,7 @@ export default function PostJobPage() {
 
       const { data: company } = await supabase
         .from('companies')
-        .select('id, is_pro')
+        .select('id, is_pro, company_name, logo_url')
         .eq('user_id', user.id)
         .single();
 
@@ -114,6 +116,8 @@ export default function PostJobPage() {
       }
 
       if (company.is_pro) setIsPro(true);
+      if (company.company_name) setCompanyName(company.company_name);
+      if (company.logo_url) setCompanyLogo(company.logo_url);
 
       // For new listings: check if non-Pro employer already has an active listing
       if (!editId && !company.is_pro) {
@@ -181,6 +185,10 @@ export default function PostJobPage() {
     if (!form.title.trim()) errs.title = 'Job title is required';
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Please select a category';
+    if (form.duration === 'unlimited' && !isPro) {
+      // Force back to 7 days if somehow set without Pro
+      updateField('duration', '7');
+    }
     if (form.salary_min && form.salary_max) {
       if (Number(form.salary_min) > Number(form.salary_max)) {
         errs.salary_max = 'Max salary must be greater than min salary';
@@ -827,7 +835,7 @@ export default function PostJobPage() {
           </motion.div>
         </form>
 
-        {/* Preview */}
+        {/* Preview — exact replica of JobCard */}
         <div className="lg:col-span-2">
           <motion.div variants={item} className="sticky top-20">
             <div className="flex items-center gap-2.5 mb-3">
@@ -839,52 +847,88 @@ export default function PostJobPage() {
               </h2>
             </div>
 
-            <div className={cn(cardBase, 'p-6 hover:shadow-lg hover:shadow-primary/5')}>
-              <h3 className="text-lg font-semibold text-text">
-                {form.title || 'Job Title'}
-              </h3>
+            <p className="text-[11px] text-text-muted mb-2">This is exactly how job seekers will see your listing.</p>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center rounded-lg bg-primary/5 px-2.5 py-1 text-xs font-medium text-primary">
-                  {JOB_TYPE_LABELS[form.job_type]}
-                </span>
-                {form.category && (
-                  <span className="inline-flex items-center rounded-lg bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-muted">
-                    {form.category}
-                  </span>
-                )}
-              </div>
-
-              {form.salary_visible &&
-                (form.salary_min || form.salary_max) && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                      <HugeiconsIcon icon={MoneyBag02Icon} size={14} className="text-emerald-600" />
-                    </div>
-                    <p className="text-sm font-semibold text-emerald-600">
-                      {formatSalaryPreview(form.salary_min, form.salary_max)}
-                      <span className="text-emerald-500 font-normal text-xs ml-1">
-                        {{ hourly: '/hr', weekly: '/wk', biweekly: '/2wk', monthly: '/mo', annually: '/yr' }[form.salary_type]}
-                      </span>
-                    </p>
+            {/* JobCard replica */}
+            <div className={`group relative rounded-[--radius-card] transition-all duration-300 p-5 cursor-pointer ${
+              isPro
+                ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
+                : "bg-white border border-border hover:border-primary/20 hover-lift"
+            }`}>
+              <div className="flex items-start gap-3.5">
+                {companyLogo ? (
+                  <img
+                    src={companyLogo}
+                    alt={companyName}
+                    className="shrink-0 h-11 w-11 rounded-xl object-cover border border-border"
+                  />
+                ) : (
+                  <div className="shrink-0 h-11 w-11 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-sm">
+                    {(companyName || 'C').charAt(0).toUpperCase()}
                   </div>
                 )}
 
-              {form.description && (
-                <div className="mt-4 border-t border-border/40 pt-4">
-                  <p className="whitespace-pre-wrap text-sm text-text-muted leading-relaxed line-clamp-6">
-                    {form.description}
-                  </p>
-                </div>
-              )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
+                      {form.title || 'Job Title'}
+                    </h3>
+                    {isPro ? (
+                      <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm shadow-amber-300/40">
+                        Featured
+                      </span>
+                    ) : (
+                      <span className="shrink-0 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                        New
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-text-muted text-[13px] mt-0.5">{companyName || 'Your Company'}</p>
 
-              <div className="mt-4 flex items-center gap-2 border-t border-border/40 pt-4">
-                <HugeiconsIcon icon={Clock01Icon} size={12} className="text-text-muted" />
-                <span className="text-xs text-text-muted">
-                  {editId ? 'Editing listing' : form.duration === 'unlimited' ? 'Listing stays active until you close it' : `Listing expires after ${form.duration} days`}
+                  <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                    <span className="flex items-center gap-1 text-xs text-text-light">
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                      </svg>
+                      Antigua
+                    </span>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                      ({
+                        full_time: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+                        part_time: "bg-primary/5 text-primary border border-primary/20",
+                        contract: "bg-accent-warm/10 text-amber-700 border border-accent-warm/20",
+                        seasonal: "bg-coral/10 text-orange-700 border border-coral/20",
+                      } as Record<string, string>)[form.job_type] ?? "bg-bg-alt text-text-light border border-border"
+                    }`}>
+                      {JOB_TYPE_LABELS[form.job_type]}
+                    </span>
+                  </div>
+
+                  {form.salary_visible && (form.salary_min || form.salary_max) && (
+                    <p className="text-[13px] font-semibold text-text mt-2.5">
+                      {formatSalaryPreview(form.salary_min, form.salary_max)}
+                      <span className="text-text-muted font-normal text-[11px] ml-1">
+                        {{ hourly: '/hr', weekly: '/wk', biweekly: '/2wk', monthly: '/mo', annually: '/yr' }[form.salary_type]}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom actions (visual only) */}
+              <div className="absolute bottom-4 right-4 flex items-center gap-2.5">
+                <span className="text-border">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                  </svg>
                 </span>
               </div>
             </div>
+
+            <p className="mt-3 text-[11px] text-text-muted text-center">
+              {editId ? 'Editing listing' : form.duration === 'unlimited' ? 'Stays active until you close it' : `Expires after ${form.duration} days`}
+            </p>
           </motion.div>
         </div>
       </div>
