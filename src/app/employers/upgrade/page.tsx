@@ -259,7 +259,7 @@ export default function UpgradePage() {
           <p className="mb-4 text-center text-sm font-medium text-text-muted">
             This is how your listings will appear to job seekers
           </p>
-          <div className="rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
+          <div className="rounded-[--radius-card] bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30 p-5">
             <div className="flex items-start gap-3.5">
               <div className="shrink-0 h-11 w-11 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-sm">
                 {companyName.charAt(0).toUpperCase()}
