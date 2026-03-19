@@ -1000,15 +1000,27 @@ function ProfileEditForm({
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-text-light mb-1">Phone</label>
-              <input
-                type="tel"
-                value={profile.phone}
-                onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
-                placeholder="+1 (268) 555-0123"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-text-light mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  placeholder="+1 (268) 555-0123"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-light mb-1">Location</label>
+                <input
+                  type="text"
+                  value={profile.location}
+                  onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  placeholder="St. John's, Antigua"
+                />
+              </div>
             </div>
 
             <div>
