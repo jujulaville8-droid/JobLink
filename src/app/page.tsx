@@ -378,7 +378,7 @@ export default async function Home() {
               {
                 icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
                 title: "Fast & Simple",
-                desc: "Create a profile in minutes. Apply with one click. No bloated onboarding, no unnecessary steps.",
+                desc: "Create a profile in minutes. Apply with one click. No hard-to-use systems, no unnecessary steps.",
               },
             ].map((item) => (
               <div key={item.title} className="rounded-2xl border border-border bg-bg p-6 text-center">
