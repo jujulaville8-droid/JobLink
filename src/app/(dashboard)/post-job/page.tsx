@@ -256,7 +256,6 @@ export default function PostJobPage() {
         job_type: form.job_type,
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
-        salary_type: form.salary_type,
         salary_visible: form.salary_visible,
       };
 
