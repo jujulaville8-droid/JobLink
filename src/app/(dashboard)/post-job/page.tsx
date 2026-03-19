@@ -21,6 +21,8 @@ import {
   type JobType,
 } from '@/lib/types';
 
+type SalaryType = 'monthly' | 'hourly';
+
 interface FormData {
   title: string;
   description: string;
@@ -28,6 +30,7 @@ interface FormData {
   job_type: JobType;
   salary_min: string;
   salary_max: string;
+  salary_type: SalaryType;
   salary_visible: boolean;
   duration: '30' | '60';
 }
@@ -78,6 +81,7 @@ export default function PostJobPage() {
     job_type: 'full_time',
     salary_min: '',
     salary_max: '',
+    salary_type: 'monthly' as SalaryType,
     salary_visible: true,
     duration: '30',
   });
@@ -146,6 +150,7 @@ export default function PostJobPage() {
           job_type: (listing.job_type as JobType) || 'full_time',
           salary_min: listing.salary_min ? String(listing.salary_min) : '',
           salary_max: listing.salary_max ? String(listing.salary_max) : '',
+          salary_type: (listing.salary_type as SalaryType) || 'monthly',
           salary_visible: listing.salary_visible ?? true,
           duration: '30',
         });
@@ -248,6 +253,7 @@ export default function PostJobPage() {
         job_type: form.job_type,
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
+        salary_type: form.salary_type,
         salary_visible: form.salary_visible,
       };
 
@@ -596,17 +602,53 @@ export default function PostJobPage() {
             </div>
 
             <div className="space-y-5">
+              {/* Pay type toggle */}
+              <div>
+                <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                  Pay Type
+                </label>
+                <div className="flex gap-2">
+                  {([
+                    { value: 'monthly' as SalaryType, label: 'Monthly' },
+                    { value: 'hourly' as SalaryType, label: 'Hourly' },
+                  ]).map(({ value, label }) => (
+                    <label
+                      key={value}
+                      className={cn(
+                        'cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200',
+                        form.salary_type === value
+                          ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
+                          : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        name="salary_type"
+                        value={value}
+                        checked={form.salary_type === value}
+                        onChange={() => updateField('salary_type', value)}
+                        className="sr-only"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                    Min Salary (XCD)
+                    {form.salary_type === 'hourly' ? 'Min Rate (XCD/hr)' : 'Min Salary (XCD)'}
                   </label>
                   <input
-                    type="number"
-                    placeholder="e.g. 2000"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={form.salary_type === 'hourly' ? 'e.g. 25' : 'e.g. 2000'}
                     value={form.salary_min}
-                    onChange={(e) => updateField('salary_min', e.target.value)}
-                    min={0}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9]/g, '');
+                      updateField('salary_min', v);
+                    }}
                     className={cn(
                       inputBase,
                       errors.salary_min
@@ -622,14 +664,17 @@ export default function PostJobPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                    Max Salary (XCD)
+                    {form.salary_type === 'hourly' ? 'Max Rate (XCD/hr)' : 'Max Salary (XCD)'}
                   </label>
                   <input
-                    type="number"
-                    placeholder="e.g. 5000"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={form.salary_type === 'hourly' ? 'e.g. 50' : 'e.g. 5000'}
                     value={form.salary_max}
-                    onChange={(e) => updateField('salary_max', e.target.value)}
-                    min={0}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/[^0-9]/g, '');
+                      updateField('salary_max', v);
+                    }}
                     className={cn(
                       inputBase,
                       errors.salary_max
@@ -774,6 +819,9 @@ export default function PostJobPage() {
                     </div>
                     <p className="text-sm font-semibold text-emerald-600">
                       {formatSalaryPreview(form.salary_min, form.salary_max)}
+                      <span className="text-emerald-500 font-normal text-xs ml-1">
+                        {form.salary_type === 'hourly' ? '/hr' : '/mo'}
+                      </span>
                     </p>
                   </div>
                 )}
