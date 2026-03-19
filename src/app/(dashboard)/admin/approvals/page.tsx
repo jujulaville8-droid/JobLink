@@ -62,6 +62,18 @@ async function rejectJob(formData: FormData) {
   revalidatePath('/admin/approvals')
 }
 
+interface PendingCompany {
+  id: string
+  company_name: string
+  logo_url: string | null
+  industry: string | null
+  location: string | null
+  website: string | null
+  description: string | null
+  is_verified: boolean
+  is_pro: boolean
+}
+
 interface PendingListing {
   id: string
   title: string
@@ -71,10 +83,7 @@ interface PendingListing {
   salary_min: number | null
   salary_max: number | null
   created_at: string
-  companies: {
-    company_name: string
-    logo_url: string | null
-  }[] | null
+  companies: PendingCompany[] | null
 }
 
 export default async function AdminApprovalsPage() {
@@ -83,7 +92,7 @@ export default async function AdminApprovalsPage() {
 
   const { data: listings, error } = await supabase
     .from('job_listings')
-    .select('id, title, description, job_type, location, salary_min, salary_max, created_at, companies(company_name, logo_url)')
+    .select('id, title, description, job_type, location, salary_min, salary_max, created_at, companies(id, company_name, logo_url, industry, location, website, description, is_verified, is_pro)')
     .eq('status', 'pending_approval')
     .order('created_at', { ascending: true })
 
@@ -231,17 +240,84 @@ export default async function AdminApprovalsPage() {
                   </div>
                 </summary>
 
-                {/* Expanded description */}
-                <div className="border-t border-border px-5 pb-5 pt-4">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-text-light">
-                    Full Description
-                  </h4>
-                  <div className="mt-2 text-sm text-text whitespace-pre-wrap leading-relaxed">
-                    {listing.description}
+                {/* Expanded details */}
+                <div className="border-t border-border px-5 pb-5 pt-4 space-y-5">
+                  {/* Company info card */}
+                  {company && (
+                    <div className="rounded-xl border border-border bg-bg-alt/50 p-4">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-text-light mb-3">
+                        Company Information
+                      </h4>
+                      <div className="flex items-start gap-3">
+                        {company.logo_url ? (
+                          <img src={company.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover border border-border" />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-white font-bold">
+                            {initials}
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-text">{companyName}</p>
+                            {company.is_verified && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700 border border-green-200">
+                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                                Verified
+                              </span>
+                            )}
+                            {company.is_pro && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                                Pro
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-text-light">
+                            {company.industry && (
+                              <p><span className="text-text-muted">Industry:</span> {company.industry}</p>
+                            )}
+                            {company.location && (
+                              <p><span className="text-text-muted">Location:</span> {company.location}</p>
+                            )}
+                            {company.website && (
+                              <p>
+                                <span className="text-text-muted">Website:</span>{' '}
+                                <a href={company.website.startsWith('http') ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                  {company.website}
+                                </a>
+                              </p>
+                            )}
+                          </div>
+                          {company.description && (
+                            <p className="mt-2 text-xs text-text-light leading-relaxed line-clamp-3">
+                              {company.description}
+                            </p>
+                          )}
+                          <a
+                            href={`/companies/${company.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                          >
+                            View full company profile
+                            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Job description */}
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-text-light">
+                      Full Description
+                    </h4>
+                    <div className="mt-2 text-sm text-text whitespace-pre-wrap leading-relaxed">
+                      {listing.description}
+                    </div>
                   </div>
 
                   {/* View listing link */}
-                  <div className="mt-4 pt-4 border-t border-border">
+                  <div className="pt-4 border-t border-border">
                     <a
                       href={`/jobs/${listing.id}`}
                       target="_blank"
