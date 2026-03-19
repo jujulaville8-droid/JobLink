@@ -89,8 +89,14 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
     `Check out this job: ${job.title} at ${job.company_name} — https://joblinkantigua.com/jobs/${job.id}`
   );
 
+  const isFeatured = job.is_featured || job.is_pro_company;
+
   return (
-    <div className="group relative bg-white rounded-[--radius-card] border border-border hover:border-primary/20 transition-all duration-300 p-5 hover-lift">
+    <div className={`group relative rounded-[--radius-card] transition-all duration-300 p-5 hover-lift ${
+      isFeatured
+        ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
+        : "bg-white border border-border hover:border-primary/20"
+    }`}>
       <Link href={`/jobs/${job.id}`} className="block">
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (
@@ -112,12 +118,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
               <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
                 {job.title}
               </h3>
-              {(job.is_featured || job.is_pro_company) && (
-                <span className="shrink-0 bg-amber-400 text-amber-950 text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm">
+              {isFeatured && (
+                <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm shadow-amber-300/40">
                   Featured
                 </span>
               )}
-              {isNew(job.created_at) && !job.is_featured && !job.is_pro_company && (
+              {isNew(job.created_at) && !isFeatured && (
                 <span className="shrink-0 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
                   New
                 </span>
