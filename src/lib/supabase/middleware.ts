@@ -48,9 +48,19 @@ export async function updateSession(request: NextRequest) {
     '/login', '/signup', '/employer/login', '/employer/signup',
     '/forgot-password', '/reset-password', '/verify-email',
     '/auth/', '/about', '/privacy', '/terms', '/explore',
-    '/api/', '/companies',
+    '/api/', '/companies', '/employers/upgrade',
   ]
   const isPublic = pathname === '/' || publicPaths.some(p => pathname.startsWith(p))
+
+  // Protected paths — require login, redirect to signup if not authenticated
+  const authRequiredPaths = ['/jobs', '/browse-jobs']
+  const requiresAuth = authRequiredPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
+
+  if (requiresAuth && !user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/signup'
+    return NextResponse.redirect(url)
+  }
 
   if (!isPublic && user) {
     // Check auth-level verification (primary source of truth)

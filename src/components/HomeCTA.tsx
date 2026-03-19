@@ -25,26 +25,36 @@ export function HeroCTAs() {
         </>
       ) : (
         <>
-          <Link
-            href="/jobs"
-            className="btn-primary w-full sm:w-auto shadow-lg shadow-black/20"
-          >
-            Browse Jobs
-          </Link>
           {!isLoading && isAuthenticated ? (
-            <Link
-              href="/dashboard"
-              className="btn-secondary w-full sm:w-auto"
-            >
-              Go to Dashboard
-            </Link>
+            <>
+              <Link
+                href="/jobs"
+                className="btn-primary w-full sm:w-auto shadow-lg shadow-black/20"
+              >
+                Browse Jobs
+              </Link>
+              <Link
+                href="/dashboard"
+                className="btn-secondary w-full sm:w-auto"
+              >
+                Go to Dashboard
+              </Link>
+            </>
           ) : (
-            <Link
-              href="/employer/signup"
-              className="btn-secondary w-full sm:w-auto"
-            >
-              Post a Job
-            </Link>
+            <>
+              <Link
+                href="/signup"
+                className="btn-primary w-full sm:w-auto shadow-lg shadow-black/20"
+              >
+                Browse Jobs
+              </Link>
+              <Link
+                href="/signup?role=employer"
+                className="btn-secondary w-full sm:w-auto"
+              >
+                Post a Job
+              </Link>
+            </>
           )}
         </>
       )}
