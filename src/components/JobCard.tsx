@@ -15,6 +15,7 @@ export interface Job {
   salary_visible?: boolean;
   created_at: string;
   is_featured?: boolean;
+  is_pro_company?: boolean;
 }
 
 function isNew(dateStr: string): boolean {
@@ -111,12 +112,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
               <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
                 {job.title}
               </h3>
-              {job.is_featured && (
-                <span className="shrink-0 bg-accent-warm text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+              {(job.is_featured || job.is_pro_company) && (
+                <span className="shrink-0 bg-amber-400 text-amber-950 text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm">
                   Featured
                 </span>
               )}
-              {isNew(job.created_at) && !job.is_featured && (
+              {isNew(job.created_at) && !job.is_featured && !job.is_pro_company && (
                 <span className="shrink-0 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
                   New
                 </span>

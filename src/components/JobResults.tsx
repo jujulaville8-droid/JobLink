@@ -45,7 +45,8 @@ export default async function JobResults({
       company:companies (
         id,
         company_name,
-        logo_url
+        logo_url,
+        is_pro
       )
     `,
       { count: "exact" }
@@ -137,6 +138,7 @@ export default async function JobResults({
       id: string;
       company_name: string;
       logo_url: string | null;
+      is_pro: boolean;
     } | null;
 
     return {
@@ -151,7 +153,15 @@ export default async function JobResults({
       salary_visible: job.salary_visible,
       created_at: job.created_at,
       is_featured: job.is_featured,
+      is_pro_company: company?.is_pro ?? false,
     };
+  });
+
+  // Sort: Pro company listings first, then by original order
+  mappedJobs.sort((a, b) => {
+    const aPro = a.is_featured || a.is_pro_company ? 1 : 0;
+    const bPro = b.is_featured || b.is_pro_company ? 1 : 0;
+    return bPro - aPro;
   });
 
   return (
