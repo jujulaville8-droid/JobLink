@@ -132,7 +132,7 @@ export default function UpgradePage() {
               {FREE_FEATURES.map((f) => (
                 <li key={f.text} className="flex items-start gap-2.5">
                   {f.included ? (
-                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-text-muted" />
+                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                   ) : (
                     <XIcon className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                   )}
