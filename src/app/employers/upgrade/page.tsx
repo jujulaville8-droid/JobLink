@@ -125,7 +125,7 @@ export default function UpgradePage() {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-text-muted">Free</h3>
             <div className="mt-3 flex items-baseline gap-0.5">
               <span className="text-3xl font-bold font-display text-text">$0</span>
-              <span className="ml-1 text-sm text-text-muted">XCD / mo</span>
+              <span className="ml-1 text-sm text-text-muted">/ mo</span>
             </div>
             <div className="my-6 border-t border-border" />
             <ul className="space-y-3.5">
@@ -155,10 +155,13 @@ export default function UpgradePage() {
               </span>
             </div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-primary">Pro</h3>
-            <div className="mt-3 flex items-baseline gap-0.5">
-              <span className="text-lg font-semibold text-text-muted leading-none translate-y-0.5">$</span>
-              <span className="text-3xl font-bold font-display text-text">97</span>
-              <span className="ml-1 text-sm text-text-muted">XCD / mo</span>
+            <div className="mt-3">
+              <div className="flex items-baseline gap-0.5">
+                <span className="text-lg font-semibold text-text-muted leading-none translate-y-0.5">$</span>
+                <span className="text-3xl font-bold font-display text-text">20</span>
+                <span className="ml-1 text-sm text-text-muted">USD / mo</span>
+              </div>
+              <p className="mt-1 text-xs text-text-muted">Billed as EC$97</p>
             </div>
             <div className="my-6 border-t border-primary/20" />
             <ul className="space-y-3.5">
@@ -190,10 +193,10 @@ export default function UpgradePage() {
           <div className="mt-6 text-center">
             <div className="flex items-baseline justify-center gap-0.5">
               <span className="text-2xl font-semibold text-text-muted leading-none translate-y-1">$</span>
-              <span className="text-5xl font-bold font-display text-text leading-none">97</span>
-              <span className="ml-1.5 text-base text-text-muted">XCD / mo</span>
+              <span className="text-5xl font-bold font-display text-text leading-none">20</span>
+              <span className="ml-1.5 text-base text-text-muted">USD / mo</span>
             </div>
-            <p className="mt-2 text-sm text-text-muted">Cancel anytime.</p>
+            <p className="mt-1.5 text-sm text-text-muted">Billed as EC$97 &middot; Cancel anytime.</p>
           </div>
 
           <div className="my-8 border-t border-primary/15" />
