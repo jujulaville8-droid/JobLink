@@ -30,7 +30,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         `
         id, title, job_type, salary_min, salary_max, salary_visible,
         location, is_featured, created_at,
-        company:companies ( company_name, logo_url )
+        company:companies ( company_name, logo_url, is_pro )
       `
       )
       .eq("status", "active")
@@ -44,6 +44,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       const company = job.company as unknown as {
         company_name: string;
         logo_url: string | null;
+        is_pro: boolean;
       } | null;
 
       return {
@@ -58,6 +59,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         salary_visible: job.salary_visible,
         created_at: job.created_at,
         is_featured: job.is_featured,
+        is_pro_company: company?.is_pro ?? false,
       };
     });
   } catch {
@@ -82,7 +84,6 @@ async function getIndustryCounts(): Promise<{ name: string; icon: string; count:
       }
     }
 
-    // Return all industries from INDUSTRY_ICONS with their real counts
     return Object.entries(INDUSTRY_ICONS).map(([name, icon]) => ({
       name,
       icon,
@@ -94,26 +95,6 @@ async function getIndustryCounts(): Promise<{ name: string; icon: string; count:
       icon,
       count: 0,
     }));
-  }
-}
-
-async function getStats(): Promise<{ seekers: number; listings: number; companies: number }> {
-  try {
-    const supabase = await createClient();
-
-    const [seekersRes, listingsRes, companiesRes] = await Promise.all([
-      supabase.from("seeker_profiles").select("id", { count: "exact", head: true }),
-      supabase.from("job_listings").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("companies").select("id", { count: "exact", head: true }),
-    ]);
-
-    return {
-      seekers: seekersRes.count || 0,
-      listings: listingsRes.count || 0,
-      companies: companiesRes.count || 0,
-    };
-  } catch {
-    return { seekers: 0, listings: 0, companies: 0 };
   }
 }
 
@@ -130,7 +111,6 @@ async function getHiringCompanies(): Promise<string[]> {
 
     if (!data) return [];
 
-    // Deduplicate company names, keep first 6
     const seen = new Set<string>();
     const names: string[] = [];
     for (const row of data) {
@@ -148,27 +128,21 @@ async function getHiringCompanies(): Promise<string[]> {
   }
 }
 
-function formatCount(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k+`;
-  return n > 0 ? String(n) : "—";
-}
-
 export default async function Home() {
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   const isLoggedIn = !!user;
 
-  const [featuredJobs, industries, stats, hiringCompanies] = await Promise.all([
+  const [featuredJobs, industries, hiringCompanies] = await Promise.all([
     getFeaturedJobs(),
     getIndustryCounts(),
-    getStats(),
     getHiringCompanies(),
   ]);
+
   return (
     <>
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden flex items-center grain-overlay">
-        {/* Background image */}
         <div className="absolute inset-0">
           <Image
             src="/images/colorful-buildings.avif"
@@ -199,28 +173,28 @@ export default async function Home() {
             <div className="animate-fade-up" style={{ animationDelay: "300ms" }}>
               <HeroCTAs />
             </div>
-
           </div>
         </div>
 
-        {/* Wave divider */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full h-auto">
-            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="var(--color-bg-alt)" />
+            <path d="M0 60V20C240 0 480 40 720 30C960 20 1200 0 1440 20V60H0Z" fill="var(--color-bg)" />
           </svg>
         </div>
       </section>
 
-      {/* ===== COMPANIES HIRING — sits flush between hero and featured ===== */}
+      {/* ===== COMPANIES HIRING ===== */}
       {hiringCompanies.length > 0 && (
-        <div className="relative bg-bg-alt -mt-px">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
-            <p className="text-center text-text-muted/50 text-[11px] uppercase tracking-[0.2em] mb-3">Companies hiring now</p>
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
+        <div className="bg-bg border-b border-border/50">
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
+            <p className="text-center text-text-muted/60 text-[10px] font-semibold uppercase tracking-[0.25em] mb-4">
+              Companies hiring now
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-3">
               {hiringCompanies.map((name) => (
                 <span
                   key={name}
-                  className="text-text-muted/60 font-bold text-xs uppercase tracking-[0.15em]"
+                  className="text-text-muted/70 font-bold text-[13px] tracking-wide"
                 >
                   {name}
                 </span>
@@ -231,100 +205,112 @@ export default async function Home() {
       )}
 
       {/* ===== FEATURED JOBS ===== */}
-      <section className="bg-bg-alt py-20 sm:py-24">
+      <section className="bg-bg py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-end justify-between mb-10">
-          <div>
-            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
-              Latest Opportunities
-            </h2>
-            <p className="mt-1.5 text-text-light">
-              Fresh openings from employers across the island
-            </p>
+          <div className="flex items-end justify-between mb-8">
+            <div>
+              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
+                Open Positions
+              </p>
+              <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
+                Latest Opportunities
+              </h2>
+              <p className="mt-1 text-sm text-text-light">
+                Fresh openings from employers across the island
+              </p>
+            </div>
+            <Link
+              href="/jobs"
+              className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
+            >
+              View all jobs
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </Link>
           </div>
-          <Link
-            href="/jobs"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark transition-colors link-animated"
-          >
-            View all
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </Link>
-        </div>
 
-        <GatedJobGrid jobs={featuredJobs} isLoggedIn={isLoggedIn} />
+          <GatedJobGrid jobs={featuredJobs} isLoggedIn={isLoggedIn} />
 
-        <div className="mt-8 text-center sm:hidden">
-          <Link
-            href="/jobs"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary link-animated"
-          >
-            View all jobs
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </Link>
-        </div>
+          <div className="mt-8 text-center sm:hidden">
+            <Link
+              href="/jobs"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
+            >
+              View all jobs
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ===== BROWSE BY INDUSTRY ===== */}
-      <section className="bg-white dark:bg-bg-dark py-20 sm:py-24">
+      <section className="bg-bg-alt py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
+              Industries
+            </p>
             <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
               Browse by Industry
             </h2>
-            <p className="mt-1.5 text-text-light">
-              Explore opportunities by sector
+            <p className="mt-1 text-sm text-text-light">
+              Explore opportunities across every sector in Antigua &amp; Barbuda
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 stagger-children">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {industries.map((ind) => (
               <Link
                 key={ind.name}
                 href={`/jobs?category=${encodeURIComponent(ind.name)}`}
-                className="group rounded-[--radius-card] border border-border p-5 text-center hover:border-primary/25 hover:shadow-md hover:shadow-primary/[0.04] transition-all bg-bg hover-lift"
+                className="group rounded-2xl border border-border bg-bg p-5 text-center transition-all duration-200 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/[0.06] hover:-translate-y-0.5"
               >
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-primary/8 text-primary mb-3 group-hover:bg-accent-warm group-hover:text-white transition-all duration-300">
+                <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary/8 text-primary mb-3 transition-colors duration-200 group-hover:bg-primary group-hover:text-white">
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d={ind.icon} />
                   </svg>
                 </div>
                 <h3 className="font-semibold text-text text-[13px] leading-tight">{ind.name}</h3>
-                <p className="text-xs text-text-muted mt-1">{ind.count} {ind.count === 1 ? "job" : "jobs"}</p>
+                <p className="text-[11px] text-text-muted mt-1">
+                  {ind.count} {ind.count === 1 ? "job" : "jobs"}
+                </p>
               </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== SPLIT SECTION: IMAGE + HOW IT WORKS ===== */}
-      <section className="bg-bg-alt py-20 sm:py-24">
+      {/* ===== HOW IT WORKS ===== */}
+      <section className="bg-bg py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             {/* Image */}
-            <div className="relative rounded-[--radius-card] overflow-hidden aspect-[4/3]">
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-xl shadow-black/10 dark:shadow-black/30">
               <Image
                 src="/images/people-sitting.webp"
                 alt="People at a job fair in Antigua"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
 
             {/* Steps */}
             <div>
+              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
+                How it works
+              </p>
               <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
                 Get started in minutes
               </h2>
-              <p className="mt-2 text-text-light mb-10">
+              <p className="mt-2 text-sm text-text-light max-w-md">
                 Whether you&apos;re looking for work or looking to hire, we keep it simple.
               </p>
 
-              <div className="space-y-8">
+              <div className="mt-10 space-y-0">
                 {[
                   {
                     num: "01",
@@ -343,15 +329,15 @@ export default async function Home() {
                   },
                 ].map((step, i) => (
                   <div key={step.num} className="flex gap-5">
-                    <div className="relative shrink-0">
-                      <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-mono text-xs font-bold">
+                    <div className="relative shrink-0 flex flex-col items-center">
+                      <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-mono text-xs font-bold shadow-md shadow-primary/20">
                         {step.num}
                       </span>
                       {i < 2 && (
-                        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-border" />
+                        <div className="w-px flex-1 min-h-[2rem] bg-border my-1" />
                       )}
                     </div>
-                    <div>
+                    <div className="pb-8">
                       <h3 className="font-semibold text-text text-[15px] mb-1">{step.title}</h3>
                       <p className="text-sm text-text-light leading-relaxed">{step.desc}</p>
                     </div>
@@ -366,52 +352,65 @@ export default async function Home() {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      <section className="bg-white dark:bg-bg-dark py-20 sm:py-24">
+      <section className="bg-bg-alt py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
+              Testimonials
+            </p>
             <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
               What people are saying
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="rounded-[--radius-card] border border-border p-7 sm:p-8 bg-bg hover-lift transition-all">
-              <div className="text-accent-warm/30 text-4xl font-display leading-none mb-2">&ldquo;</div>
-              <p className="text-text leading-relaxed text-[15px]">
-                I uploaded my CV on a Monday and had three interview calls by Thursday. JobLinks connected me to opportunities I never would have found scrolling through Facebook groups.
-              </p>
-              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
-                <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
-                  KM
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {[
+              {
+                quote: "I uploaded my CV on a Monday and had three interview calls by Thursday. JobLinks connected me to opportunities I never would have found scrolling through Facebook groups.",
+                initials: "KM",
+                name: "Keisha M.",
+                role: "Hired as Admin Assistant, St. John\u2019s",
+                color: "bg-primary",
+              },
+              {
+                quote: "We posted a listing for a kitchen manager and had 15 qualified applicants within a week. Way better than the newspaper ads we used to run.",
+                initials: "RJ",
+                name: "Richard J.",
+                role: "Restaurant Owner, English Harbour",
+                color: "bg-primary-dark",
+              },
+            ].map((t) => (
+              <div
+                key={t.initials}
+                className="rounded-2xl border border-border bg-bg p-7 sm:p-8 transition-all duration-200 hover:shadow-lg hover:shadow-primary/[0.04] hover:-translate-y-0.5"
+              >
+                <div className="flex gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  ))}
                 </div>
-                <div>
-                  <p className="font-semibold text-text text-sm">Keisha M.</p>
-                  <p className="text-xs text-text-muted">Hired as Admin Assistant, St. John&apos;s</p>
+                <p className="text-text leading-relaxed text-[15px]">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <div className="flex items-center gap-3 mt-6 pt-5 border-t border-border">
+                  <div className={`h-10 w-10 rounded-full ${t.color} flex items-center justify-center text-white font-semibold text-sm`}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-text text-sm">{t.name}</p>
+                    <p className="text-xs text-text-muted">{t.role}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            <div className="rounded-[--radius-card] border border-border p-7 sm:p-8 bg-bg hover-lift transition-all">
-              <div className="text-accent-warm/30 text-4xl font-display leading-none mb-2">&ldquo;</div>
-              <p className="text-text leading-relaxed text-[15px]">
-                We posted a listing for a kitchen manager and had 15 qualified applicants within a week. Way better than the newspaper ads we used to run.
-              </p>
-              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
-                <div className="h-10 w-10 rounded-full bg-primary-dark flex items-center justify-center text-white font-semibold text-sm">
-                  RJ
-                </div>
-                <div>
-                  <p className="font-semibold text-text text-sm">Richard J.</p>
-                  <p className="text-xs text-text-muted">Restaurant Owner, English Harbour</p>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ===== EMPLOYER CTA ===== */}
-      <section className="bg-bg-alt py-20 sm:py-24">
+      <section className="bg-bg py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="relative rounded-3xl overflow-hidden grain-overlay">
             <Image
@@ -420,22 +419,24 @@ export default async function Home() {
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-bg-dark/90 via-primary-dark/85 to-primary/75" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#062829]/95 via-[#0d7377]/90 to-[#14919b]/80" />
             <div className="relative px-8 sm:px-14 py-14 sm:py-20 max-w-xl">
+              <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">
+                For Employers
+              </p>
               <h2 className="font-display text-2xl sm:text-3xl text-white tracking-tight">
                 Ready to find your
                 <br />
                 next great hire?
               </h2>
               <p className="mt-3 text-white/70 leading-relaxed">
-                Post your listing and reach thousands of qualified candidates across Antigua and Barbuda. It only takes 5 minutes.
+                Post your listing and reach qualified candidates across Antigua and Barbuda. It only takes 5 minutes.
               </p>
               <EmployerCTAs />
             </div>
           </div>
         </div>
       </section>
-
     </>
   );
 }
