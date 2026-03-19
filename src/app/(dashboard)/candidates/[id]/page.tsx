@@ -29,8 +29,13 @@ export default async function CandidateProfilePage({ params }: PageProps) {
     .filter(Boolean)
     .join(" ") || "Unnamed";
 
+  const hasSkills = profile.skills && profile.skills.length > 0;
+  const hasBio = !!profile.bio;
+  const hasEducation = !!profile.education;
+  const hasCv = !!profile.cv_url;
+
   return (
-    <div>
+    <div className="max-w-3xl mx-auto">
       {/* Back link */}
       <Link
         href="/browse-candidates"
@@ -42,122 +47,200 @@ export default async function CandidateProfilePage({ params }: PageProps) {
         Back to candidates
       </Link>
 
-      <div className="rounded-xl border border-border bg-white overflow-hidden">
+      {/* Profile Card */}
+      <div className="rounded-2xl border border-border bg-white overflow-hidden shadow-sm">
+
         {/* Header */}
-        <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-6 py-8 sm:px-8">
-          <div className="flex items-center gap-5">
+        <div className="relative bg-gradient-to-br from-primary/8 via-primary/5 to-transparent px-6 py-10 sm:px-10">
+          {/* Status badge */}
+          <div className="absolute top-4 right-4">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+                profile.visibility === "actively_looking"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${
+                profile.visibility === "actively_looking" ? "bg-emerald-500" : "bg-blue-500"
+              }`} />
+              {profile.visibility === "actively_looking"
+                ? "Actively Looking"
+                : "Open to Opportunities"}
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {/* Avatar */}
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt=""
-                className="h-20 w-20 rounded-full object-cover ring-4 ring-white shadow"
+                className="h-24 w-24 rounded-2xl object-cover ring-4 ring-white shadow-lg"
               />
             ) : (
-              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-white text-2xl font-bold ring-4 ring-white shadow">
+              <span className="flex h-24 w-24 items-center justify-center rounded-2xl bg-primary text-white text-3xl font-bold ring-4 ring-white shadow-lg">
                 {initial}
               </span>
             )}
-            <div>
-              <h1 className="text-2xl font-bold font-display text-text">
+
+            <div className="text-center sm:text-left flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold font-display text-text">
                 {fullName}
               </h1>
-              <div className="mt-1.5 flex items-center gap-3 text-sm text-text-light flex-wrap">
+
+              <div className="mt-2 flex items-center justify-center sm:justify-start gap-4 text-sm text-text-light flex-wrap">
                 {profile.location && (
-                  <span className="flex items-center gap-1">
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <span className="flex items-center gap-1.5">
+                    <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                     </svg>
                     {profile.location}
                   </span>
                 )}
                 {profile.experience_years != null && (
-                  <span>
-                    {profile.experience_years}{" "}
-                    {profile.experience_years === 1 ? "year" : "years"} experience
+                  <span className="flex items-center gap-1.5">
+                    <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                    </svg>
+                    {profile.experience_years} {profile.experience_years === 1 ? "year" : "years"} experience
                   </span>
                 )}
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium ${
-                    profile.visibility === "actively_looking"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {profile.visibility === "actively_looking"
-                    ? "Actively Looking"
-                    : "Open to Opportunities"}
-                </span>
               </div>
-              <div className="mt-3">
+
+              {/* CTA */}
+              <div className="mt-5 flex items-center justify-center sm:justify-start gap-3 flex-wrap">
                 <InviteToApplyButton candidateName={fullName} candidateUserId={profile.user_id} />
+                {hasCv && (
+                  <a
+                    href={`/api/cv-download?profileId=${profile.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-colors"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download CV
+                  </a>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="px-6 py-6 sm:px-8 space-y-8">
-          {/* Bio */}
-          {profile.bio && (
-            <section>
-              <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-2">
+        {/* Content sections */}
+        <div className="divide-y divide-border">
+
+          {/* About */}
+          {hasBio && (
+            <div className="px-6 py-6 sm:px-10">
+              <h2 className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
                 About
               </h2>
-              <p className="text-text leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-text leading-relaxed whitespace-pre-line">
                 {profile.bio}
               </p>
-            </section>
+            </div>
           )}
 
           {/* Skills */}
-          {profile.skills && profile.skills.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
+          {hasSkills && (
+            <div className="px-6 py-6 sm:px-10">
+              <h2 className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
                 Skills
               </h2>
               <div className="flex flex-wrap gap-2">
                 {profile.skills.map((skill: string) => (
                   <span
                     key={skill}
-                    className="inline-block rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-medium"
+                    className="inline-flex items-center rounded-lg bg-primary/8 border border-primary/15 px-3 py-1.5 text-sm font-medium text-primary"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
-            </section>
+            </div>
           )}
 
-          {/* Education */}
-          {profile.education && (
-            <section>
-              <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-2">
-                Education
+          {/* Education + Experience */}
+          {(hasEducation || profile.experience_years != null) && (
+            <div className="px-6 py-6 sm:px-10">
+              <h2 className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5" />
+                </svg>
+                Background
               </h2>
-              <p className="text-text">{profile.education}</p>
-            </section>
+              <div className="space-y-3">
+                {hasEducation && (
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bg-alt">
+                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-text-muted">Education</p>
+                      <p className="text-sm text-text">{profile.education}</p>
+                    </div>
+                  </div>
+                )}
+                {profile.experience_years != null && (
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-bg-alt">
+                      <svg className="h-4 w-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-text-muted">Experience</p>
+                      <p className="text-sm text-text">
+                        {profile.experience_years} {profile.experience_years === 1 ? "year" : "years"} of professional experience
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
-          {/* CV Download */}
-          {profile.cv_url && (
-            <section>
-              <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
+          {/* Resume */}
+          {hasCv && (
+            <div className="px-6 py-6 sm:px-10">
+              <h2 className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
                 Resume / CV
               </h2>
               <a
                 href={`/api/cv-download?profileId=${profile.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-[--radius-button] border-2 border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+                className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5 hover:border-primary/30 hover:bg-primary/5 transition-colors group"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Download CV
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-text group-hover:text-primary transition-colors">
+                    {profile.first_name ? `${profile.first_name}'s CV` : "Resume"}
+                  </p>
+                  <p className="text-xs text-text-muted">Click to download</p>
+                </div>
               </a>
-            </section>
+            </div>
           )}
         </div>
       </div>
