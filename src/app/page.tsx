@@ -271,9 +271,6 @@ export default async function Home() {
                   </svg>
                 </div>
                 <h3 className="font-semibold text-text text-[13px] leading-tight">{ind.name}</h3>
-                <p className="text-[11px] text-text-muted mt-1">
-                  {ind.count} {ind.count === 1 ? "job" : "jobs"}
-                </p>
               </Link>
             ))}
           </div>
