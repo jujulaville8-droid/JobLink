@@ -394,6 +394,31 @@ async function EmployerDashboard({ userId }: { userId: string }) {
         </div>
       </div>
 
+      {/* Pro Status */}
+      {!company.is_pro && (
+        <div className="mt-6 rounded-[--radius-card] border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+                <svg className="h-5 w-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-text">Upgrade to Pro</p>
+                <p className="text-sm text-text-light">Get featured listings, priority support, and more visibility.</p>
+              </div>
+            </div>
+            <Link
+              href="/company-profile"
+              className="btn-warm text-sm px-5 py-2 whitespace-nowrap"
+            >
+              Upgrade Now
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-4 stagger-children">
         <StatCard

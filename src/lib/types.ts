@@ -50,8 +50,18 @@ export interface Company {
   location: string;
   is_verified: boolean;
   is_pro: boolean;
+  stripe_customer_id: string | null;
   pro_expires_at: string | null;
   created_at: string;
+}
+
+export interface Subscription {
+  id: string;
+  company_id: string;
+  stripe_subscription_id: string;
+  stripe_customer_id: string;
+  status: string;
+  current_period_end: string;
 }
 
 export interface JobListing {

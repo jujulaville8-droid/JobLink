@@ -5,6 +5,18 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { INDUSTRIES } from '@/lib/types';
 
+async function handleUpgradeClick(userId: string) {
+  const res = await fetch('/api/stripe/create-checkout-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId }),
+  });
+  const data = await res.json();
+  if (data.url) {
+    window.location.href = data.url;
+  }
+}
+
 interface CompanyForm {
   company_name: string;
   industry: string;
@@ -26,6 +38,8 @@ export default function CompanyProfilePage() {
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [upgrading, setUpgrading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [form, setForm] = useState<CompanyForm>({
     company_name: '',
@@ -56,6 +70,8 @@ export default function CompanyProfilePage() {
         .select('*')
         .eq('user_id', user.id)
         .single();
+
+      setUserId(user.id);
 
       if (company) {
         setCompanyId(company.id);
@@ -279,21 +295,43 @@ export default function CompanyProfilePage() {
             Verified Company
           </div>
         )}
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-bg-alt px-3 py-1 text-sm font-medium text-text-muted">
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+        {form.is_pro ? (
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-700">
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            Pro Member
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={async () => {
+              if (!userId) return;
+              setUpgrading(true);
+              await handleUpgradeClick(userId);
+              setUpgrading(false);
+            }}
+            disabled={upgrading}
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
           >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-          </svg>
-          Pro
-          <span className="ml-1 rounded bg-border px-1.5 py-0.5 text-[10px] font-bold uppercase">
-            Coming Soon
-          </span>
-        </div>
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            {upgrading ? 'Redirecting...' : 'Upgrade to Pro'}
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate>
