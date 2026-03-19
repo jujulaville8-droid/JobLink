@@ -158,7 +158,7 @@ export default function UpgradePage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-0.5">
                 <span className="text-lg font-semibold text-text-muted leading-none translate-y-0.5">$</span>
-                <span className="text-3xl font-bold font-display text-text">20</span>
+                <span className="text-3xl font-bold font-display text-text">19.99</span>
                 <span className="ml-1 text-sm text-text-muted">USD / mo</span>
               </div>
               <p className="mt-1 text-xs text-text-muted">Billed as EC$97</p>
@@ -193,7 +193,7 @@ export default function UpgradePage() {
           <div className="mt-6 text-center">
             <div className="flex items-baseline justify-center gap-0.5">
               <span className="text-2xl font-semibold text-text-muted leading-none translate-y-1">$</span>
-              <span className="text-5xl font-bold font-display text-text leading-none">20</span>
+              <span className="text-5xl font-bold font-display text-text leading-none">19.99</span>
               <span className="ml-1.5 text-base text-text-muted">USD / mo</span>
             </div>
             <p className="mt-1.5 text-sm text-text-muted">Billed as EC$97 &middot; Cancel anytime.</p>
