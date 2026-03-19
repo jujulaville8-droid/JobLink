@@ -92,10 +92,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ conversation_id: existingConversationId })
     }
 
-    // Create new conversation (no application_id — this is a direct invite)
+    // Create new conversation (direct invite — no application)
     const { data: conversation, error: convError } = await admin
       .from('conversations')
-      .insert({ application_id: null })
+      .insert({})
       .select('id')
       .single()
 
