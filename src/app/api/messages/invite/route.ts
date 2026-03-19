@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendMessageNotification } from '@/lib/messaging-notifications'
+import { sendEmail, BASE_URL } from '@/lib/email'
 
 // POST: Employer invites a candidate to apply — creates a direct conversation
 export async function POST(request: NextRequest) {
@@ -51,6 +52,16 @@ export async function POST(request: NextRequest) {
       if (listing) jobTitle = listing.title
     }
 
+    // Get recipient email for invite notification
+    const { data: recipientUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', recipient_user_id)
+      .single()
+
+    const recipientEmail = recipientUser?.email
+    const listingUrl = listing_id ? `/jobs/${listing_id}` : null
+
     const admin = createAdminClient()
 
     // Check if a direct conversation already exists between these two users
@@ -89,6 +100,19 @@ export async function POST(request: NextRequest) {
         messagePreview: body.trim().slice(0, 100),
       })
 
+      if (recipientEmail) {
+        sendEmail({
+          to: recipientEmail,
+          type: 'job_invite',
+          data: {
+            company_name: companyName,
+            job_title: jobTitle,
+            message_preview: body.trim().slice(0, 200),
+            listing_url: listingUrl ? `${BASE_URL}${listingUrl}` : undefined,
+          },
+        })
+      }
+
       return NextResponse.json({ conversation_id: existingConversationId })
     }
 
@@ -124,6 +148,20 @@ export async function POST(request: NextRequest) {
       jobTitle,
       messagePreview: body.trim().slice(0, 100),
     })
+
+    // Send invite email
+    if (recipientEmail) {
+      sendEmail({
+        to: recipientEmail,
+        type: 'job_invite',
+        data: {
+          company_name: companyName,
+          job_title: jobTitle,
+          message_preview: body.trim().slice(0, 200),
+          listing_url: listingUrl ? `${BASE_URL}${listingUrl}` : undefined,
+        },
+      })
+    }
 
     return NextResponse.json({ conversation_id: conversation.id })
   } catch (err) {

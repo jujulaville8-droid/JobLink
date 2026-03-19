@@ -8,6 +8,7 @@ type EmailType =
   | 'listing_rejected'
   | 'new_message'
   | 'report_response'
+  | 'job_invite'
 
 interface EmailData {
   applicant_name?: string
@@ -16,6 +17,7 @@ interface EmailData {
   status?: string
   jobs?: { title: string; company: string; url: string }[]
   listing_title?: string
+  listing_url?: string
   expires_at?: string
   application_url?: string
   dashboard_url?: string
@@ -240,6 +242,24 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             <p style="color: #374151; margin: 0; font-style: italic;">"${esc(d.message_preview)}${(d.message_preview?.length || 0) >= 100 ? '...' : ''}"</p>
           </div>
           ${btn('View Conversation', '/messages')}
+        `),
+      }
+
+    case 'job_invite':
+      return {
+        subject: `${esc(d.company_name)} invited you to apply for "${esc(d.job_title)}"`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">You've Been Invited to Apply!</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            Great news — <strong>${esc(d.company_name)}</strong> has reviewed your profile and thinks you'd be a great fit for their <strong>${esc(d.job_title)}</strong> position.
+          </p>
+          <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
+            <p style="color: #374151; margin: 0; font-style: italic;">"${esc(d.message_preview)}${(d.message_preview?.length || 0) >= 100 ? '...' : ''}"</p>
+          </div>
+          <p style="color: #374151; line-height: 1.6;">
+            View the listing and apply directly — the employer is waiting to hear from you.
+          </p>
+          ${d.listing_url ? btn('View Job & Apply', d.listing_url) : btn('View Messages', '/messages')}
         `),
       }
 
