@@ -183,11 +183,7 @@ export default async function Home() {
         <div className="relative mx-auto max-w-3xl px-6 sm:px-8 py-24 sm:py-32 lg:py-36 w-full">
           <div className="text-center">
             <h1 className="animate-fade-up font-display text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] text-white leading-[1.12] tracking-tight">
-              Find Opportunities.
-              <br />
-              Connect With Employers.
-              <br />
-              Get Hired.
+              Just get hired today.
             </h1>
 
             <p className="animate-fade-up mt-6 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: "100ms" }}>
@@ -204,13 +200,6 @@ export default async function Home() {
               <HeroCTAs />
             </div>
 
-            <div className="animate-fade-up mt-10 flex items-center justify-center gap-6 sm:gap-8 text-white/50 text-sm" style={{ animationDelay: "400ms" }}>
-              <span><strong className="text-white/85 font-semibold">{formatCount(stats.seekers)}</strong> job seekers</span>
-              <span className="w-px h-3 bg-white/20" />
-              <span><strong className="text-white/85 font-semibold">{formatCount(stats.listings)}</strong> active listings</span>
-              <span className="hidden sm:block w-px h-3 bg-white/20" />
-              <span className="hidden sm:block"><strong className="text-white/85 font-semibold">{formatCount(stats.companies)}</strong> companies</span>
-            </div>
           </div>
         </div>
 
