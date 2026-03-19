@@ -141,6 +141,11 @@ export default function Navbar() {
           Icon: <ArrowRightLeft className="h-4 w-4 text-text-muted" />,
         },
         {
+          label: "Switch to Employer",
+          onClick: () => handleSwitchRole("employer"),
+          Icon: <Building className="h-4 w-4 text-text-muted" />,
+        },
+        {
           label: "Settings",
           onClick: () => router.push("/settings"),
           Icon: <Settings className="h-4 w-4 text-text-muted" />,
@@ -356,14 +361,35 @@ export default function Navbar() {
                     {isEmployer ? <Building className="h-4 w-4" /> : <User className="h-4 w-4" />}
                     {isEmployer ? "Company Profile" : "Profile"}
                   </Link>
-                  <button
-                    onClick={() => handleSwitchRole(isEmployer ? "seeker" : isAdmin ? "seeker" : "employer")}
-                    disabled={switching}
-                    className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    <ArrowRightLeft className="h-4 w-4" />
-                    {switching ? "Switching..." : switchLabel}
-                  </button>
+                  {isAdmin ? (
+                    <>
+                      <button
+                        onClick={() => handleSwitchRole("seeker")}
+                        disabled={switching}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <ArrowRightLeft className="h-4 w-4" />
+                        {switching ? "Switching..." : "Switch to Job Seeker"}
+                      </button>
+                      <button
+                        onClick={() => handleSwitchRole("employer")}
+                        disabled={switching}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                      >
+                        <Building className="h-4 w-4" />
+                        {switching ? "Switching..." : "Switch to Employer"}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleSwitchRole(isEmployer ? "seeker" : "employer")}
+                      disabled={switching}
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <ArrowRightLeft className="h-4 w-4" />
+                      {switching ? "Switching..." : switchLabel}
+                    </button>
+                  )}
                   {canBeAdmin && !isAdmin && (
                     <button
                       onClick={() => handleSwitchRole("admin")}
