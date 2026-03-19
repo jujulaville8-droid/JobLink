@@ -341,7 +341,7 @@ export default function PostJobPage() {
               Upgrade to Pro
             </a>
             <a
-              href="/employers/listings"
+              href="/my-listings"
               className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-text transition-colors hover:bg-bg-alt"
             >
               Manage Existing Listings
