@@ -69,7 +69,8 @@ export default function PostJobPage() {
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
-  const [loading, setLoading] = useState(!!editId);
+  const [loading, setLoading] = useState(true);
+  const [listingGated, setListingGated] = useState(false);
   const [form, setForm] = useState<FormData>({
     title: '',
     description: '',
@@ -81,11 +82,9 @@ export default function PostJobPage() {
     duration: '30',
   });
 
-  // Load existing listing data when editing
+  // Load data: check Pro status + active listing count, and load edit data if needed
   useEffect(() => {
-    if (!editId) return;
-
-    async function loadListing() {
+    async function load() {
       const supabase = createClient();
       const {
         data: { user },
@@ -99,7 +98,7 @@ export default function PostJobPage() {
 
       const { data: company } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, is_pro')
         .eq('user_id', user.id)
         .single();
 
@@ -109,34 +108,53 @@ export default function PostJobPage() {
         return;
       }
 
-      const { data: listing, error } = await supabase
-        .from('job_listings')
-        .select('*')
-        .eq('id', editId)
-        .eq('company_id', company.id)
-        .in('status', ['pending_approval', 'active'])
-        .single();
+      // For new listings: check if non-Pro employer already has an active listing
+      if (!editId && !company.is_pro) {
+        const { count } = await supabase
+          .from('job_listings')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', company.id)
+          .eq('status', 'active');
 
-      if (error || !listing) {
-        setServerError('Listing not found or cannot be edited.');
-        setLoading(false);
-        return;
+        if ((count ?? 0) >= 1) {
+          setListingGated(true);
+          setLoading(false);
+          return;
+        }
       }
 
-      setForm({
-        title: listing.title || '',
-        description: listing.description || '',
-        category: listing.category || '',
-        job_type: (listing.job_type as JobType) || 'full_time',
-        salary_min: listing.salary_min ? String(listing.salary_min) : '',
-        salary_max: listing.salary_max ? String(listing.salary_max) : '',
-        salary_visible: listing.salary_visible ?? true,
-        duration: '30',
-      });
+      // Load existing listing if editing
+      if (editId) {
+        const { data: listing, error } = await supabase
+          .from('job_listings')
+          .select('*')
+          .eq('id', editId)
+          .eq('company_id', company.id)
+          .in('status', ['pending_approval', 'active'])
+          .single();
+
+        if (error || !listing) {
+          setServerError('Listing not found or cannot be edited.');
+          setLoading(false);
+          return;
+        }
+
+        setForm({
+          title: listing.title || '',
+          description: listing.description || '',
+          category: listing.category || '',
+          job_type: (listing.job_type as JobType) || 'full_time',
+          salary_min: listing.salary_min ? String(listing.salary_min) : '',
+          salary_max: listing.salary_max ? String(listing.salary_max) : '',
+          salary_visible: listing.salary_visible ?? true,
+          duration: '30',
+        });
+      }
+
       setLoading(false);
     }
 
-    loadListing();
+    load();
   }, [editId]);
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
@@ -196,7 +214,7 @@ export default function PostJobPage() {
 
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, is_pro')
         .eq('user_id', user.id)
         .single();
 
@@ -206,6 +224,21 @@ export default function PostJobPage() {
         );
         setSubmitting(false);
         return;
+      }
+
+      // Double-check listing limit for non-Pro on new listings
+      if (!editId && !company.is_pro) {
+        const { count } = await supabase
+          .from('job_listings')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', company.id)
+          .eq('status', 'active');
+
+        if ((count ?? 0) >= 1) {
+          setServerError('Free accounts are limited to 1 active listing. Upgrade to Pro for unlimited postings.');
+          setSubmitting(false);
+          return;
+        }
       }
 
       const listingData = {
@@ -280,6 +313,40 @@ export default function PostJobPage() {
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
         <p className="mt-4 text-sm text-text-muted">Loading listing...</p>
+      </div>
+    );
+  }
+
+  if (listingGated) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <div className="rounded-2xl border border-amber-200 bg-gradient-to-b from-amber-50 to-orange-50 p-10 shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
+            <svg className="h-8 w-8 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <h2 className="mt-6 text-xl font-bold font-display text-text">
+            Listing Limit Reached
+          </h2>
+          <p className="mt-2 text-sm text-text-light">
+            Free accounts are limited to 1 active listing at a time. Upgrade to Pro for unlimited job postings.
+          </p>
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/company-profile"
+              className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+            >
+              Upgrade to Pro
+            </a>
+            <a
+              href="/my-listings"
+              className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-text transition-colors hover:bg-bg-alt"
+            >
+              Manage Listings
+            </a>
+          </div>
+        </div>
       </div>
     );
   }

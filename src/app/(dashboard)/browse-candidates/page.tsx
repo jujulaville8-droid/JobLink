@@ -140,8 +140,41 @@ async function CandidateResults({
 export default async function BrowseCandidatesPage({
   searchParams,
 }: PageProps) {
-  await requireRole("employer");
+  const user = await requireRole("employer");
   const params = await searchParams;
+
+  const supabase = await createClient();
+  const { data: company } = await supabase
+    .from("companies")
+    .select("is_pro")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!company?.is_pro) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+        <div className="rounded-[--radius-card] border border-amber-200 bg-gradient-to-b from-amber-50 to-orange-50 p-10 shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100">
+            <svg className="h-8 w-8 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+          </div>
+          <h2 className="mt-6 text-xl font-bold font-display text-text">
+            Pro Feature
+          </h2>
+          <p className="mt-2 text-sm text-text-light">
+            Browsing candidates is available exclusively to Pro members. Upgrade to search and connect with talent across Antigua and Barbuda.
+          </p>
+          <Link
+            href="/company-profile"
+            className="mt-6 inline-block rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+          >
+            Upgrade to Pro
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
