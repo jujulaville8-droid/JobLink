@@ -321,30 +321,51 @@ export default function PostJobPage() {
     return (
       <div className="mx-auto max-w-lg px-4 py-16 text-center">
         <div className="rounded-2xl border border-border bg-white p-10 shadow-lg">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+          {/* Usage indicator */}
+          <div className="mx-auto mb-6 flex items-center justify-center gap-2">
+            <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">
+              Free plan limit reached
+            </span>
+          </div>
+
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+            <svg className="h-7 w-7 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
+
           <h2 className="mt-6 text-xl font-bold font-display text-text">
-            Your next listing is ready to go
+            You&apos;ve used your free listing
           </h2>
           <p className="mt-2 text-sm text-text-light leading-relaxed">
-            Upgrade to JobLink Pro to post unlimited active listings and get featured placement across the platform.
+            Free accounts include <span className="font-semibold text-text">1 active listing</span>. You&apos;re currently using it. Upgrade to JobLink Pro to post unlimited listings and get featured placement.
           </p>
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+
+          {/* Usage bar */}
+          <div className="mt-6 mx-auto max-w-xs">
+            <div className="flex justify-between text-xs mb-1.5">
+              <span className="text-text-muted">Active listings</span>
+              <span className="font-semibold text-text">1 / 1 used</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-bg-alt overflow-hidden">
+              <div className="h-full w-full rounded-full bg-amber-400" />
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href="/employers/upgrade"
               className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
             >
-              Upgrade to Pro
+              Upgrade to Pro — Unlimited Listings
             </a>
             <a
               href="/my-listings"
               className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-text transition-colors hover:bg-bg-alt"
             >
-              Manage Existing Listings
+              Manage Your Listing
             </a>
           </div>
         </div>
