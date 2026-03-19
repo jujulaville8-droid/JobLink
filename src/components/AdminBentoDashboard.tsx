@@ -28,6 +28,7 @@ interface AdminStats {
   pendingApprovals: number;
   totalApplications: number;
   totalReports: number;
+  proSubscribers: number;
   newUsersThisWeek: number;
   newSeekersThisWeek: number;
   newEmployersThisWeek: number;
@@ -82,7 +83,7 @@ export default function AdminBentoDashboard({
       className="space-y-6"
     >
       {/* Stat Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <AnimatedStat
           label="Total Users"
           value={stats.totalUsers}
@@ -114,6 +115,14 @@ export default function AdminBentoDashboard({
           color="text-emerald-600"
           bgColor="bg-emerald-50"
           borderColor="border-l-emerald-500"
+        />
+        <AnimatedStat
+          label="Pro Subscribers"
+          value={stats.proSubscribers}
+          icon={StarIcon}
+          color="text-purple-600"
+          bgColor="bg-purple-50"
+          borderColor="border-l-purple-500"
         />
       </div>
 
