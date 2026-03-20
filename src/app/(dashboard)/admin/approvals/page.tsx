@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
 import { sendEmail, BASE_URL } from '@/lib/email'
+import { createAdminClient } from '@/lib/supabase/admin'
 import RejectJobButton from '@/components/RejectJobButton'
 
 async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>, jobId: string, type: 'listing_approved' | 'listing_rejected', rejectionReason?: string) {
@@ -36,6 +37,53 @@ async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>
   })
 }
 
+async function notifyJobSeekers(jobId: string) {
+  try {
+    const admin = createAdminClient()
+
+    // Get job details
+    const { data: job } = await admin
+      .from('job_listings')
+      .select('title, companies(company_name)')
+      .eq('id', jobId)
+      .single()
+
+    if (!job) return
+
+    const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
+    const companyName = company?.company_name || 'An employer'
+    const jobTitle = job.title
+
+    // Get all seeker emails
+    const { data: seekers } = await admin
+      .from('users')
+      .select('email')
+      .eq('role', 'seeker')
+      .eq('email_verified', true)
+
+    if (!seekers || seekers.length === 0) return
+
+    const listingUrl = `${BASE_URL}/jobs/${jobId}`
+
+    // Send emails in batches (fire-and-forget, won't block approval)
+    for (const seeker of seekers) {
+      if (seeker.email) {
+        sendEmail({
+          to: seeker.email,
+          type: 'new_job_posted',
+          data: {
+            job_title: jobTitle,
+            company_name: companyName,
+            listing_url: listingUrl,
+          },
+        })
+      }
+    }
+  } catch (err) {
+    console.error('[notifyJobSeekers] Error:', err)
+  }
+}
+
 async function approveJob(formData: FormData) {
   'use server'
   const supabase = await createClient()
@@ -47,6 +95,7 @@ async function approveJob(formData: FormData) {
     .eq('id', jobId)
 
   await notifyEmployer(supabase, jobId, 'listing_approved')
+  notifyJobSeekers(jobId) // Fire-and-forget — don't await
   revalidatePath('/admin/approvals')
 }
 

@@ -9,6 +9,7 @@ type EmailType =
   | 'new_message'
   | 'report_response'
   | 'job_invite'
+  | 'new_job_posted'
 
 interface EmailData {
   applicant_name?: string
@@ -242,6 +243,26 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             <p style="color: #374151; margin: 0; font-style: italic;">"${esc(d.message_preview)}${(d.message_preview?.length || 0) >= 100 ? '...' : ''}"</p>
           </div>
           ${btn('View Conversation', '/messages')}
+        `),
+      }
+
+    case 'new_job_posted':
+      return {
+        subject: `New job posted: ${esc(d.job_title)} at ${esc(d.company_name)}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">A New Job Just Went Live</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            <strong>${esc(d.company_name)}</strong> is hiring for <strong>${esc(d.job_title)}</strong>. Be one of the first to apply!
+          </p>
+          <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin: 20px 0; background-color: #fafaf8;">
+            <h3 style="color: #1a1a1a; margin: 0 0 6px 0; font-size: 17px;">${esc(d.job_title)}</h3>
+            <p style="color: #6b7280; margin: 0 0 4px 0; font-size: 14px;">${esc(d.company_name)}</p>
+            ${d.listing_url ? `<a href="${d.listing_url}" style="color: #0d7377; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 10px; display: inline-block;">View Job &amp; Apply &rarr;</a>` : ''}
+          </div>
+          <p style="color: #6b7280; font-size: 13px; line-height: 1.5;">
+            New jobs are posted regularly. Keep your profile updated so employers can find you.
+          </p>
+          ${btn('Browse All Jobs', '/jobs')}
         `),
       }
 
