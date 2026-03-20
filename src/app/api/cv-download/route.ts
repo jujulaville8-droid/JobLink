@@ -25,33 +25,7 @@ export async function GET(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  if (userData?.role !== "employer") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  // Verify this employer has a legitimate relationship to the seeker
-  // (the seeker applied to one of the employer's jobs, or their profile is visible)
-  const { data: company } = await supabase
-    .from("companies")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!company) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  // Verify this specific seeker applied to one of the employer's jobs
-  // Single query with join instead of nested N+1 queries
-  const { data: hasApplication } = await supabase
-    .from("applications")
-    .select("id, job_listings!inner(company_id)")
-    .eq("seeker_id", profileId)
-    .eq("job_listings.company_id", company.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (!hasApplication) {
+  if (userData?.role !== "employer" && userData?.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -60,7 +34,6 @@ export async function GET(request: NextRequest) {
     .from("seeker_profiles")
     .select("cv_url")
     .eq("id", profileId)
-    .in("visibility", ["actively_looking", "open"])
     .single();
 
   if (!profile?.cv_url) {
