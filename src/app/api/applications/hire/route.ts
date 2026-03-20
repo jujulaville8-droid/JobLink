@@ -52,10 +52,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Update application status to hold
-    await supabase
+    const { error: updateError } = await supabase
       .from('applications')
       .update({ status: 'hold' })
       .eq('id', application_id)
+
+    if (updateError) {
+      console.error('[hire] update error:', updateError.message)
+      return NextResponse.json({ error: 'Failed to update application status' }, { status: 500 })
+    }
 
     // Optionally close the job listing
     if (close_job) {
@@ -92,7 +97,7 @@ export async function POST(request: NextRequest) {
             status: 'On Hold',
             dashboard_url: `${BASE_URL}/applications`,
           },
-        })
+        }).catch(err => console.error('[hire] sendEmail error:', err))
       }
 
       const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies

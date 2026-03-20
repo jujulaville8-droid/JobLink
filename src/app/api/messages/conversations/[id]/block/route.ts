@@ -27,8 +27,10 @@ export async function POST(
       .update({ is_blocked: true })
       .eq('id', otherParticipant.id)
 
-    if (error) console.error('[block] DB error:', error.message)
-    return NextResponse.json({ error: 'Failed to update block status' }, { status: 500 })
+    if (error) {
+      console.error('[block] DB error:', error.message)
+      return NextResponse.json({ error: 'Failed to update block status' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch {
@@ -61,8 +63,10 @@ export async function DELETE(
       .update({ is_blocked: false })
       .eq('id', otherParticipant.id)
 
-    if (error) console.error('[block] DB error:', error.message)
-    return NextResponse.json({ error: 'Failed to update block status' }, { status: 500 })
+    if (error) {
+      console.error('[block] DB error:', error.message)
+      return NextResponse.json({ error: 'Failed to update block status' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch {

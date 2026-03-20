@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     const admin = createAdminClient()
 
-    // Check if a direct conversation already exists between these two users
+    // Check if a direct (non-application) conversation already exists between these two users
     const { data: existingParticipants } = await admin
       .from('conversation_participants')
       .select('conversation_id')
@@ -82,7 +82,16 @@ export async function POST(request: NextRequest) {
         .in('conversation_id', convIds)
 
       if (sharedConvs && sharedConvs.length > 0) {
-        existingConversationId = sharedConvs[0].conversation_id
+        const sharedConvIds = sharedConvs.map(p => p.conversation_id)
+        // Only reuse a direct invite conversation, not an application thread
+        const { data: directConv } = await admin
+          .from('conversations')
+          .select('id')
+          .in('id', sharedConvIds)
+          .is('application_id', null)
+          .limit(1)
+          .single()
+        if (directConv) existingConversationId = directConv.id
       }
     }
 
@@ -110,7 +119,7 @@ export async function POST(request: NextRequest) {
             message_preview: body.trim().slice(0, 200),
             listing_url: listingUrl ? `${BASE_URL}${listingUrl}` : undefined,
           },
-        })
+        }).catch(err => console.error('[invite] sendEmail error:', err))
       }
 
       return NextResponse.json({ conversation_id: existingConversationId })
@@ -128,12 +137,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Add both participants
-    await admin
+    const { error: partError } = await admin
       .from('conversation_participants')
       .insert([
         { conversation_id: conversation.id, user_id: user.id },
         { conversation_id: conversation.id, user_id: recipient_user_id },
       ])
+
+    if (partError) {
+      console.error('[invite] insert participants error:', partError.message)
+      return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
+    }
 
     // Send the invitation message
     await admin

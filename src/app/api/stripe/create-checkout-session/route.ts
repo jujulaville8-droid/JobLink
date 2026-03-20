@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       params.customer = company.stripe_customer_id
     }
 
+    const stripe = getStripe()
     const session = await stripe.checkout.sessions.create(
       params as Parameters<typeof stripe.checkout.sessions.create>[0]
     )
