@@ -20,6 +20,11 @@ interface EmailData {
   listing_title?: string
   listing_url?: string
   expires_at?: string
+  seeker_name?: string
+  job_location?: string
+  job_type_label?: string
+  salary_range?: string
+  job_description_preview?: string
   application_url?: string
   dashboard_url?: string
   sender_name?: string
@@ -248,21 +253,58 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     case 'new_job_posted':
       return {
-        subject: `New job posted: ${esc(d.job_title)} at ${esc(d.company_name)}`,
+        subject: `${esc(d.company_name)} is hiring: ${esc(d.job_title)}`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">A New Job Just Went Live</h2>
-          <p style="color: #374151; line-height: 1.6;">
-            <strong>${esc(d.company_name)}</strong> is hiring for <strong>${esc(d.job_title)}</strong>. Be one of the first to apply!
+          <p style="color: #374151; line-height: 1.6; font-size: 15px;">
+            Hi ${esc(d.seeker_name) || 'there'},
           </p>
-          <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin: 20px 0; background-color: #fafaf8;">
-            <h3 style="color: #1a1a1a; margin: 0 0 6px 0; font-size: 17px;">${esc(d.job_title)}</h3>
-            <p style="color: #6b7280; margin: 0 0 4px 0; font-size: 14px;">${esc(d.company_name)}</p>
-            ${d.listing_url ? `<a href="${d.listing_url}" style="color: #0d7377; font-size: 14px; text-decoration: none; font-weight: 600; margin-top: 10px; display: inline-block;">View Job &amp; Apply &rarr;</a>` : ''}
+          <p style="color: #374151; line-height: 1.6; font-size: 15px;">
+            <strong>${esc(d.company_name)}</strong> just posted a new opportunity for a <strong>${esc(d.job_title)}</strong>${d.job_location ? ` in ${esc(d.job_location)}` : ''}. If you're interested, apply today or learn more about the position below.
+          </p>
+
+          ${d.listing_url ? `
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${d.listing_url}" style="display: inline-block; background-color: #0d7377; color: #ffffff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px;">View Job</a>
           </div>
-          <p style="color: #6b7280; font-size: 13px; line-height: 1.5;">
-            New jobs are posted regularly. Keep your profile updated so employers can find you.
-          </p>
-          ${btn('Browse All Jobs', '/jobs')}
+          ` : ''}
+
+          <div style="border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin: 24px 0;">
+            <div style="padding: 20px;">
+              <h3 style="color: #1a1a1a; margin: 0 0 4px 0; font-size: 17px; font-weight: 700;">${esc(d.job_title)}</h3>
+              <p style="color: #0d7377; margin: 0 0 2px 0; font-size: 14px; font-weight: 600;">${esc(d.company_name)}</p>
+              ${d.job_location ? `<p style="color: #6b7280; margin: 0; font-size: 13px;">${esc(d.job_location)}</p>` : ''}
+            </div>
+
+            ${d.salary_range || d.job_type_label ? `
+            <div style="border-top: 1px solid #e5e7eb; padding: 16px 20px;">
+              ${d.salary_range ? `
+              <div style="margin-bottom: ${d.job_type_label ? '10px' : '0'};">
+                <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 2px 0;">Salary</p>
+                <p style="color: #1a1a1a; font-size: 14px; font-weight: 600; margin: 0;">${esc(d.salary_range)}</p>
+              </div>
+              ` : ''}
+              ${d.job_type_label ? `
+              <div>
+                <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 2px 0;">Job Type</p>
+                <p style="color: #1a1a1a; font-size: 14px; font-weight: 600; margin: 0;">${esc(d.job_type_label)}</p>
+              </div>
+              ` : ''}
+            </div>
+            ` : ''}
+
+            ${d.job_description_preview ? `
+            <div style="border-top: 1px solid #e5e7eb; padding: 16px 20px;">
+              <p style="color: #6b7280; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 6px 0;">Job Description</p>
+              <p style="color: #374151; font-size: 13px; line-height: 1.5; margin: 0;">${esc(d.job_description_preview)}...</p>
+              ${d.listing_url ? `<a href="${d.listing_url}" style="color: #0d7377; font-size: 13px; text-decoration: none; font-weight: 600; margin-top: 8px; display: inline-block;">Learn more</a>` : ''}
+            </div>
+            ` : ''}
+          </div>
+
+          <div style="background-color: #f9fafb; border-radius: 10px; padding: 16px 20px; margin: 24px 0; text-align: center;">
+            <p style="color: #6b7280; font-size: 13px; margin: 0 0 4px 0;">Keep your JobLinks profile up to date</p>
+            <a href="${SITE}/profile" style="color: #0d7377; font-size: 13px; text-decoration: none; font-weight: 600;">Edit profile</a>
+          </div>
         `),
       }
 

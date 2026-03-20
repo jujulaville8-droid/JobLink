@@ -41,10 +41,10 @@ async function notifyJobSeekers(jobId: string) {
   try {
     const admin = createAdminClient()
 
-    // Get job details
+    // Get full job details
     const { data: job } = await admin
       .from('job_listings')
-      .select('title, companies(company_name)')
+      .select('title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name)')
       .eq('id', jobId)
       .single()
 
@@ -53,27 +53,61 @@ async function notifyJobSeekers(jobId: string) {
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
     const companyName = company?.company_name || 'An employer'
     const jobTitle = job.title
+    const listingUrl = `${BASE_URL}/jobs/${jobId}`
 
-    // Get all seeker emails
-    const { data: seekers } = await admin
+    // Format salary
+    let salaryRange = ''
+    if (job.salary_visible && (job.salary_min || job.salary_max)) {
+      const fmt = (n: number) => n >= 1000 ? `EC$${(n / 1000).toFixed(0)}k` : `EC$${n}`
+      if (job.salary_min && job.salary_max) salaryRange = `${fmt(job.salary_min)} – ${fmt(job.salary_max)}`
+      else if (job.salary_min) salaryRange = `From ${fmt(job.salary_min)}`
+      else if (job.salary_max) salaryRange = `Up to ${fmt(job.salary_max)}`
+    }
+
+    // Format job type
+    const jobTypeLabels: Record<string, string> = { full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', seasonal: 'Seasonal' }
+    const jobTypeLabel = jobTypeLabels[job.job_type] || job.job_type
+
+    // Description preview (first 200 chars)
+    const descPreview = job.description ? job.description.slice(0, 200).replace(/\n/g, ' ') : ''
+
+    // Get all seekers with their first names
+    const { data: seekerUsers } = await admin
       .from('users')
-      .select('email')
+      .select('id, email')
       .eq('role', 'seeker')
       .eq('email_verified', true)
 
-    if (!seekers || seekers.length === 0) return
+    if (!seekerUsers || seekerUsers.length === 0) return
 
-    const listingUrl = `${BASE_URL}/jobs/${jobId}`
+    // Get seeker first names
+    const seekerIds = seekerUsers.map(s => s.id)
+    const { data: seekerProfiles } = await admin
+      .from('seeker_profiles')
+      .select('user_id, first_name')
+      .in('user_id', seekerIds)
 
-    // Send emails in batches (fire-and-forget, won't block approval)
-    for (const seeker of seekers) {
+    const nameMap: Record<string, string> = {}
+    if (seekerProfiles) {
+      for (const p of seekerProfiles) {
+        if (p.first_name) nameMap[p.user_id] = p.first_name
+      }
+    }
+
+    // Send personalized emails
+    for (const seeker of seekerUsers) {
       if (seeker.email) {
         sendEmail({
           to: seeker.email,
           type: 'new_job_posted',
           data: {
+            seeker_name: nameMap[seeker.id] || '',
             job_title: jobTitle,
             company_name: companyName,
+            job_location: job.location || '',
+            job_type_label: jobTypeLabel,
+            salary_range: salaryRange,
+            job_description_preview: descPreview,
             listing_url: listingUrl,
           },
         })
