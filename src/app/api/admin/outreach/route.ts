@@ -7,8 +7,7 @@ import outreachData from './outreach-data.json'
 const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
 const SIGNUP_URL = 'https://joblinkantigua.com/signup?role=employer'
 const CALENDLY_URL = 'https://calendly.com/joblink-anu/ecom'
-const BATCH_SIZE = 73
-const RATE_LIMIT_MS = 600
+const RATE_LIMIT_MS = 100 // Resend premium — faster sends
 
 interface Employer {
   company_name: string
@@ -17,6 +16,7 @@ interface Employer {
   website: string
   phone: string
   email: string
+  email1_already_sent?: boolean
 }
 
 // ─── Email wrapper (matches existing JobLinks branding) ─────────────────────
@@ -172,7 +172,7 @@ function delay(ms: number): Promise<void> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { secret, email, batch, signupCount = 5, dryRun = false } = body
+    const { secret, email, signupCount = 5, dryRun = false } = body
 
     // Auth via secret key (for automated calls without user session)
     const expectedSecret = process.env.OUTREACH_SECRET
@@ -183,9 +183,6 @@ export async function POST(req: NextRequest) {
     // Validate params
     if (![1, 2, 3].includes(email)) {
       return NextResponse.json({ error: 'email must be 1, 2, or 3' }, { status: 400 })
-    }
-    if (email === 1 && ![1, 2, 3].includes(batch)) {
-      return NextResponse.json({ error: 'batch must be 1, 2, or 3 for email 1' }, { status: 400 })
     }
 
     const apiKey = process.env.RESEND_API_KEY
@@ -200,12 +197,10 @@ export async function POST(req: NextRequest) {
     let recipients: Employer[]
 
     if (email === 1) {
-      const start = (batch - 1) * BATCH_SIZE
-      const end = Math.min(batch * BATCH_SIZE, employers.length)
-      recipients = employers.slice(start, end)
+      // Email 1: skip employers who were already sent Email 1
+      recipients = employers.filter(emp => !emp.email1_already_sent)
     } else {
-      // For emails 2 & 3, send to all (filtering by tracker would need DB storage)
-      // For now, send to all employers
+      // Emails 2 & 3: send to ALL employers
       recipients = employers
     }
 
@@ -258,7 +253,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       summary: {
         emailNumber: email,
-        batch: email === 1 ? batch : 'all',
         totalRecipients: recipients.length,
         sent: sentCount,
         failed: failCount,
