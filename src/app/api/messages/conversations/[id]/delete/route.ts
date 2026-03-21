@@ -24,11 +24,16 @@ export async function DELETE(
     if (!participant) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     // Remove the participant row (soft delete for this user)
-    await supabase
+    const { error: deleteError } = await supabase
       .from('conversation_participants')
       .delete()
       .eq('conversation_id', conversationId)
       .eq('user_id', user.id)
+
+    if (deleteError) {
+      console.error('Failed to delete conversation participant:', deleteError)
+      return NextResponse.json({ error: 'Failed to delete conversation' }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch {
