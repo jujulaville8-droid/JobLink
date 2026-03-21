@@ -1,0 +1,1706 @@
+[
+  {
+    "company_name": "1st Choice Foods",
+    "sector": "Retail",
+    "location": "Anchorage Rd",
+    "website": "",
+    "phone": "268-463-3663",
+    "email": "info@firstchoicefoods.com"
+  },
+  {
+    "company_name": "ABI Insurance",
+    "sector": "Accounting / Finance",
+    "location": "156 Redcliffe St, St John's",
+    "website": "http://www.abiinsurancecoltd.com",
+    "phone": "",
+    "email": "info@abiinsurancecoltd.com"
+  },
+  {
+    "company_name": "ABS News",
+    "sector": "None",
+    "location": "St John's",
+    "website": "",
+    "phone": "1-268-462-2996",
+    "email": "abs.news@ab.gov.ag"
+  },
+  {
+    "company_name": "ACB Caribbean",
+    "sector": "Accounting / Finance",
+    "location": "Friars Hill Road, St John's",
+    "website": "https://ag.acbonline.com/",
+    "phone": "1-268-481-4220",
+    "email": "customerservice@acbcaribbean.com"
+  },
+  {
+    "company_name": "Airport Services Antigua Ltd.",
+    "sector": "Transportation",
+    "location": "7 St. George's Street, P.O. Box 15, St. John's",
+    "website": "https://www.asaanu.com/",
+    "phone": "268-462-0889",
+    "email": "asa@candw.ag"
+  },
+  {
+    "company_name": "Akary\u2019s Medical and Surgical Center (AMS)",
+    "sector": "Health Care",
+    "location": "All saints Rd , opposite Caribconex, Saint John's,",
+    "website": "",
+    "phone": "1(268)481-5200",
+    "email": "info@medicalsurgicalassociatesag.com"
+  },
+  {
+    "company_name": "All Mart",
+    "sector": "Courier & Delivery Services",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.allmartplace.com/en/",
+    "phone": "+1 268-713-0040",
+    "email": "support@allmartplace.com"
+  },
+  {
+    "company_name": "Amalgamated Security Services (Antigua) Limited",
+    "sector": "Security / Defense",
+    "location": "PO Box W1616 Scotts Hill Road, Saint John's, Antigua",
+    "website": "https://asslantigua.com/index.htm",
+    "phone": "1-268-464-7469",
+    "email": "daniel.knight@asslantigua.com"
+  },
+  {
+    "company_name": "American University of Antigua",
+    "sector": "Education Training",
+    "location": "Jabberwock Rd, Osbourn, Antigua",
+    "website": "http://auamed.org",
+    "phone": "268-484-8900",
+    "email": "admissions@auacas.org"
+  },
+  {
+    "company_name": "AMG Protection",
+    "sector": "Security / Defense",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1 268-714-1025",
+    "email": "contact@amgprotect.com"
+  },
+  {
+    "company_name": "Anatomy Fitness",
+    "sector": "Fitness",
+    "location": "Blue Waters AG, Cedar Grove",
+    "website": "",
+    "phone": "",
+    "email": "info@anatomyfitnessanu.com"
+  },
+  {
+    "company_name": "Anguilla Tourist Board",
+    "sector": "Hotel / Tourism",
+    "location": "Anguilla",
+    "website": "https://ivisitanguilla.com/",
+    "phone": "+1 264-497-2759",
+    "email": "atbtour@anguillanet.com"
+  },
+  {
+    "company_name": "Antigua & Barbuda College of Advanced Studies \u2013 ABCAS",
+    "sector": "Education Training",
+    "location": "Sir George Walter Highway and Jabberwock Rd., St. George\u2019s P.O.Box 736",
+    "website": "http://abcas.edu.ag",
+    "phone": "268-462-1434",
+    "email": "info@asc.edu.ag"
+  },
+  {
+    "company_name": "Antigua & Barbuda Department of Marine Services and Merchant Shipping",
+    "sector": "Government / Public Services",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1 (268) 462-1273",
+    "email": "registry@abregistry.ag"
+  },
+  {
+    "company_name": "Antigua and Barbuda Airport Authority",
+    "sector": "Government / Public Services",
+    "location": "Antigua and Barbuda",
+    "website": "https://vcbia.com/antigua-barbuda-airport-authority/",
+    "phone": "",
+    "email": "abairportauthority@ab.gov.ag"
+  },
+  {
+    "company_name": "Antigua and Barbuda Hospitality Training Institute (ABHTI)",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda Hotel Training, Osbourn",
+    "website": "http://abhti.edu.ag/",
+    "phone": "",
+    "email": "info@abhti.com"
+  },
+  {
+    "company_name": "Antigua and Barbuda National Parks",
+    "sector": "None",
+    "location": "None",
+    "website": "",
+    "phone": "268 481 5021",
+    "email": "info@nationalparksantigua.com"
+  },
+  {
+    "company_name": "Antigua and Barbuda Workers Union (ABWU)",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://abwunion.com/",
+    "phone": "",
+    "email": "secretariat@abwunion.com"
+  },
+  {
+    "company_name": "Antigua Barbuda Statistics Division",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://statistics.gov.ag/",
+    "phone": "",
+    "email": "info.stats@ab.gov.ag"
+  },
+  {
+    "company_name": "Antigua Day Charters",
+    "sector": "Hospitality",
+    "location": "SeaDream Dock, Jolly Harbour",
+    "website": "http://antiguadaycharters.com",
+    "phone": "268-728-5239",
+    "email": "team@antiguadaycharters.com"
+  },
+  {
+    "company_name": "Antigua Distillery",
+    "sector": "Beverage Manufacturing",
+    "location": "None",
+    "website": "http://www.antiguadistillery.com/",
+    "phone": "+1 268-480-3200",
+    "email": "info@antiguadistillery.com"
+  },
+  {
+    "company_name": "Antigua Distillery Limited",
+    "sector": "Restaurant / Food Services",
+    "location": "St John's",
+    "website": "http://antiguadistillery.com/",
+    "phone": "+1 268-480-3200",
+    "email": "info@antiguadistillery.com"
+  },
+  {
+    "company_name": "Antigua Home and Garden Centre",
+    "sector": "Retail",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.antiguahomeandgarden.com/",
+    "phone": "268-562-0268",
+    "email": "ahgc@ryangroupantigua.com"
+  },
+  {
+    "company_name": "Antigua Masonry Products Ltd.",
+    "sector": "Construction / Facilities",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "1-268-462-0347",
+    "email": "anumasonry@candw.ag"
+  },
+  {
+    "company_name": "ANTIGUA MOTORS",
+    "sector": "Automotive Jobs",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.antiguamotorsltd.com/",
+    "phone": "268-462-3234",
+    "email": "gm@antiguamotorsltd.com"
+  },
+  {
+    "company_name": "Antigua Observer",
+    "sector": "Telecommunications",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "(268) 480-1750",
+    "email": "web@antiguaobserver.com"
+  },
+  {
+    "company_name": "Antigua Plumbing & Hardware Centre Ltd.",
+    "sector": "Construction / Facilities",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "(268) 462-1496",
+    "email": "antiguaplumbing@candw.ag"
+  },
+  {
+    "company_name": "Antigua VIP Tours",
+    "sector": "Hospitality",
+    "location": "Union Road, Hatton, St. John's",
+    "website": "https://www.antiguaviptours.com/",
+    "phone": "268-724-2129",
+    "email": "antiguaviptours@gmail.com"
+  },
+  {
+    "company_name": "APUA",
+    "sector": "Telecommunications",
+    "location": "None",
+    "website": "http://apua.ag",
+    "phone": "268-480-7150",
+    "email": "info@apua.ag"
+  },
+  {
+    "company_name": "Asian Voyage Restaurant and Bar Antigua",
+    "sector": "Restaurant / Food Services",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "liteneze@gmail.com"
+  },
+  {
+    "company_name": "Attorney General\u2019s Ministry (Litigation Unit)",
+    "sector": "Government / Public Services",
+    "location": "Belize",
+    "website": "https://www.agm.gov.bz/home",
+    "phone": "+(501)-822-0519",
+    "email": "ministry.info@agm.gov.bz"
+  },
+  {
+    "company_name": "Automotive Art Antigua",
+    "sector": "Automotive Jobs",
+    "location": "Old Parham Road, Saint John's, Antigua",
+    "website": "",
+    "phone": "1 (268) 460-7211",
+    "email": "sales@autoartanu.com"
+  },
+  {
+    "company_name": "Baby Beanz Boutique",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://babybeanzboutique.com/",
+    "phone": "268-726-2229",
+    "email": "babybeanzboutique@gmail.com"
+  },
+  {
+    "company_name": "BACK 2 ROOTS Plant Nursery",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1 268-726-7459",
+    "email": "back2rootsorganic@gmail.com"
+  },
+  {
+    "company_name": "Barbados Golf Club",
+    "sector": "Hotel / Tourism",
+    "location": "Barbados",
+    "website": "https://www.barbadosgolfclub.com/",
+    "phone": "1-246-538-4653",
+    "email": "teetime@barbadosgolfclub.com"
+  },
+  {
+    "company_name": "Barbuda Landscaping Co.",
+    "sector": "Landscaping",
+    "location": "Cobbs Cross Corner, English Harbour, Saint Paul",
+    "website": "https://barbudalandscapingco.com/",
+    "phone": "268-562-8074",
+    "email": "info@barbudalandscapingco.com"
+  },
+  {
+    "company_name": "Bay Gardens",
+    "sector": "Hospitality",
+    "location": "Hodges Bay, Antigua",
+    "website": "",
+    "phone": "758-457-8514",
+    "email": "info@baygardensresorts.com"
+  },
+  {
+    "company_name": "Bay Gardens Resort",
+    "sector": "Hotel / Tourism",
+    "location": "Saint Lucia",
+    "website": "https://www.baygardensresorts.com/",
+    "phone": "758-457-8514",
+    "email": "info@baygardensresorts.com"
+  },
+  {
+    "company_name": "Big Banana",
+    "sector": "Restaurant / Food Services",
+    "location": "None",
+    "website": "",
+    "phone": "(268) 480 6967",
+    "email": "info@bigbanana-antigua.com"
+  },
+  {
+    "company_name": "Blue Waters Resort & Spa",
+    "sector": "Hotel / Tourism",
+    "location": "Soldiers Bay, Saint John,",
+    "website": "http://bluewaters.net",
+    "phone": "268-462-0290",
+    "email": "reservations@bluewaters.net"
+  },
+  {
+    "company_name": "Bluesea The Latin American Traveller",
+    "sector": "Hotel / Tourism",
+    "location": "St.John's",
+    "website": "https://www.bluesea.ag/en_gb/",
+    "phone": "268-464-1389",
+    "email": "mbritto@bluesea.ag"
+  },
+  {
+    "company_name": "Board Walk Casino",
+    "sector": "Entertainment",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1 268 562 9988",
+    "email": "play@boardwalkcasino.ag"
+  },
+  {
+    "company_name": "C&C Wine House",
+    "sector": "Restaurant / Food Services",
+    "location": "Redcliffe Quay",
+    "website": "http://ccwinehouseantigua.com",
+    "phone": "268-460-7025",
+    "email": "info@ccwinehouse.com"
+  },
+  {
+    "company_name": "Cable and Wireless Communications",
+    "sector": "Telecommunications",
+    "location": "Clare Hall Box 65, St John\u2019s",
+    "website": "http://Liberty.com",
+    "phone": "305-424-9547",
+    "email": "investor.relations@libertycaribbean.com"
+  },
+  {
+    "company_name": "CAGE Antigua-Barbuda Ltd.",
+    "sector": "Entertainment",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.caribbeancage.com/",
+    "phone": "",
+    "email": "info@caribbeancage.com"
+  },
+  {
+    "company_name": "Caribbean Hotel Services",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "https://caribbeanhotelservices.com/",
+    "phone": "",
+    "email": "info@caribbeanhotelservices.com"
+  },
+  {
+    "company_name": "Caribbean Union Bank",
+    "sector": "Accounting / Finance",
+    "location": "Antigua and Barbuda",
+    "website": "https://caribbeanunionbank.com/",
+    "phone": "268-481-8278",
+    "email": "info@caribbeanunionbank.com"
+  },
+  {
+    "company_name": "CARICOM: Caribbean Community",
+    "sector": "Government / Public Services",
+    "location": "Guyana",
+    "website": "https://caricom.org/",
+    "phone": "592-222-0117",
+    "email": "carisecl@caricom.org"
+  },
+  {
+    "company_name": "Carlisle Bay",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.carlisle-bay.com/",
+    "phone": "268-484-0000",
+    "email": "reservations@carlisle-bay.com"
+  },
+  {
+    "company_name": "Carlisle Laboratories Ltd.(part of the Aventa/Agostini Ltd. Group)",
+    "sector": "Health Care",
+    "location": "Barbados",
+    "website": "",
+    "phone": "(246) 425-4550",
+    "email": "carlislelabs@carlislelaboratories.com"
+  },
+  {
+    "company_name": "Casa Roots",
+    "sector": "Restaurant / Food Services",
+    "location": "Runaway Beach",
+    "website": "https://www.casaroots-antigua.com/",
+    "phone": "268-722-2000",
+    "email": "info@casarootsantigua.com"
+  },
+  {
+    "company_name": "Cashwiz Antigua",
+    "sector": "Retail",
+    "location": "None",
+    "website": "https://www.facebook.com/cashwiz.anu",
+    "phone": "1-268-562-8090",
+    "email": "aphillip@cashwiz.com"
+  },
+  {
+    "company_name": "Cecilias High Point Cafe",
+    "sector": "Restaurant / Food Services",
+    "location": "None",
+    "website": "",
+    "phone": "+1 268 562 7070",
+    "email": "HighPointAntigua@gmail.com"
+  },
+  {
+    "company_name": "Center for the Holistic Advancement of Therapeutic Services (CHATS)",
+    "sector": "Education Training",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "Chats.antigua@gmail.com"
+  },
+  {
+    "company_name": "CG United Insurance",
+    "sector": "Accounting / Finance",
+    "location": "Saint Lucia",
+    "website": "https://lc.cgcoralisle.com/",
+    "phone": "758-456-6560",
+    "email": "CGUfeedback@cgcoralisle.com"
+  },
+  {
+    "company_name": "Chase Distributor\u2019s Ltd",
+    "sector": "Restaurant / Food Services",
+    "location": "Factory Rd, Piggotts",
+    "website": "",
+    "phone": "",
+    "email": "accounts@chasedistributors.com"
+  },
+  {
+    "company_name": "CHIEF BRAND PRODUCTS",
+    "sector": "Restaurant / Food Services",
+    "location": "Trinidad and Tobago",
+    "website": "https://www.chief-brand.com/",
+    "phone": "868-665-4144",
+    "email": "admin@chief-brand.com"
+  },
+  {
+    "company_name": "Chippy Fine Yacht Woodwork",
+    "sector": "Carpentry",
+    "location": "Falmouth, Saint Pauls",
+    "website": "http://www.chippyantigua.com/",
+    "phone": "268-464-2447",
+    "email": "chippyantiqua@gmail.com"
+  },
+  {
+    "company_name": "Cleaning Agency",
+    "sector": "Cleaning",
+    "location": "None",
+    "website": "",
+    "phone": "(268) 463-7859",
+    "email": "poshprodigious@gmail.com"
+  },
+  {
+    "company_name": "Cocobay Resort",
+    "sector": "Hotel / Tourism",
+    "location": "Valley Church, NA",
+    "website": "",
+    "phone": "268 562 2400",
+    "email": "reservations@cocobayresort.com"
+  },
+  {
+    "company_name": "Colibri",
+    "sector": "Restaurant / Food Services",
+    "location": "57 Dockyard Drive English Harbour Town",
+    "website": "",
+    "phone": "+1 (268) 460-3434",
+    "email": "info@colibriantigua.com"
+  },
+  {
+    "company_name": "Community First Co-operative Credit Union",
+    "sector": "Accounting / Finance",
+    "location": "Old Parham Road",
+    "website": "http://cfccuonline.com",
+    "phone": "268-481-3950",
+    "email": "info@cfccuonline.com"
+  },
+  {
+    "company_name": "Coreas Building Supplies Ltd.",
+    "sector": "Construction / Facilities",
+    "location": "Saint Vincent and the Grenadines",
+    "website": "https://www.coreasbuilding.vc",
+    "phone": "784-456-1201",
+    "email": "coreasbuilding@thegelgroup.com"
+  },
+  {
+    "company_name": "Courts Antigua & Barbuda",
+    "sector": "Retail / Furniture Sales and Home D\u00e9cor",
+    "location": "Antigua and Barbuda",
+    "website": "http://courts.com/antigua",
+    "phone": "268-462-1640",
+    "email": "talktous@courts.co.ag"
+  },
+  {
+    "company_name": "CPJ Caribbean Producers St.Lucia Ltd",
+    "sector": "Restaurant / Food Services",
+    "location": "Saint Lucia",
+    "website": "https://www.cpj.com/",
+    "phone": "758-458-7551",
+    "email": "custsvc@slu.cpjstlucia.com"
+  },
+  {
+    "company_name": "Crab Hole",
+    "sector": "Retail",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "268-462-9082",
+    "email": "crabholeliquors@candw.ag"
+  },
+  {
+    "company_name": "Crossroads Centre Antigua",
+    "sector": "Health Care",
+    "location": "Willoughby Bay, Saint John's",
+    "website": "https://crossroadsantigua.org/",
+    "phone": "268-562-0035",
+    "email": "info@crossroadsantigua.org"
+  },
+  {
+    "company_name": "Curtain Bluff",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "268/462-8400",
+    "email": "curtainbluff@curtainbluff.com"
+  },
+  {
+    "company_name": "Dadli Dose",
+    "sector": "Beverage Manufacturing",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "dadlidose.antigua@gmail.com"
+  },
+  {
+    "company_name": "Digicel",
+    "sector": "Telecommunications",
+    "location": "Digicel Antigua and Barbuda, Hills Park, Friars Hill",
+    "website": "https://www.digicelgroup.com",
+    "phone": "268-726-2050",
+    "email": "dc.customercare@digicelgroup.com"
+  },
+  {
+    "company_name": "Dirt Busters Cleaners",
+    "sector": "Cleaning",
+    "location": "None",
+    "website": "https://dadlidirectory.com/at_biz_dir/dirt-busters-cleaners/",
+    "phone": "1-268-722-9080",
+    "email": "dirtbustersanu@outlook.com"
+  },
+  {
+    "company_name": "Eastern Caribbean Asset Management Corporation",
+    "sector": "Accounting / Finance",
+    "location": "Antigua and Barbuda",
+    "website": "https://ec-amc.com/",
+    "phone": "",
+    "email": "antiguaagent@eccorights.com"
+  },
+  {
+    "company_name": "Eastern Caribbean Central Bank (ECCB)",
+    "sector": "None",
+    "location": "None",
+    "website": "https://www.eccb-centralbank.org/",
+    "phone": "268-481-8278",
+    "email": "info@caribbeanunionbank.com"
+  },
+  {
+    "company_name": "Eastern\u00a0Caribbean\u00a0Civil\u00a0Aviation\u00a0Authority\u00a0(ECCAA)",
+    "sector": "Aviation",
+    "location": "Factory Rd & Nugent Ave",
+    "website": "https://eccaa.aero/",
+    "phone": "",
+    "email": "antiguaagent@eccorights.com"
+  },
+  {
+    "company_name": "EBAS",
+    "sector": "Accounting / Finance",
+    "location": "Antigua and Barbuda",
+    "website": "https://ebasantigua.com/",
+    "phone": "268-562-4664",
+    "email": "info@ebasantigua.com"
+  },
+  {
+    "company_name": "ECAB",
+    "sector": "None",
+    "location": "None",
+    "website": "https://www.ecabank.com/home/index.php?id=57",
+    "phone": "268-480-5300",
+    "email": "info@ecabank.com"
+  },
+  {
+    "company_name": "Elmsbridge",
+    "sector": "Construction / Facilities",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1 268 562 8586",
+    "email": "info@elmsbridge.com"
+  },
+  {
+    "company_name": "Emporium Smoke Studio",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.facebook.com/EmporiumSmokeStudio/",
+    "phone": "(268)780-4372",
+    "email": "info@emporiumsmokestudio.com"
+  },
+  {
+    "company_name": "Excel Tyres",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.facebook.com/exceltires/",
+    "phone": "",
+    "email": "Info@excel-tyres.com"
+  },
+  {
+    "company_name": "F. L. Enterprise",
+    "sector": "Courier & Delivery Services",
+    "location": "Upper New Gate Street, YMCA Area, Saint John's, Antigua",
+    "website": "",
+    "phone": "",
+    "email": "flenterprise268@gmail.com"
+  },
+  {
+    "company_name": "Faster Freight 268",
+    "sector": "Courier & Delivery Services",
+    "location": "JR's Complex, Friars Hill Rd, Saint John, Antigua, 00000",
+    "website": "http://fasterfreight.co",
+    "phone": "(268) 462-7447",
+    "email": "info@fasterfreight.co"
+  },
+  {
+    "company_name": "Favio",
+    "sector": "Consulting",
+    "location": "Barbados",
+    "website": "http://faviogroup.com",
+    "phone": "",
+    "email": "info@faviogroup.com"
+  },
+  {
+    "company_name": "Financial Services Regulatory Commission",
+    "sector": "Government / Public Services",
+    "location": "None",
+    "website": "https://www.fsrc.gov.ag/",
+    "phone": "(268) 481-3301",
+    "email": "info@fsrc.gov.ag"
+  },
+  {
+    "company_name": "FL Hardware",
+    "sector": "Hardware",
+    "location": "All Saints road, Belmont, Saint John's",
+    "website": "",
+    "phone": "268-780-8820",
+    "email": "flhardwarestore@gmail.com"
+  },
+  {
+    "company_name": "Flo\u2019s Perfume +",
+    "sector": "Retail",
+    "location": "Lower Long Street & VC Bird Int'l Airport , Saint John's,",
+    "website": "",
+    "phone": "",
+    "email": "flosperfumeplus@gmail.com"
+  },
+  {
+    "company_name": "Food Brokerage Services Ltd.",
+    "sector": "Restaurant / Food Services",
+    "location": "Friars Hill Road, St. John's, Antigua",
+    "website": "https://foodbrokerageservices.com/careers-2/",
+    "phone": "(268) 727-3220",
+    "email": "ad.inventory@gmail.com"
+  },
+  {
+    "company_name": "Franco App",
+    "sector": "None",
+    "location": "None",
+    "website": "https://francoapp.com/",
+    "phone": "",
+    "email": "team@francoapp.com"
+  },
+  {
+    "company_name": "Galley Bay Resort & Spa",
+    "sector": "Hotel / Tourism",
+    "location": "Five Island Village, Saint John\u02bcs",
+    "website": "https://www.galleybayresort.com/",
+    "phone": "(268) 484-3300",
+    "email": "social@galleybayantigua.com"
+  },
+  {
+    "company_name": "Garden Grill",
+    "sector": "Restaurant / Food Services",
+    "location": "Dutchman's Bay, wi Saint John's, St. John\u2019s, Antigua",
+    "website": "",
+    "phone": "(268)464-0207",
+    "email": "rockneyanu@gmail.com"
+  },
+  {
+    "company_name": "Gather Steakhouse and Sushi",
+    "sector": "Restaurant / Food Services",
+    "location": "Dutchman's Bay, Coolidge",
+    "website": "",
+    "phone": "+1 268-771-6299",
+    "email": "erinfuller@gmail.com"
+  },
+  {
+    "company_name": "GOcargo Antigua",
+    "sector": "Courier & Delivery Services",
+    "location": "Brysons Complex, Friars Hill Rd",
+    "website": "http://gocargo.ag",
+    "phone": "(268) 779-4357",
+    "email": "antigua@gocargo.ag"
+  },
+  {
+    "company_name": "Goddard Catering Group (GCG)",
+    "sector": "Restaurant / Food Services",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "1-268-462-3121",
+    "email": "anu.gcgevents@goddardcatering.com"
+  },
+  {
+    "company_name": "Going Places Travel",
+    "sector": "Transportation",
+    "location": "Barbados",
+    "website": "http://goingplacestravel.com",
+    "phone": "(268) 481-2700",
+    "email": "concierge@goingplacestravel.com"
+  },
+  {
+    "company_name": "Gores Wholesale",
+    "sector": "Retail",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "268-462-1744",
+    "email": "goresaccts@gmail.com"
+  },
+  {
+    "company_name": "Government of Montserrat",
+    "sector": "Government / Public Services",
+    "location": "Montserrat",
+    "website": "https://www.gov.ms",
+    "phone": "(664) 491-2777",
+    "email": "finance@gov.ms"
+  },
+  {
+    "company_name": "Grenada Development Bank",
+    "sector": "Accounting / Finance",
+    "location": "Grenada",
+    "website": "https://www.grenadadevelopmentbank.com/",
+    "phone": "(473) 440-2382",
+    "email": "info@gdbbank.com"
+  },
+  {
+    "company_name": "Grenada Tourism Authority",
+    "sector": "Government / Public Services",
+    "location": "Grenada",
+    "website": "https://www.puregrenada.com",
+    "phone": "(473) 440-2279",
+    "email": "info@puregrenada.com"
+  },
+  {
+    "company_name": "Grenada Tourism Authority",
+    "sector": "Hotel / Tourism",
+    "location": "Grenada",
+    "website": "",
+    "phone": "(473) 440-2279",
+    "email": "info@puregrenada.com"
+  },
+  {
+    "company_name": "Growing Minds -Preschool and Daycare Centre",
+    "sector": "Childcare",
+    "location": "Belmont",
+    "website": "",
+    "phone": "",
+    "email": "Growingmindsanu@gmail.com"
+  },
+  {
+    "company_name": "H.H.V Whitchurch & Co Ltd",
+    "sector": "Retail",
+    "location": "Dominica",
+    "website": "https://www.whitchurch.com/",
+    "phone": "(767) 448-2181",
+    "email": "customerservice@whitchurch.com"
+  },
+  {
+    "company_name": "Hammock Cove Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Indian Town Creek, Saint Philips, Antigua, W.INDIES",
+    "website": "http://hammockcoveantigua.com",
+    "phone": "(268) 484-6550",
+    "email": "reservations@eliteislandresorts.com"
+  },
+  {
+    "company_name": "Harpers Office Depot Antigua",
+    "sector": "Retail",
+    "location": "Friars Hill Road",
+    "website": "",
+    "phone": "(268) 462-5562",
+    "email": "sales@harpersoffice.com"
+  },
+  {
+    "company_name": "Hermitage Bay",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1-268-484-1200",
+    "email": "info@hermitagebay.com"
+  },
+  {
+    "company_name": "Hodges Bay",
+    "sector": "Hotel / Tourism",
+    "location": "Sandy Lane, Saint John",
+    "website": "https://www.hodgesbay.com/",
+    "phone": "(268) 484-000",
+    "email": "Reservations@HodgesBay.com"
+  },
+  {
+    "company_name": "H\u00f4tel Le Roy",
+    "sector": "Hotel / Tourism",
+    "location": "Barbados",
+    "website": "https://leroybarbados.com/",
+    "phone": "",
+    "email": "reservations@leroybarbados.com"
+  },
+  {
+    "company_name": "House Of Bo",
+    "sector": "Restaurant / Food Services",
+    "location": "Marble Hill, Saint John's, Antigua",
+    "website": "",
+    "phone": "",
+    "email": "contact@houseofbo.co"
+  },
+  {
+    "company_name": "Interlinc Group Antigua",
+    "sector": "Telecommunications",
+    "location": "Suite # 3 Royal Palm Place, Friars Hill Road, St. John\u2019s,",
+    "website": "https://www.interlincgroup.com/",
+    "phone": "(268) 562-6131",
+    "email": "info@interlincgroup.com"
+  },
+  {
+    "company_name": "Island Academy",
+    "sector": "Education Training",
+    "location": "Oliver's Estate PO Box W1884, Buckley's Main Rd, Buckleys",
+    "website": "",
+    "phone": "268 460 1094",
+    "email": "admin@islandacademy.com"
+  },
+  {
+    "company_name": "Issa Trading Ltd.",
+    "sector": "Retail",
+    "location": "Dominica",
+    "website": "https://www.issatradingltd.com",
+    "phone": "(767) 440-4040",
+    "email": "info@issatradingltd.com"
+  },
+  {
+    "company_name": "J. Astaphans & Co. Ltd",
+    "sector": "Retail",
+    "location": "Dominica",
+    "website": "",
+    "phone": "(767) 448-3221",
+    "email": "astaphans@cwdom.dm"
+  },
+  {
+    "company_name": "Jolly Beach Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Bolans Village, St. Mary\u2019s",
+    "website": "https://www.jollybeachantigua.com/",
+    "phone": "(268) 462-0061",
+    "email": "reservations@jollybeachresort.com"
+  },
+  {
+    "company_name": "K&L Distributors and Supplies",
+    "sector": "Restaurant / Food Services",
+    "location": "#3 Paynter\u2019s Industrial Park, Sir Sydney Walling High Way",
+    "website": "",
+    "phone": "",
+    "email": "kldistributorsanu@gmail.com"
+  },
+  {
+    "company_name": "Kay Inks",
+    "sector": "Printing / Graphic Design",
+    "location": "Independence Drive",
+    "website": "http://kayinks.com",
+    "phone": "(268) 786-4657",
+    "email": "kayinks268@gmail.com"
+  },
+  {
+    "company_name": "Kelly Construction",
+    "sector": "Construction / Facilities",
+    "location": "Saint Kitts and Nevis",
+    "website": "http://sknconstruction.com",
+    "phone": "(869) 760-1266",
+    "email": "info@sknconstruction.com"
+  },
+  {
+    "company_name": "Kennedy\u2019s Club Ltd.",
+    "sector": "Sales & Marketing",
+    "location": "Powells Main Road AG",
+    "website": "https://www.kennedysenterprises.com/",
+    "phone": "",
+    "email": "sales@kennedysenterprises.com"
+  },
+  {
+    "company_name": "Kentucky Fried Chicken (KFC) Antigua",
+    "sector": "Restaurant / Food Services",
+    "location": "Fort Road, Old Parham Road & Buckley Line, Saint John's",
+    "website": "",
+    "phone": "268-481-1535",
+    "email": "kfc@candw.ag"
+  },
+  {
+    "company_name": "Keyonna Beach Resort Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Turner's Beach, Johnson's Point, St Mary's Parish 0000",
+    "website": "",
+    "phone": "1 268-562-8880",
+    "email": "Reservations@KeyonnaBeachResortAntigua.com"
+  },
+  {
+    "company_name": "Kids Unlimited School",
+    "sector": "Education Training",
+    "location": "Antigua and Barbuda",
+    "website": "https://kidsunlimitedschool-anu.com/",
+    "phone": "268-461-0414",
+    "email": "info@kidsunlimitedschool-anu.com"
+  },
+  {
+    "company_name": "Koscab Antigua",
+    "sector": "Beverage Manufacturing",
+    "location": "Powell's Main Road",
+    "website": "",
+    "phone": "1-268-764-5600",
+    "email": "Antigua@koscab.com"
+  },
+  {
+    "company_name": "Landing Strip Restaurant and Bar",
+    "sector": "Restaurant / Food Services",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "liteneze@gmail.com"
+  },
+  {
+    "company_name": "Laparkan Antigua Limited",
+    "sector": "Transportation",
+    "location": "Popeshead Street, Saint John",
+    "website": "https://laparkan.com/",
+    "phone": "268-562-5314",
+    "email": "info@laparkan.com"
+  },
+  {
+    "company_name": "LIAT 2020 ltd",
+    "sector": "Transportation",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.flyliat20.com/index.html",
+    "phone": "268-480-5601",
+    "email": "reservations@liat.com"
+  },
+  {
+    "company_name": "Liat Air",
+    "sector": "Transportation",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.flyliatair.com",
+    "phone": "268-480-5601",
+    "email": "reservations@liat.com"
+  },
+  {
+    "company_name": "Lite N\u2019 Eze Bar & Restaurant",
+    "sector": "Restaurant / Food Services",
+    "location": "Dockyard Dr., English Harbour Town",
+    "website": "",
+    "phone": "",
+    "email": "liteneze@gmail.com"
+  },
+  {
+    "company_name": "Luxury Vans Global",
+    "sector": "Automotive Jobs",
+    "location": "Mahico Drive",
+    "website": "http://luxuryvansglobal.com",
+    "phone": "1-268-764-2999",
+    "email": "service@luxuryvansglobal.com"
+  },
+  {
+    "company_name": "Marketing Machine",
+    "sector": "Sales & Marketing",
+    "location": "Friars Hill Road Village walk shopping center",
+    "website": "",
+    "phone": "(268) 464-1003",
+    "email": "info@marketingmachineantigua.com"
+  },
+  {
+    "company_name": "MD Urgent Care",
+    "sector": "Admin/Clerical",
+    "location": "All Saints Road, Browne\u2019s Avenue , Saint John's",
+    "website": "",
+    "phone": "268-464-3277",
+    "email": "mddoctorsanu@gmail.com"
+  },
+  {
+    "company_name": "Medical Surgical Associates",
+    "sector": "Health Care",
+    "location": "Lauchland Benjamin Drive AG, Antigua & Barbuda, Potters Village, Antigua",
+    "website": "",
+    "phone": "(268) 481-5200",
+    "email": "info@medicalsurgicalassociatesag.com"
+  },
+  {
+    "company_name": "Metropolitan University College of Medicine",
+    "sector": "Education Training",
+    "location": "Newgate Street, St. John's Antigua",
+    "website": "http://muantigua.org",
+    "phone": "813-755-6544",
+    "email": "info@muantigua.org"
+  },
+  {
+    "company_name": "Mi Casa Imports Limited",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "(268) 562-5329",
+    "email": "sales@micasatiles.com"
+  },
+  {
+    "company_name": "Mid- island Building Supplies",
+    "sector": "Building Supplies & Appliances",
+    "location": "Antigua and Barbuda",
+    "website": "https://dadlidirectory.com/employer/mid-island-building-supplies-limited/",
+    "phone": "",
+    "email": "midislandrecruitment@gmail.com"
+  },
+  {
+    "company_name": "Mill Reef Club",
+    "sector": "Hotel / Tourism",
+    "location": "None",
+    "website": "https://millreefclub.ag/",
+    "phone": "268-484-0700",
+    "email": "info@millreefclub.ag"
+  },
+  {
+    "company_name": "Ministry of Equity, Social Justice and Empowerment",
+    "sector": "Government / Public Services",
+    "location": "Saint Lucia",
+    "website": "https://socialtransformation.govt.lc/",
+    "phone": "758-468-5108",
+    "email": "most@gosl.gov.lc"
+  },
+  {
+    "company_name": "Moongate Antigua Hotel and Spa",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.moongateantigua.com/",
+    "phone": "268-562-2625",
+    "email": "info@moongateantigua.com"
+  },
+  {
+    "company_name": "Morpho Travel Experience",
+    "sector": "Retail",
+    "location": "V.C Bird International Airport, Pavilion Dr, Osbourn",
+    "website": "http://morphotr.com",
+    "phone": "",
+    "email": "info@morphotr.com"
+  },
+  {
+    "company_name": "National Housing Development & Urban Renewal Company Limited.",
+    "sector": "Construction / Facilities",
+    "location": "Bay St., Villa, P.O, Box W829, St. John's",
+    "website": "https://nhdurco.com/",
+    "phone": "(268) 481-2570",
+    "email": "inquiries@nhdurco.com"
+  },
+  {
+    "company_name": "NexusTours",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.nexustours.com",
+    "phone": "855-706-3987",
+    "email": "info@nexustours.com"
+  },
+  {
+    "company_name": "Nobu Barbuda",
+    "sector": "Restaurant / Food Services",
+    "location": "Princess Dianna Beach, Codrington",
+    "website": "https://www.noburestaurants.com/barbuda/nobu-barbuda-japanese-restaurant-bar-and-lounge",
+    "phone": "268-720-6628",
+    "email": "barbuda@noburestaurants.com"
+  },
+  {
+    "company_name": "North Coast Hardware",
+    "sector": "Construction / Facilities",
+    "location": "Blue Waters AG",
+    "website": "https://www.northcoast.shop/",
+    "phone": "268-734-2222",
+    "email": "info@northcoasthardware.com"
+  },
+  {
+    "company_name": "Ocean Point Resort & Spa",
+    "sector": "Hotel / Tourism",
+    "location": "Hodges Bay, St.John\u2019s Antigua",
+    "website": "https://oceanpointantigua.com/",
+    "phone": "268-562-8330",
+    "email": "info@oceanpointantigua.com"
+  },
+  {
+    "company_name": "One Stop Employment Centre (OSEC)",
+    "sector": "Government / Public Services",
+    "location": "1st Floor State Insurance Building Thames & Long Streets , Saint John's, Antigua",
+    "website": "",
+    "phone": "(246) 537-7243",
+    "email": "applications@bbempcent.com"
+  },
+  {
+    "company_name": "Ounces Ice Cream Parlor and Grill",
+    "sector": "Restaurant / Food Services",
+    "location": "None",
+    "website": "https://www.facebook.com/ouncesicecreamparlor/",
+    "phone": "+1 268-562-4440",
+    "email": "onucesicecream@gmail.com"
+  },
+  {
+    "company_name": "Outdoor World Limited",
+    "sector": "Automotive Jobs",
+    "location": "Old Parham Road",
+    "website": "http://outdoorworldanu.com",
+    "phone": "268-460-7211",
+    "email": "sales@outdoorworldanu.com"
+  },
+  {
+    "company_name": "Palo Seco Agricultural Enterprises Limited",
+    "sector": "Agriculture / Gardening",
+    "location": "Trinidad and Tobago",
+    "website": "https://www.psael.co.tt",
+    "phone": "868-649-5870",
+    "email": "contactpsael@gov.tt"
+  },
+  {
+    "company_name": "Paperclips Antigua",
+    "sector": "Courier & Delivery Services",
+    "location": "Royal Palm Place, Friar's Hill Road 00000",
+    "website": "",
+    "phone": "+1 (268) 462-5477",
+    "email": "mark@paperclipsantigua.com"
+  },
+  {
+    "company_name": "Paradise Casino",
+    "sector": "Entertainment",
+    "location": "4594 79F, St John's",
+    "website": "http://www.kingscasino.com/paradise-paradise-east",
+    "phone": "268-462-1727",
+    "email": "admin@kingscasino.com"
+  },
+  {
+    "company_name": "Paradise Foods",
+    "sector": "Hotel / Tourism",
+    "location": "Martinique",
+    "website": "https://paradisefoods.com/",
+    "phone": "",
+    "email": "contact@paradisefoods.com.pg"
+  },
+  {
+    "company_name": "Pegasus Technologies",
+    "sector": "IT / Programming",
+    "location": "Suite #206, Village Walk, Friars Hill Road, Antigua",
+    "website": "https://www.pegasus.ag/careers/",
+    "phone": "268-562-3832",
+    "email": "info@pegasus.ag"
+  },
+  {
+    "company_name": "Pineapple Road Antigua",
+    "sector": "None",
+    "location": "Billy's Complex, St John's",
+    "website": "https://www.pineappleroadantigua.com/",
+    "phone": "268-722-6794",
+    "email": "info@pineappleroadantigua.com"
+  },
+  {
+    "company_name": "Premier Properties Antigua",
+    "sector": "Real Estate and Property Services",
+    "location": "Jolly Harbour",
+    "website": "http://premierpropertiesantigua.com",
+    "phone": "268-778-6463",
+    "email": "info@premierpropertiesantigua.com"
+  },
+  {
+    "company_name": "PV. Energy Limited",
+    "sector": "Renewable Energy / Solar Energy Sales Sector",
+    "location": "11 Old Parham Road, c/o Corporate Services Ltd., Parham, Saint John",
+    "website": "http://pvenergyltd.com",
+    "phone": "268-9-785-7681",
+    "email": "info@pvenergyltd.com"
+  },
+  {
+    "company_name": "Road Runners",
+    "sector": "Restaurant / Food Services",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.facebook.com/RoadRunnersPizzeria",
+    "phone": "268-562-8075",
+    "email": "info@roadrunnerspizzeria.com"
+  },
+  {
+    "company_name": "Rock Adventures Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Belfast Bay",
+    "website": "http://rockadventuresantigua.com",
+    "phone": "268-736-7625",
+    "email": "info@rockadventuresantigua.com"
+  },
+  {
+    "company_name": "Rocks Group",
+    "sector": "Restaurant / Food Services",
+    "location": "Pigeon Beach, English Harbour Town, Antigua",
+    "website": "https://itsrocksgroup.com/",
+    "phone": "268-463-6161",
+    "email": "events@itsrocksgroup.com"
+  },
+  {
+    "company_name": "Royal ST Kitts Hotel",
+    "sector": "Hotel / Tourism",
+    "location": "Saint Kitts and Nevis",
+    "website": "http://royalstkittshotel.com",
+    "phone": "+1.869.465.8651",
+    "email": "reservations@royalstkittshotel.com"
+  },
+  {
+    "company_name": "ROYALTON ANTIGUA",
+    "sector": "Hotel / Tourism",
+    "location": "Royalton Resort 7 Casino, Five Island Village, Saint John's",
+    "website": "https://www.royaltonresorts.com/resorts/royalton-antigua",
+    "phone": "+1-268-484-2000",
+    "email": "infoantigua@royaltonresorts.com"
+  },
+  {
+    "company_name": "Royalton CHIC Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Halcyon Road, St. Johns",
+    "website": "https://www.royaltonresorts.com/resorts/chic-antigua",
+    "phone": "1-888-774-0040",
+    "email": "infoantigua@royaltonresorts.com"
+  },
+  {
+    "company_name": "Rubis \u2013 Grenada",
+    "sector": "Transportation",
+    "location": "Grenada",
+    "website": "https://www.rubis-caribbean.com",
+    "phone": "473-440-2683",
+    "email": "info@rubiscaribbean.com"
+  },
+  {
+    "company_name": "Sagicor Life Grenada",
+    "sector": "Accounting / Finance",
+    "location": "Grenada",
+    "website": "http://eservice@sagicor.com",
+    "phone": "473-440-1223",
+    "email": "info@sagicor.gd"
+  },
+  {
+    "company_name": "Saint Lucia National Housing Corporation",
+    "sector": "Government / Public Services",
+    "location": "Saint Lucia",
+    "website": "",
+    "phone": "268-562-7824",
+    "email": "inquiries@nhdurco.com"
+  },
+  {
+    "company_name": "Sandals Grande Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "St. John's Anchorage Rd Dickenson Bay, St. John's",
+    "website": "https://www.sandals.com/grande-antigua/",
+    "phone": "+1-268-462-0267",
+    "email": "nadi.alphonse@grp.sandals.com"
+  },
+  {
+    "company_name": "SANDRA\u2019S BEACH SHOP BAR & GRILL",
+    "sector": "Restaurant / Food Services",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "1-268-720-7709",
+    "email": "sandrasbeachshop@gmail.com"
+  },
+  {
+    "company_name": "Sea Dream",
+    "sector": "Restaurant / Food Services",
+    "location": "Jolly Harbour Marina, Saint John's",
+    "website": "",
+    "phone": "+12682685622637",
+    "email": "crowsnest2014antigua@gmail.com"
+  },
+  {
+    "company_name": "Siboney Beach Club",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "https://siboneybeachantigua.com/",
+    "phone": "+1 268 462 0806",
+    "email": "reservations@siboneybeachantigua.com"
+  },
+  {
+    "company_name": "Signature Aviation ANU",
+    "sector": "Transportation",
+    "location": "Former Runway 10, V.C. BIrd International Airport, Gate 7, Burma Road, Coolidge, St. Georges",
+    "website": "https://www.signatureaviation.com/fbo-pages/1273-C62/",
+    "phone": "+1 407 235 9018",
+    "email": "anu@signatureflight.com"
+  },
+  {
+    "company_name": "Signature Smokes",
+    "sector": "Hospitality",
+    "location": "Lower Redcliffe Street, Saint John's,",
+    "website": "",
+    "phone": "+1 268-773-5353",
+    "email": "Gridsolutionanu@gmail.com"
+  },
+  {
+    "company_name": "Sir Lester Bird Medical Centre (SLBMC)",
+    "sector": "Health Care",
+    "location": "Michael's Mount, St. John's, Antigua & Barbuda, W.I.",
+    "website": "",
+    "phone": "(268) 484-2711",
+    "email": "marketing@slbmedical.gov.ag"
+  },
+  {
+    "company_name": "South Point Hotel-MAIA",
+    "sector": "Hotel / Tourism",
+    "location": "Yacht Club Drive, English Harbour",
+    "website": "https://southpointantigua.com/",
+    "phone": "+1 800 857 2082",
+    "email": "reservations@southpointantigua.com"
+  },
+  {
+    "company_name": "Spa Sanguine",
+    "sector": "Cosmetic Services / Aesthetics",
+    "location": "Suite 126 Utopia Park, Sir George Walter Highway",
+    "website": "",
+    "phone": "",
+    "email": "marciapersaud13@msn.com"
+  },
+  {
+    "company_name": "Special Security Services",
+    "sector": "Security / Defense",
+    "location": "Lower All Saints Rd",
+    "website": "https://www.specialsecurityservices.ltd/blank-page-4",
+    "phone": "1-268-462-2772",
+    "email": "info@specsecservanu.com"
+  },
+  {
+    "company_name": "St. James Club",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://stjamesclubantigua.com/",
+    "phone": "1-866-237-2071",
+    "email": "guestservices@sjcantigua.com"
+  },
+  {
+    "company_name": "St. Joseph\u2019s Academy",
+    "sector": "Education Training",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "sjaantigua@gmail.com"
+  },
+  {
+    "company_name": "St. Vincent de Paul Day Care Centre for Seniors",
+    "sector": "Health Care",
+    "location": "Ovals, P. O. Box W503, Saint John's, Antigua",
+    "website": "",
+    "phone": "",
+    "email": "ssvpsjb@gmail.com"
+  },
+  {
+    "company_name": "St.John\u2019s Co-Operative Credit Union",
+    "sector": "Accounting / Finance",
+    "location": "Lower All Saints Road, Saint John's, Antigua",
+    "website": "https://sjccu.com/",
+    "phone": "268-481-3950",
+    "email": "info@cfccuonline.com"
+  },
+  {
+    "company_name": "Stingray City Antigua",
+    "sector": "Hospitality",
+    "location": "37WF JXX, Willikies",
+    "website": "http://www.stingraycityantigua.com/index.html",
+    "phone": "+1-268-562-7297",
+    "email": "stingray@candw.ag"
+  },
+  {
+    "company_name": "Structural Systems Limited",
+    "sector": "Construction / Facilities",
+    "location": "Barbados",
+    "website": "https://www.ssl.bb/",
+    "phone": "246-425-2000",
+    "email": "info@ssl.bb"
+  },
+  {
+    "company_name": "Subway Antigua and Barbuda",
+    "sector": "Restaurant / Food Services",
+    "location": "156 Redcliffe St",
+    "website": "https://www.subwayantigua.com/",
+    "phone": "(268) 562-6860",
+    "email": "opsadmin@subwayantigua.com"
+  },
+  {
+    "company_name": "Sun City Restaurant and Bar",
+    "sector": "Restaurant / Food Services",
+    "location": "45W3 37P, Anchorage Rd",
+    "website": "",
+    "phone": "",
+    "email": "liteneze@gmail.com"
+  },
+  {
+    "company_name": "Sun Rise Concierge Services",
+    "sector": "Hospitality",
+    "location": "Antigua and Barbuda",
+    "website": "http://sunriseconciergeservices.com",
+    "phone": "",
+    "email": "sunriseconciergeservices@gmail.com"
+  },
+  {
+    "company_name": "Sunseakers Antigua",
+    "sector": "Retail",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.sunseakers.com/",
+    "phone": "(268) 462-4523",
+    "email": "contact@sunseakers.com"
+  },
+  {
+    "company_name": "Tamarind Hills",
+    "sector": "Hotel / Tourism",
+    "location": "Ffryes Beach, St Marys",
+    "website": "",
+    "phone": "+1 268 736 7042",
+    "email": "reservations@tamarindhills.com"
+  },
+  {
+    "company_name": "Team Landscapers of Wadadli",
+    "sector": "Landscaping",
+    "location": "Herberts, Saint John's",
+    "website": "",
+    "phone": "",
+    "email": "wadadlilandscapingservices@gmail.com"
+  },
+  {
+    "company_name": "TechnipFMC Guyana Inc",
+    "sector": "Engineering",
+    "location": "Guyana",
+    "website": "http://www.technipfmc.com",
+    "phone": "(592) 620-5287",
+    "email": "guyana@technipfmc.com"
+  },
+  {
+    "company_name": "Terra Caribbean (Grenada)",
+    "sector": "Real Estate and Property Services",
+    "location": "Grenada",
+    "website": "http://terracaribbean.com/Grenada",
+    "phone": "+1 (473) 439-3993",
+    "email": "terra.grenada@terracaribbean.com"
+  },
+  {
+    "company_name": "The Beehive Learning Center",
+    "sector": "None",
+    "location": "None",
+    "website": "",
+    "phone": "+1 268-776-4483",
+    "email": "beehivelearningcenter268@gmail.com"
+  },
+  {
+    "company_name": "The Business and Employment Centre",
+    "sector": "Admin/Clerical",
+    "location": "Barbados",
+    "website": "https://www.bbempcent.com/",
+    "phone": "(246) 537-7243",
+    "email": "applications@bbempcent.com"
+  },
+  {
+    "company_name": "The Eastern Caribbean Collective Organisation for Music Rights (ECCO) Inc.",
+    "sector": "Music / Performance",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "antiguaagent@eccorights.com"
+  },
+  {
+    "company_name": "The Escape at Nonsuch Bay Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Hughes Point, FreeTown",
+    "website": "https://theescapeantigua.com/",
+    "phone": "(268) 736-8000",
+    "email": "escape@nonsuchbayresort.com"
+  },
+  {
+    "company_name": "The Furniture Gallery",
+    "sector": "Retail / Furniture Sales and Home D\u00e9cor",
+    "location": "Airport Road, Saint John's,",
+    "website": "http://furnituregallery.biz",
+    "phone": "268-462-1452",
+    "email": "Furnituregalleryadmin@candw.ag"
+  },
+  {
+    "company_name": "The Hut Little Jumby",
+    "sector": "Hotel / Tourism",
+    "location": "Maiden Island, Little Jumby Island, St. John's",
+    "website": "https://thehutlittlejumby.com/",
+    "phone": "",
+    "email": "info@inspiringtravel.co.uk"
+  },
+  {
+    "company_name": "The Inn at English Harbour",
+    "sector": "Hotel / Tourism",
+    "location": "Freeman's Bay, No 1, English Harbour, St Paul, Antigua",
+    "website": "http://theinnantigua.com",
+    "phone": "1-268-460-1014",
+    "email": "liteneze@gmail.com"
+  },
+  {
+    "company_name": "The Marketing Machine",
+    "sector": "Digital Marketing",
+    "location": "Suite #205, Village Walk, Friars Hill Road, Antigua",
+    "website": "http://mmantigua.com",
+    "phone": "(268) 464-1003",
+    "email": "info@marketingmachineantigua.com"
+  },
+  {
+    "company_name": "The Massage Goddess",
+    "sector": "Cosmetic Services / Aesthetics",
+    "location": "Osbourn",
+    "website": "",
+    "phone": "",
+    "email": "Goddess@themassagegoddess.com"
+  },
+  {
+    "company_name": "The Stock Exchange",
+    "sector": "Retail",
+    "location": "Friars Hill Road, Opp Cemetery, Saint John's",
+    "website": "",
+    "phone": "1-268-562-3688",
+    "email": "thestockexchange268@gmail.com"
+  },
+  {
+    "company_name": "The Vanilla Orchid",
+    "sector": "Restaurant / Food Services",
+    "location": "St. Clair Heights, Saint John's",
+    "website": "",
+    "phone": "",
+    "email": "thevanillaorchid@outlook.com"
+  },
+  {
+    "company_name": "The West Indies Oil Company Ltd (WIOC)",
+    "sector": "Engineering",
+    "location": "Friar's Hill Road, St.John's",
+    "website": "https://www.westindiesoil.com",
+    "phone": "1 (268)462 0140",
+    "email": "info@westindiesoil.com"
+  },
+  {
+    "company_name": "Ticket Pulse",
+    "sector": "Entertainment",
+    "location": "Antigua and Barbuda",
+    "website": "http://ticketpulse.events",
+    "phone": "",
+    "email": "team@ticketpulse.events"
+  },
+  {
+    "company_name": "Tobago House of Assembly",
+    "sector": "Government / Public Services",
+    "location": "Trinidad and Tobago",
+    "website": "http://tha.gov.tt",
+    "phone": "1-868-639-2103",
+    "email": "aslegsec@tha.gov.tt"
+  },
+  {
+    "company_name": "TOT Heavy Duty Equipment Services",
+    "sector": "Construction / Facilities",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "",
+    "email": "totskil@hotmail.com"
+  },
+  {
+    "company_name": "Total Imports",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.facebook.com/TOTALIMPORTSANU",
+    "phone": "+1 268-721-5543",
+    "email": "info@totalimportsanu.com"
+  },
+  {
+    "company_name": "Trade Winds Antigua",
+    "sector": "Hotel / Tourism",
+    "location": "Dickenson Bay",
+    "website": "https://www.twhantigua.com/",
+    "phone": "+1 268 462 1223",
+    "email": "info@twhantigua.com"
+  },
+  {
+    "company_name": "Tree House Beach Club",
+    "sector": "Restaurant / Food Services",
+    "location": "Fort James beach, Saint John's",
+    "website": "https://www.thbeachclub.com/",
+    "phone": "+1268 562 6830",
+    "email": "reservations@thbeachclub.com"
+  },
+  {
+    "company_name": "University of the West Indies",
+    "sector": "Education Training",
+    "location": "Five Islands village",
+    "website": "https://www.uwi.edu",
+    "phone": "(876) 927-1660-9",
+    "email": "vcoffice@uwimona.edu.jm"
+  },
+  {
+    "company_name": "Vernon G. Edwards Ltd",
+    "sector": "Courier & Delivery Services",
+    "location": "Cnr. Long & Thames Street",
+    "website": "https://vgelogisticsmgmt.com/",
+    "phone": "+1268 462-2034",
+    "email": "vedwards@candw.ag"
+  },
+  {
+    "company_name": "Wacky Rollers Dominica",
+    "sector": "Hotel / Tourism",
+    "location": "Dominica",
+    "website": "http://www.wackyrollers.com/",
+    "phone": "767 449 8276",
+    "email": "wackyrollers@gmail.com"
+  },
+  {
+    "company_name": "Weatherills Hotel",
+    "sector": "Hotel / Tourism",
+    "location": "Weatherills Road",
+    "website": "http://weatherillshotel.com",
+    "phone": "+1 268 562 9770",
+    "email": "Reservations@weatherillshotel.com"
+  },
+  {
+    "company_name": "Weatherills Rekindled",
+    "sector": "Hotel / Tourism",
+    "location": "Antigua and Barbuda",
+    "website": "",
+    "phone": "+1 268-764-6060",
+    "email": "reservations@weatherillshotel.com"
+  },
+  {
+    "company_name": "West Tech Shipping",
+    "sector": "Transportation",
+    "location": "Factory Road #9 Obeeze Complex",
+    "website": "https://app.westtechshipping.com/en",
+    "phone": "+1 (321) 300-6468",
+    "email": "info@westtechshipping.com"
+  },
+  {
+    "company_name": "Wings Go",
+    "sector": "None",
+    "location": "Antigua and Barbuda",
+    "website": "https://wingsgo.com/contact/",
+    "phone": "+1 268 460 3660",
+    "email": "info@wingsgo.com"
+  },
+  {
+    "company_name": "Woodstock BoatBuilders",
+    "sector": "Marine",
+    "location": "Dockyard Drive, English Harbour Town",
+    "website": "http://woodstockboats.com",
+    "phone": "+1 (268) 725 2345",
+    "email": "office@woodstockboats.com"
+  },
+  {
+    "company_name": "Work Bee and Co.",
+    "sector": "Consulting",
+    "location": "Barbados",
+    "website": "https://www.work-bee.co/",
+    "phone": "",
+    "email": "hello@work-bee.co"
+  },
+  {
+    "company_name": "XPZ Supermarket",
+    "sector": "Retail",
+    "location": "458R M2F, Paynters, Piggotts",
+    "website": "",
+    "phone": "+1 268-770-6708",
+    "email": "Xpzsupermarket2017@gmail.com"
+  },
+  {
+    "company_name": "Yellow Social Interactive",
+    "sector": "Entertainment",
+    "location": "Antigua and Barbuda",
+    "website": "https://www.yellowsocialinteractive.com/",
+    "phone": "",
+    "email": "recruitment@yellowsocialinteractive.com"
+  }
+]
