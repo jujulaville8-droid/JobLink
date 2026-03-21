@@ -55,22 +55,26 @@ export async function POST(request: NextRequest) {
 
     const resend = new Resend(apiKey)
 
-    // Fetch the full email body from Resend's API
+    // Fetch the full email body from Resend's Receiving API
     let emailBody = ''
     let emailHtml: string | undefined
     if (emailId) {
       try {
-        const res = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
-          headers: { Authorization: `Bearer ${apiKey}` },
-        })
-        if (res.ok) {
-          const emailDetail = await res.json()
+        const { data: emailDetail, error: fetchError } = await resend.emails.receiving.get(emailId)
+        if (fetchError) {
+          console.error('[inbound-webhook] Resend receiving API error:', fetchError)
+        } else if (emailDetail) {
           emailBody = emailDetail.text || ''
           emailHtml = emailDetail.html || undefined
+          console.log(`[inbound-webhook] Fetched email body: text=${emailBody.length} chars, html=${emailHtml ? emailHtml.length : 0} chars`)
+        } else {
+          console.warn('[inbound-webhook] No email detail returned for id:', emailId)
         }
       } catch (fetchErr) {
-        console.warn('[inbound-webhook] Could not fetch email body:', fetchErr)
+        console.error('[inbound-webhook] Could not fetch email body:', fetchErr)
       }
+    } else {
+      console.warn('[inbound-webhook] No email_id in webhook payload, cannot fetch body')
     }
 
     // Build a forwarded subject line
