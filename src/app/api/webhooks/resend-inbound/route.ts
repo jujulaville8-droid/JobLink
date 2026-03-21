@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     let emailHtml: string | undefined
     if (emailId) {
       try {
-        const res = await fetch(`https://api.resend.com/emails/${emailId}`, {
+        const res = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
           headers: { Authorization: `Bearer ${apiKey}` },
         })
         if (res.ok) {
