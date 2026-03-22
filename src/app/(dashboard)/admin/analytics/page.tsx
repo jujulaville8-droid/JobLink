@@ -41,6 +41,21 @@ export default async function AdminAnalyticsPage() {
   weekAgo.setDate(weekAgo.getDate() - 7)
 
   // Fetch all data in parallel
+  // CV Builder metrics
+  const [
+    { count: cvProfilesStarted },
+    { count: cvProfilesCompleted },
+    { count: cvExportEvents },
+    { count: cvQuickBuilderCompleted },
+    { count: totalSeekerCount },
+  ] = await Promise.all([
+    supabase.from('cv_profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('cv_profiles').select('id', { count: 'exact', head: true }).gte('completion_percentage', 80),
+    supabase.from('cv_events').select('id', { count: 'exact', head: true }).eq('event_type', 'cv_downloaded_pdf'),
+    supabase.from('cv_events').select('id', { count: 'exact', head: true }).eq('event_type', 'cv_quick_builder_completed'),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'seeker'),
+  ])
+
   const [
     { count: totalUsers },
     { count: totalSeekers },
@@ -159,6 +174,41 @@ export default async function AdminAnalyticsPage() {
         applicationStatusData={applicationStatusData}
         totals={totals}
       />
+
+      {/* CV Builder Analytics */}
+      <div className="mt-10">
+        <h2 className="text-lg font-bold font-display text-text mb-4">CV Builder</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <CvStatCard
+            label="CVs Started"
+            value={cvProfilesStarted ?? 0}
+            subtitle={`${totalSeekerCount ? Math.round(((cvProfilesStarted ?? 0) / (totalSeekerCount ?? 1)) * 100) : 0}% of seekers`}
+          />
+          <CvStatCard
+            label="CVs Completed"
+            value={cvProfilesCompleted ?? 0}
+            subtitle={cvProfilesStarted ? `${Math.round(((cvProfilesCompleted ?? 0) / (cvProfilesStarted ?? 1)) * 100)}% completion rate` : 'No CVs yet'}
+          />
+          <CvStatCard
+            label="Quick Builder Completions"
+            value={cvQuickBuilderCompleted ?? 0}
+          />
+          <CvStatCard
+            label="PDF Exports"
+            value={cvExportEvents ?? 0}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function CvStatCard({ label, value, subtitle }: { label: string; value: number; subtitle?: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-white p-5">
+      <p className="text-xs font-medium text-text-muted uppercase tracking-wide">{label}</p>
+      <p className="mt-1 text-2xl font-bold text-text">{value.toLocaleString()}</p>
+      {subtitle && <p className="mt-1 text-xs text-text-light">{subtitle}</p>}
     </div>
   )
 }
