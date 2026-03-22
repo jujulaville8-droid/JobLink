@@ -737,6 +737,13 @@ async function AdminDashboard() {
     .order("created_at", { ascending: false })
     .limit(5);
 
+  const { data: activeJobsForShare } = await supabase
+    .from("job_listings")
+    .select("id, title, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name)")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
   const stats = {
     totalUsers: totalUsers ?? 0,
     totalSeekers: totalSeekers ?? 0,
@@ -769,6 +776,28 @@ async function AdminDashboard() {
     };
   });
 
+  const JOB_TYPE_DISPLAY: Record<string, string> = {
+    full_time: "Full Time",
+    part_time: "Part Time",
+    seasonal: "Seasonal",
+    contract: "Contract",
+  };
+
+  const shareableJobs = (activeJobsForShare || []).map((j: Record<string, unknown>) => {
+    const company = j.companies as Record<string, unknown> | null;
+    return {
+      id: j.id as string,
+      title: j.title as string,
+      company_name: (company?.company_name as string) ?? "Unknown",
+      location: (j.location as string) ?? "Antigua",
+      job_type: JOB_TYPE_DISPLAY[(j.job_type as string)] ?? (j.job_type as string),
+      salary_min: j.salary_min as number | null,
+      salary_max: j.salary_max as number | null,
+      salary_visible: (j.salary_visible as boolean) ?? false,
+      created_at: j.created_at as string,
+    };
+  });
+
   return (
     <div>
       <h1 className="font-display text-2xl text-text sm:text-3xl">Admin Dashboard</h1>
@@ -778,6 +807,7 @@ async function AdminDashboard() {
         stats={stats}
         recentUsers={formattedUsers}
         pendingJobs={formattedJobs}
+        shareableJobs={shareableJobs}
       />
     </div>
   );
