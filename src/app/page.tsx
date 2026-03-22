@@ -205,9 +205,9 @@ export default async function Home() {
               Watch how JobLinks connects job seekers and employers across Antigua &amp; Barbuda
             </p>
           </div>
-          <div className="relative rounded-2xl overflow-hidden shadow-xl shadow-black/10 aspect-video bg-black">
+          <div className="relative rounded-2xl overflow-hidden shadow-xl shadow-black/10">
             <video
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
               controls
               preload="metadata"
               playsInline
