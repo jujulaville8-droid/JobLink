@@ -194,6 +194,39 @@ export default async function Home() {
 
       </section>
 
+      {/* ===== VSL ===== */}
+      <section className="bg-bg py-14 sm:py-18">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8">
+            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
+              See how it works
+            </h2>
+            <p className="mt-2 text-sm text-text-light">
+              Watch how JobLinks connects job seekers and employers across Antigua &amp; Barbuda
+            </p>
+          </div>
+          <div className="relative rounded-2xl overflow-hidden shadow-xl shadow-black/10 aspect-video bg-black">
+            <video
+              className="w-full h-full object-contain"
+              controls
+              preload="metadata"
+              playsInline
+              poster=""
+            >
+              <source
+                src="https://joblinkvsl.s3.us-east-2.amazonaws.com/0321+(1).mov"
+                type="video/quicktime"
+              />
+              <source
+                src="https://joblinkvsl.s3.us-east-2.amazonaws.com/0321+(1).mov"
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </section>
+
       {/* ===== COMPANIES HIRING + FEATURED JOBS ===== */}
       <section className="relative bg-bg">
         {/* Overlap container — pulls up into the hero */}
