@@ -122,13 +122,13 @@ export default function MessagesPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-4">
+    <div className="-mx-4 sm:mx-0">
+      <div className="flex items-center justify-between gap-4 px-4 sm:px-0">
         <h1 className="text-xl font-semibold font-display text-text sm:text-2xl">{pageTitle}</h1>
       </div>
 
       {/* Tabs */}
-      <div className="mt-3 flex gap-0.5 rounded-md bg-bg-alt p-0.5 w-fit">
+      <div className="mt-3 flex gap-0.5 rounded-md bg-bg-alt p-0.5 w-fit mx-4 sm:mx-0">
         <button
           onClick={() => setTab("active")}
           className={`rounded-[5px] px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
@@ -153,7 +153,7 @@ export default function MessagesPage() {
 
       {/* Error state */}
       {error && (
-        <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+        <div className="mt-5 mx-4 sm:mx-0 rounded-lg border border-red-200 bg-red-50 p-4 text-center">
           <p className="text-[13px] text-red-600">{error}</p>
           <button
             onClick={() => fetchInbox(tab === "archived")}
@@ -166,7 +166,7 @@ export default function MessagesPage() {
 
       {/* Loading state */}
       {loading && !error && (
-        <div className="mt-5 space-y-1">
+        <div className="mt-5 space-y-1 px-4 sm:px-0">
           {[1, 2, 3].map((i) => (
             <div key={i} className="rounded-lg border border-border bg-white px-4 py-3.5 animate-pulse">
               <div className="flex items-center gap-3">
@@ -183,7 +183,7 @@ export default function MessagesPage() {
 
       {/* Empty state */}
       {!loading && !error && conversations.length === 0 && (
-        <div className="mt-14 text-center">
+        <div className="mt-14 text-center px-4 sm:px-0">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-bg-alt">
             {tab === "archived" ? (
               <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -213,7 +213,7 @@ export default function MessagesPage() {
 
       {/* Conversation list */}
       {!loading && !error && conversations.length > 0 && (
-        <div className="mt-4 border-0 sm:border border-border rounded-none sm:rounded-lg bg-white overflow-hidden divide-y divide-border">
+        <div className="mt-4 sm:border sm:border-border sm:rounded-lg bg-white overflow-hidden divide-y divide-border">
           {conversations.map((conv) => {
             const appStatus = conv.application_context.application_status as ApplicationStatus;
             const isUnread = conv.unread_count > 0;
