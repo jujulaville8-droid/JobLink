@@ -247,6 +247,19 @@ export default function Navbar() {
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
                 <>
+                  {/* Saved jobs icon (seekers only) */}
+                  {!isEmployer && !isAdmin && (
+                    <Link
+                      href="/saved"
+                      className={`flex h-9 w-9 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors ${pathname === "/saved" ? "text-primary" : ""}`}
+                      aria-label="Saved Jobs"
+                    >
+                      <svg className="h-[18px] w-[18px] text-text-light" viewBox="0 0 24 24" fill={pathname === "/saved" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                      </svg>
+                    </Link>
+                  )}
+
                   {/* Messages icon */}
                   {userRole !== "admin" && (
                     <Link
@@ -297,6 +310,19 @@ export default function Navbar() {
             <div className="flex md:hidden items-center gap-2">
               {isAuthenticated && !isLoading && (
                 <>
+                  {/* Saved jobs icon (seekers only) */}
+                  {!isEmployer && !isAdmin && (
+                    <Link
+                      href="/saved"
+                      className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors ${pathname === "/saved" ? "text-primary" : ""}`}
+                      aria-label="Saved Jobs"
+                    >
+                      <svg className="h-4 w-4 text-text-light" viewBox="0 0 24 24" fill={pathname === "/saved" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                      </svg>
+                    </Link>
+                  )}
+
                   {userRole !== "admin" && (
                     <Link
                       href="/messages"
