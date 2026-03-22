@@ -158,7 +158,8 @@ async function SeekerDashboard({ userId }: { userId: string }) {
       {(!hasCvProfile || (cvProfile && cvProfile.completion_percentage < 80)) && (
         <div className="mt-6">
           <DashboardNudge
-            hasCv={hasCvProfile}
+            hasBuiltCv={hasCvProfile}
+            hasUploadedCv={!!profile.cv_url}
             completionPercentage={cvProfile?.completion_percentage}
           />
         </div>

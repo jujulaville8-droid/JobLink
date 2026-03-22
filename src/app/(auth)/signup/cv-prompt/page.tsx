@@ -34,25 +34,25 @@ export default function CvPromptPage() {
         </div>
 
         <h1 className="mt-5 font-display text-2xl text-text">
-          Stand out to employers
+          Add your CV
         </h1>
         <p className="mt-2 text-sm text-text-light max-w-sm mx-auto">
-          Build your CV in 2 minutes. Employers are 3x more likely to reach out to candidates with a complete profile.
+          Employers are more likely to reach out to candidates with a CV. Upload one you already have or build one here.
         </p>
 
         <div className="mt-8 space-y-3">
           <button
-            onClick={() => setMode("builder")}
+            onClick={() => router.push("/profile")}
             className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
           >
-            Build my CV
+            Upload my CV
           </button>
 
           <button
-            onClick={() => router.push("/profile")}
+            onClick={() => setMode("builder")}
             className="w-full rounded-lg border border-border px-6 py-3 text-sm font-medium text-text hover:bg-bg-alt transition-colors"
           >
-            Upload a CV instead
+            Build one instead
           </button>
         </div>
 

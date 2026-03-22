@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 
 interface Props {
-  hasCv: boolean;
+  hasBuiltCv: boolean;
+  hasUploadedCv: boolean;
   completionPercentage?: number;
 }
 
 const DISMISS_KEY = "cv_nudge_dismiss_count";
 
-export default function DashboardNudge({ hasCv, completionPercentage }: Props) {
+export default function DashboardNudge({ hasBuiltCv, hasUploadedCv, completionPercentage }: Props) {
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -26,8 +27,11 @@ export default function DashboardNudge({ hasCv, completionPercentage }: Props) {
 
   if (dismissed) return null;
 
-  // No CV at all
-  if (!hasCv) {
+  // User has an uploaded CV — don't nag them to build one
+  if (hasUploadedCv) return null;
+
+  // No CV at all (neither uploaded nor built)
+  if (!hasBuiltCv) {
     return (
       <div className="relative rounded-[--radius-card] border border-primary/20 bg-primary/[0.03] p-5">
         <button
@@ -47,23 +51,31 @@ export default function DashboardNudge({ hasCv, completionPercentage }: Props) {
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-text">Build your CV to get noticed</p>
+            <p className="text-sm font-semibold text-text">Add your CV to get noticed</p>
             <p className="text-xs text-text-light mt-0.5">
-              Employers are more likely to reach out to candidates with a complete profile and CV.
+              Employers are more likely to reach out to candidates with a CV on their profile.
             </p>
-            <Link
-              href="/profile/cv"
-              className="inline-block mt-3 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
-            >
-              Build my CV
-            </Link>
+            <div className="flex items-center gap-2 mt-3">
+              <Link
+                href="/profile"
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
+              >
+                Upload a CV
+              </Link>
+              <Link
+                href="/profile/cv"
+                className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-text hover:bg-bg-alt transition-colors"
+              >
+                Build one instead
+              </Link>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Incomplete CV
+  // Has a built CV but it's incomplete
   if (completionPercentage !== undefined && completionPercentage < 80) {
     const suggestions: string[] = [];
     if (completionPercentage < 30) suggestions.push("Add your work experience");

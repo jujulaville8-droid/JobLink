@@ -202,7 +202,7 @@ export default function CvBuilderPage() {
     );
   }
 
-  // No CV yet — show CTA
+  // No CV yet — show options
   if (!cv) {
     return (
       <div>
@@ -216,16 +216,24 @@ export default function CvBuilderPage() {
               <line x1="9" y1="15" x2="15" y2="15" />
             </svg>
           </div>
-          <h2 className="mt-4 font-display text-xl text-text">Build your CV</h2>
+          <h2 className="mt-4 font-display text-xl text-text">Add your CV</h2>
           <p className="mt-2 text-sm text-text-light">
-            Create a professional CV that employers can find. It only takes a few minutes.
+            Already have a CV? Upload it. Or build one here in a few minutes.
           </p>
-          <button
-            onClick={createCv}
-            className="mt-6 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
-          >
-            Get Started
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+            <a
+              href="/profile"
+              className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+            >
+              Upload my CV
+            </a>
+            <button
+              onClick={createCv}
+              className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-text hover:bg-bg-alt transition-colors"
+            >
+              Build one instead
+            </button>
+          </div>
         </div>
       </div>
     );
