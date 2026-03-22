@@ -112,7 +112,7 @@ export default function InviteToApplyButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-[--radius-button] bg-accent-warm px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-warm-hover transition-colors"
+        className="inline-flex items-center gap-2 rounded-full bg-accent-warm px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-warm-hover transition-colors"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
