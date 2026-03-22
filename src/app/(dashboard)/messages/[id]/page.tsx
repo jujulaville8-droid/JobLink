@@ -227,7 +227,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
   if (loading || authLoading) {
     return (
-      <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
+      <div className="flex flex-col h-[calc(100dvh-4rem-4rem)] md:h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
         <div className="border border-border rounded-lg bg-white flex flex-col h-full mx-2 sm:mx-4 my-2 overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
             <div className="h-5 w-40 skeleton rounded" />
@@ -253,7 +253,7 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
+    <div className="flex flex-col h-[calc(100dvh-4rem-4rem)] md:h-[calc(100dvh-4rem)] -my-6 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
       {/* Desktop container card */}
       <div className="flex flex-col h-full mx-0 sm:mx-3 my-0 sm:my-2 border-0 sm:border border-border sm:rounded-lg bg-white overflow-hidden">
         {/* Header */}

@@ -4,19 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 
-const DASHBOARD_PREFIXES = [
-  "/dashboard", "/admin", "/messages", "/profile", "/settings",
-  "/browse-jobs", "/browse-candidates", "/applications", "/saved",
-  "/alerts", "/my-listings", "/post-job", "/company-profile", "/candidates",
-];
+// Only hide the bottom nav when actively posting a job
+const HIDDEN_PREFIXES = ["/post-job"];
 
 export default function BottomNav() {
   const { isAuthenticated, userRole } = useAuth();
   const pathname = usePathname();
-  const isDashboard = DASHBOARD_PREFIXES.some((p) => pathname.startsWith(p));
+  const isHidden = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
   const isActive = (path: string) => pathname === path;
 
-  if (isDashboard) return null;
+  if (isHidden) return null;
 
   const linkClass = (path: string) =>
     `flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 min-w-[56px] relative ${
