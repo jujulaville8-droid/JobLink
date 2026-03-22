@@ -101,7 +101,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
 
   const { data: recommendedJobs } = await supabase
     .from("job_listings")
-    .select("id, title, location, job_type, created_at, companies(company_name)")
+    .select("id, title, location, job_type, created_at, companies(company_name, logo_url)")
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(4);
@@ -227,23 +227,39 @@ async function SeekerDashboard({ userId }: { userId: string }) {
           <div className="mt-4 grid gap-4 sm:grid-cols-2 stagger-children">
             {recommendedJobs.map((job: Record<string, unknown>) => {
               const company = job.companies as Record<string, unknown> | null;
+              const companyName = (company?.company_name as string) ?? "Unknown Company";
+              const logoUrl = company?.logo_url as string | null;
+              const initial = companyName.charAt(0).toUpperCase();
               return (
                 <Link
                   key={job.id as string}
                   href={`/jobs/${job.id}`}
                   className="rounded-[--radius-card] border border-border bg-white p-5 shadow-sm hover-lift transition-all"
                 >
-                  <h3 className="font-semibold text-text">{job.title as string}</h3>
-                  <p className="mt-1 text-sm text-text-light">
-                    {(company?.company_name as string) ?? "Unknown Company"}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium text-text-light">
-                      {job.location as string}
-                    </span>
-                    <span className="inline-flex items-center rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      {((job.job_type as string) ?? "").replace("_", " ")}
-                    </span>
+                  <div className="flex items-start gap-3.5">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt={companyName}
+                        className="shrink-0 h-10 w-10 rounded-xl object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="shrink-0 h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-sm">
+                        {initial}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-text text-[14px]">{job.title as string}</h3>
+                      <p className="mt-0.5 text-sm text-text-light">{companyName}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium text-text-light">
+                          {job.location as string}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary">
+                          {((job.job_type as string) ?? "").replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </Link>
               );
