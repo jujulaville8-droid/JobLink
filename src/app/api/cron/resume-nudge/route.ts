@@ -18,7 +18,7 @@ import { sendEmail } from '@/lib/email'
  *   curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://joblinkantigua.com/api/cron/resume-nudge
  */
 
-const MAX_EMAILS_PER_RUN = 50
+const MAX_EMAILS_PER_RUN = 10000
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
