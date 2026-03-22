@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CvWorkExperience } from "@/lib/types";
+import MonthYearPicker from "@/components/cv/MonthYearPicker";
 
 interface Props {
   initial?: CvWorkExperience;
@@ -78,22 +79,18 @@ export default function ExperienceEditor({ initial, onSave, onCancel }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-text-light mb-1">Start Date *</label>
-          <input
-            required
-            type="month"
+          <MonthYearPicker
             value={form.start_date}
-            onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none"
+            onChange={(v) => setForm((p) => ({ ...p, start_date: v }))}
+            required
           />
         </div>
         <div>
           <label className="block text-xs font-medium text-text-light mb-1">End Date</label>
-          <input
-            type="month"
+          <MonthYearPicker
             value={form.end_date}
-            onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))}
+            onChange={(v) => setForm((p) => ({ ...p, end_date: v }))}
             disabled={form.is_current}
-            className="w-full rounded-lg border border-border px-3 py-2 text-sm text-text focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none disabled:opacity-50"
           />
           <label className="flex items-center gap-2 mt-1.5 cursor-pointer">
             <input

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import MonthYearPicker from "@/components/cv/MonthYearPicker";
 
 const SKILL_SUGGESTIONS = [
   "Customer Service", "Driving", "Cooking", "Carpentry",
@@ -174,18 +175,14 @@ export default function QuickBuilder({ onComplete, onSkip }: Props) {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="month"
+                  <MonthYearPicker
                     value={exp.start_date}
-                    onChange={(e) => updateExp(i, "start_date", e.target.value)}
-                    className="rounded-lg border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none"
+                    onChange={(v) => updateExp(i, "start_date", v)}
                   />
-                  <input
-                    type="month"
+                  <MonthYearPicker
                     value={exp.end_date}
-                    onChange={(e) => updateExp(i, "end_date", e.target.value)}
+                    onChange={(v) => updateExp(i, "end_date", v)}
                     disabled={exp.is_current}
-                    className="rounded-lg border border-border px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none disabled:opacity-50"
                   />
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
