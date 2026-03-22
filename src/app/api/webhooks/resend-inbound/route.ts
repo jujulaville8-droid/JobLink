@@ -30,48 +30,49 @@ export async function POST(request: NextRequest) {
     const subject = webhookData.subject || '(no subject)'
     const emailId = webhookData.email_id
 
-    // Fetch the full email body using the official Resend pattern
+    // Fetch the full email body via direct API call
     let emailText = ''
     let emailHtml = ''
 
     if (emailId) {
-      // Wait a moment for Resend to finish processing
+      // Wait for Resend to finish processing the email
       await new Promise((resolve) => setTimeout(resolve, 3000))
 
       try {
-        const { data: email, error: fetchError } = await resend.emails.receiving.get(emailId)
+        // Use direct fetch — the SDK method may silently return empty data
+        const rawRes = await fetch('https://api.resend.com/emails/receiving', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email_id: emailId }),
+        })
+        const rawBody = await rawRes.text()
+        console.log('[inbound-webhook] Receiving API raw response:', rawRes.status, rawBody)
 
-        console.log('[inbound-webhook] Receiving API response:', JSON.stringify({ email, fetchError }, null, 2))
-
-        if (fetchError) {
-          console.error('[inbound-webhook] Receiving API error:', fetchError)
-        } else if (email) {
-          emailText = email.text || ''
-          emailHtml = email.html || ''
+        if (rawRes.ok) {
+          const parsed = JSON.parse(rawBody)
+          emailText = parsed.text || ''
+          emailHtml = parsed.html || ''
+        } else {
+          console.error('[inbound-webhook] Receiving API failed:', rawRes.status, rawBody)
         }
-      } catch (err) {
-        console.error('[inbound-webhook] Receiving API exception:', err)
+      } catch (fetchErr) {
+        console.error('[inbound-webhook] Receiving API exception:', fetchErr)
+      }
 
-        // Fallback: try raw fetch to the Resend API
+      // Fallback to SDK if direct fetch returned empty
+      if (!emailText && !emailHtml) {
         try {
-          const rawRes = await fetch('https://api.resend.com/emails/receiving', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email_id: emailId }),
-          })
-          const rawBody = await rawRes.text()
-          console.log('[inbound-webhook] Raw API response:', rawRes.status, rawBody)
-
-          if (rawRes.ok) {
-            const parsed = JSON.parse(rawBody)
-            emailText = parsed.text || ''
-            emailHtml = parsed.html || ''
+          const sdkRes = await resend.emails.receiving.get(emailId)
+          console.log('[inbound-webhook] SDK fallback response:', JSON.stringify(sdkRes, null, 2))
+          if (sdkRes.data) {
+            emailText = sdkRes.data.text || ''
+            emailHtml = sdkRes.data.html || ''
           }
-        } catch (rawErr) {
-          console.error('[inbound-webhook] Raw fetch also failed:', rawErr)
+        } catch (sdkErr) {
+          console.error('[inbound-webhook] SDK fallback also failed:', sdkErr)
         }
       }
     } else {
