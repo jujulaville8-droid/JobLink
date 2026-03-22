@@ -232,6 +232,8 @@ function ProfileView({
   onEdit,
   onAvatarChange,
   onVisibilityChange,
+  hasBuiltResume,
+  builtResumeCompletion,
 }: {
   profile: ProfileData;
   profileId: string;
@@ -240,6 +242,8 @@ function ProfileView({
   onEdit: (step?: number) => void;
   onAvatarChange: (url: string) => void;
   onVisibilityChange: (value: VisibilityMode) => void;
+  hasBuiltResume: boolean;
+  builtResumeCompletion: number;
 }) {
   const { percentage, missing } = getCompletion(profile);
   const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Your Name";
@@ -249,8 +253,6 @@ function ProfileView({
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
-  const [hasBuiltResume, setHasBuiltResume] = useState(false);
-  const [builtResumeCompletion, setBuiltResumeCompletion] = useState(0);
   const [statusOpen, setStatusOpen] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -1267,6 +1269,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mode, setMode] = useState<"view" | "edit">("edit");
+  const [hasBuiltResume, setHasBuiltResume] = useState(false);
+  const [builtResumeCompletion, setBuiltResumeCompletion] = useState(0);
   const [editStep, setEditStep] = useState(1);
 
   useEffect(() => {
@@ -1385,6 +1389,8 @@ export default function ProfilePage() {
           setGlobalAvatarUrl(url);
         }}
         onVisibilityChange={(v) => setProfile((p) => ({ ...p, visibility: v }))}
+        hasBuiltResume={hasBuiltResume}
+        builtResumeCompletion={builtResumeCompletion}
       />
     );
   }
