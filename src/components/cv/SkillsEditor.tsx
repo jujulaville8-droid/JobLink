@@ -61,7 +61,7 @@ export default function SkillsEditor({ skills: initialSkills, onSave }: Props) {
         {skills.map((skill, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs font-medium px-2.5 py-1"
+            className="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1"
           >
             {skill}
             <button
@@ -94,7 +94,7 @@ export default function SkillsEditor({ skills: initialSkills, onSave }: Props) {
                 key={s}
                 type="button"
                 onClick={() => addSkill(s)}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-bg-alt text-text-light text-xs px-2.5 py-1 hover:border-primary hover:text-primary transition-colors"
+                className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 text-blue-600 text-xs px-2.5 py-1 hover:border-blue-400 hover:text-blue-700 transition-colors"
               >
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
