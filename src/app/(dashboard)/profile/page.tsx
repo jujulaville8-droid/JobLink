@@ -563,16 +563,35 @@ function ProfileView({
               <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
             </button>
           ) : (
-            <button onClick={() => onEdit(3)} className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-border">
-                <IconUpload className="h-5 w-5 text-text-muted" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-text">Upload your Resume</p>
-                <p className="text-xs text-text-light mt-0.5">Add a resume to apply faster</p>
-              </div>
-              <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
-            </button>
+            <div className="divide-y divide-border/40">
+              <button onClick={() => onEdit(3)} className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-dashed border-border">
+                  <IconUpload className="h-5 w-5 text-text-muted" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-text">Upload your Resume</p>
+                  <p className="text-xs text-text-light mt-0.5">Upload a PDF you already have</p>
+                </div>
+                <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
+              </button>
+              {!hasBuiltResume && (
+                <a href="/profile/cv" className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                    <svg className="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="12" y1="18" x2="12" y2="12" />
+                      <line x1="9" y1="15" x2="15" y2="15" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-text">Build one instead</p>
+                    <p className="text-xs text-text-light mt-0.5">Create a resume in minutes with our Resume Builder</p>
+                  </div>
+                  <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
+                </a>
+              )}
+            </div>
           )}
 
           {/* JobLink Built Resume */}
