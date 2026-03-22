@@ -509,172 +509,137 @@ async function EmployerDashboard({ userId }: { userId: string }) {
   return (
     <div className="animate-fade-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-text sm:text-3xl">
             Welcome back, {companyName}!
           </h1>
-          <p className="mt-1 text-text-light">Manage your listings, review applicants, and find talent.</p>
+          <p className="mt-1 text-text-light text-sm">Manage your listings, review applicants, and find talent.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/browse-candidates"
-            className="btn-primary text-sm px-4 py-2"
-          >
+        <div className="hidden sm:flex items-center gap-2">
+          <Link href="/browse-candidates" className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text hover:border-primary/30 hover:text-primary transition-colors">
             Browse Candidates
           </Link>
-          <Link
-            href="/post-job"
-            className="btn-warm"
-          >
+          <Link href="/post-job" className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors">
             + Post a Job
           </Link>
         </div>
       </div>
 
-      {/* Pro Status */}
+      {/* Quick Stats */}
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link href="/my-listings" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{activeListings ?? 0}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Active Listings</p>
+        </Link>
+
+        <Link href="/my-listings" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{totalApplicants}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Total Applicants</p>
+        </Link>
+
+        <Link href="/my-listings?filter=pending" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{pendingListings ?? 0}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Pending Review</p>
+        </Link>
+
+        <Link href="/messages" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{unreadMessages}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Unread Messages</p>
+        </Link>
+      </div>
+
+      {/* Pro Upgrade Banner */}
       {!company.is_pro && (
-        <div className="mt-6 rounded-[--radius-card] border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-5 shadow-sm">
+        <div className="mt-5 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-orange-50/50 p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100">
+              <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-100 flex items-center justify-center">
                 <svg className="h-5 w-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               </div>
               <div>
-                <p className="font-semibold text-text">Upgrade to Pro</p>
-                <p className="text-sm text-text-light">Get featured listings, priority support, and more visibility.</p>
+                <p className="text-sm font-semibold text-text">Upgrade to Pro</p>
+                <p className="text-xs text-text-muted">Get featured listings, priority support, and more visibility.</p>
               </div>
             </div>
-            <Link
-              href="/company-profile"
-              className="btn-warm text-sm px-5 py-2 whitespace-nowrap"
-            >
+            <Link href="/company-profile" className="rounded-full bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors whitespace-nowrap">
               Upgrade Now
             </Link>
           </div>
         </div>
       )}
 
-      {/* Stats */}
-      <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-4 stagger-children">
-        <StatCard
-          label="Active Listings"
-          value={activeListings ?? 0}
-          color="primary"
-          href="/my-listings"
-          icon={
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-              <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Total Applicants"
-          value={totalApplicants}
-          color="accent"
-          href="/my-listings"
-          icon={
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 00-3-3.87" />
-              <path d="M16 3.13a4 4 0 010 7.75" />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Pending Review"
-          value={pendingListings ?? 0}
-          color="amber"
-          href="/my-listings?filter=pending"
-          icon={
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          }
-        />
-        <StatCard
-          label="Unread Messages"
-          value={unreadMessages}
-          color="green"
-          href="/messages"
-          icon={
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
-            </svg>
-          }
-        />
-      </div>
-
-      {/* Alerts Row: Pending Listings + Expiring Listings */}
+      {/* Alerts Row */}
       {((pendingListings ?? 0) > 0 || expiringJobs.length > 0) && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {/* Pending Listings Alert */}
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {(pendingListings ?? 0) > 0 && (
-            <div className="rounded-[--radius-card] border border-amber-200 bg-amber-50/50 p-4">
+            <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 p-4">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                   <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-800">
-                    {pendingListings} listing{(pendingListings ?? 0) !== 1 ? 's' : ''} pending review
-                  </p>
+                  <p className="text-sm font-semibold text-amber-800">{pendingListings} listing{(pendingListings ?? 0) !== 1 ? 's' : ''} pending</p>
                   {pendingJobs && pendingJobs.length > 0 && (
-                    <div className="mt-2 space-y-1">
+                    <div className="mt-1.5 space-y-0.5">
                       {pendingJobs.map((job: Record<string, unknown>) => (
-                        <p key={job.id as string} className="text-xs text-amber-700 truncate">
-                          {job.title as string} — submitted {formatDate(job.created_at as string)}
-                        </p>
+                        <p key={job.id as string} className="text-xs text-amber-700 truncate">{job.title as string}</p>
                       ))}
                     </div>
                   )}
-                  <Link
-                    href="/my-listings?filter=pending"
-                    className="mt-2 inline-block text-xs font-semibold text-amber-700 hover:text-amber-900 transition-colors"
-                  >
-                    View pending listings &rarr;
-                  </Link>
                 </div>
               </div>
             </div>
           )}
-
-          {/* Expiring Listings Alert */}
           {expiringJobs.length > 0 && (
-            <div className="rounded-[--radius-card] border border-red-200 bg-red-50/50 p-4">
+            <div className="rounded-2xl border border-red-200/60 bg-red-50/50 p-4">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
                   <svg className="h-4 w-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
+                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-red-800">
-                    {expiringJobs.length} listing{expiringJobs.length !== 1 ? 's' : ''} expiring soon
-                  </p>
-                  <div className="mt-2 space-y-1">
+                  <p className="text-sm font-semibold text-red-800">{expiringJobs.length} listing{expiringJobs.length !== 1 ? 's' : ''} expiring soon</p>
+                  <div className="mt-1.5 space-y-0.5">
                     {expiringJobs.map((job: Record<string, unknown>) => (
                       <p key={job.id as string} className="text-xs text-red-700 truncate">
-                        {job.title as string} — {daysUntil(job.expires_at as string)} day{daysUntil(job.expires_at as string) !== 1 ? 's' : ''} left
+                        {job.title as string} — {daysUntil(job.expires_at as string)}d left
                       </p>
                     ))}
                   </div>
-                  <Link
-                    href="/my-listings?filter=active"
-                    className="mt-2 inline-block text-xs font-semibold text-red-700 hover:text-red-900 transition-colors"
-                  >
-                    Manage listings &rarr;
-                  </Link>
                 </div>
               </div>
             </div>
@@ -684,55 +649,46 @@ async function EmployerDashboard({ userId }: { userId: string }) {
 
       {/* Company Profile Completion */}
       {companyCompletePct < 100 && (
-        <div className="mt-6 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-text">Company Profile</h2>
-              <p className="text-sm text-text-light">{companyCompletePct}% complete</p>
+        <div className="mt-4 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-white p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text">Complete your company profile</p>
+                <p className="text-xs text-text-muted">{companyCompletePct}% done — {companyMissing.length} {companyMissing.length === 1 ? "item" : "items"} left</p>
+              </div>
             </div>
-            <Link
-              href="/company-profile"
-              className="btn-warm text-sm px-4 py-2"
-            >
-              Complete Profile
+            <Link href="/company-profile" className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+              Complete
             </Link>
           </div>
-          <div className="mt-3 h-3 w-full rounded-full bg-bg-alt">
-            <div
-              className="h-3 rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${companyCompletePct}%` }}
-            />
+          <div className="h-2 w-full rounded-full bg-amber-100">
+            <div className="h-2 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${companyCompletePct}%` }} />
           </div>
           {companyMissing.length > 0 && (
-            <div className="mt-3">
-              <p className="text-xs font-medium text-text-light">Missing:</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {companyMissing.map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center rounded-full bg-accent-warm/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-accent-warm/20"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {companyMissing.map((item) => (
+                <span key={item} className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">{item}</span>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Two-column layout: Active Listings + Recent Applicants */}
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+      {/* Two-column: Active Listings + Recent Applicants */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Active Listings */}
-        <div>
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg text-text">Active Listings</h2>
-            <Link href="/my-listings" className="text-sm font-medium text-primary hover:text-primary-dark link-animated">
-              View all
-            </Link>
+        <div className="rounded-2xl border border-border bg-white overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+            <h2 className="text-sm font-semibold text-text">Active Listings</h2>
+            <Link href="/my-listings" className="text-xs font-medium text-primary hover:text-primary-dark transition-colors">View all →</Link>
           </div>
           {activeJobsWithCounts && activeJobsWithCounts.length > 0 ? (
-            <div className="mt-4 space-y-3 stagger-children">
+            <div className="divide-y divide-border/30">
               {activeJobsWithCounts.map((job: Record<string, unknown>) => {
                 const apps = job.applications as { count: number }[] | null;
                 const appCount = apps?.[0]?.count ?? 0;
@@ -740,20 +696,21 @@ async function EmployerDashboard({ userId }: { userId: string }) {
                   <Link
                     key={job.id as string}
                     href={`/my-listings/${job.id}/applicants`}
-                    className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-bg-alt/30 transition-colors"
                   >
+                    <div className="w-9 h-9 shrink-0 rounded-lg bg-primary/8 flex items-center justify-center">
+                      <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                      </svg>
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-text truncate">
-                        {job.title as string}
-                      </p>
-                      <p className="text-sm text-text-light">
+                      <p className="text-sm font-medium text-text truncate">{job.title as string}</p>
+                      <p className="text-xs text-text-muted">
                         Posted {formatDate(job.created_at as string)}
-                        {(job.expires_at as string | null) && (
-                          <span className="text-text-muted"> &middot; Expires {formatDate(job.expires_at as string)}</span>
-                        )}
+                        {(job.expires_at as string | null) && ` · Expires ${formatDate(job.expires_at as string)}`}
                       </p>
                     </div>
-                    <span className="ml-3 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary whitespace-nowrap">
+                    <span className="shrink-0 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">
                       {appCount} {appCount === 1 ? "applicant" : "applicants"}
                     </span>
                   </Link>
@@ -761,12 +718,15 @@ async function EmployerDashboard({ userId }: { userId: string }) {
               })}
             </div>
           ) : (
-            <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-              <p className="text-text-light">No active listings. Post a job to get started!</p>
-              <Link
-                href="/post-job"
-                className="mt-3 inline-block btn-primary text-sm px-4 py-2"
-              >
+            <div className="p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-bg-alt flex items-center justify-center mb-3">
+                <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text">No active listings</p>
+              <p className="text-xs text-text-muted mt-1">Post a job to start receiving applicants.</p>
+              <Link href="/post-job" className="inline-block mt-4 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors">
                 Post a Job
               </Link>
             </div>
@@ -774,39 +734,39 @@ async function EmployerDashboard({ userId }: { userId: string }) {
         </div>
 
         {/* Recent Applicants */}
-        <div>
-          <h2 className="font-display text-lg text-text">Recent Applicants</h2>
+        <div className="rounded-2xl border border-border bg-white overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+            <h2 className="text-sm font-semibold text-text">Recent Applicants</h2>
+            {recentApplicants.length > 0 && (
+              <Link href="/my-listings" className="text-xs font-medium text-primary hover:text-primary-dark transition-colors">View all →</Link>
+            )}
+          </div>
           {recentApplicants.length > 0 ? (
-            <div className="mt-4 space-y-3 stagger-children">
+            <div className="divide-y divide-border/30">
               {recentApplicants.map((app) => {
                 const seeker = app.seeker_profiles as Record<string, unknown> | null;
                 const job = app.job_listings as Record<string, unknown> | null;
                 const status = app.status as ApplicationStatus;
+                const initials = `${((seeker?.first_name as string) ?? "?").charAt(0)}${((seeker?.last_name as string) ?? "").charAt(0)}`;
 
                 return (
                   <Link
                     key={app.id as string}
                     href={`/my-listings/${(job?.id as string) ?? ""}/applicants`}
-                    className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md hover:border-primary/20 transition-all"
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-bg-alt/30 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                        {((seeker?.first_name as string) ?? "?").charAt(0)}
-                        {((seeker?.last_name as string) ?? "").charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-text truncate">
-                          {(seeker?.first_name as string) ?? ""} {(seeker?.last_name as string) ?? ""}
-                        </p>
-                        <p className="text-xs text-text-light truncate">
-                          {(job?.title as string) ?? "Untitled"} &middot;{" "}
-                          {formatDate(app.applied_at as string)}
-                        </p>
-                      </div>
+                    <div className="w-9 h-9 shrink-0 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                      {initials}
                     </div>
-                    <span
-                      className={`ml-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] ?? STATUS_COLORS.applied}`}
-                    >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-text truncate">
+                        {(seeker?.first_name as string) ?? ""} {(seeker?.last_name as string) ?? ""}
+                      </p>
+                      <p className="text-xs text-text-muted truncate">
+                        {(job?.title as string) ?? "Untitled"} · {formatDate(app.applied_at as string)}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[status] ?? STATUS_COLORS.applied}`}>
                       {STATUS_LABELS[status] ?? status}
                     </span>
                   </Link>
@@ -814,11 +774,27 @@ async function EmployerDashboard({ userId }: { userId: string }) {
               })}
             </div>
           ) : (
-            <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-              <p className="text-text-light">No applicants yet. Post a job to get started!</p>
+            <div className="p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-bg-alt flex items-center justify-center mb-3">
+                <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text">No applicants yet</p>
+              <p className="text-xs text-text-muted mt-1">Post a job to start receiving applications.</p>
             </div>
           )}
         </div>
+      </div>
+
+      {/* Mobile CTAs */}
+      <div className="mt-6 flex gap-2 sm:hidden">
+        <Link href="/browse-candidates" className="flex-1 text-center rounded-full border border-border py-3 text-sm font-medium text-text hover:border-primary/30 transition-colors">
+          Browse Candidates
+        </Link>
+        <Link href="/post-job" className="flex-1 text-center rounded-full bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors">
+          + Post a Job
+        </Link>
       </div>
     </div>
   );
