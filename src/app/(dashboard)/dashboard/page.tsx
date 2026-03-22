@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { ApplicationStatus } from "@/lib/types";
 import AdminBentoDashboard from "@/components/AdminBentoDashboard";
+import DashboardNudge from "@/components/cv/DashboardNudge";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   applied: "bg-primary/10 text-primary",
@@ -79,7 +80,16 @@ async function SeekerDashboard({ userId }: { userId: string }) {
     redirect("/profile");
   }
 
-  const { percentage: completePct, missing } = calculateProfileCompletion(profile);
+  // Check if user has a built CV
+  const { data: cvProfile } = await supabase
+    .from("cv_profiles")
+    .select("id, completion_percentage")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const hasCvProfile = !!cvProfile;
+  const profileWithCv = { ...profile, has_cv_profile: hasCvProfile };
+  const { percentage: completePct, missing } = calculateProfileCompletion(profileWithCv);
   const firstName = profile.first_name || "there";
 
   const { data: applications } = await supabase
@@ -141,6 +151,16 @@ async function SeekerDashboard({ userId }: { userId: string }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* CV Builder Nudge */}
+      {(!hasCvProfile || (cvProfile && cvProfile.completion_percentage < 80)) && (
+        <div className="mt-6">
+          <DashboardNudge
+            hasCv={hasCvProfile}
+            completionPercentage={cvProfile?.completion_percentage}
+          />
         </div>
       )}
 

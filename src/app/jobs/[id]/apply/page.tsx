@@ -157,11 +157,18 @@ export default function ApplyPage() {
         return;
       }
 
+      // Check if user has a built CV (alternative to uploaded CV)
+      const { data: cvProfile } = await supabase
+        .from("cv_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
       const missing: string[] = [];
       if (!profile.first_name) missing.push("First name");
       if (!profile.last_name) missing.push("Last name");
       if (!profile.phone) missing.push("Phone number");
-      if (!profile.cv_url) missing.push("CV/Resume upload");
+      if (!profile.cv_url && !cvProfile) missing.push("CV (upload or build one)");
 
       if (missing.length > 0) {
         setProfileStatus({
