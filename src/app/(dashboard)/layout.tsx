@@ -106,7 +106,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64">
+      <main className="flex-1 md:ml-64 overflow-x-hidden">
         <div className="px-4 py-6 sm:px-6 lg:px-8 max-w-6xl">
           {children}
         </div>

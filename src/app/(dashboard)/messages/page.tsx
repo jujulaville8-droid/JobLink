@@ -222,7 +222,7 @@ export default function MessagesPage() {
               <Link
                 key={conv.id}
                 href={`/messages/${conv.id}`}
-                className={`group relative flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-gray-50 ${
+                className={`group relative flex items-center gap-3 px-4 py-3.5 overflow-hidden transition-colors hover:bg-gray-50 ${
                   isUnread ? "bg-primary/[0.02]" : ""
                 }`}
               >
