@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchFullCv } from '@/lib/cv-helpers'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { CvDocument } from '@/lib/cv-pdf'
-import React from 'react'
+import { createCvDocument } from '@/lib/cv-pdf'
 
 export async function GET() {
   try {
@@ -14,7 +13,8 @@ export async function GET() {
     const cv = await fetchFullCv(user.id)
     if (!cv) return NextResponse.json({ error: 'No CV found' }, { status: 404 })
 
-    const buffer = await renderToBuffer(React.createElement(CvDocument, { cv }))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buffer = await renderToBuffer(createCvDocument(cv) as any)
 
     const fullName = [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join('_') || 'CV'
     const fileName = `${fullName}_CV.pdf`

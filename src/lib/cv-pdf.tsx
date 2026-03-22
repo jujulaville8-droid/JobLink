@@ -44,7 +44,11 @@ function formatDate(d: string | null | undefined): string {
   return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
-export function CvDocument({ cv }: { cv: CvFull }) {
+export function createCvDocument(cv: CvFull) {
+  return <CvDocument cv={cv} />
+}
+
+function CvDocument({ cv }: { cv: CvFull }) {
   const fullName = [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join(' ') || 'Name'
   const contactParts = [cv.contact.email, cv.contact.phone, cv.contact.location].filter(Boolean)
 
