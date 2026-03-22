@@ -268,7 +268,7 @@ export default async function CandidateProfilePage({ params }: PageProps) {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-text group-hover:text-emerald-700 transition-colors">
-                        Built Resume
+                        JobLink Built Resume
                       </p>
                       <p className="text-xs text-text-muted">Generated PDF — Click to download</p>
                     </div>

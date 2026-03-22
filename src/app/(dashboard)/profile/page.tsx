@@ -580,7 +580,7 @@ function ProfileView({
             </button>
           )}
 
-          {/* Built Resume */}
+          {/* JobLink Built Resume */}
           {hasBuiltResume && (
             <a
               href="/profile/cv"
@@ -595,7 +595,7 @@ function ProfileView({
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-text">Built Resume</p>
+                <p className="text-sm font-medium text-text">JobLink Built Resume</p>
                 <p className="text-xs text-text-light mt-0.5">
                   {builtResumeCompletion}% complete — View or edit
                 </p>
