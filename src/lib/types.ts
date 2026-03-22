@@ -254,3 +254,86 @@ export const JOB_TYPE_LABELS: Record<JobType, string> = {
   seasonal: "Seasonal",
   contract: "Contract",
 };
+
+// ─── CV Builder Types ────────────────────────────────────────────────
+
+export interface CvProfile {
+  id: string;
+  user_id: string;
+  job_title: string | null;
+  summary: string | null;
+  completion_percentage: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CvWorkExperience {
+  id: string;
+  cv_profile_id: string;
+  company_name: string;
+  job_title: string;
+  location: string | null;
+  start_date: string;
+  end_date: string | null;
+  is_current: boolean;
+  description: string | null;
+  sort_order: number;
+}
+
+export interface CvEducation {
+  id: string;
+  cv_profile_id: string;
+  institution: string;
+  degree: string;
+  field_of_study: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_current: boolean;
+  description: string | null;
+  sort_order: number;
+}
+
+export interface CvSkill {
+  id: string;
+  cv_profile_id: string;
+  name: string;
+  sort_order: number;
+}
+
+export interface CvAward {
+  id: string;
+  cv_profile_id: string;
+  title: string;
+  issuer: string | null;
+  date_received: string | null;
+  description: string | null;
+  sort_order: number;
+}
+
+export interface CvCertification {
+  id: string;
+  cv_profile_id: string;
+  name: string;
+  issuing_organization: string | null;
+  issue_date: string | null;
+  expiry_date: string | null;
+  sort_order: number;
+}
+
+export interface CvContact {
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  phone: string | null;
+  location: string | null;
+}
+
+export interface CvFull {
+  profile: CvProfile;
+  contact: CvContact;
+  experiences: CvWorkExperience[];
+  education: CvEducation[];
+  skills: CvSkill[];
+  awards: CvAward[];
+  certifications: CvCertification[];
+}

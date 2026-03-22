@@ -12,6 +12,7 @@ export interface ProfileFields {
   experience_years?: number | null;
   education?: string | null;
   cv_url?: string | null;
+  has_cv_profile?: boolean;
 }
 
 export interface CompletionResult {
@@ -24,7 +25,7 @@ export interface CompletionResult {
 const REQUIRED_FIELDS: {
   key: keyof ProfileFields;
   label: string;
-  check: (value: unknown) => boolean;
+  check: (value: unknown, profile?: ProfileFields) => boolean;
 }[] = [
   {
     key: "first_name",
@@ -63,8 +64,10 @@ const REQUIRED_FIELDS: {
   },
   {
     key: "cv_url",
-    label: "CV upload",
-    check: (v) => typeof v === "string" && v.trim().length > 0,
+    label: "CV (uploaded or built)",
+    check: (v, profile) =>
+      (typeof v === "string" && v.trim().length > 0) ||
+      !!(profile as ProfileFields)?.has_cv_profile,
   },
 ];
 
@@ -73,7 +76,7 @@ export function calculateProfileCompletion(profile: ProfileFields): CompletionRe
   let filled = 0;
 
   for (const field of REQUIRED_FIELDS) {
-    if (field.check(profile[field.key])) {
+    if (field.check(profile[field.key], profile)) {
       filled++;
     } else {
       missing.push(field.label);
