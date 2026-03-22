@@ -242,7 +242,7 @@ export default function Navbar() {
             </nav>
 
             {/* ── Right: Role switcher + Avatar + Theme toggle (desktop) ── */}
-            <div className="hidden md:flex items-center gap-2.5 shrink-0">
+            <div className="hidden md:flex items-center gap-4 shrink-0">
               {isLoading ? (
                 <div className="h-9 w-9" />
               ) : isAuthenticated ? (
@@ -307,7 +307,7 @@ export default function Navbar() {
             </div>
 
             {/* ── Mobile: Role switcher + Avatar + Hamburger + Theme toggle ── */}
-            <div className="flex md:hidden items-center gap-2">
+            <div className="flex md:hidden items-center gap-3">
               {isAuthenticated && !isLoading && (
                 <>
                   {/* Saved jobs icon (seekers only) */}
