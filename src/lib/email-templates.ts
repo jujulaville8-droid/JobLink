@@ -11,6 +11,7 @@ type EmailType =
   | 'job_invite'
   | 'new_job_posted'
   | 'resume_nudge'
+  | 'resume_nudge_2'
 
 interface EmailData {
   applicant_name?: string
@@ -347,6 +348,34 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           </div>
           <p style="text-align: center; margin-top: 12px;">
             <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or build one using our Resume Builder</a>
+          </p>
+        `),
+      }
+
+    case 'resume_nudge_2':
+      return {
+        subject: `${esc(d.applicant_name) || 'Hey'}, don't miss out — employers are hiring now`,
+        html: wrapper(`
+          <h2 style="color: #1f2937; margin: 0 0 8px;">Quick reminder, ${esc(d.applicant_name) || 'there'}!</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            We noticed you still haven't added a resume to your JobLinks profile. That's okay — it only takes a couple of minutes.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            Right now, there are employers in Antigua &amp; Barbuda actively looking for candidates.
+            Without a resume, your profile won't show up in their search results.
+          </p>
+          <p style="color: #374151; line-height: 1.6; font-weight: 600;">
+            Two easy options:
+          </p>
+          <ul style="color: #374151; line-height: 1.8; padding-left: 20px;">
+            <li><strong>Upload</strong> a resume you already have (PDF)</li>
+            <li><strong>Build one</strong> on JobLinks in under 3 minutes</li>
+          </ul>
+          <div style="margin: 24px 0; text-align: center;">
+            ${btn('Add My Resume Now', '/profile')}
+          </div>
+          <p style="text-align: center; margin-top: 12px;">
+            <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or use our free Resume Builder</a>
           </p>
         `),
       }
