@@ -31,6 +31,9 @@ async function CandidateResults({
     .select("*")
     .eq("visibility", "actively_looking")
     .not("first_name", "is", null)
+    .neq("first_name", "")
+    .not("last_name", "is", null)
+    .neq("last_name", "")
     .order("updated_at", { ascending: false });
 
   if (searchParams.q) {
@@ -148,6 +151,9 @@ async function GatedCandidatePreview() {
     .eq("visibility", "actively_looking")
     .gte("profile_complete_pct", 50)
     .not("first_name", "is", null)
+    .neq("first_name", "")
+    .not("last_name", "is", null)
+    .neq("last_name", "")
     .order("updated_at", { ascending: false })
     .limit(6);
 
