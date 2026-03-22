@@ -1,12 +1,11 @@
--- Fix: Show company name instead of seeker name for employers in messaging
+-- Fix: Prioritize company name over seeker name when company exists
 --
 -- The bug: When a seeker views a conversation, the employer's personal name
 -- from seeker_profiles shows instead of their company name, because the
 -- COALESCE prioritizes seeker_profiles over companies.
 --
--- The fix: Check the other user's role and prioritize accordingly:
--- - If the other user is an employer → show company_name first
--- - If the other user is a seeker → show seeker first/last name first
+-- The fix: Always prioritize company_name first. If the user has a company,
+-- show that. Otherwise fall back to seeker first/last name.
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- Fix get_inbox
@@ -53,17 +52,14 @@ BEGIN
     )::BIGINT AS unread_count,
     cp.is_archived,
     cp_other.user_id AS other_user_id,
-    -- Prioritize company name for employers, seeker name for seekers
     COALESCE(
-      CASE WHEN u_other.role = 'employer' THEN co.company_name ELSE NULL END,
-      NULLIF(TRIM(COALESCE(sp.first_name, '') || ' ' || COALESCE(sp.last_name, '')), ''),
       co.company_name,
+      NULLIF(TRIM(COALESCE(sp.first_name, '') || ' ' || COALESCE(sp.last_name, '')), ''),
       'Unknown'
     )::TEXT AS other_display_name,
     COALESCE(
-      CASE WHEN u_other.role = 'employer' THEN co.logo_url ELSE NULL END,
-      (SELECT sp2.avatar_url FROM public.seeker_profiles sp2 WHERE sp2.user_id = cp_other.user_id LIMIT 1),
       co.logo_url,
+      (SELECT sp2.avatar_url FROM public.seeker_profiles sp2 WHERE sp2.user_id = cp_other.user_id LIMIT 1),
       NULL
     )::TEXT AS other_avatar_url,
     COALESCE(jl.title, 'Unknown Position')::TEXT AS job_title,
@@ -73,7 +69,6 @@ BEGIN
   JOIN public.conversations c ON c.id = cp.conversation_id
   JOIN public.conversation_participants cp_other
     ON cp_other.conversation_id = c.id AND cp_other.user_id != p_user_id
-  LEFT JOIN public.users u_other ON u_other.id = cp_other.user_id
   LEFT JOIN public.seeker_profiles sp ON sp.user_id = cp_other.user_id
   LEFT JOIN public.companies co ON co.user_id = cp_other.user_id
   LEFT JOIN public.applications a ON a.id = c.application_id
@@ -114,17 +109,14 @@ BEGIN
   RETURN QUERY
   SELECT
     cp_other.user_id AS other_user_id,
-    -- Prioritize company name for employers, seeker name for seekers
     COALESCE(
-      CASE WHEN u_other.role = 'employer' THEN co.company_name ELSE NULL END,
-      NULLIF(TRIM(COALESCE(sp.first_name, '') || ' ' || COALESCE(sp.last_name, '')), ''),
       co.company_name,
+      NULLIF(TRIM(COALESCE(sp.first_name, '') || ' ' || COALESCE(sp.last_name, '')), ''),
       'Unknown'
     ) AS other_display_name,
     COALESCE(
-      CASE WHEN u_other.role = 'employer' THEN co.logo_url ELSE NULL END,
-      sp.avatar_url,
-      co.logo_url
+      co.logo_url,
+      sp.avatar_url
     ) AS other_avatar_url,
     COALESCE(
       CASE WHEN ums.show_online_status = TRUE OR ums.show_online_status IS NULL
@@ -148,7 +140,6 @@ BEGIN
   JOIN public.conversations c ON c.id = cp_me.conversation_id
   JOIN public.conversation_participants cp_other
     ON cp_other.conversation_id = c.id AND cp_other.user_id != p_user_id
-  LEFT JOIN public.users u_other ON u_other.id = cp_other.user_id
   LEFT JOIN public.seeker_profiles sp ON sp.user_id = cp_other.user_id
   LEFT JOIN public.companies co ON co.user_id = cp_other.user_id
   LEFT JOIN public.user_presence up ON up.user_id = cp_other.user_id
