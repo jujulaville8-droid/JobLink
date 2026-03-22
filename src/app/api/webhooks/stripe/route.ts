@@ -48,34 +48,53 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        const companyId = session.metadata?.company_id
+        let companyId = session.metadata?.company_id
+        const userId = session.metadata?.user_id
 
-        if (!companyId) {
-          console.error('No company_id in session metadata')
-          break
+        // If no company_id in metadata, look up by user_id (user paid before creating company)
+        if (!companyId && userId) {
+          const { data: company } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle()
+
+          companyId = company?.id
         }
 
-        // Set company to pro and save stripe customer id
-        await supabase
-          .from('companies')
-          .update({
-            is_pro: true,
+        if (companyId) {
+          // Set company to pro and save stripe customer id
+          await supabase
+            .from('companies')
+            .update({
+              is_pro: true,
+              stripe_customer_id: session.customer as string,
+            })
+            .eq('id', companyId)
+
+          // Insert subscription record
+          const subscription = await stripe.subscriptions.retrieve(
+            session.subscription as string
+          )
+
+          await supabase.from('subscriptions').insert({
+            company_id: companyId,
+            stripe_subscription_id: subscription.id,
             stripe_customer_id: session.customer as string,
+            status: subscription.status,
+            current_period_end: getSubscriptionPeriodEnd(subscription),
           })
-          .eq('id', companyId)
-
-        // Insert subscription record
-        const subscription = await stripe.subscriptions.retrieve(
-          session.subscription as string
-        )
-
-        await supabase.from('subscriptions').insert({
-          company_id: companyId,
-          stripe_subscription_id: subscription.id,
-          stripe_customer_id: session.customer as string,
-          status: subscription.status,
-          current_period_end: getSubscriptionPeriodEnd(subscription),
-        })
+        } else {
+          // No company yet — store the Stripe customer ID on the user record
+          // so we can link it when they create their company profile later
+          if (userId) {
+            await supabase
+              .from('users')
+              .update({ stripe_customer_id: session.customer as string })
+              .eq('id', userId)
+          }
+          console.log('Checkout completed but no company profile yet. user_id:', userId)
+        }
 
         break
       }
