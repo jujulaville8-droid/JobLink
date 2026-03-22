@@ -249,6 +249,8 @@ function ProfileView({
   const [avatarMsg, setAvatarMsg] = useState<string | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
+  const [hasBuiltResume, setHasBuiltResume] = useState(false);
+  const [builtResumeCompletion, setBuiltResumeCompletion] = useState(0);
   const [statusOpen, setStatusOpen] = useState(false);
   const [statusSaving, setStatusSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -530,7 +532,7 @@ function ProfileView({
         )}
       </div>
 
-      {/* ── Resume / CV Section ── */}
+      {/* ── Resume Section ── */}
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Resume</h2>
@@ -538,7 +540,8 @@ function ProfileView({
             {profile.cv_url ? "Update" : "Upload"}
           </button>
         </div>
-        <div className="rounded-lg border border-border bg-white">
+        <div className="rounded-lg border border-border bg-white divide-y divide-border/40">
+          {/* Uploaded Resume */}
           {profile.cv_url ? (
             <button
               onClick={handleResumePreview}
@@ -554,10 +557,10 @@ function ProfileView({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-text">
-                  {profile.first_name ? `${profile.first_name}'s CV` : "My CV"}
+                  {profile.first_name ? `${profile.first_name}'s Resume` : "My Resume"}
                 </p>
                 <p className="text-xs text-text-light mt-0.5">
-                  {resumeLoading ? "Opening preview…" : "PDF document"}
+                  {resumeLoading ? "Opening preview…" : "Uploaded PDF"}
                 </p>
               </div>
               <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
@@ -568,11 +571,35 @@ function ProfileView({
                 <IconUpload className="h-5 w-5 text-text-muted" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-text">Upload your CV</p>
+                <p className="text-sm font-medium text-text">Upload your Resume</p>
                 <p className="text-xs text-text-light mt-0.5">Add a resume to apply faster</p>
               </div>
               <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
             </button>
+          )}
+
+          {/* Built Resume */}
+          {hasBuiltResume && (
+            <a
+              href="/profile/cv"
+              className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50">
+                <svg className="h-6 w-6 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <polyline points="16 13 12 17 8 13" />
+                  <line x1="12" y1="17" x2="12" y2="9" />
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-text">Built Resume</p>
+                <p className="text-xs text-text-light mt-0.5">
+                  {builtResumeCompletion}% complete — View or edit
+                </p>
+              </div>
+              <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
+            </a>
           )}
         </div>
         {resumeError && (
@@ -1295,6 +1322,18 @@ export default function ProfilePage() {
           visibility: existing.visibility ?? "actively_looking",
         });
         setMode("view");
+
+        // Check for built resume
+        const { data: cvProfile } = await supabase
+          .from("cv_profiles")
+          .select("id, completion_percentage")
+          .eq("user_id", authUser!.id)
+          .maybeSingle();
+
+        if (cvProfile) {
+          setHasBuiltResume(true);
+          setBuiltResumeCompletion(cvProfile.completion_percentage ?? 0);
+        }
       } else {
         setMode("edit");
       }

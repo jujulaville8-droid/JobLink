@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { calculateCvCompletion } from '@/lib/cv-completion'
 import type { CvFull } from '@/lib/types'
 
@@ -29,9 +30,10 @@ export async function ensureCvProfile(userId: string): Promise<string> {
 
 /**
  * Fetch the full CV data for a user.
+ * Uses admin client when fetching another user's data (e.g., employer viewing a candidate).
  */
-export async function fetchFullCv(userId: string): Promise<CvFull | null> {
-  const supabase = await createClient()
+export async function fetchFullCv(userId: string, useAdmin = false): Promise<CvFull | null> {
+  const supabase = useAdmin ? createAdminClient() : await createClient()
 
   const { data: profile } = await supabase
     .from('cv_profiles')
@@ -62,14 +64,19 @@ export async function fetchFullCv(userId: string): Promise<CvFull | null> {
     .eq('user_id', userId)
     .single()
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Get email from users table
+  const { data: userRow } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', userId)
+    .single()
 
   return {
     profile,
     contact: {
       first_name: seeker?.first_name ?? null,
       last_name: seeker?.last_name ?? null,
-      email: user?.email ?? '',
+      email: userRow?.email ?? '',
       phone: seeker?.phone ?? null,
       location: seeker?.location ?? null,
     },
