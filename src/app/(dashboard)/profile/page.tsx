@@ -51,11 +51,6 @@ const VISIBILITY_OPTIONS: {
     description: "Your profile is visible to all employers",
   },
   {
-    value: "open",
-    label: "Open to Opportunities",
-    description: "Only visible to employers when you apply",
-  },
-  {
     value: "not_looking",
     label: "Not Looking",
     description: "Your profile is hidden, but you can still browse and apply",
