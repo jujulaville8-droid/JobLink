@@ -12,10 +12,14 @@ import { sendEmail } from '@/lib/email'
  */
 
 export async function GET(request: NextRequest) {
+  // Vercel Cron sends this header automatically
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+  // Also allow manual trigger with CRON_SECRET
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!isVercelCron && !hasValidSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
