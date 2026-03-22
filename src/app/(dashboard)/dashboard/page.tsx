@@ -92,71 +92,147 @@ async function SeekerDashboard({ userId }: { userId: string }) {
   const { percentage: completePct, missing } = calculateProfileCompletion(profileWithCv);
   const firstName = profile.first_name || "there";
 
-  const { data: applications } = await supabase
-    .from("applications")
-    .select("id, status, applied_at, job_listings(id, title, companies(company_name))")
-    .eq("seeker_id", profile.id)
-    .order("applied_at", { ascending: false })
-    .limit(5);
+  const [
+    { data: applications },
+    { data: recommendedJobs },
+    { count: totalApplications },
+    { count: savedCount },
+  ] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("id, status, applied_at, job_listings(id, title, companies(company_name, logo_url))")
+      .eq("seeker_id", profile.id)
+      .order("applied_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("job_listings")
+      .select("id, title, location, job_type, created_at, companies(company_name, logo_url)")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(4),
+    supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .eq("seeker_id", profile.id),
+    supabase
+      .from("saved_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId),
+  ]);
 
-  const { data: recommendedJobs } = await supabase
-    .from("job_listings")
-    .select("id, title, location, job_type, created_at, companies(company_name, logo_url)")
-    .eq("status", "active")
-    .order("created_at", { ascending: false })
-    .limit(4);
+  const interviewCount = (applications ?? []).filter((a: Record<string, unknown>) => a.status === "interview").length;
 
   return (
     <div className="animate-fade-up">
-      <h1 className="font-display text-2xl text-text sm:text-3xl">
-        Welcome back, {firstName}!
-      </h1>
-      <p className="mt-1 text-text-light">
-        Here&apos;s what&apos;s happening with your job search.
-      </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl text-text sm:text-3xl">
+            Welcome back, {firstName}!
+          </h1>
+          <p className="mt-1 text-text-light text-sm">
+            Here&apos;s what&apos;s happening with your job search.
+          </p>
+        </div>
+        <Link
+          href="/jobs"
+          className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          Find Jobs
+        </Link>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Link href="/profile" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all group">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{completePct}%</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Profile</p>
+        </Link>
+
+        <Link href="/applications" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all group">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{totalApplications ?? 0}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Applications</p>
+        </Link>
+
+        <div className="rounded-2xl border border-border bg-white p-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{interviewCount}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Interviews</p>
+        </div>
+
+        <Link href="/saved" className="rounded-2xl border border-border bg-white p-4 hover:border-primary/20 hover:shadow-md transition-all group">
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
+              <svg className="h-4.5 w-4.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold text-text">{savedCount ?? 0}</span>
+          </div>
+          <p className="text-xs font-medium text-text-muted">Saved Jobs</p>
+        </Link>
+      </div>
 
       {/* Profile Completion - hidden when 100% */}
       {completePct < 100 && (
-        <div className="mt-6 rounded-[--radius-card] border border-border bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-text">Profile Completion</h2>
-              <p className="text-sm text-text-light">{completePct}% complete</p>
+        <div className="mt-5 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-white p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text">Complete your profile</p>
+                <p className="text-xs text-text-muted">{completePct}% done — {missing.length} {missing.length === 1 ? "item" : "items"} left</p>
+              </div>
             </div>
-            <Link
-              href="/profile"
-              className="btn-warm text-sm px-4 py-2"
-            >
-              Complete Profile
+            <Link href="/profile" className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+              Complete
             </Link>
           </div>
-          <div className="mt-3 h-3 w-full rounded-full bg-bg-alt">
-            <div
-              className="h-3 rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${completePct}%` }}
-            />
+          <div className="h-2 w-full rounded-full bg-amber-100">
+            <div className="h-2 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${completePct}%` }} />
           </div>
           {missing.length > 0 && (
-            <div className="mt-3">
-              <p className="text-xs font-medium text-text-light">Missing:</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {missing.map((item) => (
-                  <span
-                    key={item}
-                    className="inline-flex items-center rounded-full bg-accent-warm/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-accent-warm/20"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {missing.map((item) => (
+                <span key={item} className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                  {item}
+                </span>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {/* CV Builder Nudge */}
+      {/* Resume Nudge */}
       {(!hasCvProfile || (cvProfile && cvProfile.completion_percentage < 80)) && (
-        <div className="mt-6">
+        <div className="mt-4">
           <DashboardNudge
             hasBuiltCv={hasCvProfile}
             hasUploadedCv={!!profile.cv_url}
@@ -165,111 +241,136 @@ async function SeekerDashboard({ userId }: { userId: string }) {
         </div>
       )}
 
-      {/* Recent Applications */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-text">Recent Applications</h2>
-          <Link href="/applications" className="text-sm font-medium text-primary hover:text-primary-dark link-animated">
-            View all
-          </Link>
-        </div>
-
-        {applications && applications.length > 0 ? (
-          <div className="mt-4 space-y-3 stagger-children">
-            {applications.map((app: Record<string, unknown>) => {
-              const job = app.job_listings as Record<string, unknown> | null;
-              const company = job?.companies as Record<string, unknown> | null;
-              const status = app.status as ApplicationStatus;
-
-              return (
-                <div
-                  key={app.id as string}
-                  className="flex items-center justify-between rounded-[--radius-button] border border-border bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="min-w-0 flex-1">
-                    <Link
-                      href={`/jobs/${job?.id ?? ""}`}
-                      className="font-medium text-text hover:text-primary transition-colors truncate block"
-                    >
-                      {(job?.title as string) ?? "Untitled"}
-                    </Link>
-                    <p className="text-sm text-text-light">
-                      {(company?.company_name as string) ?? "Unknown Company"} &middot;{" "}
-                      {new Date(app.applied_at as string).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span
-                    className={`ml-3 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_COLORS[status] ?? STATUS_COLORS.applied}`}
-                  >
-                    {STATUS_LABELS[status] ?? status}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-            <p className="text-text-light">You haven&apos;t applied to any jobs yet.</p>
-            <Link
-              href="/jobs"
-              className="mt-3 inline-block btn-primary text-sm px-4 py-2"
-            >
-              Browse Jobs
+      {/* Two-column layout: Applications + Recommended */}
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Applications */}
+        <div className="rounded-2xl border border-border bg-white overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+            <h2 className="text-sm font-semibold text-text">Recent Applications</h2>
+            <Link href="/applications" className="text-xs font-medium text-primary hover:text-primary-dark transition-colors">
+              View all →
             </Link>
           </div>
-        )}
-      </div>
+          {applications && applications.length > 0 ? (
+            <div className="divide-y divide-border/30">
+              {applications.map((app: Record<string, unknown>) => {
+                const job = app.job_listings as Record<string, unknown> | null;
+                const company = job?.companies as Record<string, unknown> | null;
+                const companyName = (company?.company_name as string) ?? "Unknown";
+                const logoUrl = company?.logo_url as string | null;
+                const status = app.status as ApplicationStatus;
 
-      {/* Recommended Jobs */}
-      <div className="mt-8">
-        <h2 className="font-display text-lg text-text">Recommended Jobs</h2>
-        {recommendedJobs && recommendedJobs.length > 0 ? (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 stagger-children">
-            {recommendedJobs.map((job: Record<string, unknown>) => {
-              const company = job.companies as Record<string, unknown> | null;
-              const companyName = (company?.company_name as string) ?? "Unknown Company";
-              const logoUrl = company?.logo_url as string | null;
-              const initial = companyName.charAt(0).toUpperCase();
-              return (
-                <Link
-                  key={job.id as string}
-                  href={`/jobs/${job.id}`}
-                  className="rounded-[--radius-card] border border-border bg-white p-5 shadow-sm hover-lift transition-all"
-                >
-                  <div className="flex items-start gap-3.5">
+                return (
+                  <Link
+                    key={app.id as string}
+                    href={`/jobs/${job?.id ?? ""}`}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-bg-alt/30 transition-colors"
+                  >
                     {logoUrl ? (
-                      <img
-                        src={logoUrl}
-                        alt={companyName}
-                        className="shrink-0 h-10 w-10 rounded-xl object-cover border border-border"
-                      />
+                      <img src={logoUrl} alt="" className="shrink-0 h-9 w-9 rounded-lg object-cover border border-border" />
                     ) : (
-                      <div className="shrink-0 h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-sm">
-                        {initial}
+                      <div className="shrink-0 h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
+                        {companyName.charAt(0)}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-text text-[14px]">{job.title as string}</h3>
-                      <p className="mt-0.5 text-sm text-text-light">{companyName}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <span className="inline-flex items-center rounded-full bg-bg-alt px-2.5 py-0.5 text-xs font-medium text-text-light">
-                          {job.location as string}
-                        </span>
-                        <span className="inline-flex items-center rounded-full bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary">
-                          {((job.job_type as string) ?? "").replace("_", " ")}
-                        </span>
-                      </div>
+                      <p className="text-sm font-medium text-text truncate">
+                        {(job?.title as string) ?? "Untitled"}
+                      </p>
+                      <p className="text-xs text-text-muted">
+                        {companyName} · {new Date(app.applied_at as string).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </p>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
+                    <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[status] ?? STATUS_COLORS.applied}`}>
+                      {STATUS_LABELS[status] ?? status}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-bg-alt flex items-center justify-center mb-3">
+                <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text">No applications yet</p>
+              <p className="text-xs text-text-muted mt-1">Start applying to jobs to track them here.</p>
+              <Link href="/jobs" className="inline-block mt-4 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors">
+                Browse Jobs
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Recommended Jobs */}
+        <div className="rounded-2xl border border-border bg-white overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+            <h2 className="text-sm font-semibold text-text">Latest Opportunities</h2>
+            <Link href="/jobs" className="text-xs font-medium text-primary hover:text-primary-dark transition-colors">
+              See all →
+            </Link>
           </div>
-        ) : (
-          <div className="mt-4 rounded-[--radius-card] border border-dashed border-border p-8 text-center">
-            <p className="text-text-light">No jobs available right now. Check back soon!</p>
-          </div>
-        )}
+          {recommendedJobs && recommendedJobs.length > 0 ? (
+            <div className="divide-y divide-border/30">
+              {recommendedJobs.map((job: Record<string, unknown>) => {
+                const company = job.companies as Record<string, unknown> | null;
+                const companyName = (company?.company_name as string) ?? "Unknown Company";
+                const logoUrl = company?.logo_url as string | null;
+
+                return (
+                  <Link
+                    key={job.id as string}
+                    href={`/jobs/${job.id}`}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-bg-alt/30 transition-colors"
+                  >
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="" className="shrink-0 h-9 w-9 rounded-lg object-cover border border-border" />
+                    ) : (
+                      <div className="shrink-0 h-9 w-9 rounded-lg bg-primary flex items-center justify-center text-white font-semibold text-xs">
+                        {companyName.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-text truncate">{job.title as string}</p>
+                      <p className="text-xs text-text-muted">{companyName}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="inline-flex items-center rounded-full bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        {((job.job_type as string) ?? "").replace("_", " ")}
+                      </span>
+                      <p className="text-[10px] text-text-muted mt-0.5">{job.location as string}</p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-xl bg-bg-alt flex items-center justify-center mb-3">
+                <svg className="h-5 w-5 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text">No jobs available</p>
+              <p className="text-xs text-text-muted mt-1">Check back soon for new opportunities.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Find Jobs button */}
+      <div className="mt-6 sm:hidden">
+        <Link
+          href="/jobs"
+          className="flex items-center justify-center gap-2 w-full rounded-full bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          Find Jobs
+        </Link>
       </div>
     </div>
   );
