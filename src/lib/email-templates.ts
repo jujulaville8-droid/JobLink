@@ -10,6 +10,7 @@ type EmailType =
   | 'report_response'
   | 'job_invite'
   | 'new_job_posted'
+  | 'resume_nudge'
 
 interface EmailData {
   applicant_name?: string
@@ -323,6 +324,30 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             View the listing and apply directly — the employer is waiting to hear from you.
           </p>
           ${d.listing_url ? btn('View Job & Apply', d.listing_url) : btn('View Messages', '/messages')}
+        `),
+      }
+
+    case 'resume_nudge':
+      return {
+        subject: `${esc(d.applicant_name) || 'Hey'}, employers are looking for candidates like you`,
+        html: wrapper(`
+          <h2 style="color: #1f2937; margin: 0 0 8px;">You're almost there, ${esc(d.applicant_name) || 'there'}!</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            You signed up for JobLinks — great first step! But we noticed you haven't added a resume to your profile yet.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            Employers across Antigua &amp; Barbuda are actively searching for candidates right now.
+            Profiles with a resume are <strong>3x more likely</strong> to get contacted by employers.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            You can upload a resume you already have, or build one right on JobLinks in just a few minutes.
+          </p>
+          <div style="margin: 24px 0; text-align: center;">
+            ${btn('Upload My Resume', '/profile')}
+          </div>
+          <p style="text-align: center; margin-top: 12px;">
+            <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or build one using our Resume Builder</a>
+          </p>
         `),
       }
 
