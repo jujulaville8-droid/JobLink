@@ -93,17 +93,51 @@ export default function CompanyProfilePage() {
     return errs;
   }
 
+  function resizeImage(file: File, maxSize: number): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const canvas = document.createElement('canvas');
+        canvas.width = maxSize;
+        canvas.height = maxSize;
+        const ctx = canvas.getContext('2d')!;
+
+        // White background for transparency
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, maxSize, maxSize);
+
+        // Center-crop to square
+        const size = Math.min(img.width, img.height);
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, maxSize, maxSize);
+
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Failed to process image'))),
+          'image/png',
+          1
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Failed to load image'));
+      };
+      img.src = url;
+    });
+  }
+
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file
     if (!file.type.startsWith('image/')) {
       setMessage({ type: 'error', text: 'Please upload an image file.' });
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage({ type: 'error', text: 'Image must be under 2MB.' });
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Image must be under 5MB.' });
       return;
     }
 
@@ -118,12 +152,16 @@ export default function CompanyProfilePage() {
 
       if (!user) return;
 
-      const ext = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${ext}`;
+      // Resize to 256x256 square PNG for consistent display
+      const resized = await resizeImage(file, 256);
+      const fileName = `${user.id}/${Date.now()}.png`;
 
       const { error: uploadError } = await supabase.storage
         .from('company-logos')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, resized, {
+          upsert: true,
+          contentType: 'image/png',
+        });
 
       if (uploadError) {
         setMessage({ type: 'error', text: 'Failed to upload logo.' });
@@ -320,7 +358,7 @@ export default function CompanyProfilePage() {
               <img
                 src={form.logo_url}
                 alt="Company logo"
-                className="h-16 w-16 rounded-lg border border-border object-cover"
+                className="h-16 w-16 rounded-xl border border-border object-cover"
               />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border bg-bg-alt text-text-light">
@@ -347,7 +385,7 @@ export default function CompanyProfilePage() {
                 {uploading ? 'Uploading...' : 'Upload Logo'}
               </button>
               <p className="mt-1 text-xs text-text-light">
-                PNG, JPG up to 2MB
+                PNG, JPG up to 5MB. Will be resized to a square.
               </p>
               <input
                 ref={fileInputRef}
