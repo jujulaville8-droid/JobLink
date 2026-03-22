@@ -15,11 +15,12 @@ export async function GET() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const buffer = await renderToBuffer(createCvDocument(cv) as any)
+    const bytes = new Uint8Array(buffer)
 
     const fullName = [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join('_') || 'CV'
     const fileName = `${fullName}_CV.pdf`
 
-    return new Response(buffer, {
+    return new Response(bytes, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${fileName}"`,
