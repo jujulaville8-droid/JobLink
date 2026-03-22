@@ -211,16 +211,8 @@ export default async function Home() {
               controls
               preload="metadata"
               playsInline
-              poster=""
             >
-              <source
-                src="https://joblinkvsl.s3.us-east-2.amazonaws.com/0321+(1).mov"
-                type="video/quicktime"
-              />
-              <source
-                src="https://joblinkvsl.s3.us-east-2.amazonaws.com/0321+(1).mov"
-                type="video/mp4"
-              />
+              <source src="/videos/vsl.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>
