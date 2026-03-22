@@ -169,7 +169,7 @@ export default function CvBuilderPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "CV.pdf";
+      a.download = "Resume.pdf";
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -180,7 +180,7 @@ export default function CvBuilderPage() {
 
   // Delete CV
   async function handleDeleteCv() {
-    if (!confirm("Delete your entire CV? This cannot be undone.")) return;
+    if (!confirm("Delete your entire Resume? This cannot be undone.")) return;
     await fetch("/api/cv", { method: "DELETE" });
     setCv(null);
     setMenuOpen(false);
@@ -189,7 +189,7 @@ export default function CvBuilderPage() {
   if (authLoading || loading) {
     return (
       <div>
-        <h1 className="font-display text-2xl text-text sm:text-3xl">CV Builder</h1>
+        <h1 className="font-display text-2xl text-text sm:text-3xl">Resume Builder</h1>
         <div className="mt-6 space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="rounded-xl border border-border bg-white p-5 animate-pulse">
@@ -206,7 +206,7 @@ export default function CvBuilderPage() {
   if (!cv) {
     return (
       <div>
-        <h1 className="font-display text-2xl text-text sm:text-3xl">CV Builder</h1>
+        <h1 className="font-display text-2xl text-text sm:text-3xl">Resume Builder</h1>
         <div className="mt-10 text-center max-w-md mx-auto">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
             <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -216,16 +216,16 @@ export default function CvBuilderPage() {
               <line x1="9" y1="15" x2="15" y2="15" />
             </svg>
           </div>
-          <h2 className="mt-4 font-display text-xl text-text">Add your CV</h2>
+          <h2 className="mt-4 font-display text-xl text-text">Add your Resume</h2>
           <p className="mt-2 text-sm text-text-light">
-            Already have a CV? Upload it. Or build one here in a few minutes.
+            Already have a Resume? Upload it. Or build one here in a few minutes.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
             <a
               href="/profile"
               className="rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
             >
-              Upload my CV
+              Upload my Resume
             </a>
             <button
               onClick={createCv}
@@ -246,9 +246,9 @@ export default function CvBuilderPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl text-text sm:text-3xl">CV Builder</h1>
+          <h1 className="font-display text-2xl text-text sm:text-3xl">Resume Builder</h1>
           <p className="mt-1 text-sm text-text-light">
-            {saving ? "Saving..." : "Build and manage your professional CV."}
+            {saving ? "Saving..." : "Build and manage your professional Resume."}
           </p>
         </div>
         <div className="relative">
@@ -281,7 +281,7 @@ export default function CvBuilderPage() {
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                   </svg>
-                  Delete CV
+                  Delete Resume
                 </button>
               </div>
             </>

@@ -168,7 +168,7 @@ export default function ApplyPage() {
       if (!profile.first_name) missing.push("First name");
       if (!profile.last_name) missing.push("Last name");
       if (!profile.phone) missing.push("Phone number");
-      if (!profile.cv_url && !cvProfile) missing.push("CV (upload or build one)");
+      if (!profile.cv_url && !cvProfile) missing.push("Resume (upload or build one)");
 
       if (missing.length > 0) {
         setProfileStatus({
@@ -594,7 +594,7 @@ export default function ApplyPage() {
                 has been sent.
               </p>
               <p className="mt-1 text-xs text-text-muted">
-                The employer will review your profile and CV. Track the status
+                The employer will review your profile and Resume. Track the status
                 from your dashboard.
               </p>
 
@@ -794,7 +794,7 @@ export default function ApplyPage() {
           <p className="text-xs text-text-muted leading-relaxed">
             Your <span className="font-medium text-text">profile</span>,{" "}
             <span className="font-medium text-text">contact details</span>, and{" "}
-            <span className="font-medium text-text">CV</span> will be shared
+            <span className="font-medium text-text">Resume</span> will be shared
             automatically with the employer.
           </p>
         </motion.div>

@@ -11,7 +11,7 @@ export default function CvCompletionBar({ percentage, missing }: Props) {
   return (
     <div className="rounded-xl border border-border bg-white p-5">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-text">CV Completion</span>
+        <span className="text-sm font-semibold text-text">Resume Completion</span>
         <span className="text-sm font-bold text-primary">{percentage}%</span>
       </div>
       <div className="h-2 rounded-full bg-bg-alt overflow-hidden">

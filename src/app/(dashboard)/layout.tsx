@@ -8,7 +8,7 @@ import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/profile", label: "My Profile", icon: "user" },
-  { href: "/profile/cv", label: "CV Builder", icon: "file-text" },
+  { href: "/profile/cv", label: "Resume Builder", icon: "file-text" },
   { href: "/jobs", label: "Browse Jobs", icon: "search" },
   { href: "/applications", label: "My Applications", icon: "file-text" },
   { href: "/messages", label: "Messages", icon: "mail" },

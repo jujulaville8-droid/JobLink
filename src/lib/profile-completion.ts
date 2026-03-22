@@ -64,7 +64,7 @@ const REQUIRED_FIELDS: {
   },
   {
     key: "cv_url",
-    label: "CV (uploaded or built)",
+    label: "Resume (uploaded or built)",
     check: (v, profile) =>
       (typeof v === "string" && v.trim().length > 0) ||
       !!(profile as ProfileFields)?.has_cv_profile,

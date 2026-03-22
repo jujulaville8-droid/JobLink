@@ -51,16 +51,16 @@ export default function DashboardNudge({ hasBuiltCv, hasUploadedCv, completionPe
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-text">Add your CV to get noticed</p>
+            <p className="text-sm font-semibold text-text">Add your Resume to get noticed</p>
             <p className="text-xs text-text-light mt-0.5">
-              Employers are more likely to reach out to candidates with a CV on their profile.
+              Employers are more likely to reach out to candidates with a Resume on their profile.
             </p>
             <div className="flex items-center gap-2 mt-3">
               <Link
                 href="/profile"
                 className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
               >
-                Upload a CV
+                Upload a Resume
               </Link>
               <Link
                 href="/profile/cv"
@@ -95,7 +95,7 @@ export default function DashboardNudge({ hasBuiltCv, hasUploadedCv, completionPe
           </svg>
         </button>
         <p className="text-sm font-semibold text-text">
-          Your CV is {completionPercentage}% complete
+          Your Resume is {completionPercentage}% complete
         </p>
         <p className="text-xs text-text-light mt-0.5">
           {suggestions[0]} to improve your chances.
@@ -104,7 +104,7 @@ export default function DashboardNudge({ hasBuiltCv, hasUploadedCv, completionPe
           href="/profile/cv"
           className="inline-block mt-3 rounded-lg border border-amber-300 bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-200 transition-colors"
         >
-          Complete my CV
+          Complete my Resume
         </Link>
       </div>
     );

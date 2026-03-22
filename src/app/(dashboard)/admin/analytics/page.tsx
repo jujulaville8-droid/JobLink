@@ -177,17 +177,17 @@ export default async function AdminAnalyticsPage() {
 
       {/* CV Builder Analytics */}
       <div className="mt-10">
-        <h2 className="text-lg font-bold font-display text-text mb-4">CV Builder</h2>
+        <h2 className="text-lg font-bold font-display text-text mb-4">Resume Builder</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <CvStatCard
-            label="CVs Started"
+            label="Resumes Started"
             value={cvProfilesStarted ?? 0}
             subtitle={`${totalSeekerCount ? Math.round(((cvProfilesStarted ?? 0) / (totalSeekerCount ?? 1)) * 100) : 0}% of seekers`}
           />
           <CvStatCard
-            label="CVs Completed"
+            label="Resumes Completed"
             value={cvProfilesCompleted ?? 0}
-            subtitle={cvProfilesStarted ? `${Math.round(((cvProfilesCompleted ?? 0) / (cvProfilesStarted ?? 1)) * 100)}% completion rate` : 'No CVs yet'}
+            subtitle={cvProfilesStarted ? `${Math.round(((cvProfilesCompleted ?? 0) / (cvProfilesStarted ?? 1)) * 100)}% completion rate` : 'No Resumes yet'}
           />
           <CvStatCard
             label="Quick Builder Completions"

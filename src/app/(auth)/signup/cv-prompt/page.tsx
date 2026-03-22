@@ -34,10 +34,10 @@ export default function CvPromptPage() {
         </div>
 
         <h1 className="mt-5 font-display text-2xl text-text">
-          Add your CV
+          Add your Resume
         </h1>
         <p className="mt-2 text-sm text-text-light max-w-sm mx-auto">
-          Employers are more likely to reach out to candidates with a CV. Upload one you already have or build one here.
+          Employers are more likely to reach out to candidates with a Resume. Upload one you already have or build one here.
         </p>
 
         <div className="mt-8 space-y-3">
@@ -45,7 +45,7 @@ export default function CvPromptPage() {
             onClick={() => router.push("/profile")}
             className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors"
           >
-            Upload my CV
+            Upload my Resume
           </button>
 
           <button
