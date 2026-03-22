@@ -703,7 +703,7 @@ export default function ApplyPage() {
 
   // ─── Ready: Application form ───
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+    <div className="mx-auto max-w-2xl px-4 pt-8 pb-24 sm:pt-12 md:pb-12">
       {/* Back link */}
       <motion.div
         initial={{ opacity: 0, x: -8 }}
