@@ -56,22 +56,36 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(apiKey)
 
     // Fetch the full email body from Resend's Receiving API
+    // Retry with delay because the webhook can fire before the body is available
     let emailBody = ''
     let emailHtml: string | undefined
     if (emailId) {
-      try {
-        const { data: emailDetail, error: fetchError } = await resend.emails.receiving.get(emailId)
-        if (fetchError) {
-          console.error('[inbound-webhook] Resend receiving API error:', fetchError)
-        } else if (emailDetail) {
-          emailBody = emailDetail.text || ''
-          emailHtml = emailDetail.html || undefined
-          console.log(`[inbound-webhook] Fetched email body: text=${emailBody.length} chars, html=${emailHtml ? emailHtml.length : 0} chars`)
-        } else {
-          console.warn('[inbound-webhook] No email detail returned for id:', emailId)
+      const MAX_ATTEMPTS = 3
+      const DELAY_MS = 2000
+
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        try {
+          // Wait before fetching to give Resend time to process the email body
+          await new Promise((resolve) => setTimeout(resolve, DELAY_MS))
+
+          const { data: emailDetail, error: fetchError } = await resend.emails.receiving.get(emailId)
+
+          if (fetchError) {
+            console.error(`[inbound-webhook] Resend receiving API error (attempt ${attempt}/${MAX_ATTEMPTS}):`, fetchError)
+          } else if (emailDetail) {
+            emailBody = emailDetail.text || ''
+            emailHtml = emailDetail.html || undefined
+            console.log(`[inbound-webhook] Fetched email body (attempt ${attempt}): text=${emailBody.length} chars, html=${emailHtml ? emailHtml.length : 0} chars`)
+
+            // If we got content, stop retrying
+            if (emailBody || emailHtml) break
+            console.warn(`[inbound-webhook] Empty body on attempt ${attempt}/${MAX_ATTEMPTS}, retrying...`)
+          } else {
+            console.warn(`[inbound-webhook] No email detail returned (attempt ${attempt}/${MAX_ATTEMPTS}) for id:`, emailId)
+          }
+        } catch (fetchErr) {
+          console.error(`[inbound-webhook] Could not fetch email body (attempt ${attempt}/${MAX_ATTEMPTS}):`, fetchErr)
         }
-      } catch (fetchErr) {
-        console.error('[inbound-webhook] Could not fetch email body:', fetchErr)
       }
     } else {
       console.warn('[inbound-webhook] No email_id in webhook payload, cannot fetch body')
