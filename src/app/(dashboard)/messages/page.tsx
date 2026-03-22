@@ -213,7 +213,7 @@ export default function MessagesPage() {
 
       {/* Conversation list */}
       {!loading && !error && conversations.length > 0 && (
-        <div className="mt-4 border border-border rounded-lg bg-white overflow-hidden divide-y divide-border">
+        <div className="mt-4 border-0 sm:border border-border rounded-none sm:rounded-lg bg-white overflow-hidden divide-y divide-border">
           {conversations.map((conv) => {
             const appStatus = conv.application_context.application_status as ApplicationStatus;
             const isUnread = conv.unread_count > 0;
@@ -245,7 +245,7 @@ export default function MessagesPage() {
                 <div className="min-w-0 flex-1">
                   {/* Row 1: Name + time */}
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className={`text-[13px] truncate transition-colors ${
+                    <h3 className={`text-[15px] sm:text-[13px] truncate transition-colors ${
                       isUnread ? "font-semibold text-text" : "font-medium text-text-light"
                     } group-hover:text-primary`}>
                       {conv.other_participant.display_name}
@@ -257,7 +257,7 @@ export default function MessagesPage() {
 
                   {/* Row 2: Job title + application status */}
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <p className="text-[11px] text-text-muted truncate">
+                    <p className="text-xs sm:text-[11px] text-text-muted truncate">
                       {conv.application_context.job_title}
                       {isEmployer ? "" : ` at ${conv.application_context.company_name}`}
                     </p>
@@ -270,7 +270,7 @@ export default function MessagesPage() {
 
                   {/* Row 3: Last message + unread badge */}
                   <div className="flex items-center justify-between gap-2 mt-0.5">
-                    <p className={`text-[13px] truncate ${isUnread ? "text-text font-medium" : "text-text-light"}`}>
+                    <p className={`text-sm sm:text-[13px] truncate ${isUnread ? "text-text font-medium" : "text-text-light"}`}>
                       {conv.last_message_sender_id === user?.id ? "You: " : ""}
                       {conv.last_message_text || "No messages yet"}
                     </p>

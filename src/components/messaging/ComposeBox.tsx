@@ -105,7 +105,7 @@ export default function ComposeBox({
         disabled={disabled || sending}
         rows={1}
         maxLength={5000}
-        className="flex-1 resize-none rounded-md border border-border bg-gray-50 px-3 py-2 text-[13px] leading-[1.5] outline-none transition-colors focus:border-primary/40 focus:bg-white placeholder:text-text-muted/50 disabled:opacity-50"
+        className="flex-1 resize-none rounded-xl sm:rounded-md border border-border bg-gray-50 px-3.5 py-2.5 sm:px-3 sm:py-2 text-[15px] sm:text-[13px] leading-[1.5] outline-none transition-colors focus:border-primary/40 focus:bg-white placeholder:text-text-muted/50 disabled:opacity-50"
       />
 
       <AnimatePresence mode="wait">
@@ -114,7 +114,7 @@ export default function ComposeBox({
           type="submit"
           disabled={!hasText || sending || disabled}
           transition={{ duration: 0.15 }}
-          className="shrink-0 flex items-center justify-center h-8 w-8 rounded-md bg-primary text-white transition-colors hover:bg-primary-dark disabled:opacity-30 disabled:cursor-not-allowed"
+          className="shrink-0 flex items-center justify-center h-9 w-9 sm:h-8 sm:w-8 rounded-xl sm:rounded-md bg-primary text-white transition-colors hover:bg-primary-dark disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {sending ? (
             <motion.div

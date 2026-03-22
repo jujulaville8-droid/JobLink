@@ -286,10 +286,10 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-[15px] font-semibold text-text truncate leading-tight">{meta?.other_display_name || "Conversation"}</h2>
+              <h2 className="text-base sm:text-[15px] font-semibold text-text truncate leading-tight">{meta?.other_display_name || "Conversation"}</h2>
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs text-text-muted truncate">
+              <p className="text-[13px] sm:text-xs text-text-muted truncate">
                 {meta?.job_title} at {meta?.company_name}
               </p>
               {meta?.application_status && (

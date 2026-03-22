@@ -210,7 +210,7 @@ function MessageBubble({
       : msg._optimistic
         ? "bg-primary/90 text-white"
         : "bg-primary text-white"
-    : "bg-gray-50 text-text border border-border";
+    : "bg-gray-100 text-text sm:bg-gray-50 sm:border sm:border-border";
 
   return (
     <div>
@@ -242,7 +242,7 @@ function MessageBubble({
             damping: 30,
             mass: 0.6,
           }}
-          className={`max-w-[70%] px-3 py-2 text-[13px] leading-[1.5] ${bubbleRadius} ${bubbleColor}`}
+          className={`max-w-[85%] sm:max-w-[70%] px-3.5 py-2.5 sm:px-3 sm:py-2 text-[15px] sm:text-[13px] leading-[1.5] ${bubbleRadius} ${bubbleColor}`}
         >
           <p className="whitespace-pre-wrap break-words"><Linkify>{msg.body}</Linkify></p>
           {hasAttachment && <AttachmentCard url={msg.attachment_url!} name={msg.attachment_name} isMine={isMine} />}
@@ -350,7 +350,7 @@ export default function MessageThread({
     <div
       ref={scrollContainerRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto px-5 py-4 bg-gray-50/30"
+      className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 bg-gray-50/30"
     >
       {/* Load more indicator */}
       <AnimatePresence>
