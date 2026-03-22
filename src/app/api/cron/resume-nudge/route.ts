@@ -29,14 +29,16 @@ export async function GET(request: NextRequest) {
     const oneDayAgo = new Date()
     oneDayAgo.setDate(oneDayAgo.getDate() - 1)
 
-    // Find all seekers without an uploaded resume who signed up 24h+ ago
-    const { data: seekers, error: seekerError } = await supabase
+    // Find all seekers who signed up 24h+ ago — filter empty/null cv_url in JS
+    // (some profiles store "" instead of null for missing CV)
+    const { data: allSeekers, error: seekerError } = await supabase
       .from('seeker_profiles')
       .select('user_id, first_name, cv_url')
-      .is('cv_url', null)
       .lt('created_at', oneDayAgo.toISOString())
 
-    if (seekerError || !seekers) {
+    const seekers = (allSeekers ?? []).filter((s) => !s.cv_url)
+
+    if (seekerError) {
       console.error('[resume-nudge] Failed to fetch seekers:', seekerError)
       return NextResponse.json({ error: 'Failed to fetch seekers' }, { status: 500 })
     }
