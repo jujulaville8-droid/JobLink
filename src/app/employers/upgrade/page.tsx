@@ -35,9 +35,7 @@ function XIcon({ className }: { className?: string }) {
 }
 
 export default function UpgradePage() {
-  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [upgrading, setUpgrading] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [companyName, setCompanyName] = useState('Your Company');
 
@@ -52,8 +50,6 @@ export default function UpgradePage() {
         setLoading(false);
         return;
       }
-
-      setUserId(user.id);
 
       const { data: company } = await supabase
         .from('companies')
@@ -72,26 +68,6 @@ export default function UpgradePage() {
     }
     load();
   }, []);
-
-  async function handleUpgrade() {
-    if (!userId) return;
-    setUpgrading(true);
-    try {
-      const res = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setUpgrading(false);
-      }
-    } catch {
-      setUpgrading(false);
-    }
-  }
 
   if (loading) {
     return (
@@ -231,20 +207,12 @@ export default function UpgradePage() {
               <p className="mb-4 text-center text-xs text-text-muted">
                 Featured listings get significantly more applicant views
               </p>
-              <button
-                onClick={handleUpgrade}
-                disabled={upgrading || !userId}
-                className="w-full rounded-xl bg-accent px-6 py-4 text-base font-semibold text-white transition-all duration-300 hover:bg-accent-hover hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-1 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
+              <a
+                href="/api/stripe/checkout"
+                className="block w-full rounded-xl bg-accent px-6 py-4 text-center text-base font-semibold text-white transition-all duration-300 hover:bg-accent-hover hover:shadow-xl hover:shadow-accent/25 hover:-translate-y-1 active:translate-y-0"
               >
-                {upgrading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white " />
-                    Redirecting to checkout...
-                  </span>
-                ) : (
-                  'Upgrade to Pro'
-                )}
-              </button>
+                Upgrade to Pro
+              </a>
               <p className="mt-5 text-center text-xs text-text-muted">
                 Join employers across Antigua &amp; Barbuda who are hiring smarter
               </p>
