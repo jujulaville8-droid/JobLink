@@ -4,9 +4,11 @@ import { useState, useRef } from "react";
 import type { CvSkill } from "@/lib/types";
 
 const SUGGESTIONS = [
-  "Customer Service", "Communication", "Teamwork", "Microsoft Office",
-  "Problem Solving", "Time Management", "Leadership", "Sales",
-  "Data Entry", "Accounting", "Social Media", "Project Management",
+  "Customer Service", "Driving", "Heavy Equipment Operation", "Carpentry",
+  "Plumbing", "Electrical Work", "Cooking", "Housekeeping",
+  "Landscaping", "Welding", "Construction", "Security",
+  "Cashier", "Bartending", "Waitressing", "Fishing",
+  "Painting", "Auto Mechanic", "Forklift Operation", "First Aid",
 ];
 
 interface Props {

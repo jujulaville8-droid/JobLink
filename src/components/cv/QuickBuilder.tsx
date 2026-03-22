@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const SKILL_SUGGESTIONS = [
-  "Customer Service", "Communication", "Teamwork", "Microsoft Office",
-  "Problem Solving", "Time Management", "Leadership", "Sales",
+  "Customer Service", "Driving", "Cooking", "Carpentry",
+  "Cashier", "Security", "Housekeeping", "Construction",
 ];
 
 interface Props {
