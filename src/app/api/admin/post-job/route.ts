@@ -169,6 +169,7 @@ export async function POST(req: NextRequest) {
       salary_visible: salary_visible ?? true,
       requires_work_permit: false,
       status: 'active',
+      posted_by_admin: true,
       expires_at: expiresAt,
     })
     .select('id')

@@ -240,6 +240,20 @@ export default async function JobDetailPage({ params }: PageProps) {
           Back to jobs
         </Link>
 
+        {/* Admin-posted disclaimer */}
+        {job.posted_by_admin && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>
+              This listing was posted by the <span className="font-semibold">JobLink team</span> on behalf of {company?.company_name || "this company"}. It has not been submitted directly by the employer.
+            </span>
+          </div>
+        )}
+
         {/* ─── Hero header card ─── */}
         <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
