@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { calculateProfileCompletion } from '@/lib/profile-completion'
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,28 @@ export async function POST(request: NextRequest) {
         payload[field] = profileData[field]
       }
     }
+
+    // Check if user has a built resume (for completion calc)
+    const { data: cvProfile } = await supabase
+      .from('cv_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    // Calculate profile completion server-side
+    const { percentage } = calculateProfileCompletion({
+      first_name: payload.first_name as string || null,
+      last_name: payload.last_name as string || null,
+      phone: payload.phone as string || null,
+      bio: payload.bio as string || null,
+      skills: payload.skills as string[] || null,
+      experience_years: payload.experience_years as number || null,
+      education: payload.education as string || null,
+      cv_url: payload.cv_url as string || null,
+      has_cv_profile: !!cvProfile,
+    })
+
+    payload.profile_complete_pct = percentage
 
     let error
     let newProfileId: string | null = null
