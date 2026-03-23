@@ -28,6 +28,7 @@ const employerLinks = [
 
 const adminLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
+  { href: "/admin/post-job", label: "Post a Job", icon: "plus-circle" },
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/approvals", label: "Job Approvals", icon: "check-circle" },
   { href: "/admin/reports", label: "Reports", icon: "alert-triangle" },
