@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchFullCv } from '@/lib/cv-helpers'
 import { renderToBuffer } from '@react-pdf/renderer'
-import { createCvDocument } from '@/lib/cv-pdf'
+import { createCvDocument, type ThemeId, THEME_LIST } from '@/lib/cv-pdf'
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,8 +30,11 @@ export async function GET(request: NextRequest) {
     const cv = await fetchFullCv(targetUserId, targetUserId !== user.id)
     if (!cv) return NextResponse.json({ error: 'No resume found' }, { status: 404 })
 
+    const themeParam = searchParams.get('theme') || 'modern'
+    const theme = THEME_LIST.some(t => t.id === themeParam) ? themeParam as ThemeId : 'modern'
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await renderToBuffer(createCvDocument(cv) as any)
+    const buffer = await renderToBuffer(createCvDocument(cv, theme) as any)
     const bytes = new Uint8Array(buffer)
 
     const fullName = [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join('_') || 'Resume'

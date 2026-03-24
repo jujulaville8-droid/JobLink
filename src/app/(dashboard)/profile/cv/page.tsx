@@ -29,6 +29,7 @@ export default function CvBuilderPage() {
   const [smartPreview, setSmartPreview] = useState<Record<string, unknown> | null>(null);
   const [smartPurchased, setSmartPurchased] = useState(false);
   const [smartError, setSmartError] = useState("");
+  const [selectedTheme, setSelectedTheme] = useState("modern");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchCv = useCallback(async () => {
@@ -221,7 +222,7 @@ export default function CvBuilderPage() {
   async function handleExport() {
     setExporting(true);
     try {
-      const res = await fetch("/api/cv/export");
+      const res = await fetch(`/api/cv/export?theme=${selectedTheme}`);
       if (!res.ok) return;
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -407,6 +408,41 @@ export default function CvBuilderPage() {
       {/* Completion bar */}
       <div className="mt-5">
         <CvCompletionBar percentage={completion.percentage} missing={completion.missing} />
+      </div>
+
+      {/* Theme selector */}
+      <div className="mt-5">
+        <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2.5">PDF Theme</p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "classic", name: "Classic", color: "#1a1a1a" },
+            { id: "modern", name: "Modern", color: "#0d7377" },
+            { id: "bold", name: "Bold", color: "#dc2626" },
+            { id: "minimal", name: "Minimal", color: "#525252" },
+            { id: "professional", name: "Professional", color: "#1e3a5f" },
+            { id: "executive", name: "Executive", color: "#7c3aed" },
+            { id: "creative", name: "Creative", color: "#ea580c" },
+            { id: "ocean", name: "Ocean", color: "#0369a1" },
+            { id: "sunset", name: "Sunset", color: "#be185d" },
+            { id: "forest", name: "Forest", color: "#15803d" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedTheme(t.id)}
+              className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                selectedTheme === t.id
+                  ? "border-primary bg-primary/5 text-primary shadow-sm"
+                  : "border-border text-text-muted hover:border-primary/30 hover:text-text"
+              }`}
+            >
+              <span
+                className="h-3 w-3 rounded-full shrink-0"
+                style={{ backgroundColor: t.color }}
+              />
+              {t.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-6 space-y-6">
