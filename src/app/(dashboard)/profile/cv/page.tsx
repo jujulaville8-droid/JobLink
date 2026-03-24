@@ -1030,12 +1030,18 @@ function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
           <p className="mt-1 text-xs text-text-muted">
             Unlock to add everything to your resume builder. Edit anytime.
           </p>
-          <a
-            href="/api/stripe/smart-resume-checkout"
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/stripe/smart-resume-checkout", { method: "POST" });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+              } catch { /* ignore */ }
+            }}
             className="mt-3 block w-full rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors shadow-sm shadow-primary/20"
           >
             Unlock Full Resume — EC$10
-          </a>
+          </button>
         </div>
       </div>
     </div>
