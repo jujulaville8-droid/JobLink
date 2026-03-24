@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     const { data: job } = await admin
       .from("job_listings")
       .select(
-        "title, description, requirements, location, job_type, company_id, companies(company_name)"
+        "title, description, location, job_type, category, company_id, companies(company_name)"
       )
       .eq("id", jobId)
       .single();
@@ -99,7 +99,7 @@ JOB:
 - Title: ${job.title}
 - Company: ${companyName}
 - Description: ${job.description || "Not provided"}
-- Requirements: ${job.requirements || "Not provided"}
+- Category: ${job.category || "Not specified"}
 - Location: ${job.location || "Antigua"}
 - Type: ${job.job_type || "Not specified"}`;
 
