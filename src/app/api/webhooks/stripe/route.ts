@@ -48,8 +48,21 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        let companyId = session.metadata?.company_id
+        const purchaseType = session.metadata?.purchase_type
         const userId = session.metadata?.user_id
+
+        // Handle Smart Resume one-time purchase
+        if (purchaseType === 'smart_resume' && userId) {
+          await supabase.from('ai_purchases').insert({
+            user_id: userId,
+            feature: 'smart_resume',
+            stripe_session_id: session.id,
+          })
+          break
+        }
+
+        // Employer Pro subscription flow
+        let companyId = session.metadata?.company_id
 
         // If no company_id in metadata, look up by user_id (user paid before creating company)
         if (!companyId && userId) {

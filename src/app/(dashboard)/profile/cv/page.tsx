@@ -25,6 +25,10 @@ export default function CvBuilderPage() {
   const [saving, setSaving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [smartLoading, setSmartLoading] = useState(false);
+  const [smartPreview, setSmartPreview] = useState<Record<string, unknown> | null>(null);
+  const [smartPurchased, setSmartPurchased] = useState(false);
+  const [smartError, setSmartError] = useState("");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchCv = useCallback(async () => {
@@ -47,8 +51,62 @@ export default function CvBuilderPage() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && user) fetchCv();
+    if (!authLoading && user) {
+      fetchCv();
+      // Check if user has purchased Smart Resume
+      fetch("/api/ai/resume/status")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.purchased) setSmartPurchased(true);
+          if (d.preview) setSmartPreview(d.preview);
+        })
+        .catch(() => {});
+
+      // Handle post-payment unlock
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("unlock") === "true") {
+        setSmartPurchased(true);
+        // Move preview data into CV tables
+        fetch("/api/ai/resume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode: "unlock" }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.success) {
+              setSmartPreview(null);
+              fetchCv();
+              // Clean URL
+              window.history.replaceState({}, "", "/profile/cv");
+            }
+          })
+          .catch(() => {});
+      }
+    }
   }, [user, authLoading, fetchCv]);
+
+  async function handleSmartResume() {
+    setSmartLoading(true);
+    setSmartError("");
+    try {
+      const res = await fetch("/api/ai/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "preview" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSmartError(data.error || "Something went wrong.");
+        return;
+      }
+      setSmartPreview(data.preview);
+    } catch {
+      setSmartError("Something went wrong. Please try again.");
+    } finally {
+      setSmartLoading(false);
+    }
+  }
 
   // Auto-save job_title and summary with debounce
   function handleFieldChange(field: "job_title" | "summary", value: string) {
@@ -218,8 +276,36 @@ export default function CvBuilderPage() {
           </div>
           <h2 className="mt-4 font-display text-xl text-text">Add your Resume</h2>
           <p className="mt-2 text-sm text-text-light">
-            Already have a Resume? Upload it. Or build one here in a few minutes.
+            Already have a Resume? Upload it. Build one manually. Or let Smart Resume do it for you.
           </p>
+
+          {/* Smart Resume CTA */}
+          {!smartPurchased && !smartPreview && (
+            <div className="mt-6 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.08] p-6">
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+                </svg>
+                <span className="text-sm font-bold uppercase tracking-wider">Smart Resume</span>
+              </div>
+              <p className="mt-2 text-sm font-medium text-text">Your complete professional resume, ready in seconds</p>
+              <p className="mt-1 text-xs text-text-muted">Built with the same proven format that gets candidates more interviews</p>
+              <button
+                onClick={handleSmartResume}
+                disabled={smartLoading}
+                className="mt-4 w-full rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
+              >
+                {smartLoading ? "Building your resume..." : "Generate my Resume"}
+              </button>
+              {smartError && <p className="mt-2 text-xs text-red-500 text-center">{smartError}</p>}
+            </div>
+          )}
+
+          {/* Smart Resume Preview + Paywall */}
+          {smartPreview && !smartPurchased && (
+            <SmartResumePreview preview={smartPreview} />
+          )}
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
             <a
               href="/profile"
@@ -231,7 +317,7 @@ export default function CvBuilderPage() {
               onClick={createCv}
               className="rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-text hover:bg-bg-alt transition-colors"
             >
-              Build one instead
+              Build one manually
             </button>
           </div>
         </div>
@@ -243,6 +329,35 @@ export default function CvBuilderPage() {
 
   return (
     <div>
+      {/* Smart Resume CTA for existing CV users */}
+      {!smartPurchased && !smartPreview && (
+        <div className="mb-6 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/[0.03] to-primary/[0.08] p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <svg className="h-5 w-5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-text">Smart Resume</p>
+              <p className="text-xs text-text-muted">Generate a complete professional resume in seconds</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSmartResume}
+            disabled={smartLoading}
+            className="shrink-0 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark transition-colors disabled:opacity-60"
+          >
+            {smartLoading ? "Building..." : "Try it free"}
+          </button>
+        </div>
+      )}
+
+      {/* Smart Resume Preview + Paywall */}
+      {smartPreview && !smartPurchased && (
+        <div className="mb-6">
+          <SmartResumePreview preview={smartPreview} />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -601,5 +716,87 @@ function SimpleEntryEditor({ fields, labels, onSave, onCancel, saveLabel, dateFi
         </button>
       </div>
     </form>
+  );
+}
+
+function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
+  const data = preview as {
+    summary?: string;
+    experiences?: { company_name: string; job_title: string; description: string }[];
+    education?: { institution: string; degree: string; field_of_study: string }[];
+    skills?: string[];
+  };
+
+  return (
+    <div className="mt-6 rounded-2xl border border-border bg-white overflow-hidden">
+      {/* Visible section — summary + first experience */}
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-2 text-primary mb-3">
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+          </svg>
+          <span className="text-xs font-bold uppercase tracking-wider">Smart Resume Preview</span>
+        </div>
+
+        {data.summary && (
+          <div>
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Professional Summary</p>
+            <p className="text-sm text-text leading-relaxed">{data.summary}</p>
+          </div>
+        )}
+
+        {data.experiences?.[0] && (
+          <div>
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Work Experience</p>
+            <p className="text-sm font-medium text-text">{data.experiences[0].job_title}</p>
+            <p className="text-xs text-text-muted">{data.experiences[0].company_name}</p>
+            <p className="text-xs text-text-light mt-1">{data.experiences[0].description}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Blurred section */}
+      <div className="relative">
+        <div className="p-5 space-y-3 blur-sm select-none pointer-events-none" aria-hidden="true">
+          {data.experiences?.slice(1).map((exp, i) => (
+            <div key={i}>
+              <p className="text-sm font-medium text-text">{exp.job_title}</p>
+              <p className="text-xs text-text-muted">{exp.company_name}</p>
+            </div>
+          ))}
+          {data.education?.map((edu, i) => (
+            <div key={i}>
+              <p className="text-sm font-medium text-text">{edu.degree} in {edu.field_of_study}</p>
+              <p className="text-xs text-text-muted">{edu.institution}</p>
+            </div>
+          ))}
+          {data.skills && (
+            <div className="flex flex-wrap gap-1.5">
+              {data.skills.map((s, i) => (
+                <span key={i} className="rounded-full bg-bg-alt px-2.5 py-0.5 text-xs text-text-muted">{s}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Gradient overlay + unlock CTA */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-white flex flex-col items-center justify-center p-6">
+          <div className="rounded-2xl border border-primary/20 bg-white/95 backdrop-blur-sm p-6 shadow-lg text-center max-w-xs">
+            <svg className="h-8 w-8 mx-auto text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0110 0v4" />
+            </svg>
+            <h3 className="mt-3 text-base font-bold text-text">Unlock your full resume</h3>
+            <p className="mt-1 text-xs text-text-muted">Professionally structured. Ready to download. Edit anytime.</p>
+            <a
+              href="/api/stripe/smart-resume-checkout"
+              className="mt-4 block w-full rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors"
+            >
+              Unlock — EC$10
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
