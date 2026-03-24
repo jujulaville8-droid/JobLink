@@ -122,26 +122,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
     }
 
-    const { data: created, error: companyError } = await admin
+    // Check if company with this name already exists (avoid duplicate admin companies)
+    const { data: existing } = await admin
       .from('companies')
-      .insert({
-        user_id: user.id,
-        company_name: new_company.company_name.trim(),
-        industry: new_company.industry || null,
-        location: new_company.location || null,
-        website: new_company.website || null,
-        description: new_company.description || null,
-        is_verified: false,
-        is_pro: false,
-      })
       .select('id')
-      .single()
+      .ilike('company_name', new_company.company_name.trim())
+      .maybeSingle()
 
-    if (companyError || !created) {
-      return NextResponse.json({ error: companyError?.message || 'Failed to create company' }, { status: 500 })
+    if (existing) {
+      resolvedCompanyId = existing.id
+    } else {
+      // Create a placeholder user for this admin-posted company
+      const placeholderEmail = `admin-company-${Date.now()}@joblinkantigua.com`
+      const { data: placeholderUser, error: userError } = await admin.auth.admin.createUser({
+        email: placeholderEmail,
+        email_confirm: true,
+        user_metadata: { role: 'employer', admin_created: true },
+      })
+
+      if (userError || !placeholderUser.user) {
+        return NextResponse.json({ error: 'Failed to create company placeholder' }, { status: 500 })
+      }
+
+      // Set role in users table
+      await admin.from('users').update({ role: 'employer' }).eq('id', placeholderUser.user.id)
+
+      const { data: created, error: companyError } = await admin
+        .from('companies')
+        .insert({
+          user_id: placeholderUser.user.id,
+          company_name: new_company.company_name.trim(),
+          industry: new_company.industry || null,
+          location: new_company.location || null,
+          website: new_company.website || null,
+          description: new_company.description || null,
+          is_verified: false,
+          is_pro: false,
+        })
+        .select('id')
+        .single()
+
+      if (companyError || !created) {
+        return NextResponse.json({ error: companyError?.message || 'Failed to create company' }, { status: 500 })
+      }
+
+      resolvedCompanyId = created.id
     }
-
-    resolvedCompanyId = created.id
   }
 
   if (!resolvedCompanyId) {
