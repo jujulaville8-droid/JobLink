@@ -52,10 +52,13 @@ async function notifyJobSeekers(jobId: string) {
       }
     }
 
-    for (const seeker of seekerUsers as { id: string; email: string | null }[]) {
-      if (seeker.email) {
+    // Send in batches of 10 to avoid overwhelming Resend
+    const seekersWithEmail = (seekerUsers as { id: string; email: string | null }[]).filter(s => s.email)
+    for (let i = 0; i < seekersWithEmail.length; i += 10) {
+      const batch = seekersWithEmail.slice(i, i + 10)
+      await Promise.all(batch.map(seeker =>
         sendEmail({
-          to: seeker.email,
+          to: seeker.email!,
           type: 'new_job_posted',
           data: {
             seeker_name: nameMap[seeker.id] || '',
@@ -68,8 +71,9 @@ async function notifyJobSeekers(jobId: string) {
             listing_url: listingUrl,
           },
         })
-      }
+      ))
     }
+    console.log(`[notifyJobSeekers] Sent ${seekersWithEmail.length} emails for job ${jobId}`)
   } catch (err) {
     console.error('[notifyJobSeekers] Error:', err)
   }
@@ -209,8 +213,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: listingError?.message || 'Failed to create listing' }, { status: 500 })
   }
 
-  // Fire-and-forget seeker notifications
-  notifyJobSeekers(listing.id)
+  // Send notifications and wait for completion
+  await notifyJobSeekers(listing.id)
 
   return NextResponse.json({ success: true, listingId: listing.id, companyId: resolvedCompanyId })
 }
