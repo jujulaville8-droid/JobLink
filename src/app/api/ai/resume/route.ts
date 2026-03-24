@@ -142,7 +142,7 @@ Generate 2-3 work experiences based on their past roles. Generate 1-2 education 
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 700,
+      max_tokens: 1000,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -150,13 +150,21 @@ Generate 2-3 work experiences based on their past roles. Generate 1-2 education 
     const raw =
       message.content[0].type === "text" ? message.content[0].text : "";
 
-    // Parse JSON from response (handle potential markdown wrapping)
+    // Parse JSON from response — handle markdown wrapping, extra text, etc.
     let resumeData: ResumeData;
     try {
-      const jsonStr = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      // Strip markdown fences
+      let jsonStr = raw.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      // Find the first { and last } to extract JSON even if there's surrounding text
+      const firstBrace = jsonStr.indexOf("{");
+      const lastBrace = jsonStr.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+      }
       resumeData = JSON.parse(jsonStr);
-    } catch {
-      console.error("[ai/resume] Failed to parse JSON:", raw);
+    } catch (parseErr) {
+      console.error("[ai/resume] Failed to parse JSON. Raw response:", raw);
+      console.error("[ai/resume] Parse error:", parseErr);
       return NextResponse.json(
         { error: "Failed to generate resume. Please try again." },
         { status: 500 }
