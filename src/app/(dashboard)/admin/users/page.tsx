@@ -51,6 +51,7 @@ export default async function AdminUsersPage({
   let query = supabase
     .from('users')
     .select('*, seeker_profiles(first_name, last_name), companies(company_name)')
+    .not('email', 'like', 'admin-company-%@joblinkantigua.com')
     .order('created_at', { ascending: false })
 
   if (search) {

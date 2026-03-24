@@ -407,9 +407,10 @@ export default function AdminPostJobPage() {
                 placeholder="Job description *"
                 value={form.description}
                 onChange={e => updateField('description', e.target.value)}
-                rows={7}
-                className={cn(inputBase, 'resize-none', errors.description ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-border/40')}
+                rows={12}
+                className={cn(inputBase, 'resize-y min-h-[200px]', errors.description ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-border/40')}
               />
+              <p className="mt-1 text-xs text-text-muted">{form.description.length.toLocaleString()} characters</p>
               {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
             </div>
           </div>

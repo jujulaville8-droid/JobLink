@@ -53,7 +53,7 @@ export default async function AdminAnalyticsPage() {
     supabase.from('cv_profiles').select('id', { count: 'exact', head: true }).gte('completion_percentage', 80),
     supabase.from('cv_events').select('id', { count: 'exact', head: true }).eq('event_type', 'cv_downloaded_pdf'),
     supabase.from('cv_events').select('id', { count: 'exact', head: true }).eq('event_type', 'cv_quick_builder_completed'),
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'seeker'),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'seeker').not('email', 'like', 'admin-company-%@joblinkantigua.com'),
   ])
 
   const [
@@ -80,7 +80,7 @@ export default async function AdminAnalyticsPage() {
     { count: rejectedCount },
   ] = await Promise.all([
     supabase.from('users').select('id', { count: 'exact', head: true }),
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'seeker'),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'seeker').not('email', 'like', 'admin-company-%@joblinkantigua.com'),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'employer'),
     supabase.from('job_listings').select('id', { count: 'exact', head: true }),
     supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
@@ -88,13 +88,13 @@ export default async function AdminAnalyticsPage() {
     supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'closed'),
     supabase.from('applications').select('id', { count: 'exact', head: true }),
     supabase.from('companies').select('id', { count: 'exact', head: true }),
-    supabase.from('users').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()),
+    supabase.from('users').select('id', { count: 'exact', head: true }).gte('created_at', weekAgo.toISOString()).not('email', 'like', 'admin-company-%@joblinkantigua.com'),
     supabase.from('applications').select('id', { count: 'exact', head: true }).gte('applied_at', weekAgo.toISOString()),
     supabase.from('reported_listings').select('id', { count: 'exact', head: true }),
     // Time-series data (last 30 days)
-    supabase.from('users').select('created_at').gte('created_at', since),
+    supabase.from('users').select('created_at').gte('created_at', since).not('email', 'like', 'admin-company-%@joblinkantigua.com'),
     supabase.from('users').select('created_at').gte('created_at', since).eq('role', 'seeker'),
-    supabase.from('users').select('created_at').gte('created_at', since).eq('role', 'employer'),
+    supabase.from('users').select('created_at').gte('created_at', since).eq('role', 'employer').not('email', 'like', 'admin-company-%@joblinkantigua.com'),
     supabase.from('applications').select('applied_at').gte('applied_at', since),
     supabase.from('job_listings').select('created_at').gte('created_at', since),
     // Application status counts

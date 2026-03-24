@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, title, company_id, companies(company_name, user_id)')
+      .select('id, status, title, company_id, posted_by_admin, companies(company_name, user_id)')
       .eq('id', job_id)
       .single()
 
@@ -115,7 +115,22 @@ export async function POST(request: NextRequest) {
     // RLS blocks the read-back on .select() because the user isn't a participant yet
     // at the moment the conversation row is created.
     let conversationId: string | null = null
-    const employerUserId = company?.user_id
+
+    // For admin-posted jobs, route messages to the admin user instead of the placeholder
+    let employerUserId = company?.user_id
+    if (job.posted_by_admin) {
+      const { createAdminClient: getAdmin } = await import('@/lib/supabase/admin')
+      const adminCheck = getAdmin()
+      const { data: adminUser } = await adminCheck
+        .from('users')
+        .select('id')
+        .eq('is_admin', true)
+        .limit(1)
+        .single()
+      if (adminUser) {
+        employerUserId = adminUser.id
+      }
+    }
 
     if (employerUserId) {
       try {
