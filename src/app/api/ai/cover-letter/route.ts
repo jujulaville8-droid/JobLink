@@ -84,24 +84,12 @@ export async function POST(req: Request) {
       "the company";
 
     // Build prompt
-    const systemPrompt = `You are a professional cover letter writer for job seekers in Antigua & Barbuda. Write concise, genuine cover letters (150-200 words). Be specific — match the candidate's actual skills and experience to the job requirements. Do not use generic filler phrases like "I am excited to apply" or "I believe I would be a great fit." Start with "Dear Hiring Manager," and end with "Sincerely, ${profile.first_name} ${profile.last_name}". Write in a warm but professional Caribbean English tone.`;
+    const systemPrompt = `Professional cover letter writer for Antigua & Barbuda job seekers. Rules: 150 words max. No dashes, em dashes, or hyphens between words. No bullet points. No generic phrases like "I am excited to apply" or "I believe I would be a great fit" or "I am writing to express my interest". Write in natural flowing sentences. Start with "Dear Hiring Manager," and end with "Sincerely, ${profile.first_name} ${profile.last_name}". Warm, professional tone. Match the candidate's real skills to the job.`;
 
-    const userPrompt = `Write a cover letter for this candidate applying to this job.
+    const skills = (profile.skills || []).slice(0, 5).join(", ");
+    const desc = (job.description || "").slice(0, 500);
 
-CANDIDATE:
-- Name: ${profile.first_name} ${profile.last_name}
-- Skills: ${(profile.skills || []).join(", ") || "Not specified"}
-- Experience: ${profile.experience_years ?? "Not specified"} years
-- Education: ${profile.education || "Not specified"}
-- About: ${profile.bio || "Not specified"}
-
-JOB:
-- Title: ${job.title}
-- Company: ${companyName}
-- Description: ${job.description || "Not provided"}
-- Category: ${job.category || "Not specified"}
-- Location: ${job.location || "Antigua"}
-- Type: ${job.job_type || "Not specified"}`;
+    const userPrompt = `Cover letter for: ${profile.first_name} ${profile.last_name}, ${profile.experience_years ?? 0}yr exp, skills: ${skills || "general"}, education: ${profile.education || "N/A"}. Applying to: ${job.title} at ${companyName}, ${job.location || "Antigua"}. Job: ${desc}`;
 
     // Call Claude Haiku
     const anthropic = new Anthropic({
@@ -110,7 +98,7 @@ JOB:
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 400,
+      max_tokens: 250,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
