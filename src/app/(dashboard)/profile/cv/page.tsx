@@ -17,16 +17,16 @@ function formatDate(d: string | null | undefined): string {
 }
 
 const THEMES = [
-  { id: "classic", name: "Classic", color: "#1a1a1a" },
-  { id: "modern", name: "Modern", color: "#0d7377" },
-  { id: "bold", name: "Bold", color: "#dc2626" },
-  { id: "minimal", name: "Minimal", color: "#525252" },
-  { id: "professional", name: "Professional", color: "#1e3a5f" },
-  { id: "executive", name: "Executive", color: "#7c3aed" },
-  { id: "creative", name: "Creative", color: "#ea580c" },
-  { id: "ocean", name: "Ocean", color: "#0369a1" },
-  { id: "sunset", name: "Sunset", color: "#be185d" },
-  { id: "forest", name: "Forest", color: "#15803d" },
+  { id: "classic", name: "Classic", description: "Clean single column, ATS optimized", color: "#1a1a1a", layout: "single" },
+  { id: "sidebar", name: "Sidebar", description: "Dark sidebar with skills", color: "#1e293b", layout: "two-col" },
+  { id: "banner", name: "Banner", description: "Bold colored header block", color: "#0d7377", layout: "single" },
+  { id: "minimal", name: "Minimal", description: "Elegant serif typography", color: "#525252", layout: "single" },
+  { id: "professional", name: "Professional", description: "Navy with left border accents", color: "#1e3a5f", layout: "single" },
+  { id: "executive", name: "Executive", description: "Two columns, colored bars", color: "#7c3aed", layout: "two-col" },
+  { id: "timeline", name: "Timeline", description: "Vertical line with markers", color: "#0369a1", layout: "single" },
+  { id: "modular", name: "Modular", description: "Card based block layout", color: "#ea580c", layout: "two-col" },
+  { id: "compact", name: "Compact", description: "Three panel header, dense", color: "#15803d", layout: "single" },
+  { id: "elegant", name: "Elegant", description: "Refined serif, centered", color: "#be185d", layout: "single" },
 ];
 
 export default function CvBuilderPage() {
@@ -477,27 +477,61 @@ export default function CvBuilderPage() {
       {/* Completion */}
       <CvCompletionBar percentage={completion.percentage} missing={completion.missing} />
 
-      {/* Theme selector */}
+      {/* Template carousel */}
       <div className="mt-5 mb-6">
-        <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.12em] mb-3">PDF Theme</p>
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+        <p className="text-[11px] font-semibold text-text-muted uppercase tracking-[0.12em] mb-3">Resume Template</p>
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none snap-x snap-mandatory">
           {THEMES.map((t) => (
             <button
               key={t.id}
               onClick={() => setSelectedTheme(t.id)}
-              className={`group flex flex-col items-center gap-1.5 shrink-0 rounded-xl px-3 py-2.5 transition-all ${
+              className={`group relative shrink-0 snap-start rounded-xl border-2 overflow-hidden transition-all duration-200 w-[140px] ${
                 selectedTheme === t.id
-                  ? "bg-white shadow-sm ring-2 ring-primary/20"
-                  : "hover:bg-white/60"
+                  ? "border-primary shadow-md scale-[1.02]"
+                  : "border-transparent hover:border-border hover:shadow-sm hover:scale-[1.05]"
               }`}
             >
-              <span
-                className={`h-6 w-6 rounded-full transition-transform ${selectedTheme === t.id ? "scale-110 ring-2 ring-offset-2" : "group-hover:scale-105"}`}
-                style={{ backgroundColor: t.color }}
-              />
-              <span className={`text-[10px] font-medium ${selectedTheme === t.id ? "text-text" : "text-text-muted"}`}>
-                {t.name}
-              </span>
+              {/* Mini preview */}
+              <div className="h-[180px] p-3 flex flex-col" style={{ backgroundColor: t.layout === 'two-col' ? '#f8f8f8' : '#ffffff' }}>
+                {/* Header bar */}
+                <div className="rounded-sm mb-2" style={{ height: t.layout === 'two-col' ? 28 : 20, backgroundColor: t.color, opacity: 0.9 }} />
+                {/* Content lines */}
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-1.5 rounded-full bg-gray-200 w-full" />
+                  <div className="h-1.5 rounded-full bg-gray-200 w-4/5" />
+                  <div className="h-1.5 rounded-full bg-gray-100 w-full mt-2" />
+                  <div className="h-1.5 rounded-full bg-gray-100 w-3/4" />
+                  <div className="h-1.5 rounded-full bg-gray-100 w-5/6" />
+                  {t.layout === 'two-col' && (
+                    <div className="flex gap-1.5 mt-2">
+                      <div className="flex-1 space-y-1">
+                        <div className="h-1 rounded-full bg-gray-100 w-full" />
+                        <div className="h-1 rounded-full bg-gray-100 w-3/4" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="h-1 rounded-full bg-gray-100 w-full" />
+                        <div className="h-1 rounded-full bg-gray-100 w-2/3" />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex gap-1 mt-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="h-2.5 rounded-full px-1" style={{ backgroundColor: t.color + '15', width: `${25 + i * 5}%` }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Label */}
+              <div className={`px-3 py-2 text-center border-t ${selectedTheme === t.id ? 'bg-primary/5 border-primary/10' : 'bg-white border-border/30'}`}>
+                <p className={`text-xs font-semibold ${selectedTheme === t.id ? 'text-primary' : 'text-text'}`}>{t.name}</p>
+                <p className="text-[9px] text-text-muted mt-0.5 leading-tight">{t.description}</p>
+              </div>
+              {/* Selected check */}
+              {selectedTheme === t.id && (
+                <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                  <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                </div>
+              )}
             </button>
           ))}
         </div>
