@@ -36,8 +36,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = (await req.json()) as { mode?: "preview" | "unlock"; jobTitle?: string };
-    const { mode, jobTitle } = body;
+    const body = (await req.json()) as {
+      mode?: "preview" | "unlock";
+      intake?: {
+        targetRole: string;
+        yearsExperience: number;
+        pastRoles: string;
+        topSkills: string;
+        education: string;
+      };
+    };
+    const { mode, intake } = body;
     const admin = createAdminClient();
 
     // If unlocking, check purchase and move preview data to CV tables
@@ -82,31 +91,50 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true });
     }
 
-    // Preview mode — generate and store, don't populate CV tables
-    const { data: profile } = await admin
-      .from("seeker_profiles")
-      .select(
-        "first_name, last_name, bio, skills, experience_years, education, location"
-      )
-      .eq("user_id", user.id)
-      .single();
-
-    if (!profile) {
+    // Preview mode — generate from intake data
+    if (!intake || !intake.targetRole) {
       return NextResponse.json(
-        { error: "Please complete your profile first." },
+        { error: "Please complete the intake form first." },
         { status: 400 }
       );
     }
 
-    const systemPrompt = `Generate a professional resume in JSON format for a job seeker in Antigua & Barbuda. Rules: No dashes or em dashes anywhere. No bullet points. Natural flowing descriptions. No generic filler like "results driven" or "team player". Be specific and realistic based on the candidate's actual background. Output valid JSON only, no markdown.`;
+    // Also fetch profile for name and contact info
+    const { data: profile } = await admin
+      .from("seeker_profiles")
+      .select("first_name, last_name, location")
+      .eq("user_id", user.id)
+      .single();
 
-    const skills = (profile.skills || []).slice(0, 6).join(", ");
-    const userPrompt = `Generate a resume JSON for: ${profile.first_name} ${profile.last_name}, ${profile.experience_years ?? 1} years experience, location: ${profile.location || "Antigua"}, skills: ${skills || "general"}, education: ${profile.education || "Secondary school"}, bio: ${(profile.bio || "").slice(0, 300)}.${jobTitle ? ` Target role: ${jobTitle}.` : ""}
+    const name = profile
+      ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim()
+      : "Candidate";
 
-Return this exact JSON structure:
-{"summary":"2-3 sentence professional summary","experiences":[{"company_name":"realistic company","job_title":"title","location":"Antigua","start_date":"2024-01","end_date":null,"is_current":true,"description":"2-3 sentences about responsibilities"}],"education":[{"institution":"school name","degree":"degree","field_of_study":"field","start_date":"2020-01","end_date":"2024-06","is_current":false}],"skills":["skill1","skill2","skill3","skill4","skill5","skill6"]}
+    const systemPrompt = `You are an expert resume writer. Generate a resume in JSON format. Follow these rules strictly:
 
-Generate 2-3 work experiences and 1-2 education entries. Make it realistic for Antigua.`;
+SUMMARY: 2-3 sentences. No first person pronouns. Lead with target job title and years of experience. Include one quantified achievement. No generic phrases like "hardworking professional", "team player", "seeking opportunities", "results driven", or "detail oriented".
+
+WORK EXPERIENCE: Each entry has a description of 2-3 sentences. Every sentence must start with a strong action verb (Spearheaded, Streamlined, Cultivated, Negotiated, Orchestrated, Expanded, Reduced, Accelerated). Never use "Responsible for", "Managed", "Handled", "Assisted", or "Helped". Include specific numbers, percentages, or metrics in every description. Show impact and outcomes, not daily duties.
+
+SKILLS: 8-10 skills. 60% hard/technical skills, 40% substantive soft skills. No generic skills like "team player", "hard worker", "computer skills". Include specific tools, methodologies, or certifications.
+
+EDUCATION: Use real Antiguan or Caribbean institutions when the candidate is from the region.
+
+FORMAT: Output valid JSON only. No markdown. No dashes or em dashes anywhere. No bullet points. Use commas and periods only.`;
+
+    const userPrompt = `Generate a professional resume JSON for:
+Name: ${name}
+Target Role: ${intake.targetRole}
+Years of Experience: ${intake.yearsExperience}
+Past Roles/Companies: ${intake.pastRoles}
+Key Skills: ${intake.topSkills}
+Education: ${intake.education}
+Location: ${profile?.location || "Antigua"}
+
+Return exactly this JSON structure:
+{"summary":"professional summary here","experiences":[{"company_name":"company","job_title":"title","location":"location","start_date":"YYYY-MM","end_date":null,"is_current":true,"description":"achievement focused description with metrics"}],"education":[{"institution":"school","degree":"degree","field_of_study":"field","start_date":"YYYY-MM","end_date":"YYYY-MM","is_current":false}],"skills":["skill1","skill2","skill3","skill4","skill5","skill6","skill7","skill8"]}
+
+Generate 2-3 work experiences based on their past roles. Generate 1-2 education entries. Use realistic Caribbean companies and institutions. Every experience description must contain at least one number or percentage.`;
 
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
