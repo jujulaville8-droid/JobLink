@@ -493,7 +493,7 @@ export default function CvBuilderPage() {
             >
               <span
                 className={`h-6 w-6 rounded-full transition-transform ${selectedTheme === t.id ? "scale-110 ring-2 ring-offset-2" : "group-hover:scale-105"}`}
-                style={{ backgroundColor: t.color, ringColor: t.color }}
+                style={{ backgroundColor: t.color }}
               />
               <span className={`text-[10px] font-medium ${selectedTheme === t.id ? "text-text" : "text-text-muted"}`}>
                 {t.name}
