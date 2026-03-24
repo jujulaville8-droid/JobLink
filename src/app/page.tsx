@@ -172,14 +172,13 @@ export default async function Home() {
 
         <div className="relative mx-auto max-w-3xl px-6 sm:px-8 pt-24 sm:pt-32 lg:pt-36 pb-16 sm:pb-20 lg:pb-24 w-full">
           <div className="text-center">
-            <h1 className="animate-fade-up font-display text-[2rem] sm:text-[2.75rem] lg:text-[3.25rem] text-white leading-[1.12] tracking-tight">
-              Get hired today!
+            <h1 className="animate-fade-up font-display text-[2.5rem] sm:text-[3.25rem] lg:text-[4rem] text-white leading-[1.05] tracking-tight">
+              Find your next{" "}
+              <span className="text-accent-warm">opportunity</span>
             </h1>
 
-            <p className="animate-fade-up mt-6 text-base sm:text-lg text-white/70 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: "100ms" }}>
+            <p className="animate-fade-up mt-6 text-lg sm:text-xl text-white/80 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: "100ms" }}>
               Connecting job seekers with employers across Antigua and Barbuda.
-              <br className="hidden sm:block" />
-              Browse opportunities and apply in minutes.
             </p>
 
             <div className="animate-fade-up mt-8" style={{ animationDelay: "200ms" }}>
@@ -195,26 +194,29 @@ export default async function Home() {
       </section>
 
       {/* ===== VSL ===== */}
-      <section className="bg-bg py-14 sm:py-18">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
-              See how it works
-            </h2>
-            <p className="mt-2 text-sm text-text-light">
-              Watch how JobLinks connects job seekers and employers across Antigua &amp; Barbuda
-            </p>
-          </div>
-          <div className="relative rounded-2xl overflow-hidden shadow-xl shadow-black/10">
-            <video
-              className="w-full h-full object-cover"
-              controls
-              preload="metadata"
-              playsInline
-            >
-              <source src="/videos/vsl.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+              <h2 className="font-display text-3xl sm:text-4xl text-text tracking-tight section-heading-accent">
+                See how it works
+              </h2>
+              <p className="mt-6 text-text-light leading-relaxed">
+                Watch how JobLinks connects job seekers and employers across Antigua &amp; Barbuda. From sign-up to application — it only takes a few minutes.
+              </p>
+            </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/15 border border-border/40">
+              <video
+                className="w-full h-full object-cover"
+                controls
+                preload="auto"
+              poster=""
+                playsInline
+              >
+                <source src="/videos/vsl.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
       </section>
@@ -322,30 +324,16 @@ export default async function Home() {
       <section className="bg-bg py-16 sm:py-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            {/* Image */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-xl shadow-black/10">
-              <Image
-                src="/images/people-sitting.webp"
-                alt="People at a job fair in Antigua"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-            </div>
-
             {/* Steps */}
             <div>
-              <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
-                How it works
-              </p>
-              <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
+              <h2 className="font-display text-3xl sm:text-4xl text-text tracking-tight section-heading-accent">
                 Get started in minutes
               </h2>
-              <p className="mt-2 text-sm text-text-light max-w-md">
+              <p className="mt-4 text-text-light max-w-md">
                 Whether you&apos;re looking for work or looking to hire, we keep it simple.
               </p>
 
-              <div className="mt-10 space-y-0">
+              <div className="mt-10 space-y-4">
                 {[
                   {
                     num: "01",
@@ -362,25 +350,29 @@ export default async function Home() {
                     title: "Get hired",
                     desc: "Track applications in real time. Get notified the moment an employer responds.",
                   },
-                ].map((step, i) => (
-                  <div key={step.num} className="flex gap-5">
-                    <div className="relative shrink-0 flex flex-col items-center">
-                      <span className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white font-mono text-xs font-bold shadow-md shadow-primary/20">
-                        {step.num}
-                      </span>
-                      {i < 2 && (
-                        <div className="w-px flex-1 min-h-[2rem] bg-border my-1" />
-                      )}
-                    </div>
-                    <div className="pb-8">
-                      <h3 className="font-semibold text-text text-[15px] mb-1">{step.title}</h3>
-                      <p className="text-sm text-text-light leading-relaxed">{step.desc}</p>
-                    </div>
+                ].map((step) => (
+                  <div key={step.num} className="bg-white rounded-2xl p-6 border border-border shadow-sm">
+                    <span className="font-display text-4xl text-accent-warm leading-none">{step.num}</span>
+                    <h3 className="font-bold text-text text-base mt-3 mb-1">{step.title}</h3>
+                    <p className="text-sm text-text-light leading-relaxed">{step.desc}</p>
                   </div>
                 ))}
               </div>
 
-              <GetStartedCTA />
+              <div className="mt-8">
+                <GetStartedCTA />
+              </div>
+            </div>
+
+            {/* Image */}
+            <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl shadow-black/15 hidden lg:block">
+              <Image
+                src="/images/people-sitting.webp"
+                alt="People at a job fair in Antigua"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
           </div>
         </div>
