@@ -49,7 +49,7 @@ export default function CvBuilderPage() {
     topSkills: "",
     education: "",
   });
-  const [selectedTheme, setSelectedTheme] = useState("modern");
+  const [selectedTheme, setSelectedTheme] = useState("classic");
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchCv = useCallback(async () => {
@@ -598,8 +598,28 @@ export default function CvBuilderPage() {
               />
             )
           )}
-          {cv.experiences.length === 0 && editingSection !== "experience" && (
-            <EmptyState text="Add your work experience to stand out" />
+          {cv.experiences.length < 3 && editingSection !== "experience" && (
+            <div className="space-y-2">
+              {Array.from({ length: 3 - cv.experiences.length }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setEditingSection("experience"); setEditingId(null); }}
+                  className="w-full flex items-center gap-3 rounded-xl border border-dashed border-border/60 bg-[--color-bg] p-4 text-left hover:border-primary/30 hover:bg-primary/[0.02] transition-all group"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-border/30 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                    <svg className="h-4 w-4 text-text-muted group-hover:text-primary transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-text-muted group-hover:text-text transition-colors">
+                      Add experience {cv.experiences.length + i + 1} of 3
+                    </p>
+                    <p className="text-[11px] text-text-muted/60">
+                      {i === 0 && cv.experiences.length === 0 ? "Employers want to see at least 3 roles" : "Keep building your work history"}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
           )}
         </Section>
 
