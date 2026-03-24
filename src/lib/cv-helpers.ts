@@ -49,12 +49,22 @@ export async function fetchFullCv(userId: string, useAdmin = false): Promise<CvF
     { data: skills },
     { data: awards },
     { data: certifications },
+    { data: projects },
+    { data: languages },
+    { data: volunteer },
+    { data: memberships },
+    { data: references },
   ] = await Promise.all([
     supabase.from('cv_work_experiences').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
     supabase.from('cv_education').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
     supabase.from('cv_skills').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
     supabase.from('cv_awards').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
     supabase.from('cv_certifications').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
+    supabase.from('cv_projects').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
+    supabase.from('cv_languages').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
+    supabase.from('cv_volunteer').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
+    supabase.from('cv_memberships').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
+    supabase.from('cv_references').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
   ])
 
   // Contact info from seeker_profiles + users
@@ -85,6 +95,11 @@ export async function fetchFullCv(userId: string, useAdmin = false): Promise<CvF
     skills: skills ?? [],
     awards: awards ?? [],
     certifications: certifications ?? [],
+    projects: projects ?? [],
+    languages: languages ?? [],
+    volunteer: volunteer ?? [],
+    memberships: memberships ?? [],
+    references: references ?? [],
   }
 }
 

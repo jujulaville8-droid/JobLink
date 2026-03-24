@@ -23,6 +23,9 @@ interface ResumeData {
     is_current: boolean;
   }[];
   skills: string[];
+  languages?: { name: string; proficiency: string }[];
+  projects?: { title: string; role: string; description: string }[];
+  volunteer?: { organization: string; role: string; description: string }[];
 }
 
 export async function POST(req: Request) {
@@ -110,19 +113,25 @@ export async function POST(req: Request) {
       ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim()
       : "Candidate";
 
-    const systemPrompt = `You are an expert resume writer. Generate a resume in JSON format. Follow these rules strictly:
+    const systemPrompt = `You are an elite resume writer who creates resumes that get interviews. Generate a comprehensive resume in JSON format. Follow these rules:
 
-SUMMARY: 2-3 sentences. No first person pronouns. Lead with target job title and years of experience. Include one quantified achievement. No generic phrases like "hardworking professional", "team player", "seeking opportunities", "results driven", or "detail oriented".
+SUMMARY: 3 sentences. No first person. Formula: [Title] with [X] years in [domain]. [Quantified achievement]. [Key value proposition]. No generic phrases (hardworking, team player, seeking opportunities, results driven, detail oriented, passionate).
 
-WORK EXPERIENCE: Each entry has a description of 2-3 sentences. Every sentence must start with a strong action verb (Spearheaded, Streamlined, Cultivated, Negotiated, Orchestrated, Expanded, Reduced, Accelerated). Never use "Responsible for", "Managed", "Handled", "Assisted", or "Helped". Include specific numbers, percentages, or metrics in every description. Show impact and outcomes, not daily duties.
+WORK EXPERIENCE: 3 entries minimum. Each description is 3-4 sentences. Every sentence starts with a power verb: Spearheaded, Streamlined, Cultivated, Negotiated, Orchestrated, Expanded, Accelerated, Transformed, Pioneered, Redesigned, Consolidated, Maximized. NEVER use: Responsible for, Managed, Handled, Assisted, Helped, Worked on. Every description MUST have 2+ specific metrics (percentages, dollar amounts, team sizes, time saved, volume processed). Show outcomes and impact, never daily duties.
 
-SKILLS: 8-10 skills. 60% hard/technical skills, 40% substantive soft skills. No generic skills like "team player", "hard worker", "computer skills". Include specific tools, methodologies, or certifications.
+SKILLS: 10 skills. 6 hard/technical, 4 substantive soft. No generic (team player, hard worker, computer skills, Microsoft Office). Include specific tools, systems, methodologies, and certifications relevant to the role.
 
-EDUCATION: Use real Antiguan or Caribbean institutions when the candidate is from the region.
+EDUCATION: Use real Caribbean institutions (Antigua State College, University of the West Indies, Antigua and Barbuda Institute of Continuing Education, CFBC) when appropriate.
 
-FORMAT: Output valid JSON only. No markdown. No dashes or em dashes anywhere. No bullet points. Use commas and periods only.`;
+LANGUAGES: Include English as Native plus any other Caribbean languages (Spanish, French Creole) at realistic proficiency levels.
 
-    const userPrompt = `Generate a professional resume JSON for:
+PROJECTS: 1-2 relevant projects with specific outcomes and metrics.
+
+VOLUNTEER: 1 community involvement entry relevant to Antigua/Caribbean.
+
+FORMAT: Valid JSON only. No markdown fences. No dashes or em dashes. No bullet points. Commas and periods only. No text before or after the JSON object.`;
+
+    const userPrompt = `Create a world class resume JSON for:
 Name: ${name}
 Target Role: ${intake.targetRole}
 Years of Experience: ${intake.yearsExperience}
@@ -131,10 +140,10 @@ Key Skills: ${intake.topSkills}
 Education: ${intake.education}
 Location: ${profile?.location || "Antigua"}
 
-Return exactly this JSON structure:
-{"summary":"professional summary here","experiences":[{"company_name":"company","job_title":"title","location":"location","start_date":"YYYY-MM","end_date":null,"is_current":true,"description":"achievement focused description with metrics"}],"education":[{"institution":"school","degree":"degree","field_of_study":"field","start_date":"YYYY-MM","end_date":"YYYY-MM","is_current":false}],"skills":["skill1","skill2","skill3","skill4","skill5","skill6","skill7","skill8"]}
+JSON structure (return ONLY this, no other text):
+{"summary":"3 sentence summary","experiences":[{"company_name":"real company","job_title":"title","location":"city","start_date":"YYYY-MM","end_date":null,"is_current":true,"description":"3-4 achievement sentences with 2+ metrics each"}],"education":[{"institution":"real school","degree":"degree","field_of_study":"field","start_date":"YYYY-MM","end_date":"YYYY-MM","is_current":false}],"skills":["10 specific skills"],"languages":[{"name":"English","proficiency":"Native"}],"projects":[{"title":"project name","role":"your role","description":"outcome with metrics"}],"volunteer":[{"organization":"org name","role":"role","description":"impact"}]}
 
-Generate 2-3 work experiences based on their past roles. Generate 1-2 education entries. Use realistic Caribbean companies and institutions. Every experience description must contain at least one number or percentage.`;
+Generate 3 work experiences, 1-2 education, 10 skills, 2+ languages, 1-2 projects, 1 volunteer entry. Make every description specific and metric rich. Use real Antiguan companies and institutions.`;
 
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
@@ -142,7 +151,7 @@ Generate 2-3 work experiences based on their past roles. Generate 1-2 education 
 
     const message = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1000,
+      max_tokens: 1500,
       system: systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
     });
@@ -274,6 +283,47 @@ async function populateCvTables(
       data.skills.map((name, i) => ({
         cv_profile_id: profileId,
         name,
+        sort_order: i,
+      }))
+    );
+  }
+
+  // Insert languages
+  if (data.languages?.length) {
+    await admin.from("cv_languages").delete().eq("cv_profile_id", profileId);
+    await admin.from("cv_languages").insert(
+      data.languages.map((lang, i) => ({
+        cv_profile_id: profileId,
+        name: lang.name,
+        proficiency: lang.proficiency,
+        sort_order: i,
+      }))
+    );
+  }
+
+  // Insert projects
+  if (data.projects?.length) {
+    await admin.from("cv_projects").delete().eq("cv_profile_id", profileId);
+    await admin.from("cv_projects").insert(
+      data.projects.map((proj, i) => ({
+        cv_profile_id: profileId,
+        title: proj.title,
+        role: proj.role,
+        description: proj.description,
+        sort_order: i,
+      }))
+    );
+  }
+
+  // Insert volunteer
+  if (data.volunteer?.length) {
+    await admin.from("cv_volunteer").delete().eq("cv_profile_id", profileId);
+    await admin.from("cv_volunteer").insert(
+      data.volunteer.map((vol, i) => ({
+        cv_profile_id: profileId,
+        organization: vol.organization,
+        role: vol.role,
+        description: vol.description,
         sort_order: i,
       }))
     );

@@ -6,10 +6,10 @@ import CvCompletionBar from "@/components/cv/CvCompletionBar";
 import ExperienceEditor from "@/components/cv/ExperienceEditor";
 import EducationEditor from "@/components/cv/EducationEditor";
 import SkillsEditor from "@/components/cv/SkillsEditor";
-import type { CvFull, CvWorkExperience, CvEducation, CvAward, CvCertification } from "@/lib/types";
+import type { CvFull, CvWorkExperience, CvEducation, CvAward, CvCertification, CvProject, CvVolunteer, CvMembership, CvReference } from "@/lib/types";
 import { calculateCvCompletion } from "@/lib/cv-completion";
 
-type EditingSection = null | "experience" | "education" | "award" | "certification";
+type EditingSection = null | "experience" | "education" | "award" | "certification" | "project" | "volunteer" | "membership" | "reference" | "language";
 
 function formatDate(d: string | null | undefined): string {
   if (!d) return "Present";
@@ -64,6 +64,11 @@ export default function CvBuilderPage() {
         skills: data.skills,
         awards: data.awards,
         certifications: data.certifications,
+        projects: data.projects ?? [],
+        languages: data.languages ?? [],
+        volunteer: data.volunteer ?? [],
+        memberships: data.memberships ?? [],
+        references: data.references ?? [],
       });
     } else {
       setCv(null);
@@ -239,6 +244,61 @@ export default function CvBuilderPage() {
     if (!confirm("Remove this certification?")) return;
     await fetch(`/api/cv/certifications?id=${id}`, { method: "DELETE" });
     await fetchCv();
+  }
+
+  // Projects CRUD
+  async function saveProject(data: Partial<CvProject>) {
+    const isEdit = !!data.id;
+    await fetch("/api/cv/projects", { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    setEditingSection(null); setEditingId(null); await fetchCv();
+  }
+  async function deleteProject(id: string) {
+    if (!confirm("Remove this project?")) return;
+    await fetch(`/api/cv/projects?id=${id}`, { method: "DELETE" }); await fetchCv();
+  }
+
+  // Volunteer CRUD
+  async function saveVolunteer(data: Partial<CvVolunteer>) {
+    const isEdit = !!data.id;
+    await fetch("/api/cv/volunteer", { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    setEditingSection(null); setEditingId(null); await fetchCv();
+  }
+  async function deleteVolunteer(id: string) {
+    if (!confirm("Remove this entry?")) return;
+    await fetch(`/api/cv/volunteer?id=${id}`, { method: "DELETE" }); await fetchCv();
+  }
+
+  // Memberships CRUD
+  async function saveMembership(data: Partial<CvMembership>) {
+    const isEdit = !!data.id;
+    await fetch("/api/cv/memberships", { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    setEditingSection(null); setEditingId(null); await fetchCv();
+  }
+  async function deleteMembership(id: string) {
+    if (!confirm("Remove this membership?")) return;
+    await fetch(`/api/cv/memberships?id=${id}`, { method: "DELETE" }); await fetchCv();
+  }
+
+  // References CRUD
+  async function saveReference(data: Partial<CvReference>) {
+    const isEdit = !!data.id;
+    await fetch("/api/cv/references", { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    setEditingSection(null); setEditingId(null); await fetchCv();
+  }
+  async function deleteReference(id: string) {
+    if (!confirm("Remove this reference?")) return;
+    await fetch(`/api/cv/references?id=${id}`, { method: "DELETE" }); await fetchCv();
+  }
+
+  // Languages CRUD
+  async function saveLanguage(data: Record<string, unknown>) {
+    const isEdit = !!data.id;
+    await fetch("/api/cv/languages", { method: isEdit ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    setEditingSection(null); setEditingId(null); await fetchCv();
+  }
+  async function deleteLanguage(id: string) {
+    if (!confirm("Remove this language?")) return;
+    await fetch(`/api/cv/languages?id=${id}`, { method: "DELETE" }); await fetchCv();
   }
 
   async function handleExport() {
@@ -717,6 +777,156 @@ export default function CvBuilderPage() {
             <EmptyState text="Add professional certifications" />
           )}
         </Section>
+
+        {/* Projects */}
+        <Section
+          title="Projects"
+          icon={<FileIcon />}
+          onAdd={() => { setEditingSection("project"); setEditingId(null); }}
+        >
+          {editingSection === "project" && !editingId && (
+            <SimpleEntryEditor
+              fields={["title", "role", "url", "description"]}
+              labels={{ title: "Project Title *", role: "Your Role", url: "Project URL", description: "Description" }}
+              onSave={(d) => saveProject(d as Partial<CvProject>)}
+              onCancel={() => setEditingSection(null)}
+              saveLabel="Add Project"
+            />
+          )}
+          {cv.projects.map((p) => (
+            <EntryCard
+              key={p.id}
+              title={p.title}
+              subtitle={p.role}
+              description={p.description}
+              onEdit={() => { setEditingSection("project"); setEditingId(p.id); }}
+              onDelete={() => deleteProject(p.id)}
+            />
+          ))}
+          {cv.projects.length === 0 && editingSection !== "project" && (
+            <EmptyState text="Add personal or freelance projects" />
+          )}
+        </Section>
+
+        {/* Languages */}
+        <Section
+          title="Languages"
+          icon={<LanguageIcon />}
+          onAdd={() => { setEditingSection("language"); setEditingId(null); }}
+        >
+          {editingSection === "language" && !editingId && (
+            <SimpleEntryEditor
+              fields={["name", "proficiency"]}
+              labels={{ name: "Language *", proficiency: "Proficiency Level" }}
+              onSave={saveLanguage}
+              onCancel={() => setEditingSection(null)}
+              saveLabel="Add Language"
+              selectFields={{ proficiency: ["Native", "Fluent", "Advanced", "Conversational", "Basic"] }}
+            />
+          )}
+          {cv.languages.map((l) => (
+            <EntryCard
+              key={l.id}
+              title={l.name}
+              subtitle={l.proficiency}
+              onEdit={() => { setEditingSection("language"); setEditingId(l.id); }}
+              onDelete={() => deleteLanguage(l.id)}
+            />
+          ))}
+          {cv.languages.length === 0 && editingSection !== "language" && (
+            <EmptyState text="Add languages you speak" />
+          )}
+        </Section>
+
+        {/* Volunteer Work */}
+        <Section
+          title="Volunteer Work"
+          icon={<HeartIcon />}
+          onAdd={() => { setEditingSection("volunteer"); setEditingId(null); }}
+        >
+          {editingSection === "volunteer" && !editingId && (
+            <SimpleEntryEditor
+              fields={["organization", "role", "description"]}
+              labels={{ organization: "Organization *", role: "Your Role", description: "Description" }}
+              onSave={(d) => saveVolunteer(d as Partial<CvVolunteer>)}
+              onCancel={() => setEditingSection(null)}
+              saveLabel="Add Volunteer Work"
+            />
+          )}
+          {cv.volunteer.map((v) => (
+            <EntryCard
+              key={v.id}
+              title={v.organization}
+              subtitle={v.role}
+              description={v.description}
+              onEdit={() => { setEditingSection("volunteer"); setEditingId(v.id); }}
+              onDelete={() => deleteVolunteer(v.id)}
+            />
+          ))}
+          {cv.volunteer.length === 0 && editingSection !== "volunteer" && (
+            <EmptyState text="Add community involvement" />
+          )}
+        </Section>
+
+        {/* Professional Memberships */}
+        <Section
+          title="Professional Memberships"
+          icon={<MemberIcon />}
+          onAdd={() => { setEditingSection("membership"); setEditingId(null); }}
+        >
+          {editingSection === "membership" && !editingId && (
+            <SimpleEntryEditor
+              fields={["organization", "role", "year_joined"]}
+              labels={{ organization: "Organization *", role: "Your Role/Title", year_joined: "Year Joined" }}
+              onSave={(d) => saveMembership(d as Partial<CvMembership>)}
+              onCancel={() => setEditingSection(null)}
+              saveLabel="Add Membership"
+            />
+          )}
+          {cv.memberships.map((m) => (
+            <EntryCard
+              key={m.id}
+              title={m.organization}
+              subtitle={m.role}
+              date={m.year_joined ? `Joined ${m.year_joined}` : undefined}
+              onEdit={() => { setEditingSection("membership"); setEditingId(m.id); }}
+              onDelete={() => deleteMembership(m.id)}
+            />
+          ))}
+          {cv.memberships.length === 0 && editingSection !== "membership" && (
+            <EmptyState text="Add industry associations or groups" />
+          )}
+        </Section>
+
+        {/* References */}
+        <Section
+          title="References"
+          icon={<PersonIcon />}
+          onAdd={() => { setEditingSection("reference"); setEditingId(null); }}
+        >
+          {editingSection === "reference" && !editingId && (
+            <SimpleEntryEditor
+              fields={["name", "title", "company", "phone", "email", "relationship"]}
+              labels={{ name: "Full Name *", title: "Their Job Title", company: "Company", phone: "Phone", email: "Email", relationship: "Relationship" }}
+              onSave={(d) => saveReference(d as Partial<CvReference>)}
+              onCancel={() => setEditingSection(null)}
+              saveLabel="Add Reference"
+            />
+          )}
+          {cv.references.map((r) => (
+            <EntryCard
+              key={r.id}
+              title={r.name}
+              subtitle={`${r.title || ""}${r.title && r.company ? " at " : ""}${r.company || ""}`}
+              description={r.relationship ? `Relationship: ${r.relationship}` : null}
+              onEdit={() => { setEditingSection("reference"); setEditingId(r.id); }}
+              onDelete={() => deleteReference(r.id)}
+            />
+          ))}
+          {cv.references.length === 0 && editingSection !== "reference" && (
+            <EmptyState text="Add 2-3 professional references" />
+          )}
+        </Section>
       </div>
     </div>
   );
@@ -778,6 +988,30 @@ function CertIcon() {
   return (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="6" /><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+    </svg>
+  );
+}
+
+function LanguageIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+    </svg>
+  );
+}
+
+function MemberIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   );
 }
@@ -867,13 +1101,14 @@ function EmptyState({ text }: { text: string }) {
   );
 }
 
-function SimpleEntryEditor({ fields, labels, onSave, onCancel, saveLabel, dateFields = [] }: {
+function SimpleEntryEditor({ fields, labels, onSave, onCancel, saveLabel, dateFields = [], selectFields = {} }: {
   fields: string[];
   labels: Record<string, string>;
   onSave: (data: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
   saveLabel: string;
   dateFields?: string[];
+  selectFields?: Record<string, string[]>;
 }) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -908,6 +1143,14 @@ function SimpleEntryEditor({ fields, labels, onSave, onCancel, saveLabel, dateFi
               rows={2}
               className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-text focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none resize-none transition-all"
             />
+          ) : selectFields[f] ? (
+            <select
+              value={form[f] ?? selectFields[f][0]}
+              onChange={(e) => setForm((p) => ({ ...p, [f]: e.target.value }))}
+              className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-text focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all"
+            >
+              {selectFields[f].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
           ) : (
             <input
               required={labels[f]?.includes("*")}
@@ -1029,74 +1272,97 @@ function SmartResumeIntake({ form, onChange, onGenerate, loading, error, onBack 
 function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
   const data = preview as {
     summary?: string;
-    experiences?: { job_title: string }[];
-    education?: { degree: string }[];
+    experiences?: { job_title: string; company_name: string; description: string }[];
+    education?: { degree: string; institution: string }[];
     skills?: string[];
+    languages?: { name: string; proficiency: string }[];
+    projects?: { title: string }[];
+    volunteer?: { organization: string }[];
   };
 
-  // Only show the first ~100 chars of summary as teaser
   const summaryTeaser = data.summary
-    ? data.summary.slice(0, 100) + (data.summary.length > 100 ? "..." : "")
+    ? data.summary.slice(0, 140) + (data.summary.length > 140 ? "..." : "")
     : "";
 
-  const sectionCount =
-    (data.experiences?.length ?? 0) +
-    (data.education?.length ?? 0) +
-    (data.skills ? 1 : 0);
+  const sections = [
+    data.summary ? "Professional Summary" : null,
+    data.experiences?.length ? `${data.experiences.length} Work Experience${data.experiences.length !== 1 ? "s" : ""}` : null,
+    data.education?.length ? `${data.education.length} Education` : null,
+    data.skills?.length ? `${data.skills.length} Skills` : null,
+    data.languages?.length ? `${data.languages.length} Language${data.languages.length !== 1 ? "s" : ""}` : null,
+    data.projects?.length ? `${data.projects.length} Project${data.projects.length !== 1 ? "s" : ""}` : null,
+    data.volunteer?.length ? "Volunteer Work" : null,
+  ].filter(Boolean);
 
   return (
-    <div className="rounded-2xl bg-white overflow-hidden" style={{ boxShadow: "var(--shadow-md)" }}>
-      {/* Teaser — just summary preview */}
-      <div className="p-5">
+    <div className="rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
+      {/* Top — teal gradient header */}
+      <div className="bg-gradient-to-br from-[#095355] via-[#0d7377] to-[#14919b] p-5 text-white">
         <div className="flex items-center gap-2 mb-3">
           <svg className="h-4 w-4 text-accent-warm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
           </svg>
-          <span className="text-xs font-bold uppercase tracking-[0.12em] text-primary">Your Resume is Ready</span>
+          <span className="text-xs font-bold uppercase tracking-[0.15em] text-white/80">Your Resume is Ready</span>
         </div>
         {summaryTeaser && (
-          <p className="text-sm text-text-light leading-relaxed italic">&ldquo;{summaryTeaser}&rdquo;</p>
+          <p className="text-sm text-white/90 leading-relaxed">&ldquo;{summaryTeaser}&rdquo;</p>
+        )}
+        {/* Show first experience title as teaser */}
+        {data.experiences?.[0] && (
+          <div className="mt-3 pt-3 border-t border-white/10">
+            <p className="text-[11px] text-white/50 uppercase tracking-wider">Latest Role</p>
+            <p className="text-sm font-semibold text-white">{data.experiences[0].job_title}</p>
+            <p className="text-xs text-white/60">{data.experiences[0].company_name}</p>
+          </div>
         )}
       </div>
 
-      {/* Locked sections */}
-      <div className="border-t border-border/40 bg-[--color-bg] px-5 py-4">
-        <div className="space-y-2.5">
-          {[
-            { label: "Professional Summary", ready: true },
-            { label: `${data.experiences?.length ?? 0} Work Experience${(data.experiences?.length ?? 0) !== 1 ? "s" : ""}`, ready: true },
-            { label: `${data.education?.length ?? 0} Education Entr${(data.education?.length ?? 0) !== 1 ? "ies" : "y"}`, ready: true },
-            { label: `${data.skills?.length ?? 0} Skills`, ready: true },
-          ].map((section) => (
-            <div key={section.label} className="flex items-center gap-2.5">
-              <svg className="h-3.5 w-3.5 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      {/* What's included */}
+      <div className="bg-white px-5 py-4">
+        <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">What&apos;s included</p>
+        <div className="grid grid-cols-2 gap-2">
+          {sections.map((s) => (
+            <div key={s} className="flex items-center gap-2">
+              <svg className="h-3.5 w-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span className="text-xs text-text-muted">{section.label}</span>
+              <span className="text-xs text-text">{s}</span>
             </div>
           ))}
         </div>
 
-        <div className="mt-5 rounded-xl border border-primary/15 bg-white p-4 text-center">
-          <p className="text-sm font-semibold text-text">
-            {sectionCount} sections ready to use
-          </p>
-          <p className="mt-1 text-xs text-text-muted">
-            Unlock to add everything to your resume builder. Edit anytime.
-          </p>
-          <button
-            onClick={async () => {
-              try {
-                const res = await fetch("/api/stripe/smart-resume-checkout", { method: "POST" });
-                const data = await res.json();
-                if (data.url) window.location.href = data.url;
-              } catch { /* ignore */ }
-            }}
-            className="mt-3 block w-full rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white hover:bg-accent-hover transition-colors shadow-sm shadow-primary/20"
-          >
-            Unlock Full Resume — EC$10
-          </button>
+        {/* Skills preview chips */}
+        {data.skills && data.skills.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {data.skills.slice(0, 5).map((s, i) => (
+              <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/5 text-primary font-medium">{s}</span>
+            ))}
+            {data.skills.length > 5 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-bg-alt text-text-muted">+{data.skills.length - 5} more</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* CTA */}
+      <div className="bg-[--color-bg] px-5 py-4 border-t border-border/40">
+        <div className="text-center">
+          <p className="text-sm font-semibold text-text">{sections.length} sections, ready to download and edit</p>
+          <p className="mt-1 text-xs text-text-muted">Choose from 10 professional templates. Export as PDF anytime.</p>
         </div>
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/stripe/smart-resume-checkout", { method: "POST" });
+              const d = await res.json();
+              if (d.url) window.location.href = d.url;
+            } catch { /* ignore */ }
+          }}
+          className="mt-3 w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white hover:bg-accent-hover transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+        >
+          Unlock Full Resume — EC$10
+        </button>
+        <p className="mt-2 text-center text-[10px] text-text-muted">One time payment. No subscription. Yours forever.</p>
       </div>
     </div>
   );

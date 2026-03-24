@@ -320,6 +320,59 @@ export interface CvCertification {
   sort_order: number;
 }
 
+export interface CvProject {
+  id: string;
+  cv_profile_id: string;
+  title: string;
+  role: string | null;
+  url: string | null;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  sort_order: number;
+}
+
+export interface CvLanguage {
+  id: string;
+  cv_profile_id: string;
+  name: string;
+  proficiency: string;
+  sort_order: number;
+}
+
+export interface CvVolunteer {
+  id: string;
+  cv_profile_id: string;
+  organization: string;
+  role: string | null;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  is_current: boolean;
+  sort_order: number;
+}
+
+export interface CvMembership {
+  id: string;
+  cv_profile_id: string;
+  organization: string;
+  role: string | null;
+  year_joined: string | null;
+  sort_order: number;
+}
+
+export interface CvReference {
+  id: string;
+  cv_profile_id: string;
+  name: string;
+  title: string | null;
+  company: string | null;
+  phone: string | null;
+  email: string | null;
+  relationship: string | null;
+  sort_order: number;
+}
+
 export interface CvContact {
   first_name: string | null;
   last_name: string | null;
@@ -336,4 +389,9 @@ export interface CvFull {
   skills: CvSkill[];
   awards: CvAward[];
   certifications: CvCertification[];
+  projects: CvProject[];
+  languages: CvLanguage[];
+  volunteer: CvVolunteer[];
+  memberships: CvMembership[];
+  references: CvReference[];
 }
