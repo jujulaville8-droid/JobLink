@@ -144,8 +144,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Failed to create company placeholder' }, { status: 500 })
       }
 
-      // Set role in users table
-      await admin.from('users').update({ role: 'employer' }).eq('id', placeholderUser.user.id)
+      // Ensure public.users row exists (trigger may or may not create it)
+      await admin.from('users').upsert({
+        id: placeholderUser.user.id,
+        email: placeholderEmail,
+        role: 'employer',
+      }, { onConflict: 'id' })
 
       const { data: created, error: companyError } = await admin
         .from('companies')
