@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 const FREE_FEATURES = [
-  { text: '1 active listing', included: true },
-  { text: 'No candidate browsing', included: false },
+  { text: 'Unlimited job listings', included: true },
   { text: 'Standard listing placement', included: true },
+  { text: 'No candidate browsing', included: false },
   { text: 'No headhunting', included: false },
 ];
 
 const PRO_FEATURES = [
-  { text: 'Unlimited active listings', included: true },
-  { text: 'Full candidate browse access', included: true },
+  { text: 'Unlimited job listings', included: true },
   { text: 'Featured listing placement', included: true },
+  { text: 'Full candidate browse access', included: true },
   { text: 'Headhunt candidates directly', included: true },
 ];
 
@@ -134,10 +134,10 @@ export default function UpgradePage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-0.5">
                 <span className="text-lg font-semibold text-text-muted leading-none translate-y-0.5">$</span>
-                <span className="text-3xl font-bold font-display text-text">35.99</span>
+                <span className="text-3xl font-bold font-display text-text">19.99</span>
                 <span className="ml-1 text-sm text-text-muted">USD / mo</span>
               </div>
-              <p className="mt-1 text-xs text-text-muted">Billed as EC$97</p>
+              <p className="mt-1 text-xs text-text-muted">Billed as EC$54</p>
             </div>
             <div className="my-6 border-t border-primary/20" />
             <ul className="space-y-3.5">
@@ -169,10 +169,10 @@ export default function UpgradePage() {
           <div className="mt-6 text-center">
             <div className="flex items-baseline justify-center gap-0.5">
               <span className="text-2xl font-semibold text-text-muted leading-none translate-y-1">$</span>
-              <span className="text-5xl font-bold font-display text-text leading-none">35.99</span>
+              <span className="text-5xl font-bold font-display text-text leading-none">19.99</span>
               <span className="ml-1.5 text-base text-text-muted">USD / mo</span>
             </div>
-            <p className="mt-1.5 text-sm text-text-muted">Billed as EC$97 &middot; Cancel anytime.</p>
+            <p className="mt-1.5 text-sm text-text-muted">Billed as EC$54 &middot; Cancel anytime.</p>
           </div>
 
           <div className="my-8 border-t border-primary/15" />

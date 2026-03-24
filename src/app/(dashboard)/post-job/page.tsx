@@ -119,20 +119,7 @@ export default function PostJobPage() {
       if (company.company_name) setCompanyName(company.company_name);
       if (company.logo_url) setCompanyLogo(company.logo_url);
 
-      // For new listings: check if non-Pro employer already has an active listing
-      if (!editId && !company.is_pro) {
-        const { count } = await supabase
-          .from('job_listings')
-          .select('id', { count: 'exact', head: true })
-          .eq('company_id', company.id)
-          .eq('status', 'active');
-
-        if ((count ?? 0) >= 1) {
-          setListingGated(true);
-          setLoading(false);
-          return;
-        }
-      }
+      // Listing limit removed — all employers can post unlimited jobs
 
       // Load existing listing if editing
       if (editId) {
@@ -185,10 +172,7 @@ export default function PostJobPage() {
     if (!form.title.trim()) errs.title = 'Job title is required';
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Please select a category';
-    if (form.duration === 'unlimited' && !isPro) {
-      // Force back to 7 days if somehow set without Pro
-      updateField('duration', '7');
-    }
+    // Duration gating removed — all employers can select any duration
     if (form.salary_min && form.salary_max) {
       if (Number(form.salary_min) > Number(form.salary_max)) {
         errs.salary_max = 'Max salary must be greater than min salary';
@@ -768,17 +752,13 @@ export default function PostJobPage() {
                   <span className="text-xs">days</span>
                 </label>
 
-                {/* Unlimited — Pro only */}
+                {/* Unlimited — available to all */}
                 <label
                   className={cn(
-                    'relative rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
-                    !isPro && 'opacity-60 cursor-not-allowed',
-                    isPro && 'cursor-pointer',
+                    'relative rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center cursor-pointer',
                     form.duration === 'unlimited'
                       ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                      : isPro
-                        ? 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                        : 'border-border/60 text-text-muted'
+                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
                   )}
                 >
                   <input
@@ -786,25 +766,13 @@ export default function PostJobPage() {
                     name="duration"
                     value="unlimited"
                     checked={form.duration === 'unlimited'}
-                    onChange={() => { if (isPro) updateField('duration', 'unlimited'); }}
-                    disabled={!isPro}
+                    onChange={() => updateField('duration', 'unlimited')}
                     className="sr-only"
                   />
                   <span className="text-lg font-bold block">&infin;</span>
                   <span className="text-xs">unlimited</span>
-                  {!isPro && (
-                    <span className="absolute -top-2 -right-2 rounded-full bg-amber-400 text-amber-950 text-[9px] font-bold uppercase px-1.5 py-0.5 tracking-wider">
-                      Pro
-                    </span>
-                  )}
                 </label>
               </div>
-
-              {!isPro && form.duration === '7' && (
-                <p className="mt-3 text-xs text-text-muted">
-                  <a href="/employers/upgrade" className="text-primary font-medium hover:underline">Upgrade to Pro</a> for unlimited listing duration.
-                </p>
-              )}
             </motion.div>
           )}
 
