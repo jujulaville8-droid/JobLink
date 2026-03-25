@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminEmailActions from '@/components/AdminEmailActions'
+import AdminUnverifiedUsers from '@/components/AdminUnverifiedUsers'
 import { JobNotificationBlast, TemplateSender } from '@/components/AdminEmailSender'
 
 const DRIP_CONFIG = [
@@ -152,51 +153,19 @@ export default async function AdminEmailsPage() {
         />
       </div>
 
-      {/* ── Section 4: All Unverified Users (read-only) ───────────────── */}
+      {/* ── Section 4: All Unverified Users (with manual send) ─────────── */}
       {unverifiedUsers.length > 0 && (
         <div className="mt-10">
-          <h2 className="text-sm font-semibold text-text mb-3">
-            All Unverified Signups ({totalUnverified})
-          </h2>
-          <div className="overflow-x-auto bg-white rounded-2xl border border-border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-bg-alt">
-                  <th className="text-left px-4 py-3 font-semibold text-text">Email</th>
-                  <th className="text-left px-4 py-3 font-semibold text-text">Signed Up</th>
-                  <th className="text-left px-4 py-3 font-semibold text-text">Reminder Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unverifiedUsers
-                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                  .map((user) => {
-                    const lastDrip = maxDripSent.get(user.id) ?? 0
-                    return (
-                      <tr key={user.id} className="border-b border-border last:border-0 hover:bg-bg-alt">
-                        <td className="px-4 py-3 text-text">{user.email}</td>
-                        <td className="px-4 py-3 text-text-light whitespace-nowrap">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3">
-                          {lastDrip === 0 ? (
-                            <span className="text-text-muted text-xs">No reminders sent</span>
-                          ) : lastDrip >= 3 ? (
-                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200/40">
-                              All sent
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 border border-blue-200/40">
-                              {lastDrip} of 3 sent
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-              </tbody>
-            </table>
-          </div>
+          <AdminUnverifiedUsers
+            users={unverifiedUsers
+              .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+              .map((user) => ({
+                id: user.id,
+                email: user.email,
+                created_at: user.created_at,
+                maxDripSent: maxDripSent.get(user.id) ?? 0,
+              }))}
+          />
         </div>
       )}
     </div>
