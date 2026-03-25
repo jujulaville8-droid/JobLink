@@ -1,6 +1,7 @@
 export const metadata = {
-  title: 'Terms of Service — JobLinks',
+  title: 'Terms of Service',
   description: 'JobLinks terms of service. Rules and guidelines for using our platform.',
+  alternates: { canonical: 'https://joblinkantigua.com/terms' },
 }
 
 export default function TermsPage() {

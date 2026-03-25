@@ -22,9 +22,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Company Not Found | JobLinks" };
   }
 
+  const url = `https://joblinkantigua.com/companies/${id}`;
   return {
-    title: `${company.company_name} | JobLinks`,
-    description: `View ${company.company_name}'s profile and job listings on JobLinks, Antigua's job platform.`,
+    title: `${company.company_name} — Jobs & Company Profile`,
+    description: `View ${company.company_name}'s profile and open job listings on JobLinks, Antigua and Barbuda's #1 job platform.`,
+    alternates: { canonical: url },
+    openGraph: {
+      title: `${company.company_name} — Jobs & Company Profile`,
+      description: `View ${company.company_name}'s profile and open job listings on JobLinks.`,
+      url,
+      siteName: "JobLinks",
+    },
   };
 }
 

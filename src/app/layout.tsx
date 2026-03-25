@@ -18,15 +18,59 @@ const bodyFont = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "JobLinks — Antigua's Job Platform",
+  metadataBase: new URL("https://joblinkantigua.com"),
+  title: {
+    default: "JobLinks — Jobs in Antigua and Barbuda",
+    template: "%s | JobLinks",
+  },
   description:
-    "The first dedicated job platform for Antigua and Barbuda. Find jobs, post listings, and connect with employers.",
+    "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume — free. Employers post listings and find talent instantly.",
+  keywords: [
+    "jobs in Antigua",
+    "Antigua jobs",
+    "Barbuda jobs",
+    "job board Antigua",
+    "find work Antigua",
+    "hiring Antigua",
+    "careers Antigua and Barbuda",
+    "employment Antigua",
+    "JobLinks",
+  ],
   icons: {
-    icon: [
-      { url: "/favicon.png", type: "image/png" },
-    ],
+    icon: [{ url: "/favicon.png", type: "image/png" }],
     shortcut: "/favicon.png",
     apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_AG",
+    siteName: "JobLinks",
+    title: "JobLinks — Jobs in Antigua and Barbuda",
+    description:
+      "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume — free.",
+    url: "https://joblinkantigua.com",
+    images: [
+      {
+        url: "/images/colorful-buildings.avif",
+        width: 1200,
+        height: 630,
+        alt: "JobLinks — Find work in Antigua",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JobLinks — Jobs in Antigua and Barbuda",
+    description:
+      "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume — free.",
+    images: ["/images/colorful-buildings.avif"],
+  },
+  alternates: {
+    canonical: "https://joblinkantigua.com",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

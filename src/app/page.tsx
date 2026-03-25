@@ -155,8 +155,46 @@ export default async function Home() {
     getHiringCompanies(),
   ]);
 
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "JobLinks",
+    url: "https://joblinkantigua.com",
+    logo: "https://joblinkantigua.com/favicon.png",
+    description: "Antigua and Barbuda's first dedicated job platform. Connecting job seekers with employers across every industry on the island.",
+    areaServed: {
+      "@type": "Country",
+      name: "Antigua and Barbuda",
+    },
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: "hello@joblinkantigua.com",
+      contactType: "customer service",
+    },
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "JobLinks",
+    url: "https://joblinkantigua.com",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://joblinkantigua.com/jobs?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden flex items-center grain-overlay">
         <div className="absolute inset-0">

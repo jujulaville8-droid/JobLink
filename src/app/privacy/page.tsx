@@ -1,6 +1,7 @@
 export const metadata = {
-  title: 'Privacy Policy — JobLinks',
+  title: 'Privacy Policy',
   description: 'JobLinks privacy policy. How we collect, use, and protect your data.',
+  alternates: { canonical: 'https://joblinkantigua.com/privacy' },
 }
 
 export default function PrivacyPage() {

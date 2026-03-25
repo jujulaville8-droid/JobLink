@@ -1,8 +1,9 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'About — JobLinks',
-  description: 'Learn about JobLinks, Antigua\'s first dedicated job platform.',
+  title: 'About JobLinks — Antigua\'s Job Platform',
+  description: 'JobLinks is Antigua and Barbuda\'s first dedicated job platform. Learn how we connect job seekers with employers across every industry on the island.',
+  alternates: { canonical: 'https://joblinkantigua.com/about' },
 }
 
 export default function AboutPage() {

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, company:companies(company_name)")
+    .select("title, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
@@ -25,11 +25,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Job Not Found | JobLinks" };
   }
 
-  const company = job.company as unknown as { company_name: string } | null;
+  const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
+  const title = `${job.title} at ${company?.company_name || "Company"} | JobLinks`;
+  const description = `Apply for ${job.title} at ${company?.company_name || "a company"} in Antigua and Barbuda. Browse jobs on JobLinks, Antigua's #1 job platform.`;
+  const url = `https://joblinkantigua.com/jobs/${id}`;
 
   return {
-    title: `${job.title} at ${company?.company_name || "Company"} | JobLinks`,
-    description: `Apply for ${job.title} at ${company?.company_name || "a company"} in Antigua and Barbuda.`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: "JobLinks",
+      type: "website",
+      locale: "en_AG",
+      images: company?.logo_url ? [{ url: company.logo_url, width: 200, height: 200, alt: company.company_name }] : [],
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 
@@ -220,8 +238,77 @@ export default async function JobDetailPage({ params }: PageProps) {
       colors.length
     : 0;
 
+  // JSON-LD: JobPosting schema for Google Jobs
+  const employmentTypeMap: Record<string, string> = {
+    full_time: "FULL_TIME",
+    part_time: "PART_TIME",
+    contract: "CONTRACTOR",
+    temporary: "TEMPORARY",
+    seasonal: "TEMPORARY",
+    internship: "INTERN",
+    volunteer: "VOLUNTEER",
+  };
+
+  const jobPostingSchema = {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    description: job.description || `${job.title} position at ${company?.company_name || "a company"} in Antigua and Barbuda.`,
+    datePosted: job.created_at,
+    employmentType: employmentTypeMap[job.job_type] || "FULL_TIME",
+    hiringOrganization: {
+      "@type": "Organization",
+      name: company?.company_name || "Company",
+      ...(company?.logo_url ? { logo: company.logo_url } : {}),
+      ...(company?.website ? { sameAs: company.website } : {}),
+    },
+    jobLocation: {
+      "@type": "Place",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: job.location || company?.location || "St. John's",
+        addressCountry: "AG",
+      },
+    },
+    ...(job.salary_visible && (job.salary_min || job.salary_max)
+      ? {
+          baseSalary: {
+            "@type": "MonetaryAmount",
+            currency: "XCD",
+            value: {
+              "@type": "QuantitativeValue",
+              ...(job.salary_min && job.salary_max
+                ? { minValue: job.salary_min, maxValue: job.salary_max }
+                : job.salary_min
+                  ? { value: job.salary_min }
+                  : { value: job.salary_max }),
+              unitText: "MONTH",
+            },
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://joblinkantigua.com" },
+      { "@type": "ListItem", position: 2, name: "Jobs", item: "https://joblinkantigua.com/jobs" },
+      { "@type": "ListItem", position: 3, name: job.title, item: `https://joblinkantigua.com/jobs/${job.id}` },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/60">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-fade-up">
         {/* Back link */}
         <Link

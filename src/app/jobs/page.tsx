@@ -13,9 +13,10 @@ interface PageProps {
 }
 
 export const metadata = {
-  title: "Browse Jobs | JobLinks",
+  title: "Browse Jobs in Antigua and Barbuda",
   description:
-    "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, job type, and more.",
+    "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type. Apply in minutes on JobLinks.",
+  alternates: { canonical: "https://joblinkantigua.com/jobs" },
 };
 
 export default async function JobsPage({ searchParams }: PageProps) {
