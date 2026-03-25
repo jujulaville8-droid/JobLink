@@ -1,6 +1,7 @@
 import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminEmailActions from '@/components/AdminEmailActions'
+import { JobNotificationBlast, TemplateSender } from '@/components/AdminEmailSender'
 
 const DRIP_CONFIG = [
   { step: 1, delayHours: 24 },
@@ -13,7 +14,25 @@ export default async function AdminEmailsPage() {
 
   const supabase = createAdminClient()
 
-  // Fetch all unverified auth users
+  // ── Fetch active job listings for the notification blast ───────────
+  const { data: activeJobs } = await supabase
+    .from('job_listings')
+    .select('id, title, created_at, companies(company_name)')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
+  const jobsForBlast = (activeJobs ?? []).map((job) => {
+    const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
+    return {
+      id: job.id,
+      title: job.title,
+      company_name: (company as { company_name: string } | null)?.company_name || 'Unknown',
+      created_at: job.created_at,
+    }
+  })
+
+  // ── Fetch unverified auth users for signup reminders ───────────────
   const unverifiedUsers: { id: string; email: string; created_at: string }[] = []
   let page = 1
   const perPage = 1000
@@ -51,12 +70,10 @@ export default async function AdminEmailsPage() {
 
   // Build lookup: auth_user_id → max drip_step sent
   const maxDripSent = new Map<string, number>()
-  const lastSentAt = new Map<string, string>()
   for (const log of logs ?? []) {
     const current = maxDripSent.get(log.auth_user_id) ?? 0
     if (log.drip_step > current) {
       maxDripSent.set(log.auth_user_id, log.drip_step)
-      lastSentAt.set(log.auth_user_id, log.sent_at)
     }
   }
 
@@ -68,7 +85,6 @@ export default async function AdminEmailsPage() {
       const hoursSinceSignup = (now - new Date(user.created_at).getTime()) / (1000 * 60 * 60)
       const lastDrip = maxDripSent.get(user.id) ?? 0
 
-      // Find next eligible drip
       let nextDripStep = 0
       for (const drip of DRIP_CONFIG) {
         if (drip.step <= lastDrip) continue
@@ -95,65 +111,48 @@ export default async function AdminEmailsPage() {
   const drip1Sent = [...maxDripSent.values()].filter((v) => v >= 1).length
   const drip2Sent = [...maxDripSent.values()].filter((v) => v >= 2).length
   const drip3Sent = [...maxDripSent.values()].filter((v) => v >= 3).length
-  const allComplete = drip3Sent
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
-        Signup Reminders
+        Email Centre
       </h1>
       <p className="mt-1 text-sm text-text-light">
-        Manage reminder emails for users who signed up but never verified their account.
+        Send job notifications, manage signup reminders, and send any email template manually.
       </p>
 
-      {/* Stat Cards */}
-      <div className="mt-6 grid gap-4 grid-cols-2 lg:grid-cols-5">
-        <StatCard
-          label="Unverified"
-          value={totalUnverified}
-          color="text-amber-600"
-          bg="bg-amber-50"
-          borderColor="border-l-amber-500"
-        />
-        <StatCard
-          label="Queued"
-          value={pendingUsers.length}
-          color="text-primary"
-          bg="bg-primary/5"
-          borderColor="border-l-primary"
-        />
-        <StatCard
-          label="Drip 1 Sent"
-          value={drip1Sent}
-          color="text-blue-600"
-          bg="bg-blue-50"
-          borderColor="border-l-blue-500"
-        />
-        <StatCard
-          label="Drip 2 Sent"
-          value={drip2Sent}
-          color="text-purple-600"
-          bg="bg-purple-50"
-          borderColor="border-l-purple-500"
-        />
-        <StatCard
-          label="All 3 Sent"
-          value={allComplete}
-          color="text-emerald-600"
-          bg="bg-emerald-50"
-          borderColor="border-l-emerald-500"
-        />
+      {/* ── Section 1: Job Notification Blast ─────────────────────────── */}
+      <div className="mt-8">
+        <h2 className="text-base font-semibold text-text mb-3">Job Notifications</h2>
+        <JobNotificationBlast jobs={jobsForBlast} />
       </div>
 
-      {/* All unverified users table */}
-      <div className="mt-8">
+      {/* ── Section 2: Send Any Template ──────────────────────────────── */}
+      <div className="mt-10">
+        <h2 className="text-base font-semibold text-text mb-3">Send Any Template</h2>
+        <TemplateSender />
+      </div>
+
+      {/* ── Section 3: Signup Reminders ───────────────────────────────── */}
+      <div className="mt-10">
+        <h2 className="text-base font-semibold text-text mb-3">Signup Reminders</h2>
+
+        {/* Stat Cards */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5 mb-6">
+          <StatCard label="Unverified" value={totalUnverified} borderColor="border-l-amber-500" />
+          <StatCard label="Queued" value={pendingUsers.length} borderColor="border-l-primary" />
+          <StatCard label="Drip 1 Sent" value={drip1Sent} borderColor="border-l-blue-500" />
+          <StatCard label="Drip 2 Sent" value={drip2Sent} borderColor="border-l-purple-500" />
+          <StatCard label="All 3 Sent" value={drip3Sent} borderColor="border-l-emerald-500" />
+        </div>
+
         <AdminEmailActions
           pendingUsers={pendingUsers}
           totalPending={pendingUsers.length}
         />
       </div>
 
-      {/* Full unverified list (read-only) */}
+      {/* ── Section 4: All Unverified Users (read-only) ───────────────── */}
       {unverifiedUsers.length > 0 && (
         <div className="mt-10">
           <h2 className="text-sm font-semibold text-text mb-3">
@@ -207,20 +206,14 @@ export default async function AdminEmailsPage() {
 function StatCard({
   label,
   value,
-  color,
-  bg,
   borderColor,
 }: {
   label: string
   value: number
-  color: string
-  bg: string
   borderColor: string
 }) {
   return (
-    <div
-      className={`rounded-2xl border border-border/40 bg-white p-5 border-l-4 ${borderColor}`}
-    >
+    <div className={`rounded-2xl border border-border/40 bg-white p-5 border-l-4 ${borderColor}`}>
       <p className="text-xs text-text-muted font-medium uppercase tracking-wide">{label}</p>
       <p className="mt-1 text-2xl font-bold text-text">{value.toLocaleString()}</p>
     </div>
