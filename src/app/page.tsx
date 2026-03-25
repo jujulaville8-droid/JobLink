@@ -378,6 +378,59 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ===== TESTIMONIALS ===== */}
+      <section className="py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <p className="text-primary text-xs font-semibold uppercase tracking-widest mb-2">
+              Real People, Real Results
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl text-text tracking-tight">
+              What job seekers are saying
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {[
+              {
+                quote: "I was sending my CV through WhatsApp for months with no response. Signed up to JobLinks on a Monday, applied to three jobs, and had an interview by Thursday. This is what Antigua needed.",
+                name: "Kendra H.",
+                role: "Hospitality Worker, St. John's",
+              },
+              {
+                quote: "The resume builder alone saved me. I never had a proper CV before. Now I have one I can actually send to employers without feeling embarrassed. And it took me like ten minutes.",
+                name: "Daryl S.",
+                role: "Recent Graduate, All Saints",
+              },
+            ].map((t) => (
+              <div
+                key={t.name}
+                className="rounded-2xl border border-border bg-white p-6 sm:p-8"
+                style={{ boxShadow: "var(--shadow-xs)" }}
+              >
+                <svg className="h-8 w-8 text-primary/20 mb-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                </svg>
+                <p className="text-sm text-text leading-relaxed">
+                  {t.quote}
+                </p>
+                <div className="mt-5 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-semibold text-primary">
+                      {t.name.charAt(0)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-text">{t.name}</p>
+                    <p className="text-xs text-text-muted">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ===== OUR MISSION ===== */}
       <section className="bg-bg-alt py-16 sm:py-20">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
