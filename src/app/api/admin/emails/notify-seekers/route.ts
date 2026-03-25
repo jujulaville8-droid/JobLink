@@ -84,12 +84,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Send in batches of 5 with delay to avoid Resend rate limits
+  // Send in batches of 10, awaited (Resend Pro supports ~10/sec)
   const seekersWithEmail = seekerUsers.filter(s => s.email)
   let sent = 0
 
-  for (let i = 0; i < seekersWithEmail.length; i += 5) {
-    const batch = seekersWithEmail.slice(i, i + 5)
+  for (let i = 0; i < seekersWithEmail.length; i += 10) {
+    const batch = seekersWithEmail.slice(i, i + 10)
     await Promise.all(
       batch.map(seeker =>
         sendEmail({
@@ -109,10 +109,6 @@ export async function POST(request: NextRequest) {
       )
     )
     sent += batch.length
-    // Small delay between batches to stay within Resend rate limits
-    if (i + 5 < seekersWithEmail.length) {
-      await new Promise(r => setTimeout(r, 1000))
-    }
   }
 
   return NextResponse.json({ sent, job_title: job.title })
