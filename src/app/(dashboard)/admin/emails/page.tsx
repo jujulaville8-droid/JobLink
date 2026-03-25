@@ -2,7 +2,7 @@ import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminEmailActions from '@/components/AdminEmailActions'
 import AdminUnverifiedUsers from '@/components/AdminUnverifiedUsers'
-import { JobNotificationBlast, TemplateSender } from '@/components/AdminEmailSender'
+import { JobNotificationBlast, ResumeImportanceBlast, TemplateSender } from '@/components/AdminEmailSender'
 
 const DRIP_CONFIG = [
   { step: 1, delayHours: 24 },
@@ -128,7 +128,13 @@ export default async function AdminEmailsPage() {
         <JobNotificationBlast jobs={jobsForBlast} />
       </div>
 
-      {/* ── Section 2: Send Any Template ──────────────────────────────── */}
+      {/* ── Section 2: Resume Importance Blast ─────────────────────────── */}
+      <div className="mt-10">
+        <h2 className="text-base font-semibold text-text mb-3">Resume Campaign</h2>
+        <ResumeImportanceBlast />
+      </div>
+
+      {/* ── Section 3: Send Any Template ──────────────────────────────── */}
       <div className="mt-10">
         <h2 className="text-base font-semibold text-text mb-3">Send Any Template</h2>
         <TemplateSender />

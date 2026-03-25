@@ -140,6 +140,14 @@ const TEMPLATES: TemplateDef[] = [
     ],
   },
   {
+    type: 'resume_importance',
+    label: 'Resume Importance (Campaign)',
+    description: 'Campaign email emphasizing why a resume is essential for being found by employers',
+    fields: [
+      { key: 'applicant_name', label: 'Seeker Name', placeholder: 'e.g. Sarah' },
+    ],
+  },
+  {
     type: 'signup_reminder_1',
     label: 'Signup Reminder (1st)',
     description: 'First reminder for users who haven\'t verified their email',
@@ -237,6 +245,72 @@ export function JobNotificationBlast({ jobs }: { jobs: ActiveJob[] }) {
             </>
           ) : (
             'Send to All Seekers'
+          )}
+        </button>
+      </div>
+
+      {error && (
+        <p className="mt-3 text-sm text-red-600">{error}</p>
+      )}
+    </div>
+  )
+}
+
+// ── Resume Importance Blast ──────────────────────────────────────────
+
+export function ResumeImportanceBlast() {
+  const [sending, setSending] = useState(false)
+  const [result, setResult] = useState<{ sent: number; skipped: number } | null>(null)
+  const [error, setError] = useState('')
+
+  async function handleSend() {
+    setSending(true)
+    setError('')
+    setResult(null)
+    try {
+      const res = await fetch('/api/admin/emails/resume-blast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setResult({ sent: data.sent, skipped: data.skipped })
+      } else {
+        const data = await res.json()
+        setError(data.error || 'Failed to send')
+      }
+    } catch {
+      setError('Network error')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/40 bg-white p-6">
+      <h3 className="text-sm font-semibold text-text">Resume Importance Campaign</h3>
+      <p className="text-xs text-text-muted mt-1">
+        Send the resume importance email to all verified seekers who don&apos;t have a resume (uploaded or built).
+      </p>
+
+      <div className="mt-4 flex flex-col sm:flex-row gap-3 items-start">
+        <button
+          onClick={handleSend}
+          disabled={sending || result !== null}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white hover:bg-primary-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          {sending ? (
+            <>
+              <Spinner />
+              Sending...
+            </>
+          ) : result ? (
+            <>
+              <CheckIcon />
+              {result.sent} sent, {result.skipped} skipped (have resume)
+            </>
+          ) : (
+            'Send to All Seekers Without Resume'
           )}
         </button>
       </div>

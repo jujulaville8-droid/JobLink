@@ -12,6 +12,7 @@ type EmailType =
   | 'new_job_posted'
   | 'resume_nudge'
   | 'resume_nudge_2'
+  | 'resume_importance'
   | 'signup_reminder_1'
   | 'signup_reminder_2'
   | 'signup_reminder_3'
@@ -380,6 +381,60 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           <p style="text-align: center; margin-top: 12px;">
             <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or use our free Resume Builder</a>
           </p>
+        `),
+      }
+
+    case 'resume_importance':
+      return {
+        subject: `${esc(d.applicant_name) || 'Hey'}, your resume could be the reason an employer reaches out`,
+        html: wrapper(`
+          <h2 style="color: #1f2937; margin: 0 0 8px;">Your Resume Matters More Than You Think</h2>
+          <p style="color: #374151; line-height: 1.6; font-size: 15px;">
+            Hi ${esc(d.applicant_name) || 'there'},
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            Here's something most people don't realise: <strong>employers on JobLinks are browsing profiles every single day</strong> — even when they haven't posted a job yet. They're searching for the right person before they ever publish a listing.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            If your profile doesn't have a resume, you're invisible to them. It's that simple.
+          </p>
+
+          <div style="background-color: #fef9ec; border-left: 4px solid #e8973e; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
+            <p style="color: #92400e; font-weight: 700; margin: 0 0 8px 0; font-size: 15px;">Why a resume is essential:</p>
+            <ul style="color: #78350f; margin: 0; padding-left: 18px; line-height: 2;">
+              <li>Employers actively search public profiles — <strong>even when no jobs are posted</strong></li>
+              <li>A resume is the first thing they look at when deciding who to contact</li>
+              <li>Profiles with a resume are far more likely to receive direct invitations</li>
+              <li>Without one, your profile won't appear in employer search results</li>
+            </ul>
+          </div>
+
+          <p style="color: #374151; line-height: 1.6;">
+            You don't need a perfect resume. You just need one. Whether you have experience or you're just starting out, having something there tells employers you're serious and ready to work.
+          </p>
+
+          <p style="color: #374151; line-height: 1.6; font-weight: 600;">
+            You have two easy options:
+          </p>
+
+          <div style="display: flex; gap: 12px; margin: 24px 0;">
+            <div style="flex: 1; background-color: #f0fafa; border-radius: 12px; padding: 20px; text-align: center;">
+              <p style="color: #0d7377; font-weight: 700; margin: 0 0 6px 0; font-size: 15px;">Upload Your Resume</p>
+              <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">Already have a CV? Upload it in seconds.</p>
+              <a href="${SITE}/profile" style="display: inline-block; background-color: #0d7377; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Upload Now</a>
+            </div>
+            <div style="flex: 1; background-color: #f0fafa; border-radius: 12px; padding: 20px; text-align: center;">
+              <p style="color: #0d7377; font-weight: 700; margin: 0 0 6px 0; font-size: 15px;">Build One on JobLinks</p>
+              <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">No resume? Build a professional one for free.</p>
+              <a href="${SITE}/profile/cv" style="display: inline-block; background-color: #14919b; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Build My Resume</a>
+            </div>
+          </div>
+
+          <p style="color: #374151; line-height: 1.6;">
+            The job market in Antigua &amp; Barbuda moves fast. Don't wait for a job to be posted — make sure employers can find <strong>you</strong> first.
+          </p>
+
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Every day without a resume is a missed opportunity. Take 3 minutes and add yours today.</p>
         `),
       }
 
