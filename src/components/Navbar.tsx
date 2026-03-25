@@ -216,6 +216,7 @@ export default function Navbar() {
               <span className="font-display text-xl font-bold tracking-tight text-primary">
                 JobLinks
               </span>
+              <span className="text-base ml-0.5" aria-label="Antigua and Barbuda flag">&#x1F1E6;&#x1F1EC;</span>
               <span className="hidden sm:inline text-[11px] font-medium text-text-muted/70 border-l border-border pl-2.5 leading-tight">
                 Antigua&apos;s Career Network
               </span>
