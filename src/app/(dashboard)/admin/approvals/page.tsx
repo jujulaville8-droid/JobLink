@@ -94,23 +94,31 @@ async function notifyJobSeekers(jobId: string) {
       }
     }
 
-    // Send personalized emails
-    for (const seeker of seekerUsers) {
-      if (seeker.email) {
-        sendEmail({
-          to: seeker.email,
-          type: 'new_job_posted',
-          data: {
-            seeker_name: nameMap[seeker.id] || '',
-            job_title: jobTitle,
-            company_name: companyName,
-            job_location: job.location || '',
-            job_type_label: jobTypeLabel,
-            salary_range: salaryRange,
-            job_description_preview: descPreview,
-            listing_url: listingUrl,
-          },
-        })
+    // Send personalized emails in batches of 5 with delay to avoid Resend rate limits
+    const seekersWithEmail = seekerUsers.filter(s => s.email)
+    for (let i = 0; i < seekersWithEmail.length; i += 5) {
+      const batch = seekersWithEmail.slice(i, i + 5)
+      await Promise.all(
+        batch.map(seeker =>
+          sendEmail({
+            to: seeker.email,
+            type: 'new_job_posted',
+            data: {
+              seeker_name: nameMap[seeker.id] || '',
+              job_title: jobTitle,
+              company_name: companyName,
+              job_location: job.location || '',
+              job_type_label: jobTypeLabel,
+              salary_range: salaryRange,
+              job_description_preview: descPreview,
+              listing_url: listingUrl,
+            },
+          })
+        )
+      )
+      // Small delay between batches to stay within Resend rate limits
+      if (i + 5 < seekersWithEmail.length) {
+        await new Promise(r => setTimeout(r, 1000))
       }
     }
   } catch (err) {

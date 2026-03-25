@@ -52,10 +52,10 @@ async function notifyJobSeekers(jobId: string) {
       }
     }
 
-    // Send in batches of 10 to avoid overwhelming Resend
+    // Send in batches of 5 with delay to avoid Resend rate limits
     const seekersWithEmail = (seekerUsers as { id: string; email: string | null }[]).filter(s => s.email)
-    for (let i = 0; i < seekersWithEmail.length; i += 10) {
-      const batch = seekersWithEmail.slice(i, i + 10)
+    for (let i = 0; i < seekersWithEmail.length; i += 5) {
+      const batch = seekersWithEmail.slice(i, i + 5)
       await Promise.all(batch.map(seeker =>
         sendEmail({
           to: seeker.email!,
@@ -72,6 +72,9 @@ async function notifyJobSeekers(jobId: string) {
           },
         })
       ))
+      if (i + 5 < seekersWithEmail.length) {
+        await new Promise(r => setTimeout(r, 1000))
+      }
     }
     console.log(`[notifyJobSeekers] Sent ${seekersWithEmail.length} emails for job ${jobId}`)
   } catch (err) {

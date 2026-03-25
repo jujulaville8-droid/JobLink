@@ -84,38 +84,35 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Send in batches of 10
+  // Send in batches of 5 with delay to avoid Resend rate limits
+  const seekersWithEmail = seekerUsers.filter(s => s.email)
   let sent = 0
-  const batch: Promise<void>[] = []
 
-  for (const seeker of seekerUsers) {
-    if (!seeker.email) continue
-    batch.push(
-      sendEmail({
-        to: seeker.email,
-        type: 'new_job_posted',
-        data: {
-          seeker_name: nameMap[seeker.id] || '',
-          job_title: job.title,
-          company_name: companyName,
-          job_location: job.location || '',
-          job_type_label: jobTypeLabel,
-          salary_range: salaryRange,
-          job_description_preview: descPreview,
-          listing_url: listingUrl,
-        },
-      })
+  for (let i = 0; i < seekersWithEmail.length; i += 5) {
+    const batch = seekersWithEmail.slice(i, i + 5)
+    await Promise.all(
+      batch.map(seeker =>
+        sendEmail({
+          to: seeker.email,
+          type: 'new_job_posted',
+          data: {
+            seeker_name: nameMap[seeker.id] || '',
+            job_title: job.title,
+            company_name: companyName,
+            job_location: job.location || '',
+            job_type_label: jobTypeLabel,
+            salary_range: salaryRange,
+            job_description_preview: descPreview,
+            listing_url: listingUrl,
+          },
+        })
+      )
     )
-    sent++
-
-    if (batch.length >= 10) {
-      await Promise.all(batch)
-      batch.length = 0
+    sent += batch.length
+    // Small delay between batches to stay within Resend rate limits
+    if (i + 5 < seekersWithEmail.length) {
+      await new Promise(r => setTimeout(r, 1000))
     }
-  }
-
-  if (batch.length > 0) {
-    await Promise.all(batch)
   }
 
   return NextResponse.json({ sent, job_title: job.title })
