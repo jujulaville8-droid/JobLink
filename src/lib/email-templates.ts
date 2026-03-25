@@ -12,6 +12,9 @@ type EmailType =
   | 'new_job_posted'
   | 'resume_nudge'
   | 'resume_nudge_2'
+  | 'signup_reminder_1'
+  | 'signup_reminder_2'
+  | 'signup_reminder_3'
 
 interface EmailData {
   applicant_name?: string
@@ -377,6 +380,65 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           <p style="text-align: center; margin-top: 12px;">
             <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or use our free Resume Builder</a>
           </p>
+        `),
+      }
+
+    case 'signup_reminder_1':
+      return {
+        subject: `Don't forget to verify your JobLinks account`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">One Step Left!</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            You recently signed up for JobLinks — Antigua &amp; Barbuda's job platform — but you haven't verified your email yet.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            Without verifying, you won't be able to browse jobs, apply, or set up your profile. It only takes a second.
+          </p>
+          ${btn('Verify My Email', '/auth/callback')}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">If you didn't create this account, you can safely ignore this email.</p>
+        `),
+      }
+
+    case 'signup_reminder_2':
+      return {
+        subject: `Your JobLinks account is still waiting for you`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">You're Almost There</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            A few days ago you signed up for JobLinks, but your account still isn't verified.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            Right now, employers across Antigua &amp; Barbuda are posting new jobs daily. Verify your email so you don't miss out on opportunities.
+          </p>
+          <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
+            <p style="color: #374151; margin: 0; font-weight: 600;">What you get with JobLinks:</p>
+            <ul style="color: #374151; margin: 8px 0 0; padding-left: 18px; line-height: 1.8;">
+              <li>Browse and apply to local jobs</li>
+              <li>Build a free professional resume</li>
+              <li>Get notified when new jobs match your skills</li>
+            </ul>
+          </div>
+          ${btn('Verify My Email', '/auth/callback')}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">If you didn't create this account, you can safely ignore this email.</p>
+        `),
+      }
+
+    case 'signup_reminder_3':
+      return {
+        subject: `Last chance — verify your JobLinks account before it expires`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Final Reminder</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            This is our last reminder — your JobLinks account is still unverified.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            We don't want you to miss out. Employers are hiring right now and your profile could be the one they're looking for.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            Click below to verify and get started — it takes less than 10 seconds.
+          </p>
+          ${btn('Verify My Email Now', '/auth/callback')}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">If you're no longer interested, no action is needed. We won't email you again.</p>
         `),
       }
 
