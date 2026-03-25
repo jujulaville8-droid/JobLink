@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail, BASE_URL } from '@/lib/email'
+import { buildEmailHtml } from '@/lib/email-templates'
+import { BASE_URL } from '@/lib/email'
 import { requireVerifiedUser } from '@/lib/api-auth'
+
+const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
 /**
  * POST /api/admin/emails/notify-seekers
  * Re-send the "new job posted" notification to all verified seekers for a specific job.
+ * Uses Resend batch API to send up to 100 emails per API call.
  * Body: { job_id: string }
  */
 export async function POST(request: NextRequest) {
@@ -84,31 +89,40 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Send in batches of 10, awaited (Resend Pro supports ~10/sec)
+  // Build all emails and send via Resend batch API (up to 100 per call)
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 })
+  }
+
+  const resend = new Resend(apiKey)
   const seekersWithEmail = seekerUsers.filter(s => s.email)
   let sent = 0
 
-  for (let i = 0; i < seekersWithEmail.length; i += 10) {
-    const batch = seekersWithEmail.slice(i, i + 10)
-    await Promise.all(
-      batch.map(seeker =>
-        sendEmail({
-          to: seeker.email,
-          type: 'new_job_posted',
-          data: {
-            seeker_name: nameMap[seeker.id] || '',
-            job_title: job.title,
-            company_name: companyName,
-            job_location: job.location || '',
-            job_type_label: jobTypeLabel,
-            salary_range: salaryRange,
-            job_description_preview: descPreview,
-            listing_url: listingUrl,
-          },
-        })
-      )
-    )
-    sent += batch.length
+  // Build personalized email payloads
+  const allEmails = seekersWithEmail.map(seeker => {
+    const { subject, html } = buildEmailHtml('new_job_posted', {
+      seeker_name: nameMap[seeker.id] || '',
+      job_title: job.title,
+      company_name: companyName,
+      job_location: job.location || '',
+      job_type_label: jobTypeLabel,
+      salary_range: salaryRange,
+      job_description_preview: descPreview,
+      listing_url: listingUrl,
+    })
+    return { from: FROM_ADDRESS, to: seeker.email, subject, html }
+  })
+
+  // Send in batches of 100 via batch API
+  for (let i = 0; i < allEmails.length; i += 100) {
+    const batch = allEmails.slice(i, i + 100)
+    try {
+      await resend.batch.send(batch)
+      sent += batch.length
+    } catch (err) {
+      console.error(`[notify-seekers] Batch ${i / 100 + 1} failed:`, err)
+    }
   }
 
   return NextResponse.json({ sent, job_title: job.title })

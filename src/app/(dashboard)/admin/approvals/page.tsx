@@ -2,9 +2,13 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
+import { Resend } from 'resend'
 import { sendEmail, BASE_URL } from '@/lib/email'
+import { buildEmailHtml } from '@/lib/email-templates'
 import { createAdminClient } from '@/lib/supabase/admin'
 import RejectJobButton from '@/components/RejectJobButton'
+
+const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
 async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>, jobId: string, type: 'listing_approved' | 'listing_rejected', rejectionReason?: string) {
   const { data: job } = await supabase
@@ -94,28 +98,34 @@ async function notifyJobSeekers(jobId: string) {
       }
     }
 
-    // Send personalized emails in batches of 10, awaited (Resend Pro supports ~10/sec)
+    // Send via Resend batch API (up to 100 per call) to avoid function timeout
+    const apiKey = process.env.RESEND_API_KEY
+    if (!apiKey) return
+
+    const resend = new Resend(apiKey)
     const seekersWithEmail = seekerUsers.filter(s => s.email)
-    for (let i = 0; i < seekersWithEmail.length; i += 10) {
-      const batch = seekersWithEmail.slice(i, i + 10)
-      await Promise.all(
-        batch.map(seeker =>
-          sendEmail({
-            to: seeker.email,
-            type: 'new_job_posted',
-            data: {
-              seeker_name: nameMap[seeker.id] || '',
-              job_title: jobTitle,
-              company_name: companyName,
-              job_location: job.location || '',
-              job_type_label: jobTypeLabel,
-              salary_range: salaryRange,
-              job_description_preview: descPreview,
-              listing_url: listingUrl,
-            },
-          })
-        )
-      )
+
+    const allEmails = seekersWithEmail.map(seeker => {
+      const { subject, html } = buildEmailHtml('new_job_posted', {
+        seeker_name: nameMap[seeker.id] || '',
+        job_title: jobTitle,
+        company_name: companyName,
+        job_location: job.location || '',
+        job_type_label: jobTypeLabel,
+        salary_range: salaryRange,
+        job_description_preview: descPreview,
+        listing_url: listingUrl,
+      })
+      return { from: FROM_ADDRESS, to: seeker.email, subject, html }
+    })
+
+    for (let i = 0; i < allEmails.length; i += 100) {
+      const batch = allEmails.slice(i, i + 100)
+      try {
+        await resend.batch.send(batch)
+      } catch (err) {
+        console.error(`[notifyJobSeekers] Batch failed:`, err)
+      }
     }
   } catch (err) {
     console.error('[notifyJobSeekers] Error:', err)
