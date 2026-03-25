@@ -173,8 +173,8 @@ export default async function Home() {
         <div className="relative mx-auto max-w-3xl px-6 sm:px-8 pt-24 sm:pt-32 lg:pt-36 pb-16 sm:pb-20 lg:pb-24 w-full">
           <div className="text-center">
             <h1 className="animate-fade-up font-display text-[2.5rem] sm:text-[3.25rem] lg:text-[4rem] text-white leading-[1.05] tracking-tight">
-              Find your next{" "}
-              <span className="text-accent-warm">opportunity</span>
+              Find work in{" "}
+              <span className="text-accent-warm">Antigua</span>
             </h1>
 
             <p className="animate-fade-up mt-6 text-lg sm:text-xl text-white/80 max-w-xl mx-auto leading-relaxed" style={{ animationDelay: "100ms" }}>
