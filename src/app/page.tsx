@@ -231,34 +231,6 @@ export default async function Home() {
 
       </section>
 
-      {/* ===== VSL ===== */}
-      <section className="bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div>
-              <h2 className="font-display text-3xl sm:text-4xl text-text tracking-tight section-heading-accent">
-                See how it works
-              </h2>
-              <p className="mt-6 text-text-light leading-relaxed">
-                Watch how JobLinks connects job seekers and employers across Antigua &amp; Barbuda. From sign-up to application — it only takes a few minutes.
-              </p>
-            </div>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/15 border border-border/40">
-              <video
-                className="w-full h-full object-cover"
-                controls
-                preload="auto"
-              poster=""
-                playsInline
-              >
-                <source src="/videos/vsl.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ===== COMPANIES HIRING + FEATURED JOBS ===== */}
       <section className="relative bg-bg">
         {/* Overlap container — pulls up into the hero */}
@@ -321,6 +293,34 @@ export default async function Home() {
             </Link>
           </div>
         </div>
+        </div>
+      </section>
+
+      {/* ===== VSL ===== */}
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+            <div>
+              <h2 className="font-display text-3xl sm:text-4xl text-text tracking-tight section-heading-accent">
+                See how it works
+              </h2>
+              <p className="mt-6 text-text-light leading-relaxed">
+                Watch how JobLinks connects job seekers and employers across Antigua &amp; Barbuda. From sign-up to application — it only takes a few minutes.
+              </p>
+            </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/15 border border-border/40">
+              <video
+                className="w-full h-full object-cover"
+                controls
+                preload="auto"
+                poster=""
+                playsInline
+              >
+                <source src="/videos/vsl.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
         </div>
       </section>
 
