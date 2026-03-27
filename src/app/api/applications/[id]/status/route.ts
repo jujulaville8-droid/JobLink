@@ -82,16 +82,15 @@ export async function PATCH(
     }
 
     // Update the application status
-    const { data: updated, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('applications')
       .update({ status })
-      .eq('id', id)
-      .select()
-      .single();
+      .eq('id', id);
 
     if (updateError) {
+      console.error('[status-update] Supabase error:', JSON.stringify(updateError));
       return NextResponse.json(
-        { error: 'Failed to update application status' },
+        { error: 'Failed to update application status', detail: updateError.message, code: updateError.code },
         { status: 500 }
       );
     }
@@ -146,7 +145,7 @@ export async function PATCH(
       }
     }
 
-    return NextResponse.json({ application: updated });
+    return NextResponse.json({ success: true, status });
   } catch {
     return NextResponse.json(
       { error: 'Internal server error' },

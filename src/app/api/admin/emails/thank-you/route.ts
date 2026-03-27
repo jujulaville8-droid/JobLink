@@ -3,7 +3,7 @@ import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
-const RATE_LIMIT_MS = 100
+const RATE_LIMIT_MS = 250
 const SITE = 'https://joblinkantigua.com'
 
 function delay(ms: number): Promise<void> {
