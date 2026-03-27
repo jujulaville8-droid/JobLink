@@ -185,6 +185,24 @@ export default async function Home() {
     },
   };
 
+  const employmentAgencySchema = {
+    "@context": "https://schema.org",
+    "@type": "EmploymentAgency",
+    name: "JobLinks",
+    url: "https://joblinkantigua.com",
+    email: "hello@joblinkantigua.com",
+    description: "Antigua and Barbuda's dedicated job platform connecting local employers with job seekers across every industry on the island.",
+    areaServed: {
+      "@type": "Country",
+      name: "Antigua and Barbuda",
+    },
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "St. John's",
+      addressCountry: "AG",
+    },
+  };
+
   return (
     <>
       <script
@@ -194,6 +212,10 @@ export default async function Home() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(employmentAgencySchema) }}
       />
       {/* ===== HERO ===== */}
       <section className="relative overflow-hidden flex items-center grain-overlay">
