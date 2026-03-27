@@ -50,38 +50,48 @@ export async function GET(request: NextRequest) {
     if (userData?.role === "admin") {
       // Admins can access any CV — skip relationship check
     } else {
-      const { data: company } = await adminClient
-        .from("companies")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!company) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-
-      // Find the seeker with this CV
-      const { data: profile } = await adminClient
-        .from("seeker_profiles")
-        .select("id")
-        .eq("cv_url", path)
-        .maybeSingle();
-
-      if (!profile) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
-
-      // Verify this seeker applied to one of the employer's jobs
-      const { data: hasApp } = await adminClient
-        .from("applications")
-        .select("id, job_listings!inner(company_id)")
-        .eq("seeker_id", profile.id)
-        .eq("job_listings.company_id", company.id)
+      // Verify this employer is a participant in a conversation containing this attachment
+      const { data: hasMessage } = await adminClient
+        .from("messages")
+        .select("id, conversation:conversations!inner(id, conversation_participants!inner(user_id))")
+        .eq("attachment_url", path)
+        .eq("conversation.conversation_participants.user_id", user.id)
         .limit(1)
         .maybeSingle();
 
-      if (!hasApp) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (!hasMessage) {
+        // Fallback: check via seeker profile + application relationship
+        const { data: company } = await adminClient
+          .from("companies")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!company) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const { data: profile } = await adminClient
+          .from("seeker_profiles")
+          .select("id")
+          .eq("cv_url", path)
+          .maybeSingle();
+
+        if (!profile) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
+        const { data: hasApp } = await adminClient
+          .from("applications")
+          .select("id, job_listings!inner(company_id)")
+          .eq("seeker_id", profile.id)
+          .eq("job_listings.company_id", company.id)
+          .limit(1)
+          .maybeSingle();
+
+        if (!hasApp) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
       }
     }
   }
