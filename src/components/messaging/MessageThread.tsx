@@ -94,8 +94,6 @@ function AttachmentCard({
   return (
     <a
       href={`/api/cv-download-attachment?path=${encodeURIComponent(url)}`}
-      target="_blank"
-      rel="noopener noreferrer"
       className={`mt-2 flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-all hover:shadow-sm ${
         isMine
           ? "border-white/20 bg-white/10 hover:bg-white/20"
