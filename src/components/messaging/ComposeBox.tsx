@@ -30,8 +30,7 @@ export default function ComposeBox({
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus({ preventScroll: true });
-          textareaRef.current.style.height = "auto";
-          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px";
+          resizeTextarea();
         }
       }, 0);
     }
@@ -64,12 +63,36 @@ export default function ComposeBox({
     }
   }
 
-  function handleInput() {
+  function resizeTextarea() {
     const el = textareaRef.current;
     if (el) {
       el.style.height = "auto";
       el.style.height = Math.min(el.scrollHeight, 120) + "px";
     }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const pasted = e.clipboardData.getData("text");
+    if (!pasted) return;
+
+    e.preventDefault();
+    const el = e.currentTarget;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const current = body;
+    const next = current.slice(0, start) + pasted + current.slice(end);
+    const trimmed = next.slice(0, 5000);
+    setBody(trimmed);
+
+    // Restore cursor position after React re-render
+    const cursorPos = start + pasted.length;
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = cursorPos;
+        textareaRef.current.selectionEnd = cursorPos;
+        resizeTextarea();
+      }
+    });
   }
 
   const hasText = body.trim().length > 0;
@@ -100,7 +123,8 @@ export default function ComposeBox({
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
-        onInput={handleInput}
+        onPaste={handlePaste}
+        onInput={resizeTextarea}
         placeholder="Write a message..."
         disabled={disabled || sending}
         rows={1}

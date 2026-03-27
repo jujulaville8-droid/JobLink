@@ -113,7 +113,7 @@ export async function PATCH(
           .single();
 
         if (seekerUser?.email) {
-          const company = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
+          const companyInfo = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
           const statusLabels: Record<string, string> = {
             interview: 'Interview',
             rejected: 'Not Selected',
@@ -125,7 +125,7 @@ export async function PATCH(
             type: 'status_update',
             data: {
               job_title: listing.title,
-              company_name: company?.company_name || 'the employer',
+              company_name: companyInfo?.company_name || 'the employer',
               status: statusLabels[status] || status,
               dashboard_url: `${BASE_URL}/applications`,
             },
