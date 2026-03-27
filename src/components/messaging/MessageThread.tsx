@@ -7,7 +7,7 @@ import type { Message } from "@/lib/types";
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
-function Linkify({ children }: { children: string }) {
+function Linkify({ children, isMine }: { children: string; isMine?: boolean }) {
   const parts = children.split(URL_REGEX);
   return (
     <>
@@ -18,7 +18,11 @@ function Linkify({ children }: { children: string }) {
             href={part}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary underline underline-offset-2 hover:text-primary-dark break-all"
+            className={`underline underline-offset-2 break-all ${
+              isMine
+                ? "text-white/90 hover:text-white"
+                : "text-primary hover:text-primary-dark"
+            }`}
           >
             {part}
           </a>
@@ -244,7 +248,7 @@ function MessageBubble({
           }}
           className={`max-w-[85%] sm:max-w-[70%] px-3.5 py-2.5 sm:px-3 sm:py-2 text-[15px] sm:text-[13px] leading-[1.5] ${bubbleRadius} ${bubbleColor}`}
         >
-          <p className="whitespace-pre-wrap break-words"><Linkify>{msg.body}</Linkify></p>
+          <p className="whitespace-pre-wrap break-words"><Linkify isMine={isMine}>{msg.body}</Linkify></p>
           {hasAttachment && <AttachmentCard url={msg.attachment_url!} name={msg.attachment_name} isMine={isMine} />}
           {msg._optimistic && !msg._failed && (
             <motion.p
