@@ -270,6 +270,8 @@ export default async function JobDetailPage({ params }: PageProps) {
         addressCountry: "AG",
       },
     },
+    ...(job.expires_at ? { validThrough: new Date(job.expires_at).toISOString() } : {}),
+    directApply: true,
     ...(job.salary_visible && (job.salary_min || job.salary_max)
       ? {
           baseSalary: {
