@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
+import AlertToggle from "@/components/AlertToggle";
 
 const JOBS_PER_PAGE = 12;
 
@@ -166,10 +167,18 @@ export default async function JobResults({
 
   return (
     <div className="animate-fade-up">
-      <p className="mb-4 text-sm text-text-light">
-        <span className="font-semibold text-text">{totalCount}</span>{" "}
-        {totalCount === 1 ? "job" : "jobs"} found
-      </p>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <p className="text-sm text-text-light">
+          <span className="font-semibold text-text">{totalCount}</span>{" "}
+          {totalCount === 1 ? "job" : "jobs"} found
+        </p>
+        <AlertToggle
+          query={searchParams.q}
+          category={searchParams.category}
+          jobType={searchParams.job_type}
+          loggedIn={!!user}
+        />
+      </div>
       <div className={`${gridClassName} stagger-children`}>
         {mappedJobs.map((job) => (
           <JobCard key={job.id} job={job} isSaved={savedJobIds.has(job.id)} loggedIn={!!user} />
