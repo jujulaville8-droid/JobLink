@@ -48,6 +48,20 @@ export default async function AdminFeaturedPage() {
     )
   }
 
+  // Get applicant counts per job
+  const listingIds = (listings || []).map((l: { id: string }) => l.id)
+  const { data: appData } = listingIds.length > 0
+    ? await supabase
+        .from('applications')
+        .select('job_id')
+        .in('job_id', listingIds)
+    : { data: [] }
+
+  const appCounts = new Map<string, number>()
+  for (const a of appData || []) {
+    appCounts.set(a.job_id, (appCounts.get(a.job_id) || 0) + 1)
+  }
+
   const allListings = (listings || []) as ListingRow[]
   const featuredListings = allListings.filter((l) => l.is_featured)
   const regularListings = allListings.filter((l) => !l.is_featured)
@@ -76,6 +90,8 @@ export default async function AdminFeaturedPage() {
                   <p className="text-xs text-text-light mt-0.5">
                     {listing.companies?.[0]?.company_name || 'Unknown'} &middot; {listing.location} &middot;{' '}
                     {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
+                    {' '}&middot;{' '}
+                    <span className="font-medium text-primary">{appCounts.get(listing.id) || 0} applicants</span>
                   </p>
                 </div>
                 <form action={toggleFeatured}>
@@ -113,6 +129,8 @@ export default async function AdminFeaturedPage() {
                   <p className="text-xs text-text-light mt-0.5">
                     {listing.companies?.[0]?.company_name || 'Unknown'} &middot; {listing.location} &middot;{' '}
                     {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
+                    {' '}&middot;{' '}
+                    <span className="font-medium text-primary">{appCounts.get(listing.id) || 0} applicants</span>
                   </p>
                 </div>
                 <form action={toggleFeatured}>

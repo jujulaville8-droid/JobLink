@@ -144,6 +144,32 @@ export default async function AdminAnalyticsPage() {
     { name: 'Rejected', value: rejectedCount ?? 0 },
   ].filter((d) => d.value > 0)
 
+  // Top jobs by applicant count
+  const { data: topJobsRaw } = await supabase
+    .from('applications')
+    .select('job_id, job_listings(id, title, status, companies(company_name))')
+
+  const jobAppCounts = new Map<string, { title: string; company: string; status: string; count: number }>()
+  for (const app of topJobsRaw || []) {
+    const listing = Array.isArray(app.job_listings) ? app.job_listings[0] : app.job_listings
+    if (!listing) continue
+    const existing = jobAppCounts.get(app.job_id)
+    if (existing) {
+      existing.count++
+    } else {
+      const comp = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies
+      jobAppCounts.set(app.job_id, {
+        title: listing.title,
+        company: (comp as { company_name: string } | null)?.company_name || 'Unknown',
+        status: listing.status,
+        count: 1,
+      })
+    }
+  }
+  const topJobs = Array.from(jobAppCounts.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10)
+
   const totals = {
     totalUsers: totalUsers ?? 0,
     totalSeekers: totalSeekers ?? 0,
@@ -174,6 +200,50 @@ export default async function AdminAnalyticsPage() {
         applicationStatusData={applicationStatusData}
         totals={totals}
       />
+
+      {/* Top Jobs by Applicants */}
+      {topJobs.length > 0 && (
+        <div className="mt-10">
+          <h2 className="text-lg font-bold font-display text-text mb-4">Top Jobs by Applicants</h2>
+          <div className="rounded-xl border border-border bg-white overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-bg-alt/50">
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-text-muted">Job</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-text-muted hidden sm:table-cell">Company</th>
+                  <th className="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider text-text-muted hidden sm:table-cell">Status</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-text-muted">Applicants</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topJobs.map((job, i) => (
+                  <tr key={i} className="border-b border-border/50 last:border-0">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-text truncate max-w-[200px] sm:max-w-none">{job.title}</p>
+                      <p className="text-xs text-text-muted sm:hidden">{job.company}</p>
+                    </td>
+                    <td className="px-4 py-3 text-text-light hidden sm:table-cell">{job.company}</td>
+                    <td className="px-4 py-3 text-center hidden sm:table-cell">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        job.status === 'active' ? 'bg-emerald-50 text-emerald-700' :
+                        job.status === 'pending_approval' ? 'bg-amber-50 text-amber-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {job.status === 'active' ? 'Active' : job.status === 'pending_approval' ? 'Pending' : 'Closed'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="inline-flex items-center justify-center min-w-[2rem] rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-bold text-primary">
+                        {job.count}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* CV Builder Analytics */}
       <div className="mt-10">
