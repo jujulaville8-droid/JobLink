@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
 import { BASE_URL } from '@/lib/email'
 import { buildEmailHtml } from '@/lib/email-templates'
+import { processJobAlerts } from '@/lib/job-alert-matcher'
 
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
@@ -227,6 +228,11 @@ export async function POST(req: NextRequest) {
 
   // Send notifications and wait for completion
   await notifyJobSeekers(listing.id)
+
+  // Send targeted alert emails to seekers with matching alerts
+  processJobAlerts(listing.id).catch((err) =>
+    console.error('[POST /admin/post-job] Alert processing failed:', err)
+  )
 
   return NextResponse.json({ success: true, listingId: listing.id, companyId: resolvedCompanyId })
 }

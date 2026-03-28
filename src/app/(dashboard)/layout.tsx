@@ -13,6 +13,7 @@ const seekerLinks = [
   { href: "/applications", label: "My Applications", icon: "file-text" },
   { href: "/messages", label: "Messages", icon: "mail" },
   { href: "/saved", label: "Saved Jobs", icon: "bookmark" },
+  { href: "/alerts", label: "Job Alerts", icon: "bell" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ];
 

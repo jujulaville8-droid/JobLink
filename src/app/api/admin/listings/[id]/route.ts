@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
+import { processJobAlerts } from '@/lib/job-alert-matcher'
 
 export async function PATCH(
   request: NextRequest,
@@ -114,6 +115,13 @@ export async function PATCH(
           }
         }
       }
+    }
+
+    // Send job alert emails to seekers with matching alerts
+    if (currentListing?.status === 'pending_approval' && status === 'active') {
+      processJobAlerts(id).catch((err) =>
+        console.error('[PATCH /admin/listings] Alert processing failed:', err)
+      )
     }
 
     return NextResponse.json({ listing: updatedListing })
