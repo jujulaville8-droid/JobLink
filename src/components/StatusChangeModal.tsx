@@ -142,7 +142,7 @@ export default function StatusChangeModal({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to update status");
+        setError(data.detail ? `${data.error}: ${data.detail}` : (data.error || "Failed to update status"));
         setLoading(false);
         return;
       }
