@@ -127,6 +127,14 @@ export default async function JobResults({
         <p className="mt-1 text-sm text-text-light">
           Try adjusting your filters or search terms to find more opportunities.
         </p>
+        <div className="mt-4">
+          <AlertToggle
+            query={searchParams.q}
+            category={searchParams.category}
+            jobType={searchParams.job_type}
+            loggedIn={!!user}
+          />
+        </div>
       </div>
     );
   }
