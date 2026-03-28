@@ -17,6 +17,14 @@ export const metadata = {
   description:
     "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type. Apply in minutes on JobLinks.",
   alternates: { canonical: "https://joblinkantigua.com/jobs" },
+  openGraph: {
+    title: "Browse Jobs in Antigua and Barbuda | JobLinks",
+    description:
+      "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type.",
+    url: "https://joblinkantigua.com/jobs",
+    siteName: "JobLinks",
+    images: [{ url: "/images/colorful-buildings.jpg", width: 1200, height: 630, alt: "JobLinks — Browse Jobs" }],
+  },
 };
 
 export default async function JobsPage({ searchParams }: PageProps) {

@@ -4,6 +4,13 @@ export const metadata = {
   title: 'About JobLinks — Antigua\'s Job Platform',
   description: 'JobLinks is Antigua and Barbuda\'s first dedicated job platform. Learn how we connect job seekers with employers across every industry on the island.',
   alternates: { canonical: 'https://joblinkantigua.com/about' },
+  openGraph: {
+    title: 'About JobLinks — Antigua\'s Job Platform',
+    description: 'JobLinks is Antigua and Barbuda\'s first dedicated job platform. Learn how we connect job seekers with employers across every industry on the island.',
+    url: 'https://joblinkantigua.com/about',
+    siteName: 'JobLinks',
+    images: [{ url: '/images/colorful-buildings.jpg', width: 1200, height: 630, alt: 'About JobLinks' }],
+  },
 }
 
 export default function AboutPage() {

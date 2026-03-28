@@ -334,7 +334,7 @@ export default async function Home() {
               <video
                 className="w-full h-full object-cover"
                 controls
-                preload="auto"
+                preload="none"
                 poster=""
                 playsInline
               >

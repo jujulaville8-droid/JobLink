@@ -2,6 +2,12 @@ export const metadata = {
   title: 'Terms of Service',
   description: 'JobLinks terms of service. Rules and guidelines for using our platform.',
   alternates: { canonical: 'https://joblinkantigua.com/terms' },
+  openGraph: {
+    title: 'Terms of Service | JobLinks',
+    description: 'JobLinks terms of service. Rules and guidelines for using our platform.',
+    url: 'https://joblinkantigua.com/terms',
+    siteName: 'JobLinks',
+  },
 }
 
 export default function TermsPage() {

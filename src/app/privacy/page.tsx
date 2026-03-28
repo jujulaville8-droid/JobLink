@@ -2,6 +2,12 @@ export const metadata = {
   title: 'Privacy Policy',
   description: 'JobLinks privacy policy. How we collect, use, and protect your data.',
   alternates: { canonical: 'https://joblinkantigua.com/privacy' },
+  openGraph: {
+    title: 'Privacy Policy | JobLinks',
+    description: 'JobLinks privacy policy. How we collect, use, and protect your data.',
+    url: 'https://joblinkantigua.com/privacy',
+    siteName: 'JobLinks',
+  },
 }
 
 export default function PrivacyPage() {
