@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail, BASE_URL } from '@/lib/email';
 import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
 
@@ -81,8 +82,10 @@ export async function PATCH(
       );
     }
 
-    // Update the application status
-    const { error: updateError } = await supabase
+    // Update the application status (use admin client to bypass RLS,
+    // since we already verified ownership above)
+    const adminClient = createAdminClient();
+    const { error: updateError } = await adminClient
       .from('applications')
       .update({ status })
       .eq('id', id);

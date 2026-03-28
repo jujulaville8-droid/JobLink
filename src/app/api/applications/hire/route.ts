@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail, BASE_URL } from '@/lib/email'
 import { sendStatusChangeMessage } from '@/lib/messaging-system-messages'
 
@@ -51,8 +52,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Update application status to hold
-    const { error: updateError } = await supabase
+    // Update application status to hold (use admin client to bypass RLS,
+    // since we already verified ownership above)
+    const adminClient = createAdminClient()
+    const { error: updateError } = await adminClient
       .from('applications')
       .update({ status: 'hold' })
       .eq('id', application_id)
@@ -64,8 +67,6 @@ export async function POST(request: NextRequest) {
 
     // Optionally close the job listing
     if (close_job) {
-      const { createAdminClient } = await import('@/lib/supabase/admin')
-      const adminClient = createAdminClient()
       await adminClient
         .from('job_listings')
         .update({ status: 'closed' })
