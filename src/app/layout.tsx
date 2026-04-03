@@ -82,6 +82,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="impact-site-verification" content="f3103db6-1ece-4ed4-afbb-e66b3501d3d4" />
+      </head>
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased font-sans`}>
         <AuthProvider>
           <Navbar />
