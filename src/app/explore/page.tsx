@@ -60,7 +60,7 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen bg-bg-alt">
       {/* Header */}
-      <section className="bg-gradient-to-br from-[#095355] to-[#0d7377] text-white py-12 md:py-16">
+      <section className="bg-gradient-to-br from-primary-dark to-primary text-white py-12 md:py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 mb-4">
             <Compass className="h-6 w-6" />

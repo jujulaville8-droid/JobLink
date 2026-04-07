@@ -367,7 +367,7 @@ export default function CvBuilderPage() {
         {/* Smart Resume CTA */}
         {!smartPurchased && !smartPreview && !showIntake && (
           <div className="mt-8 max-w-lg mx-auto">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#095355] via-[#0d7377] to-[#14919b] p-6 sm:p-8 text-white">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-dark via-primary to-primary-light p-6 sm:p-8 text-white">
               <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-3">
@@ -455,7 +455,7 @@ export default function CvBuilderPage() {
     <div className="pb-24">
       {/* Smart Resume banner for existing CV users */}
       {!smartPurchased && !smartPreview && !showIntake && (
-        <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#095355] to-[#14919b] p-4 flex items-center justify-between gap-4">
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-primary-dark to-primary-light p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-9 w-9 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
               <svg className="h-4 w-4 text-accent-warm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1297,7 +1297,7 @@ function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
       {/* Top — teal gradient header */}
-      <div className="bg-gradient-to-br from-[#095355] via-[#0d7377] to-[#14919b] p-5 text-white">
+      <div className="bg-gradient-to-br from-primary-dark via-primary to-primary-light p-5 text-white">
         <div className="flex items-center gap-2 mb-3">
           <svg className="h-4 w-4 text-accent-warm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />

@@ -78,7 +78,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
                   </div>
 
                   <Link href={`/jobs/${job.id}`} className="block">
-                    <h3 className="pr-8 font-semibold text-text hover:text-[#0d7377]">
+                    <h3 className="pr-8 font-semibold text-text hover:text-primary">
                       {job.title as string}
                     </h3>
                     <p className="mt-1 text-sm text-text-light">

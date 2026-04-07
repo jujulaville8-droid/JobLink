@@ -14,14 +14,14 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-white py-16 px-4">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold font-display text-[#0d7377] mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold font-display text-primary mb-2">
           Terms of Service
         </h1>
         <p className="text-text-light mb-10">Last updated: March 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               1. Acceptance of Terms
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -30,7 +30,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               2. User Accounts
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -39,7 +39,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               3. Job Seekers
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -48,7 +48,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               4. Employers
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -57,7 +57,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               5. Content Guidelines
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -66,18 +66,18 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               6. Privacy
             </h2>
             <p className="text-text-light leading-relaxed">
               Your use of the Platform is also governed by our{' '}
-              <a href="/privacy" className="text-[#0d7377] underline hover:text-[#095355]">Privacy Policy</a>.
+              <a href="/privacy" className="text-primary underline hover:text-primary-dark">Privacy Policy</a>.
               By using the Platform, you consent to the collection and use of your data as described therein.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               7. Intellectual Property
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -86,7 +86,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               8. Limitation of Liability
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -95,7 +95,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               9. Account Termination
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -104,7 +104,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               10. Changes to Terms
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -113,12 +113,12 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               11. Contact
             </h2>
             <p className="text-text-light leading-relaxed">
               For questions about these terms, contact us at{' '}
-              <a href="mailto:support@joblinkantigua.com" className="text-[#0d7377] underline hover:text-[#095355]">
+              <a href="mailto:support@joblinkantigua.com" className="text-primary underline hover:text-primary-dark">
                 support@joblinkantigua.com
               </a>.
             </p>

@@ -81,7 +81,7 @@ export default function UpgradePage() {
     <div className="min-h-screen bg-gradient-to-b from-white to-[#e8f5f5]">
 
       {/* ─── Hero ─── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#095355] via-[#0d7377] to-[#14919b]">
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-dark via-primary to-primary-light">
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20 text-center">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">

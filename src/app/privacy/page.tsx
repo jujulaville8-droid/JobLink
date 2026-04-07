@@ -14,14 +14,14 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white py-16 px-4">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl md:text-4xl font-bold font-display text-[#0d7377] mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold font-display text-primary mb-2">
           Privacy Policy
         </h1>
         <p className="text-text-light mb-10">Last updated: March 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               1. Information We Collect
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               2. How We Use Your Information
             </h2>
             <ul className="list-disc pl-5 text-text-light space-y-2">
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               3. Profile Visibility
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -64,7 +64,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               4. Data Storage and Security
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -77,7 +77,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               5. Data Sharing
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               6. Cookies
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -100,7 +100,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               7. Your Rights
             </h2>
             <ul className="list-disc pl-5 text-text-light space-y-2">
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-[#0d7377] mb-3">
+            <h2 className="text-xl font-semibold text-primary mb-3">
               8. Contact Us
             </h2>
             <p className="text-text-light leading-relaxed">
@@ -121,7 +121,7 @@ export default function PrivacyPage() {
               contact us at{' '}
               <a
                 href="mailto:hello@joblinkantigua.com"
-                className="text-[#14919b] hover:underline"
+                className="text-primary-light hover:underline"
               >
                 hello@joblinkantigua.com
               </a>

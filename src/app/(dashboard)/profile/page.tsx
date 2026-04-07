@@ -194,7 +194,7 @@ function ProfileAvatar({
           className={`${sizeClasses} rounded-full object-cover border-2 border-border`}
         />
       ) : (
-        <div className={`flex items-center justify-center rounded-full bg-[#0d7377] font-bold text-white ${sizeClasses}`}>
+        <div className={`flex items-center justify-center rounded-full bg-primary font-bold text-white ${sizeClasses}`}>
           {initials}
         </div>
       )}
@@ -424,7 +424,7 @@ function ProfileView({
               />
               <button
                 onClick={() => onEdit(1)}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#0d7377] hover:text-[#095355] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark transition-colors"
               >
                 <IconPen className="h-3.5 w-3.5" />
                 Edit
@@ -441,13 +441,13 @@ function ProfileView({
           <div className="border-t border-border px-6 py-3 bg-bg-alt/50">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-text-light">Profile {percentage}% complete</span>
-              <button onClick={() => onEdit(1)} className="font-medium text-[#14919b] hover:underline">
+              <button onClick={() => onEdit(1)} className="font-medium text-primary-light hover:underline">
                 Complete profile
               </button>
             </div>
             <div className="mt-1.5 h-1.5 w-full rounded-full bg-border">
               <div
-                className="h-1.5 rounded-full bg-[#0d7377] transition-all duration-500"
+                className="h-1.5 rounded-full bg-primary transition-all duration-500"
                 style={{ width: `${percentage}%` }}
               />
             </div>
@@ -501,23 +501,23 @@ function ProfileView({
                   disabled={statusSaving}
                   className={`w-full flex items-start gap-3 rounded-lg border p-4 text-left transition-colors ${
                     isSelected
-                      ? "border-[#0d7377] bg-[#0d7377]/5"
+                      ? "border-primary bg-primary/5"
                       : "border-border hover:border-border hover:bg-bg-alt"
                   } ${statusSaving ? "opacity-60 cursor-not-allowed" : ""}`}
                 >
                   <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                    isSelected ? "border-[#0d7377]" : "border-border"
+                    isSelected ? "border-primary" : "border-border"
                   }`}>
-                    {isSelected && <div className="h-2 w-2 rounded-full bg-[#0d7377]" />}
+                    {isSelected && <div className="h-2 w-2 rounded-full bg-primary" />}
                   </div>
                   <div>
-                    <p className={`text-sm font-medium ${isSelected ? "text-[#0d7377]" : "text-text"}`}>
+                    <p className={`text-sm font-medium ${isSelected ? "text-primary" : "text-text"}`}>
                       {opt.label}
                     </p>
                     <p className="text-xs text-text-light mt-0.5">{opt.description}</p>
                   </div>
                   {isSelected && statusSaving && (
-                    <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
+                    <div className="ml-auto h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                   )}
                 </button>
               );
@@ -533,7 +533,7 @@ function ProfileView({
       <div className="mt-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Resume</h2>
-          <button onClick={() => onEdit(3)} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(3)} className="text-sm font-medium text-primary hover:underline">
             {profile.cv_url ? "Update" : "Upload"}
           </button>
         </div>
@@ -547,9 +547,9 @@ function ProfileView({
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-50">
                 {resumeLoading ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                 ) : (
-                  <IconFile className="h-6 w-6 text-[#0d7377]" />
+                  <IconFile className="h-6 w-6 text-primary" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -627,7 +627,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Qualifications</h2>
-          <button onClick={() => onEdit(2)} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(2)} className="text-sm font-medium text-primary hover:underline">
             Edit
           </button>
         </div>
@@ -679,7 +679,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">About</h2>
-          <button onClick={() => onEdit(1)} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(1)} className="text-sm font-medium text-primary hover:underline">
             Edit
           </button>
         </div>
@@ -696,7 +696,7 @@ function ProfileView({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold font-display text-text">Contact Information</h2>
-          <button onClick={() => onEdit(1)} className="text-sm font-medium text-[#0d7377] hover:underline">
+          <button onClick={() => onEdit(1)} className="text-sm font-medium text-primary hover:underline">
             Edit
           </button>
         </div>
@@ -922,11 +922,11 @@ function ProfileEditForm({
       <div className="mt-5 rounded-lg border border-border bg-white p-4">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium text-text-light">Profile Completion</span>
-          <span className={`font-semibold ${completePct === 100 ? "text-green-600" : "text-[#0d7377]"}`}>{completePct}%</span>
+          <span className={`font-semibold ${completePct === 100 ? "text-green-600" : "text-primary"}`}>{completePct}%</span>
         </div>
         <div className="mt-2 h-2 w-full rounded-full bg-bg-alt">
           <div
-            className={`h-2 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-[#0d7377]"}`}
+            className={`h-2 rounded-full transition-all duration-500 ${completePct === 100 ? "bg-green-500" : "bg-primary"}`}
             style={{ width: `${completePct}%` }}
           />
         </div>
@@ -945,7 +945,7 @@ function ProfileEditForm({
             onClick={() => setStep(s)}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
               s === step
-                ? "bg-[#0d7377] text-white"
+                ? "bg-primary text-white"
                 : s < step
                   ? "bg-green-100 text-green-700"
                   : "bg-bg-alt text-text-muted"
@@ -1027,7 +1027,7 @@ function ProfileEditForm({
                   type="text"
                   value={profile.first_name}
                   onChange={(e) => setProfile((p) => ({ ...p, first_name: e.target.value }))}
-                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="John"
                 />
               </div>
@@ -1037,7 +1037,7 @@ function ProfileEditForm({
                   type="text"
                   value={profile.last_name}
                   onChange={(e) => setProfile((p) => ({ ...p, last_name: e.target.value }))}
-                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Doe"
                 />
               </div>
@@ -1050,7 +1050,7 @@ function ProfileEditForm({
                   type="tel"
                   value={profile.phone}
                   onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="+1 (268) 555-0123"
                 />
               </div>
@@ -1060,7 +1060,7 @@ function ProfileEditForm({
                   type="text"
                   value={profile.location}
                   onChange={(e) => setProfile((p) => ({ ...p, location: e.target.value }))}
-                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="St. John's, Antigua"
                 />
               </div>
@@ -1072,7 +1072,7 @@ function ProfileEditForm({
                 value={profile.bio}
                 onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
                 rows={4}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377] resize-none"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                 placeholder="Tell employers a bit about yourself..."
               />
             </div>
@@ -1092,13 +1092,13 @@ function ProfileEditForm({
                   value={skillInput}
                   onChange={(e) => setSkillInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
-                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder="Type a skill and press Enter"
                 />
                 <button
                   type="button"
                   onClick={addSkill}
-                  className="rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#095355] transition-all duration-200"
+                  className="rounded-[10px] bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark transition-all duration-200"
                 >
                   Add
                 </button>
@@ -1127,7 +1127,7 @@ function ProfileEditForm({
                 max="50"
                 value={profile.experience_years ?? ""}
                 onChange={(e) => setProfile((p) => ({ ...p, experience_years: e.target.value ? parseInt(e.target.value) : null }))}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="e.g. 5"
               />
             </div>
@@ -1138,7 +1138,7 @@ function ProfileEditForm({
                 type="text"
                 value={profile.education}
                 onChange={(e) => setProfile((p) => ({ ...p, education: e.target.value }))}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 placeholder="e.g. BSc in Computer Science, UWI"
               />
             </div>
@@ -1155,9 +1155,9 @@ function ProfileEditForm({
               <div className="flex items-center gap-3 rounded-lg border border-border p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
                   {resumePreviewLoading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#0d7377]/30 border-t-[#0d7377]" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                   ) : (
-                    <IconFile className="h-5 w-5 text-[#0d7377]" />
+                    <IconFile className="h-5 w-5 text-primary" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -1165,7 +1165,7 @@ function ProfileEditForm({
                   <button
                     onClick={handleResumePreviewInForm}
                     disabled={resumePreviewLoading}
-                    className="text-xs text-[#0d7377] hover:underline truncate block"
+                    className="text-xs text-primary hover:underline truncate block"
                   >
                     {resumePreviewLoading ? "Opening…" : "View current CV"}
                   </button>
@@ -1177,9 +1177,9 @@ function ProfileEditForm({
             )}
 
             <label className="block cursor-pointer">
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 hover:border-[#0d7377] hover:bg-bg-alt/50 transition-colors">
+              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 hover:border-primary hover:bg-bg-alt/50 transition-colors">
                 {uploading ? (
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-[#0d7377]" />
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
                 ) : (
                   <>
                     <IconUpload className="h-8 w-8 text-text-muted" />
@@ -1213,7 +1213,7 @@ function ProfileEditForm({
                   key={opt.value}
                   className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
                     profile.visibility === opt.value
-                      ? "border-[#0d7377] bg-blue-50/50"
+                      ? "border-primary bg-blue-50/50"
                       : "border-border hover:border-border"
                   }`}
                 >
@@ -1223,7 +1223,7 @@ function ProfileEditForm({
                     value={opt.value}
                     checked={profile.visibility === opt.value}
                     onChange={() => setProfile((p) => ({ ...p, visibility: opt.value }))}
-                    className="mt-0.5 h-4 w-4 accent-[#0d7377]"
+                    className="mt-0.5 h-4 w-4 accent-primary"
                   />
                   <div>
                     <p className="text-sm font-medium text-text">{opt.label}</p>
@@ -1251,7 +1251,7 @@ function ProfileEditForm({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+              className="rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
             >
               {saving ? "Saving..." : "Save"}
             </button>
@@ -1260,7 +1260,7 @@ function ProfileEditForm({
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(4, s + 1))}
-                className="rounded-[10px] bg-[#14919b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#0d7377] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+                className="rounded-[10px] bg-primary-light px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
               >
                 Next
               </button>
@@ -1367,7 +1367,7 @@ export default function ProfilePage() {
   if (authLoading || loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-[#0d7377]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     );
   }
@@ -1380,7 +1380,7 @@ export default function ProfilePage() {
         </div>
         <button
           onClick={() => window.location.reload()}
-          className="mt-4 rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+          className="mt-4 rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
         >
           Retry
         </button>

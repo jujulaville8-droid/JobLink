@@ -548,7 +548,7 @@ export default async function Home() {
               fill
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#062829]/95 via-[#0d7377]/90 to-[#14919b]/80" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#062829]/95 via-primary/90 to-primary-light/80" />
             <div className="relative px-8 sm:px-14 py-14 sm:py-20 max-w-xl">
               <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-3">
                 For Employers

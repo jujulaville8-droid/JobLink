@@ -251,7 +251,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-[#0d7377]" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     );
   }
@@ -321,7 +321,7 @@ export default function SettingsPage() {
                     [pref.key]: e.target.checked,
                   }))
                 }
-                className="mt-0.5 h-4 w-4 rounded accent-[#0d7377]"
+                className="mt-0.5 h-4 w-4 rounded accent-primary"
               />
               <div>
                 <p className="text-sm font-medium text-text">{pref.label}</p>
@@ -358,7 +358,7 @@ export default function SettingsPage() {
                   value={opt.value}
                   checked={visibility === opt.value}
                   onChange={() => handleVisibilityChange(opt.value)}
-                  className="mt-0.5 h-4 w-4 accent-[#0d7377]"
+                  className="mt-0.5 h-4 w-4 accent-primary"
                 />
                 <div>
                   <p className="text-sm font-medium text-text">{opt.label}</p>
@@ -428,7 +428,7 @@ export default function SettingsPage() {
                   setSavingMsgSettings(false);
                 }}
                 disabled={savingMsgSettings}
-                className="mt-0.5 h-4 w-4 rounded accent-[#0d7377]"
+                className="mt-0.5 h-4 w-4 rounded accent-primary"
               />
               <div>
                 <p className="text-sm font-medium text-text">{pref.label}</p>
@@ -457,7 +457,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setPasswords((p) => ({ ...p, current: e.target.value }))
               }
-              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <div>
@@ -470,7 +470,7 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setPasswords((p) => ({ ...p, new: e.target.value }))
               }
-              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               placeholder="Min. 8 characters"
             />
           </div>
@@ -484,14 +484,14 @@ export default function SettingsPage() {
               onChange={(e) =>
                 setPasswords((p) => ({ ...p, confirm: e.target.value }))
               }
-              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-[#0d7377] focus:outline-none focus:ring-1 focus:ring-[#0d7377]"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <button
             type="button"
             onClick={handleChangePassword}
             disabled={changingPassword || !passwords.new || !passwords.confirm}
-            className="rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+            className="rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
           >
             {changingPassword ? "Updating..." : "Update Password"}
           </button>

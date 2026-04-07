@@ -177,7 +177,7 @@ export default function AlertsPage() {
         {!showForm && (
           <button
             onClick={() => { resetForm(); setShowForm(true); }}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -211,7 +211,7 @@ export default function AlertsPage() {
                   onChange={(e) => setKeywordInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="e.g. marketing, chef, IT support"
-                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
+                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary outline-none"
                 />
                 <button
                   type="button"
@@ -251,7 +251,7 @@ export default function AlertsPage() {
               <select
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-primary focus:ring-1 focus:ring-primary outline-none"
               >
                 <option value="">Any industry</option>
                 {INDUSTRIES.map((ind) => (
@@ -268,7 +268,7 @@ export default function AlertsPage() {
               <select
                 value={jobType}
                 onChange={(e) => setJobType(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-[#0d7377] focus:ring-1 focus:ring-[#0d7377] outline-none"
+                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-primary focus:ring-1 focus:ring-primary outline-none"
               >
                 <option value="">Any type</option>
                 {JOB_TYPES.map((jt) => (
@@ -285,7 +285,7 @@ export default function AlertsPage() {
               <button
                 onClick={handleCreate}
                 disabled={saving}
-                className="rounded-[10px] bg-[#0d7377] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+                className="rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
               >
                 {saving ? "Creating..." : "Create Alert"}
               </button>
@@ -313,7 +313,7 @@ export default function AlertsPage() {
           {!showForm && (
             <button
               onClick={() => { resetForm(); setShowForm(true); }}
-              className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-[#0d7377] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#095355] transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-[#0d7377]/20"
+              className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
             >
               Create your first alert
             </button>
@@ -326,8 +326,8 @@ export default function AlertsPage() {
               key={alert.id}
               className="flex items-start gap-4 rounded-lg border border-border bg-white p-4"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0d7377]/10 flex-shrink-0">
-                <svg className="h-5 w-5 text-[#0d7377]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
+                <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
               </div>
