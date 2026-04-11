@@ -8,7 +8,19 @@ import SendEmailButton from './SendEmailButton'
 const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
 const SIGNUP_URL = 'https://joblinkantigua.com/signup?role=employer'
 
-function buildEmail1Html(): string {
+function escHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function buildEmail1Html(roleHiringFor: string | null): string {
+  const roleLine = roleHiringFor
+    ? `<p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">I saw you're currently hiring for a <strong>${escHtml(roleHiringFor)}</strong>, which is actually what made me want to reach out personally.</p>`
+    : ''
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -24,6 +36,8 @@ function buildEmail1Html(): string {
       <p style="color: #374151; line-height: 1.6; font-size: 15px;">Hi there,</p>
 
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">I'm Julian, founder of <strong>JobLinks</strong>, a new job platform built for Antigua and Barbuda.</p>
+
+      ${roleLine}
 
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">I built JobLinks because people here have been sending CVs through WhatsApp, Facebook groups, and outdated platforms for too long, hoping someone would see them. We deserved better.</p>
 
@@ -167,7 +181,7 @@ async function sendEmail1ToBusiness(formData: FormData) {
     from: FROM_ADDRESS,
     to: normalizedEmail,
     subject,
-    html: buildEmail1Html(),
+    html: buildEmail1Html(biz.role_hiring_for),
     replyTo: 'hello@joblinkantigua.com',
   })
 
