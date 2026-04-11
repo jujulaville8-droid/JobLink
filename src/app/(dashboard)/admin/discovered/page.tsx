@@ -39,7 +39,7 @@ function buildEmail1Html(roleHiringFor: string | null): string {
 
       ${roleLine}
 
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">I built JobLinks because people here have been sending CVs through WhatsApp, Facebook groups, and outdated platforms for too long, hoping someone would see them. We deserved better.</p>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">Hiring in Antigua takes way more time than it should. I built JobLinks so employers don't have to waste days sifting through random CVs and unqualified applicants. Post a job once and get proper applications from people who actually built a profile and uploaded their CV.</p>
 
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">It's <strong>completely free</strong> for employers. Create a profile, post jobs, get notified when people apply, and manage everything from one dashboard. No credit card, nothing to pay.</p>
 
