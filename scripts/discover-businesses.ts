@@ -251,11 +251,15 @@ function runClaudeHeadless(prompt: string): Promise<string> {
       `[discover] Spawning claude -p (prompt: ${prompt.length} chars, ~${Math.round(prompt.length / 4)} tokens)...`
     );
 
-    // Pass the prompt via stdin to avoid ARG_MAX / shell escaping issues
+    // Pass the prompt via stdin to avoid ARG_MAX / shell escaping issues.
+    // Uses Sonnet to keep Max quota consumption lower — this task is
+    // search + structured extraction, which Sonnet handles just as well.
     const proc = spawn(
       "claude",
       [
         "-p",
+        "--model",
+        "sonnet",
         "--max-turns",
         "100",
         "--allowed-tools",
