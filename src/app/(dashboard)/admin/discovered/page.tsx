@@ -1,7 +1,58 @@
 import { revalidatePath } from 'next/cache'
+import { Resend } from 'resend'
 import { requireRole } from '@/lib/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import RunDiscoveryButton from './RunDiscoveryButton'
+import SendEmailButton from './SendEmailButton'
+
+const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
+const SIGNUP_URL = 'https://joblinkantigua.com/signup?role=employer'
+const CALENDLY_URL = 'https://calendly.com/joblink-anu/ecom'
+
+function buildEmail1Html(companyName: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #ffffff; margin: 0; padding: 0;">
+  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; overflow: hidden;">
+    <div style="background-color: #0d7377; padding: 24px; text-align: center;">
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLinks</h1>
+    </div>
+    <div style="padding: 32px 24px;">
+      <p style="color: #374151; line-height: 1.6; font-size: 15px;">Hi there,</p>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">I'm reaching out to local businesses in Antigua and <strong>${companyName}</strong> stood out as a business we'd love to have on our platform.</p>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">We just launched <strong style="color: #0d7377;">JobLinks</strong> &mdash; Antigua &amp; Barbuda's own job platform, built specifically for local businesses like yours. Whether you're hiring now or might need someone down the road, your free employer profile puts you in front of hundreds of active job seekers across the island.</p>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">Here's what you get <strong>for free</strong>:</p>
+      <div style="background-color: #f0fafa; border-radius: 10px; padding: 20px; margin: 16px 0;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">A company profile page with your logo, description, and location</td></tr>
+          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">Post a job listing whenever you need staff &mdash; reaches job seekers island-wide</td></tr>
+          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">Instant notifications when someone applies</td></tr>
+          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">A dashboard to review applicants, shortlist, and manage everything in one place</td></tr>
+        </table>
+      </div>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">It takes about 2 minutes to set up. No credit card, no commitment &mdash; and it's there for you whenever you need it.</p>
+      <p style="text-align: center; margin-top: 28px;">
+        <a href="${SIGNUP_URL}" style="background-color: #0d7377; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; font-size: 15px;">Create Your Free Employer Account</a>
+      </p>
+      <div style="background-color: #f9fafb; border-radius: 10px; padding: 16px 20px; margin: 24px 0; text-align: center;">
+        <p style="color: #374151; font-size: 14px; margin: 0 0 8px 0;"><strong>Want a quick walkthrough?</strong> Book a free 15-minute demo and we'll show you around.</p>
+        <a href="${CALENDLY_URL}" style="color: #0d7377; font-size: 14px; text-decoration: none; font-weight: 600;">Book a Demo Call &rarr;</a>
+      </div>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">If you have any questions, just reply to this email &mdash; I'm happy to help you get set up.</p>
+      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 24px;">Wishing you all the best,<br><strong>Julian</strong><br><span style="color: #6b7280; font-size: 14px;">JobLinks Antigua</span></p>
+    </div>
+    <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+      <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
+      <p style="color: #9ca3af; font-size: 11px; margin-top: 4px;">Don't want emails from us? <a href="#" style="color: #9ca3af;">Unsubscribe</a></p>
+    </div>
+  </div>
+</body>
+</html>`
+}
 
 interface DiscoveredBusiness {
   id: string
@@ -58,6 +109,86 @@ async function resetBusiness(formData: FormData) {
     .from('discovered_businesses')
     .update({ status: 'pending_review', reviewed_at: null })
     .eq('id', id)
+  revalidatePath('/admin/discovered')
+}
+
+async function sendEmail1ToBusiness(formData: FormData) {
+  'use server'
+  await requireRole('admin')
+  const admin = createAdminClient()
+  const id = formData.get('id') as string
+
+  // Load the row
+  const { data: biz } = await admin
+    .from('discovered_businesses')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (!biz) return
+  if (!biz.email) return
+  if (biz.status !== 'approved') return
+
+  const normalizedEmail = biz.email.toLowerCase().trim()
+
+  // Dedup check — 30 day window
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const { data: existing } = await admin
+    .from('outreach_log')
+    .select('id')
+    .eq('email', normalizedEmail)
+    .gte('contacted_at', thirtyDaysAgo.toISOString())
+    .maybeSingle()
+
+  if (existing) {
+    // Already contacted recently — mark sent anyway to clear the queue
+    await admin
+      .from('discovered_businesses')
+      .update({ status: 'sent', sent_at: new Date().toISOString() })
+      .eq('id', id)
+    revalidatePath('/admin/discovered')
+    return
+  }
+
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.error('[send-email-1] RESEND_API_KEY not set')
+    return
+  }
+
+  const resend = new Resend(apiKey)
+  const companyName = biz.company_name
+  const subject = `${companyName}, something new for Antigua businesses`
+
+  const { error: sendError } = await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: normalizedEmail,
+    subject,
+    html: buildEmail1Html(companyName),
+    replyTo: 'hello@joblinkantigua.com',
+  })
+
+  if (sendError) {
+    console.error('[send-email-1] Resend error:', sendError.message)
+    return
+  }
+
+  // Log to outreach_log so future discovery runs exclude this contact
+  await admin.from('outreach_log').insert({
+    business_name: companyName,
+    email: normalizedEmail,
+    role_hiring_for: biz.role_hiring_for,
+    source_url: biz.source_url,
+  })
+
+  // Mark the row as sent
+  await admin
+    .from('discovered_businesses')
+    .update({ status: 'sent', sent_at: new Date().toISOString() })
+    .eq('id', id)
+
   revalidatePath('/admin/discovered')
 }
 
@@ -291,19 +422,40 @@ export default async function AdminDiscoveredPage({
                         </button>
                       </form>
                     </>
+                  ) : b.status === 'approved' ? (
+                    <>
+                      <SendEmailButton
+                        id={b.id}
+                        email={b.email}
+                        companyName={b.company_name}
+                        action={sendEmail1ToBusiness}
+                      />
+                      <form action={resetBusiness}>
+                        <input type="hidden" name="id" value={b.id} />
+                        <button
+                          type="submit"
+                          className="w-full px-3 py-1.5 bg-white border border-border text-text-light rounded-lg text-xs hover:border-primary/40 transition-colors"
+                        >
+                          Reset to Pending
+                        </button>
+                      </form>
+                    </>
                   ) : (
                     <>
                       <div
                         className={`text-center px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          b.status === 'approved'
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : b.status === 'sent'
+                          b.status === 'sent'
                             ? 'bg-blue-50 text-blue-700'
                             : 'bg-red-50 text-red-700'
                         }`}
                       >
-                        {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
+                        {b.status === 'sent' ? 'Sent' : 'Rejected'}
                       </div>
+                      {b.sent_at && (
+                        <div className="text-center text-[10px] text-text-muted">
+                          {new Date(b.sent_at).toLocaleDateString()}
+                        </div>
+                      )}
                       <form action={resetBusiness}>
                         <input type="hidden" name="id" value={b.id} />
                         <button
