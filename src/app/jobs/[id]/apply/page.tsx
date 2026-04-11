@@ -90,8 +90,6 @@ export default function ApplyPage() {
     seekerId: null,
   });
   const [coverLetter, setCoverLetter] = useState("");
-  const [smartLoading, setSmartLoading] = useState(false);
-  const [smartError, setSmartError] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
 
@@ -204,32 +202,6 @@ export default function ApplyPage() {
 
     init();
   }, [jobId]);
-
-  async function handleSmartCoverLetter() {
-    setSmartLoading(true);
-    setSmartError("");
-
-    try {
-      const res = await fetch("/api/ai/cover-letter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setSmartError(data.error || "Something went wrong. Please try again.");
-        return;
-      }
-
-      setCoverLetter(data.text);
-    } catch {
-      setSmartError("Something went wrong. Please try again.");
-    } finally {
-      setSmartLoading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -848,42 +820,7 @@ export default function ApplyPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-5 space-y-5">
-            {/* Smart Cover Letter button */}
-            <div>
-              <button
-                type="button"
-                onClick={handleSmartCoverLetter}
-                disabled={smartLoading}
-                className={cn(
-                  "group w-full flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium transition-all duration-200",
-                  smartLoading
-                    ? "border-primary/30 bg-primary/5 text-primary cursor-wait"
-                    : "border-primary/20 bg-gradient-to-r from-primary/[0.03] to-primary/[0.08] text-primary hover:border-primary/40 hover:shadow-sm hover:shadow-primary/10 hover:-translate-y-0.5 active:translate-y-0"
-                )}
-              >
-                {smartLoading ? (
-                  <>
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                    <span>Crafting your cover letter...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="h-4 w-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
-                    </svg>
-                    <span>Smart Cover Letter</span>
-                  </>
-                )}
-              </button>
-              <p className="mt-1.5 text-center text-[11px] text-text-muted">
-                Professionally crafted, tailored to this role
-              </p>
-              {smartError && (
-                <p className="mt-2 text-center text-xs text-red-500">
-                  {smartError}
-                </p>
-              )}
-            </div>
+            {/* Smart Cover Letter temporarily disabled */}
 
             {/* Cover letter textarea */}
             <div>

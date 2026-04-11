@@ -7,6 +7,15 @@ const DAILY_LIMIT = 2;
 const TIMEZONE = "America/Antigua";
 
 export async function POST(req: Request) {
+  // Temporarily disabled — Smart Cover Letter is offline
+  return NextResponse.json(
+    {
+      error:
+        "Smart Cover Letter is temporarily unavailable. We're working on bringing it back soon.",
+    },
+    { status: 503 }
+  );
+
   try {
     // Auth check
     const supabase = await createClient();
