@@ -4,17 +4,19 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 const FREE_FEATURES = [
-  { text: 'Unlimited job listings', included: true },
-  { text: 'Standard listing placement', included: true },
-  { text: 'No candidate browsing', included: false },
-  { text: 'No headhunting', included: false },
+  { text: '1 active job listing', included: true },
+  { text: 'Standard placement', included: true },
+  { text: 'Browse candidate profiles', included: true },
+  { text: 'Message candidates', included: false },
+  { text: 'Download full resumes', included: false },
 ];
 
 const PRO_FEATURES = [
-  { text: 'Unlimited job listings', included: true },
-  { text: 'Featured listing placement', included: true },
-  { text: 'Full candidate browse access', included: true },
-  { text: 'Headhunt candidates directly', included: true },
+  { text: 'Unlimited active job listings', included: true },
+  { text: 'Featured placement (boosted)', included: true },
+  { text: 'Browse candidate profiles', included: true },
+  { text: 'Message and invite candidates', included: true },
+  { text: 'Download full resumes', included: true },
 ];
 
 function CheckIcon({ className }: { className?: string }) {
@@ -85,10 +87,10 @@ export default function UpgradePage() {
         <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '32px 32px' }} />
         <div className="relative mx-auto max-w-3xl px-4 py-16 sm:py-20 text-center">
           <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight">
-            Your competitors are already headhunting.
+            Find the right hire, faster.
           </h1>
           <p className="mt-4 text-base sm:text-lg text-white/80 max-w-xl mx-auto leading-relaxed">
-            While you&apos;re limited to one listing, Pro employers are browsing candidates and filling roles faster. Don&apos;t fall behind.
+            Post unlimited featured listings, message candidates directly, and view full resumes — everything you need to make your next hire in one upgrade.
           </p>
         </div>
       </section>
