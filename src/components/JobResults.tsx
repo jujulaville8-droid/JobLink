@@ -109,31 +109,48 @@ export default async function JobResults({
   }
 
   if (!jobs || jobs.length === 0) {
+    const searchLabel = searchParams.q
+      ? `"${searchParams.q}"`
+      : searchParams.category
+        ? searchParams.category.toLowerCase()
+        : "matching";
+
     return (
-      <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
-        <svg
-          className="mx-auto h-12 w-12 text-text-muted/50"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <h3 className="mt-4 font-display text-lg text-text">No jobs found</h3>
-        <p className="mt-1 text-sm text-text-light">
-          Try adjusting your filters or search terms to find more opportunities.
+      <div className="rounded-[--radius-card] border border-border bg-gradient-to-b from-white to-bg-alt/40 p-10 sm:p-14 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+          <svg
+            className="h-7 w-7 text-primary"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+        </div>
+        <h3 className="mt-5 font-display text-xl text-text">
+          No {searchLabel} jobs right now
+        </h3>
+        <p className="mt-2 text-sm text-text-light max-w-md mx-auto">
+          Be the first to know when one posts. We&apos;ll email you the moment a matching job goes live in Antigua.
         </p>
-        <div className="mt-4">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <AlertToggle
             query={searchParams.q}
             category={searchParams.category}
             jobType={searchParams.job_type}
             loggedIn={!!user}
+            emphasis
           />
+          <a
+            href="/jobs"
+            className="text-sm font-medium text-text-light hover:text-primary transition-colors"
+          >
+            Or browse all jobs →
+          </a>
         </div>
       </div>
     );
