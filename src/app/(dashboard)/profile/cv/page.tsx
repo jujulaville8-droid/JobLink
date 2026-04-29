@@ -1280,19 +1280,8 @@ function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
     volunteer?: { organization: string }[];
   };
 
-  const summaryTeaser = data.summary
-    ? data.summary.slice(0, 140) + (data.summary.length > 140 ? "..." : "")
-    : "";
-
-  const sections = [
-    data.summary ? "Professional Summary" : null,
-    data.experiences?.length ? `${data.experiences.length} Work Experience${data.experiences.length !== 1 ? "s" : ""}` : null,
-    data.education?.length ? `${data.education.length} Education` : null,
-    data.skills?.length ? `${data.skills.length} Skills` : null,
-    data.languages?.length ? `${data.languages.length} Language${data.languages.length !== 1 ? "s" : ""}` : null,
-    data.projects?.length ? `${data.projects.length} Project${data.projects.length !== 1 ? "s" : ""}` : null,
-    data.volunteer?.length ? "Volunteer Work" : null,
-  ].filter(Boolean);
+  const firstExp = data.experiences?.[0];
+  const remainingExps = (data.experiences?.length ?? 0) - 1;
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
@@ -1304,52 +1293,70 @@ function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
           </svg>
           <span className="text-xs font-bold uppercase tracking-[0.15em] text-white/80">Your Resume is Ready</span>
         </div>
-        {summaryTeaser && (
-          <p className="text-sm text-white/90 leading-relaxed">&ldquo;{summaryTeaser}&rdquo;</p>
-        )}
-        {/* Show first experience title as teaser */}
-        {data.experiences?.[0] && (
-          <div className="mt-3 pt-3 border-t border-white/10">
-            <p className="text-[11px] text-white/50 uppercase tracking-wider">Latest Role</p>
-            <p className="text-sm font-semibold text-white">{data.experiences[0].job_title}</p>
-            <p className="text-xs text-white/60">{data.experiences[0].company_name}</p>
-          </div>
-        )}
+        <p className="text-xs text-white/70">Here&apos;s a sample of what we wrote for you. The full version is below.</p>
       </div>
 
-      {/* What's included */}
-      <div className="bg-white px-5 py-4">
-        <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">What&apos;s included</p>
-        <div className="grid grid-cols-2 gap-2">
-          {sections.map((s) => (
-            <div key={s} className="flex items-center gap-2">
-              <svg className="h-3.5 w-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span className="text-xs text-text">{s}</span>
-            </div>
-          ))}
+      {/* Full summary — show the actual AI quality */}
+      {data.summary && (
+        <div className="bg-white px-5 py-5 border-b border-border/40">
+          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Professional Summary</p>
+          <p className="text-sm text-text leading-relaxed">{data.summary}</p>
         </div>
+      )}
 
-        {/* Skills preview chips */}
-        {data.skills && data.skills.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {data.skills.slice(0, 5).map((s, i) => (
-              <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/5 text-primary font-medium">{s}</span>
+      {/* Full first experience — proves the writing quality */}
+      {firstExp && (
+        <div className="bg-white px-5 py-5 border-b border-border/40">
+          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Latest Experience</p>
+          <p className="text-sm font-semibold text-text">{firstExp.job_title}</p>
+          <p className="text-xs text-text-muted mb-2">{firstExp.company_name}</p>
+          {firstExp.description && (
+            <p className="text-sm text-text leading-relaxed whitespace-pre-line">{firstExp.description}</p>
+          )}
+        </div>
+      )}
+
+      {/* Blurred remaining content — creates urgency */}
+      {remainingExps > 0 && (
+        <div className="relative bg-white px-5 py-5 border-b border-border/40 overflow-hidden">
+          <div
+            className="select-none"
+            style={{ filter: "blur(5px)", pointerEvents: "none" }}
+            aria-hidden="true"
+          >
+            <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Previous Experience</p>
+            <p className="text-sm font-semibold text-text">Senior Server &amp; Bartender</p>
+            <p className="text-xs text-text-muted mb-2">Casa Roots Restaurant</p>
+            <p className="text-sm text-text leading-relaxed">
+              Delivered consistent five-star service across 80+ covers per shift while maintaining a 96% positive guest review rate. Trained 4 incoming staff on POS systems and beverage service standards, reducing onboarding time by 30%.
+            </p>
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-white via-white/90 to-white/40">
+            <div className="text-center">
+              <p className="text-sm font-semibold text-text">+{remainingExps} more {remainingExps === 1 ? "role" : "roles"} written for you</p>
+              <p className="mt-0.5 text-xs text-text-muted">Plus skills, education, and more — unlock to see everything</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Skills preview chips */}
+      {data.skills && data.skills.length > 0 && (
+        <div className="bg-white px-5 py-4 border-b border-border/40">
+          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Skills</p>
+          <div className="flex flex-wrap gap-1.5">
+            {data.skills.slice(0, 8).map((s, i) => (
+              <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/5 text-primary font-medium">{s}</span>
             ))}
-            {data.skills.length > 5 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-bg-alt text-text-muted">+{data.skills.length - 5} more</span>
+            {data.skills.length > 8 && (
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-bg-alt text-text-muted">+{data.skills.length - 8} more</span>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* CTA */}
-      <div className="bg-[--color-bg] px-5 py-4 border-t border-border/40">
-        <div className="text-center">
-          <p className="text-sm font-semibold text-text">{sections.length} sections, ready to download and edit</p>
-          <p className="mt-1 text-xs text-text-muted">Choose from 10 professional templates. Export as PDF anytime.</p>
-        </div>
+      <div className="bg-[--color-bg] px-5 py-5">
         <button
           onClick={async () => {
             try {
@@ -1358,11 +1365,13 @@ function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
               if (d.url) window.location.href = d.url;
             } catch { /* ignore */ }
           }}
-          className="mt-3 w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white hover:bg-accent-hover transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+          className="w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white hover:bg-accent-hover transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
         >
-          Unlock Full Resume — EC$10
+          Unlock my full resume — EC$10
         </button>
-        <p className="mt-2 text-center text-[10px] text-text-muted">One time payment. No subscription. Yours forever.</p>
+        <p className="mt-2 text-center text-[11px] text-text-muted">
+          AI-written, ready in 30 seconds. <span className="font-semibold text-text">Don&apos;t love it? Full refund.</span>
+        </p>
       </div>
     </div>
   );
