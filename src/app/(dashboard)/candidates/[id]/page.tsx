@@ -244,8 +244,9 @@ export default async function CandidateProfilePage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Resume — Pro only (CVs typically contain contact info) */}
-          {isProActive && (hasCv || hasBuiltResume) && (
+          {/* Resume — visible to all (so employers know one exists),
+              but actual download is gated behind Pro */}
+          {(hasCv || hasBuiltResume) && (
             <div className="px-6 py-6 sm:px-10">
               <h2 className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -253,49 +254,104 @@ export default async function CandidateProfilePage({ params }: PageProps) {
                 </svg>
                 Resume
               </h2>
-              <div className="flex flex-wrap gap-3">
-                {hasCv && (
-                  <a
-                    href={`/api/cv-download?profileId=${profile.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5 hover:border-primary/30 hover:bg-primary/5 transition-colors group"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                      <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+              <div className="relative">
+                <div
+                  className={`flex flex-wrap gap-3 ${isProActive ? "" : "select-none"}`}
+                  style={isProActive ? undefined : { filter: "blur(5px)", pointerEvents: "none" }}
+                  aria-hidden={isProActive ? undefined : true}
+                >
+                  {hasCv && (
+                    isProActive ? (
+                      <a
+                        href={`/api/cv-download?profileId=${profile.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5 hover:border-primary/30 hover:bg-primary/5 transition-colors group"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-text group-hover:text-primary transition-colors">
+                            {profile.first_name ? `${profile.first_name}'s Resume` : "Resume"}
+                          </p>
+                          <p className="text-xs text-text-muted">Uploaded PDF — Click to download</p>
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-text">
+                            {profile.first_name ? `${profile.first_name}'s Resume` : "Resume"}
+                          </p>
+                          <p className="text-xs text-text-muted">Uploaded PDF — Click to download</p>
+                        </div>
+                      </div>
+                    )
+                  )}
+                  {hasBuiltResume && (
+                    isProActive ? (
+                      <a
+                        href={`/api/cv/export?userId=${profile.user_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5 hover:border-emerald-300/50 hover:bg-emerald-50/50 transition-colors group"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
+                          <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <polyline points="16 13 12 17 8 13" />
+                            <line x1="12" y1="17" x2="12" y2="9" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-text group-hover:text-emerald-700 transition-colors">
+                            JobLink Built Resume
+                          </p>
+                          <p className="text-xs text-text-muted">Generated PDF — Click to download</p>
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
+                          <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <polyline points="16 13 12 17 8 13" />
+                            <line x1="12" y1="17" x2="12" y2="9" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-text">
+                            JobLink Built Resume
+                          </p>
+                          <p className="text-xs text-text-muted">Generated PDF — Click to download</p>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+                {!isProActive && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Link
+                      href="/employers/upgrade"
+                      className="inline-flex items-center gap-2 rounded-full bg-accent-warm px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-accent-warm-hover transition-colors"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-text group-hover:text-primary transition-colors">
-                        {profile.first_name ? `${profile.first_name}'s Resume` : "Resume"}
-                      </p>
-                      <p className="text-xs text-text-muted">Uploaded PDF — Click to download</p>
-                    </div>
-                  </a>
-                )}
-                {hasBuiltResume && (
-                  <a
-                    href={`/api/cv/export?userId=${profile.user_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-3 rounded-xl border border-border bg-bg-alt/50 px-5 py-3.5 hover:border-emerald-300/50 hover:bg-emerald-50/50 transition-colors group"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50">
-                      <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <polyline points="16 13 12 17 8 13" />
-                        <line x1="12" y1="17" x2="12" y2="9" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-text group-hover:text-emerald-700 transition-colors">
-                        JobLink Built Resume
-                      </p>
-                      <p className="text-xs text-text-muted">Generated PDF — Click to download</p>
-                    </div>
-                  </a>
+                      Upgrade to view resume
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
