@@ -249,13 +249,24 @@ export default async function JobDetailPage({ params }: PageProps) {
     volunteer: "VOLUNTEER",
   };
 
+  const rawLocality = (job.location || company?.location || "").trim();
+  const addressLocality = rawLocality
+    ? rawLocality.replace(/,\s*Antigua( and Barbuda)?\s*$/i, "").trim() || "St. John's"
+    : "St. John's";
+
   const jobPostingSchema = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
+    identifier: {
+      "@type": "PropertyValue",
+      name: "JobLinks",
+      value: job.id,
+    },
     title: job.title,
     description: job.description || `${job.title} position at ${company?.company_name || "a company"} in Antigua and Barbuda.`,
     datePosted: job.created_at,
     employmentType: employmentTypeMap[job.job_type] || "FULL_TIME",
+    ...(job.category ? { industry: job.category } : {}),
     hiringOrganization: {
       "@type": "Organization",
       name: company?.company_name || "Company",
@@ -266,10 +277,16 @@ export default async function JobDetailPage({ params }: PageProps) {
       "@type": "Place",
       address: {
         "@type": "PostalAddress",
-        addressLocality: job.location || company?.location || "St. John's",
+        addressLocality,
+        addressRegion: "Saint John",
         addressCountry: "AG",
       },
     },
+    applicantLocationRequirements: {
+      "@type": "Country",
+      name: "Antigua and Barbuda",
+    },
+    jobLocationType: rawLocality.toLowerCase().includes("remote") ? "TELECOMMUTE" : undefined,
     ...(job.expires_at ? { validThrough: new Date(job.expires_at).toISOString() } : {}),
     directApply: true,
     ...(job.salary_visible && (job.salary_min || job.salary_max)

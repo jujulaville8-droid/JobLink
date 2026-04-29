@@ -27,6 +27,7 @@ interface FormData {
   title: string;
   description: string;
   category: string;
+  location: string;
   job_type: JobType;
   salary_min: string;
   salary_max: string;
@@ -81,6 +82,7 @@ export default function PostJobPage() {
     title: '',
     description: '',
     category: '',
+    location: "St. John's, Antigua",
     job_type: 'full_time',
     salary_min: '',
     salary_max: '',
@@ -141,6 +143,7 @@ export default function PostJobPage() {
           title: listing.title || '',
           description: listing.description || '',
           category: listing.category || '',
+          location: listing.location || "St. John's, Antigua",
           job_type: (listing.job_type as JobType) || 'full_time',
           salary_min: listing.salary_min ? String(listing.salary_min) : '',
           salary_max: listing.salary_max ? String(listing.salary_max) : '',
@@ -172,6 +175,7 @@ export default function PostJobPage() {
     if (!form.title.trim()) errs.title = 'Job title is required';
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Please select a category';
+    if (!form.location.trim()) errs.location = 'Location is required';
     // Duration gating removed — all employers can select any duration
     if (form.salary_min && form.salary_max) {
       if (Number(form.salary_min) > Number(form.salary_max)) {
@@ -245,6 +249,7 @@ export default function PostJobPage() {
         title: form.title.trim(),
         description: form.description.trim(),
         category: form.category,
+        location: form.location.trim(),
         job_type: form.job_type,
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
@@ -520,37 +525,82 @@ export default function PostJobPage() {
               <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
                 <HugeiconsIcon icon={Briefcase01Icon} size={16} className="text-blue-600" />
               </div>
-              <h2 className="text-sm font-semibold text-text">Category</h2>
+              <h2 className="text-sm font-semibold text-text">Category & Location</h2>
             </div>
 
-            <div>
-              <label
-                htmlFor="category"
-                className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-              >
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="category"
-                value={form.category}
-                onChange={(e) => updateField('category', e.target.value)}
-                className={cn(
-                  inputBase,
-                  errors.category
-                    ? 'border-red-300 bg-red-50/50'
-                    : 'border-border/60'
+            <div className="space-y-5">
+              <div>
+                <label
+                  htmlFor="category"
+                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+                >
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="category"
+                  value={form.category}
+                  onChange={(e) => updateField('category', e.target.value)}
+                  className={cn(
+                    inputBase,
+                    errors.category
+                      ? 'border-red-300 bg-red-50/50'
+                      : 'border-border/60'
+                  )}
+                >
+                  <option value="">Select category</option>
+                  {INDUSTRIES.map((ind) => (
+                    <option key={ind} value={ind}>
+                      {ind}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.category}</p>
                 )}
-              >
-                <option value="">Select category</option>
-                {INDUSTRIES.map((ind) => (
-                  <option key={ind} value={ind}>
-                    {ind}
-                  </option>
-                ))}
-              </select>
-              {errors.category && (
-                <p className="mt-1.5 text-xs text-red-600">{errors.category}</p>
-              )}
+              </div>
+
+              <div>
+                <label
+                  htmlFor="location"
+                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
+                >
+                  Location <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="location"
+                  type="text"
+                  list="location-suggestions"
+                  value={form.location}
+                  onChange={(e) => updateField('location', e.target.value)}
+                  placeholder="e.g. St. John's, Antigua"
+                  className={cn(
+                    inputBase,
+                    errors.location
+                      ? 'border-red-300 bg-red-50/50'
+                      : 'border-border/60'
+                  )}
+                />
+                <datalist id="location-suggestions">
+                  <option value="St. John's, Antigua" />
+                  <option value="English Harbour, Antigua" />
+                  <option value="Jolly Harbour, Antigua" />
+                  <option value="Hodges Bay, Antigua" />
+                  <option value="Falmouth Harbour, Antigua" />
+                  <option value="All Saints, Antigua" />
+                  <option value="Liberta, Antigua" />
+                  <option value="Parham, Antigua" />
+                  <option value="Bolans, Antigua" />
+                  <option value="Codrington, Barbuda" />
+                  <option value="Remote — Antigua and Barbuda" />
+                </datalist>
+                {errors.location ? (
+                  <p className="mt-1.5 text-xs text-red-600">{errors.location}</p>
+                ) : (
+                  <p className="mt-1.5 text-[11px] text-text-muted">
+                    Required for Google Jobs visibility
+                  </p>
+                )}
+              </div>
             </div>
           </motion.div>
 

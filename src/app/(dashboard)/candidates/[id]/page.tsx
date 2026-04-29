@@ -9,7 +9,7 @@ interface PageProps {
 }
 
 export default async function CandidateProfilePage({ params }: PageProps) {
-  await requireRole("employer");
+  const user = await requireRole("employer");
   const { id } = await params;
   const supabase = await createClient();
 
@@ -23,6 +23,16 @@ export default async function CandidateProfilePage({ params }: PageProps) {
   if (!profile) {
     redirect("/browse-candidates");
   }
+
+  const { data: company } = await supabase
+    .from("companies")
+    .select("is_pro, pro_expires_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const isProActive =
+    company?.is_pro === true &&
+    (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date());
 
   const initial = (profile.first_name?.charAt(0) || "?").toUpperCase();
   const fullName = [profile.first_name, profile.last_name]
@@ -118,8 +128,21 @@ export default async function CandidateProfilePage({ params }: PageProps) {
 
               {/* CTA */}
               <div className="mt-5 flex items-center justify-center sm:justify-start gap-3 flex-wrap">
-                <InviteToApplyButton candidateName={fullName} candidateUserId={profile.user_id} />
-                {hasCv && (
+                {isProActive ? (
+                  <InviteToApplyButton candidateName={fullName} candidateUserId={profile.user_id} />
+                ) : (
+                  <Link
+                    href="/employers/upgrade"
+                    className="inline-flex items-center gap-2 rounded-full bg-accent-warm px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-warm-hover transition-colors"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    Upgrade to Invite
+                  </Link>
+                )}
+                {hasCv && isProActive && (
                   <a
                     href={`/api/cv-download?profileId=${profile.id}`}
                     target="_blank"
@@ -221,8 +244,8 @@ export default async function CandidateProfilePage({ params }: PageProps) {
             </div>
           )}
 
-          {/* Resume */}
-          {(hasCv || hasBuiltResume) && (
+          {/* Resume — Pro only (CVs typically contain contact info) */}
+          {isProActive && (hasCv || hasBuiltResume) && (
             <div className="px-6 py-6 sm:px-10">
               <h2 className="flex items-center gap-2 text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
