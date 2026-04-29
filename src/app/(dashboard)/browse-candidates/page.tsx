@@ -29,6 +29,7 @@ async function CandidateResults({
     .from("seeker_profiles")
     .select("*")
     .eq("visibility", "actively_looking")
+    .gte("profile_complete_pct", 30)
     .not("first_name", "is", null)
     .neq("first_name", "")
     .not("last_name", "is", null)
