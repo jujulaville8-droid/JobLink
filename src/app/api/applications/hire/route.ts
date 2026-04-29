@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
       if (seekerUser?.email) {
         const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies
-        sendEmail({
+        await sendEmail({
           to: seekerUser.email,
           type: 'status_update',
           data: {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
             status: 'On Hold',
             dashboard_url: `${BASE_URL}/applications`,
           },
-        }).catch(err => console.error('[hire] sendEmail error:', err))
+        })
       }
 
       const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies

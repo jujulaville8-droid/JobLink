@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         .from('messages')
         .insert({ conversation_id: existingConversationId, sender_id: user.id, body: body.trim() })
 
-      sendMessageNotification(supabase, {
+      await sendMessageNotification(supabase, {
         conversationId: existingConversationId,
         recipientId: recipient_user_id,
         senderName: companyName,
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       })
 
       if (recipientEmail) {
-        sendEmail({
+        await sendEmail({
           to: recipientEmail,
           type: 'job_invite',
           data: {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
             message_preview: body.trim().slice(0, 200),
             listing_url: listingUrl ? `${BASE_URL}${listingUrl}` : undefined,
           },
-        }).catch(err => console.error('[invite] sendEmail error:', err))
+        })
       }
 
       return NextResponse.json({ conversation_id: existingConversationId })
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       .insert({ conversation_id: conversation.id, sender_id: user.id, body: body.trim() })
 
     // Send notification
-    sendMessageNotification(supabase, {
+    await sendMessageNotification(supabase, {
       conversationId: conversation.id,
       recipientId: recipient_user_id,
       senderName: companyName,
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
 
     // Send invite email
     if (recipientEmail) {
-      sendEmail({
+      await sendEmail({
         to: recipientEmail,
         type: 'job_invite',
         data: {

@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       const senderName = user.id === seekerUserId
         ? `${seeker.first_name} ${seeker.last_name}`.trim()
         : job.companies.company_name
-      sendMessageNotification(supabase, {
+      await sendMessageNotification(supabase, {
         conversationId: existing.id,
         recipientId: otherUserId,
         senderName,
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       const senderName = user.id === seekerUserId
         ? `${seeker.first_name} ${seeker.last_name}`.trim()
         : job.companies.company_name
-      sendMessageNotification(supabase, {
+      await sendMessageNotification(supabase, {
         conversationId: conversation.id,
         recipientId: otherUserId,
         senderName,

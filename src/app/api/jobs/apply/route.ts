@@ -247,8 +247,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fire-and-forget emails
-    sendEmail({
+    // Send confirmation + new-applicant emails
+    await sendEmail({
       to: user.email!,
       type: 'application_confirmation',
       data: {
@@ -266,7 +266,7 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (employerUser?.email) {
-        sendEmail({
+        await sendEmail({
           to: employerUser.email,
           type: 'new_applicant',
           data: {
