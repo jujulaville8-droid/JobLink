@@ -10,6 +10,10 @@ interface Listing {
   title: string;
 }
 
+function buildDefaultMessage(candidateName: string, listing: Listing) {
+  return `Hi ${candidateName.split(" ")[0]},\n\nI came across your profile and think you'd be a great fit for our "${listing.title}" position. We'd love for you to apply!\n\nYou can view and apply for the role here: ${window.location.origin}/jobs/${listing.id}\n\nLooking forward to hearing from you.`;
+}
+
 export default function InviteToApplyButton({
   candidateName,
   candidateUserId,
@@ -21,7 +25,7 @@ export default function InviteToApplyButton({
   const searchParams = useSearchParams();
   const autoOpen = searchParams.get("invite") === "true";
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [listings, setListings] = useState<Listing[]>([]);
   const [selectedListing, setSelectedListing] = useState<string>("");
   const [message, setMessage] = useState("");
@@ -29,17 +33,13 @@ export default function InviteToApplyButton({
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Auto-open if ?invite=true
-  useEffect(() => {
-    if (autoOpen) setOpen(true);
-  }, [autoOpen]);
-
   // Fetch employer's active listings when modal opens
   useEffect(() => {
     if (!open || !user) return;
 
     async function fetchListings() {
       const supabase = createClient();
+      const now = new Date().toISOString();
       const { data: company } = await supabase
         .from("companies")
         .select("id")
@@ -53,30 +53,26 @@ export default function InviteToApplyButton({
         .select("id, title")
         .eq("company_id", company.id)
         .eq("status", "active")
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
         .order("created_at", { ascending: false });
 
       if (data) {
         setListings(data);
-        if (data.length === 1) setSelectedListing(data[0].id);
+        if (data.length === 1) {
+          setSelectedListing(data[0].id);
+          setMessage(buildDefaultMessage(candidateName, data[0]));
+        }
       }
     }
 
     fetchListings();
-  }, [open, user]);
+  }, [open, user, candidateName]);
 
-  // Build default message when listing is selected
-  useEffect(() => {
-    if (!selectedListing) {
-      setMessage("");
-      return;
-    }
-    const listing = listings.find((l) => l.id === selectedListing);
-    if (listing) {
-      setMessage(
-        `Hi ${candidateName.split(" ")[0]},\n\nI came across your profile and think you'd be a great fit for our "${listing.title}" position. We'd love for you to apply!\n\nYou can view and apply for the role here: ${window.location.origin}/jobs/${listing.id}\n\nLooking forward to hearing from you.`
-      );
-    }
-  }, [selectedListing, listings, candidateName]);
+  function handleListingChange(listingId: string) {
+    setSelectedListing(listingId);
+    const listing = listings.find((item) => item.id === listingId);
+    setMessage(listing ? buildDefaultMessage(candidateName, listing) : "");
+  }
 
   async function handleSend() {
     if (!selectedListing || !message.trim()) return;
@@ -174,7 +170,7 @@ export default function InviteToApplyButton({
                   ) : (
                     <select
                       value={selectedListing}
-                      onChange={(e) => setSelectedListing(e.target.value)}
+                      onChange={(e) => handleListingChange(e.target.value)}
                       className="w-full rounded-xl border border-border px-3 py-2.5 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
                     >
                       <option value="">Choose a listing...</option>

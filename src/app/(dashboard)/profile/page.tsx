@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
@@ -687,7 +686,7 @@ function ProfileView({
           {profile.bio ? (
             <p className="text-sm text-text-light leading-relaxed whitespace-pre-line">{profile.bio}</p>
           ) : (
-            <p className="text-sm text-text-muted">Tell employers about yourself, your experience, and what you're looking for.</p>
+            <p className="text-sm text-text-muted">Tell employers about yourself, your experience, and what you&apos;re looking for.</p>
           )}
         </div>
       </div>
@@ -1274,12 +1273,9 @@ function ProfileEditForm({
 
 // ─── Main Page Component ────────────────────────────────────────
 export default function ProfilePage() {
-  const router = useRouter();
   const { user: authUser, isLoading: authLoading, setAvatarUrl: setGlobalAvatarUrl } = useAuth();
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
   const [profileId, setProfileId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [mode, setMode] = useState<"view" | "edit">("edit");
@@ -1292,17 +1288,7 @@ export default function ProfilePage() {
     if (authLoading) return;
 
     // AuthProvider already validated the session — use its user directly
-    if (!authUser) {
-      setLoadError("Session expired. Please sign in again.");
-      setLoading(false);
-      return;
-    }
-
-    // Reset error state in case we're re-running after auth resolved
-    setLoadError(null);
-    setLoading(true);
-    setUserId(authUser.id);
-    setEmail(authUser.email ?? "");
+    if (!authUser) return;
 
     let cancelled = false;
 
@@ -1364,10 +1350,20 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, [authLoading, authUser]);
 
-  if (authLoading || loading) {
+  if (authLoading || (authUser && loading)) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <div className="mx-auto max-w-2xl">
+        <div className="mt-8 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          Session expired. Please sign in again.
+        </div>
       </div>
     );
   }
@@ -1395,8 +1391,8 @@ export default function ProfilePage() {
       <ProfileView
         profile={profile}
         profileId={profileId!}
-        email={email}
-        userId={userId!}
+        email={authUser.email ?? ""}
+        userId={authUser.id}
         onEdit={(step) => { setEditStep(step ?? 1); setMode("edit"); }}
         onAvatarChange={(url) => {
           setProfile((p) => ({ ...p, avatar_url: url }));
@@ -1414,7 +1410,7 @@ export default function ProfilePage() {
       key={editStep}
       initialProfile={profile}
       initialProfileId={profileId}
-      userId={userId!}
+      userId={authUser.id}
       isNewProfile={isNewProfile}
       initialStep={editStep}
       onSaved={(savedProfile, savedId) => {

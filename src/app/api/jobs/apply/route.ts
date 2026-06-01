@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, title, company_id, posted_by_admin, companies(company_name, user_id)')
+      .select('id, status, title, company_id, posted_by_admin, expires_at, companies(company_name, user_id)')
       .eq('id', job_id)
       .single()
 
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job listing not found' }, { status: 404 })
     }
 
-    if (job.status !== 'active') {
+    if (job.status !== 'active' || (job.expires_at && new Date(job.expires_at) <= new Date())) {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
     }
 
@@ -192,58 +192,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (adminErr) {
-        // Admin client not available (no service key) — fall back to regular client
-        console.error('[apply] admin client unavailable, trying regular client:', adminErr)
-
-        const messageParts: string[] = []
-        messageParts.push(`Hi, I've applied for the ${job.title} position.`)
-        if (cover_letter_text?.trim()) {
-          messageParts.push(`\n\n📝 Cover Letter\n${cover_letter_text.trim()}`)
-        }
-        const firstMessageBody = messageParts.join('\n')
-
-        // Build CV attachment info if available
-        const cvAttachmentUrl = seekerInfo?.cv_url || null
-        const cvAttachmentName = cvAttachmentUrl
-          ? `${(seekerInfo?.first_name || 'Applicant')}_${(seekerInfo?.last_name || '')}_CV.pdf`.replace(/\s+/g, '_')
-          : null
-
-        // With regular client: insert without .select() to avoid RLS read-back issue
-        const { error: convError } = await supabase
-          .from('conversations')
-          .insert({ application_id: application.id })
-
-        if (convError) {
-          console.error('[apply] create conversation error (regular):', convError)
-        } else {
-          // Look up the conversation we just created
-          const { data: convLookup } = await supabase
-            .from('conversations')
-            .select('id')
-            .eq('application_id', application.id)
-            .single()
-
-          if (convLookup) {
-            conversationId = convLookup.id
-
-            await supabase
-              .from('conversation_participants')
-              .insert([
-                { conversation_id: convLookup.id, user_id: user.id },
-                { conversation_id: convLookup.id, user_id: employerUserId },
-              ])
-
-            // Now that we're a participant, we can insert the message with CV attachment
-            await supabase
-              .from('messages')
-              .insert({
-                conversation_id: convLookup.id,
-                sender_id: user.id,
-                body: firstMessageBody,
-                ...(cvAttachmentUrl ? { attachment_url: cvAttachmentUrl, attachment_name: cvAttachmentName } : {}),
-              })
-          }
-        }
+        console.error('[apply] admin client unavailable; application thread was not created:', adminErr)
       }
     }
 

@@ -16,6 +16,8 @@ export default function DashboardNudge({ hasBuiltCv, hasUploadedCv, completionPe
 
   useEffect(() => {
     const count = parseInt(localStorage.getItem(DISMISS_KEY) || "0", 10);
+    // Hydrate the client-only dismissal count after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDismissed(count >= 3);
   }, []);
 

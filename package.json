@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "smoke": "node scripts/smoke-local.mjs",
     "discover": "npx tsx scripts/discover-businesses.ts"
   },
   "dependencies": {

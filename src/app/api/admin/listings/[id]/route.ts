@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
-import { processJobAlerts } from '@/lib/job-alert-matcher'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function PATCH(
   request: NextRequest,
@@ -21,14 +21,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify caller is admin
-    const { data: adminUser, error: adminError } = await supabase
+    const admin = createAdminClient()
+
+    // Verify caller has the server-managed admin flag.
+    const { data: adminUser, error: adminError } = await admin
       .from('users')
-      .select('role')
+      .select('is_admin')
       .eq('id', user.id)
       .single()
 
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
+    if (adminError || !adminUser?.is_admin) {
       return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
     }
 
@@ -58,13 +60,13 @@ export async function PATCH(
     }
 
     // Get the listing before updating (to check previous status and get details for email)
-    const { data: currentListing } = await supabase
+    const { data: currentListing } = await admin
       .from('job_listings')
       .select('status, title, company_id, companies(user_id)')
       .eq('id', id)
       .single()
 
-    const { data: updatedListing, error: updateError } = await supabase
+    const { data: updatedListing, error: updateError } = await admin
       .from('job_listings')
       .update(updates)
       .eq('id', id)
@@ -87,7 +89,7 @@ export async function PATCH(
       const employerUserId = (companyData as { user_id: string } | null)?.user_id
 
       if (employerUserId) {
-        const { data: employerUser } = await supabase
+        const { data: employerUser } = await admin
           .from('users')
           .select('email')
           .eq('id', employerUserId)
@@ -117,12 +119,7 @@ export async function PATCH(
       }
     }
 
-    // Send job alert emails to seekers with matching alerts
-    if (currentListing?.status === 'pending_approval' && status === 'active') {
-      processJobAlerts(id).catch((err) =>
-        console.error('[PATCH /admin/listings] Alert processing failed:', err)
-      )
-    }
+    // Automatic alert emails disabled — use admin dashboard to manually notify seekers
 
     return NextResponse.json({ listing: updatedListing })
   } catch {

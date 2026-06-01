@@ -7,15 +7,14 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * Closes any job_listings where status = 'active' and expires_at <= now().
  * Without this, expired listings stay marked active and clutter search results.
  *
- * Protected by CRON_SECRET / x-vercel-cron header. Runs hourly via Vercel Cron.
+ * Protected by CRON_SECRET. Runs hourly via the hosting provider's scheduler.
  */
 export async function GET(request: NextRequest) {
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-  if (!isVercelCron && !hasValidSecret) {
+  if (!hasValidSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

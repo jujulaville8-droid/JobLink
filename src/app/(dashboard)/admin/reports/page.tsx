@@ -1,7 +1,5 @@
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
-import { sendEmail, BASE_URL } from '@/lib/email'
 import ReportReplyForm from '@/components/ReportReplyForm'
 
 interface ReportData {
@@ -22,7 +20,6 @@ interface ReportData {
 
 async function dismissReport(formData: FormData) {
   'use server'
-  const supabase = await createClient()
   await requireRole('admin')
   const reportId = formData.get('report_id') as string
 
@@ -39,7 +36,6 @@ async function dismissReport(formData: FormData) {
 
 async function removeListingAction(formData: FormData) {
   'use server'
-  const supabase = await createClient()
   await requireRole('admin')
   const jobId = formData.get('job_id') as string
   const reportId = formData.get('report_id') as string
@@ -64,8 +60,6 @@ async function removeListingAction(formData: FormData) {
 
 export default async function AdminReportsPage() {
   await requireRole('admin')
-  const supabase = await createClient()
-
   const { createAdminClient } = await import('@/lib/supabase/admin')
   const adminClient = createAdminClient()
 

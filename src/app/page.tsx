@@ -39,6 +39,7 @@ const INDUSTRY_ICONS: Record<string, string> = {
 async function getFeaturedJobs(): Promise<Job[]> {
   try {
     const supabase = await createClient();
+    const now = new Date().toISOString();
 
     const { data: jobs } = await supabase
       .from("job_listings")
@@ -50,6 +51,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       `
       )
       .eq("status", "active")
+      .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(6);
@@ -86,11 +88,13 @@ async function getFeaturedJobs(): Promise<Job[]> {
 async function getIndustryCounts(): Promise<{ name: string; icon: string; count: number }[]> {
   try {
     const supabase = await createClient();
+    const now = new Date().toISOString();
 
     const { data: jobs } = await supabase
       .from("job_listings")
       .select("category")
-      .eq("status", "active");
+      .eq("status", "active")
+      .or(`expires_at.is.null,expires_at.gt.${now}`);
 
     const counts: Record<string, number> = {};
     if (jobs) {
@@ -114,18 +118,19 @@ async function getIndustryCounts(): Promise<{ name: string; icon: string; count:
   }
 }
 
-async function getHiringCompanies(): Promise<string[]> {
+async function getHiringCompanies(): Promise<{ names: string[]; total: number }> {
   try {
     const supabase = await createClient();
+    const now = new Date().toISOString();
 
     const { data } = await supabase
       .from("job_listings")
       .select("company:companies ( company_name )")
       .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .or(`expires_at.is.null,expires_at.gt.${now}`)
+      .order("created_at", { ascending: false });
 
-    if (!data) return [];
+    if (!data) return { names: [], total: 0 };
 
     const seen = new Set<string>();
     const names: string[] = [];
@@ -135,12 +140,11 @@ async function getHiringCompanies(): Promise<string[]> {
       if (name && !seen.has(name)) {
         seen.add(name);
         names.push(name);
-        if (names.length >= 6) break;
       }
     }
-    return names;
+    return { names: names.slice(0, 6), total: names.length };
   } catch {
-    return [];
+    return { names: [], total: 0 };
   }
 }
 
@@ -154,6 +158,11 @@ export default async function Home() {
     getIndustryCounts(),
     getHiringCompanies(),
   ]);
+  const activeJobCount = industries.reduce((total, industry) => total + industry.count, 0);
+  const activeIndustries = industries.filter((industry) => industry.count > 0);
+  const featuredIndustries = [...(activeIndustries.length > 0 ? activeIndustries : industries)]
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 8);
 
   const organizationSchema = {
     "@context": "https://schema.org",
@@ -248,6 +257,17 @@ export default async function Home() {
             <div className="animate-fade-up" style={{ animationDelay: "300ms" }}>
               <HeroCTAs />
             </div>
+
+            <div
+              className="animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs sm:text-sm text-white/75"
+              style={{ animationDelay: "400ms" }}
+            >
+              <span>{activeJobCount} active {activeJobCount === 1 ? "job" : "jobs"}</span>
+              <span className="hidden sm:inline text-white/35">•</span>
+              <span>{hiringCompanies.total} local {hiringCompanies.total === 1 ? "employer" : "employers"} hiring</span>
+              <span className="hidden sm:inline text-white/35">•</span>
+              <span>Free for job seekers</span>
+            </div>
           </div>
         </div>
 
@@ -256,14 +276,14 @@ export default async function Home() {
       {/* ===== COMPANIES HIRING + FEATURED JOBS ===== */}
       <section className="relative bg-bg">
         {/* Overlap container — pulls up into the hero */}
-        {hiringCompanies.length > 0 && (
+        {hiringCompanies.names.length > 0 && (
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 -mt-6 relative z-10">
             <div className="rounded-2xl bg-white border border-border/60 shadow-lg shadow-black/[0.04] px-6 sm:px-8 py-5">
               <p className="text-center text-text-muted/60 text-[10px] font-semibold uppercase tracking-[0.25em] mb-3">
                 Companies hiring now
               </p>
               <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-2">
-                {hiringCompanies.map((name) => (
+                {hiringCompanies.names.map((name) => (
                   <span
                     key={name}
                     className="text-text/60 font-bold text-[13px] tracking-wide"
@@ -276,7 +296,7 @@ export default async function Home() {
           </div>
         )}
 
-        <div className={hiringCompanies.length > 0 ? "pt-12 sm:pt-14 pb-16 sm:pb-20" : "py-16 sm:py-20"}>
+        <div className={hiringCompanies.names.length > 0 ? "pt-12 sm:pt-14 pb-16 sm:pb-20" : "py-16 sm:py-20"}>
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -335,7 +355,7 @@ export default async function Home() {
                 className="w-full h-full object-cover"
                 controls
                 preload="none"
-                poster=""
+                poster="/images/working.jpg"
                 playsInline
               >
                 <source src="/videos/vsl.mp4" type="video/mp4" />
@@ -361,8 +381,8 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {industries.map((ind) => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {featuredIndustries.map((ind) => (
               <Link
                 key={ind.name}
                 href={`/jobs?category=${encodeURIComponent(ind.name)}`}
@@ -374,8 +394,23 @@ export default async function Home() {
                   </svg>
                 </div>
                 <h3 className="font-semibold text-text text-[13px] leading-tight">{ind.name}</h3>
+                <p className="mt-1.5 text-[11px] text-text-muted">
+                  {ind.count} {ind.count === 1 ? "opening" : "openings"}
+                </p>
               </Link>
             ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link
+              href="/jobs"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary-dark transition-colors"
+            >
+              Explore all industries
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </Link>
           </div>
         </div>
       </section>
@@ -430,6 +465,7 @@ export default async function Home() {
                 src="/images/people-sitting.webp"
                 alt="People at a job fair in Antigua"
                 fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
@@ -546,6 +582,7 @@ export default async function Home() {
               src="/images/harbor.jpg"
               alt="Antigua harbor with boats"
               fill
+              sizes="(min-width: 1152px) 1152px, 100vw"
               className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#062829]/95 via-primary/90 to-primary-light/80" />

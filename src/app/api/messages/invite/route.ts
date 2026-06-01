@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
 
     const { recipient_user_id, listing_id, body } = await request.json()
 
-    if (!recipient_user_id || !body?.trim()) {
-      return NextResponse.json({ error: 'recipient_user_id and body are required' }, { status: 400 })
+    if (!recipient_user_id || !listing_id || !body?.trim()) {
+      return NextResponse.json({ error: 'recipient_user_id, listing_id, and body are required' }, { status: 400 })
     }
 
     if (body.trim().length > 5000) {
@@ -35,32 +35,44 @@ export async function POST(request: NextRequest) {
     // Get company info for notification
     const { data: company } = await supabase
       .from('companies')
-      .select('company_name')
+      .select('id, company_name')
       .eq('user_id', user.id)
       .single()
 
+    if (!company) {
+      return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
+    }
+
     const companyName = company?.company_name || 'An employer'
 
-    // Get job title for notification if listing_id provided
-    let jobTitle = 'a position'
-    if (listing_id) {
-      const { data: listing } = await supabase
-        .from('job_listings')
-        .select('title')
-        .eq('id', listing_id)
-        .single()
-      if (listing) jobTitle = listing.title
+    // Invitations must point at one of this employer's open listings.
+    const { data: listing } = await supabase
+      .from('job_listings')
+      .select('title, expires_at')
+      .eq('id', listing_id)
+      .eq('company_id', company.id)
+      .eq('status', 'active')
+      .single()
+
+    if (!listing || (listing.expires_at && new Date(listing.expires_at) <= new Date())) {
+      return NextResponse.json({ error: 'Choose one of your active listings' }, { status: 400 })
     }
+
+    const jobTitle = listing.title
 
     // Get recipient email for invite notification
     const { data: recipientUser } = await supabase
       .from('users')
-      .select('email')
+      .select('email, role')
       .eq('id', recipient_user_id)
       .single()
 
+    if (recipientUser?.role !== 'seeker') {
+      return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+    }
+
     const recipientEmail = recipientUser?.email
-    const listingUrl = listing_id ? `/jobs/${listing_id}` : null
+    const listingUrl = `/jobs/${listing_id}`
 
     const admin = createAdminClient()
 
@@ -117,7 +129,7 @@ export async function POST(request: NextRequest) {
             company_name: companyName,
             job_title: jobTitle,
             message_preview: body.trim().slice(0, 200),
-            listing_url: listingUrl ? `${BASE_URL}${listingUrl}` : undefined,
+            listing_url: `${BASE_URL}${listingUrl}`,
           },
         })
       }
@@ -172,7 +184,7 @@ export async function POST(request: NextRequest) {
           company_name: companyName,
           job_title: jobTitle,
           message_preview: body.trim().slice(0, 200),
-          listing_url: listingUrl ? `${BASE_URL}${listingUrl}` : undefined,
+          listing_url: `${BASE_URL}${listingUrl}`,
         },
       })
     }

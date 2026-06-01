@@ -41,6 +41,8 @@ async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>
   })
 }
 
+// Kept ready for a future opt-in broadcast workflow.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function notifyJobSeekers(jobId: string) {
   try {
     const admin = createAdminClient()
@@ -134,7 +136,8 @@ async function notifyJobSeekers(jobId: string) {
 
 async function approveJob(formData: FormData) {
   'use server'
-  const supabase = await createClient()
+  await requireRole('admin')
+  const supabase = createAdminClient()
   const jobId = formData.get('job_id') as string
 
   await supabase
@@ -143,13 +146,14 @@ async function approveJob(formData: FormData) {
     .eq('id', jobId)
 
   await notifyEmployer(supabase, jobId, 'listing_approved')
-  notifyJobSeekers(jobId) // Fire-and-forget — don't await
+  // Automatic seeker emails disabled — use admin dashboard to manually notify
   revalidatePath('/admin/approvals')
 }
 
 async function rejectJob(formData: FormData) {
   'use server'
-  const supabase = await createClient()
+  await requireRole('admin')
+  const supabase = createAdminClient()
   const jobId = formData.get('job_id') as string
   const rejectionReason = formData.get('rejection_reason') as string
 
@@ -235,7 +239,7 @@ export default async function AdminApprovalsPage() {
         <div className="rounded-2xl border border-border bg-white p-4 text-center">
           <p className="text-2xl font-bold text-text">
             {pendingListings.length > 0
-              ? Math.ceil((Date.now() - new Date(pendingListings[0].created_at).getTime()) / (1000 * 60 * 60))
+              ? Math.ceil((new Date().getTime() - new Date(pendingListings[0].created_at).getTime()) / (1000 * 60 * 60))
               : 0}h
           </p>
           <p className="mt-0.5 text-xs font-medium text-text-muted">Oldest Wait</p>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -57,14 +57,6 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-
-  // Respect URL ?role= param
-  useEffect(() => {
-    if (preselectedRole === 'seeker' || preselectedRole === 'employer') {
-      setRole(preselectedRole)
-      setStep('signup-form')
-    }
-  }, [preselectedRole])
 
   function handleContinue() {
     if (!role) return

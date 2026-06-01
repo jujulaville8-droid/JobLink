@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function PATCH(
   request: NextRequest,
@@ -19,14 +20,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify caller is admin
-    const { data: adminUser, error: adminError } = await supabase
+    const admin = createAdminClient()
+
+    // Verify caller has the server-managed admin flag.
+    const { data: adminUser, error: adminError } = await admin
       .from('users')
-      .select('role')
+      .select('is_admin')
       .eq('id', user.id)
       .single()
 
-    if (adminError || !adminUser || adminUser.role !== 'admin') {
+    if (adminError || !adminUser?.is_admin) {
       return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
     }
 
@@ -49,7 +52,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Cannot ban your own account' }, { status: 400 })
     }
 
-    const { data: updatedUser, error: updateError } = await supabase
+    const { data: updatedUser, error: updateError } = await admin
       .from('users')
       .update(updates)
       .eq('id', id)

@@ -81,9 +81,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ conversation_id: existing.id, message })
     }
 
-    // Create new conversation using admin client to bypass RLS read-back issue
-    let conversationId: string | null = null
-
+    // Create the thread through the service client after validating ownership.
     try {
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const adminDb = createAdminClient()
@@ -98,8 +96,6 @@ export async function POST(request: NextRequest) {
         console.error('[conversations] create error:', convError)
         return NextResponse.json({ error: convError?.message || 'Failed to create conversation' }, { status: 500 })
       }
-
-      conversationId = conversation.id
 
       // Add both participants
       const { error: partError } = await adminDb
@@ -140,45 +136,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ conversation_id: conversation.id, message }, { status: 201 })
     } catch (adminErr) {
-      // Fallback: no service key available
       console.error('[conversations] admin client unavailable:', adminErr)
-
-      // Insert without select to avoid RLS read-back
-      const { error: convError } = await supabase
-        .from('conversations')
-        .insert({ application_id })
-
-      if (convError) {
-        return NextResponse.json({ error: convError.message }, { status: 500 })
-      }
-
-      // Look it up now
-      const { data: convLookup } = await supabase
-        .from('conversations')
-        .select('id')
-        .eq('application_id', application_id)
-        .single()
-
-      if (!convLookup) {
-        return NextResponse.json({ error: 'Conversation created but could not be retrieved' }, { status: 500 })
-      }
-
-      conversationId = convLookup.id
-
-      await supabase
-        .from('conversation_participants')
-        .insert([
-          { conversation_id: convLookup.id, user_id: user.id },
-          { conversation_id: convLookup.id, user_id: otherUserId },
-        ])
-
-      const { data: message } = await supabase
-        .from('messages')
-        .insert({ conversation_id: convLookup.id, sender_id: user.id, body: body.trim() })
-        .select()
-        .single()
-
-      return NextResponse.json({ conversation_id: convLookup.id, message }, { status: 201 })
+      return NextResponse.json({ error: 'Messaging is temporarily unavailable' }, { status: 500 })
     }
   } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -211,7 +170,7 @@ export async function GET(request: NextRequest) {
       .filter((r: { application_id: string | null }) => !r.application_id)
       .map((r: { other_user_id: string }) => r.other_user_id)
 
-    let companyMap: Record<string, { company_name: string; logo_url: string | null }> = {}
+    const companyMap: Record<string, { company_name: string; logo_url: string | null }> = {}
     if (otherUserIds.length > 0) {
       const { data: companies } = await supabase
         .from('companies')

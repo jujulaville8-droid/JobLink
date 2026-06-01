@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // POST: Block the other participant in this conversation
 export async function POST(
@@ -12,8 +13,18 @@ export async function POST(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Block the OTHER participant (mark them as blocked so they can't send)
-    const { data: otherParticipant } = await supabase
+    const admin = createAdminClient()
+    const { data: caller } = await admin
+      .from('conversation_participants')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!caller) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+
+    // Block the other participant after verifying the caller belongs to the thread.
+    const { data: otherParticipant } = await admin
       .from('conversation_participants')
       .select('id, user_id')
       .eq('conversation_id', conversationId)
@@ -22,7 +33,7 @@ export async function POST(
 
     if (!otherParticipant) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
 
-    const { error } = await supabase
+    const { error } = await admin
       .from('conversation_participants')
       .update({ is_blocked: true })
       .eq('id', otherParticipant.id)
@@ -49,7 +60,17 @@ export async function DELETE(
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { data: otherParticipant } = await supabase
+    const admin = createAdminClient()
+    const { data: caller } = await admin
+      .from('conversation_participants')
+      .select('id')
+      .eq('conversation_id', conversationId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (!caller) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+
+    const { data: otherParticipant } = await admin
       .from('conversation_participants')
       .select('id')
       .eq('conversation_id', conversationId)
@@ -58,7 +79,7 @@ export async function DELETE(
 
     if (!otherParticipant) return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
 
-    const { error } = await supabase
+    const { error } = await admin
       .from('conversation_participants')
       .update({ is_blocked: false })
       .eq('id', otherParticipant.id)

@@ -93,10 +93,11 @@ export async function updateSession(request: NextRequest) {
                 .update({ email_verified: true })
                 .eq('id', user.id)
             } else {
+              const metadataRole = user.user_metadata?.role
               await admin.from('users').insert({
                 id: user.id,
                 email: user.email!,
-                role: (user.user_metadata?.role as string) || 'seeker',
+                role: metadataRole === 'employer' ? 'employer' : 'seeker',
                 email_verified: true,
               })
             }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import type { VisibilityMode, UserMessagingSettings } from "@/lib/types";
@@ -100,7 +99,6 @@ function SubscriptionSection() {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
   const { user: authUser, isLoading: authLoading } = useAuth();
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,10 +142,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    if (!authUser) {
-      setLoading(false);
-      return;
-    }
+    if (!authUser) return;
 
     async function load() {
       const supabase = createClient();
@@ -248,10 +243,18 @@ export default function SettingsPage() {
     setChangingPassword(false);
   };
 
-  if (loading) {
+  if (authLoading || (authUser && loading)) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        Session expired. Please sign in again.
       </div>
     );
   }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
@@ -17,7 +17,6 @@ export default function Navbar() {
   const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [floatingVisible, setFloatingVisible] = useState(false);
   const [scrolledPastTop, setScrolledPastTop] = useState(false);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
@@ -80,10 +79,6 @@ export default function Navbar() {
     if (href.startsWith("/admin/")) return pathname.startsWith(href);
     return pathname === href;
   }
-
-  const handleFloatingVisibility = useCallback((visible: boolean) => {
-    setFloatingVisible(visible);
-  }, []);
 
   async function handleSwitchRole(targetRole?: string) {
     if (switching) return;
@@ -460,7 +455,6 @@ export default function Navbar() {
 
       {/* ── Floating nav (homepage only) ── */}
       {pathname === "/" && <FloatingNav
-        onVisibilityChange={handleFloatingVisibility}
         navItems={[
           ...navLinks.map((link) => ({
             name: link.label,

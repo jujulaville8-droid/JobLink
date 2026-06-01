@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { type ComponentProps } from "react";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -397,7 +397,7 @@ function AnimatedStat({
 }: {
   label: string;
   value: number;
-  icon: any;
+  icon: ComponentProps<typeof HugeiconsIcon>["icon"];
   color: string;
   bgColor: string;
   borderColor: string;

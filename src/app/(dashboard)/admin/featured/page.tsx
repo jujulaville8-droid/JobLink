@@ -2,10 +2,12 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 async function toggleFeatured(formData: FormData) {
   'use server'
-  const supabase = await createClient()
+  await requireRole('admin')
+  const supabase = createAdminClient()
   const jobId = formData.get('job_id') as string
   const currentlyFeatured = formData.get('is_featured') === 'true'
 

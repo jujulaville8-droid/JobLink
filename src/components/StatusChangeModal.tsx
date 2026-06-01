@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 const DEFAULT_MESSAGES: Record<string, string> = {
@@ -98,23 +98,11 @@ export default function StatusChangeModal({
   const config = STATUS_CONFIG[status];
   const colors = ACCENT_COLORS[config?.accent || "emerald"];
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() => getSavedTemplate(status) || DEFAULT_MESSAGES[status] || "");
   const [saveAsDefault, setSaveAsDefault] = useState(false);
-  const [hasSavedTemplate, setHasSavedTemplate] = useState(false);
+  const [hasSavedTemplate, setHasSavedTemplate] = useState(() => !!getSavedTemplate(status));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Load saved template or fall back to default
-  useEffect(() => {
-    const saved = getSavedTemplate(status);
-    if (saved) {
-      setMessage(saved);
-      setHasSavedTemplate(true);
-    } else {
-      setMessage(DEFAULT_MESSAGES[status] || "");
-      setHasSavedTemplate(false);
-    }
-  }, [status]);
 
   function handleResetToDefault() {
     clearTemplate(status);

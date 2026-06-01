@@ -39,6 +39,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!user.email_confirmed_at) {
+      return NextResponse.json({ error: "Please verify your email first." }, { status: 403 });
+    }
+
     const body = (await req.json()) as {
       mode?: "preview" | "unlock";
       intake?: {
@@ -99,6 +103,26 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Please complete the intake form first." },
         { status: 400 }
+      );
+    }
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: previewsThisHour, error: usageError } = await admin
+      .from("ai_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("feature", "smart_resume_preview")
+      .gte("created_at", oneHourAgo);
+
+    if (usageError) {
+      console.error("[ai/resume] Failed to check usage:", usageError);
+      return NextResponse.json({ error: "Could not verify usage limit. Please try again." }, { status: 500 });
+    }
+
+    if ((previewsThisHour ?? 0) >= 3) {
+      return NextResponse.json(
+        { error: "You have reached the preview limit. Please try again in an hour." },
+        { status: 429 }
       );
     }
 

@@ -20,6 +20,7 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
   hold: "On Hold",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function StatCard({
   label,
   value,

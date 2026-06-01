@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
@@ -17,11 +16,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, company:companies(company_name, logo_url)")
+    .select("title, status, expires_at, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
-  if (!job) {
+  if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
     return { title: "Job Not Found | JobLinks" };
   }
 
@@ -105,7 +104,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single();
 
-  if (error || !job || job.status !== "active") {
+  if (error || !job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
         <svg
