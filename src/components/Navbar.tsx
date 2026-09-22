@@ -1,4 +1,5 @@
 "use client";
+import HomeHeader from "@/components/home/HomeHeader";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -16,20 +17,16 @@ export default function Navbar() {
   const { isAuthenticated, user, userRole, isAdminUser, avatarUrl, logout, setUserRole, isLoading } = useAuth();
   const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [imgError, setImgError] = useState(false);
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   const [scrolledPastTop, setScrolledPastTop] = useState(false);
 
   const initial = user?.email?.charAt(0).toUpperCase() ?? "U";
-  const showAvatar = avatarUrl && !imgError;
+  const showAvatar = avatarUrl && failedAvatar !== avatarUrl;
 
-  useEffect(() => {
-    setImgError(false);
-  }, [avatarUrl]);
 
   // Only track scroll on homepage where floating nav takes over
   useEffect(() => {
     if (pathname !== "/") {
-      setScrolledPastTop(false);
       return;
     }
     function handleScroll() {
@@ -67,9 +64,11 @@ export default function Navbar() {
         ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
       ];
 
-  useEffect(() => {
+  const [previousPath, setPreviousPath] = useState(pathname);
+  if (previousPath !== pathname) {
+    setPreviousPath(pathname);
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }
 
   function isActive(href: string) {
     if (href === "/jobs") return pathname.startsWith("/jobs") || pathname.startsWith("/browse-jobs");
@@ -107,7 +106,7 @@ export default function Navbar() {
           src={avatarUrl}
           alt=""
           className="h-9 w-9 rounded-full object-cover ring-2 ring-primary/10"
-          onError={() => setImgError(true)}
+          onError={() => setFailedAvatar(avatarUrl ?? null)}
         />
       ) : (
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-white text-sm font-semibold">
@@ -186,6 +185,8 @@ export default function Navbar() {
           className: "text-red-500 hover:bg-red-500/10",
         },
       ];
+
+  if (pathname === "/" || pathname === "/design-preview") return <HomeHeader />;
 
   return (
     <>
@@ -335,7 +336,7 @@ export default function Navbar() {
                   )}
                   <Link href="/dashboard" className="flex shrink-0 rounded-full overflow-hidden">
                     {showAvatar ? (
-                      <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setImgError(true)} />
+                      <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover" onError={() => setFailedAvatar(avatarUrl ?? null)} />
                     ) : (
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white text-[12px] font-semibold">
                         {initial}
@@ -488,7 +489,7 @@ export default function Navbar() {
                   src={avatarUrl}
                   alt=""
                   className="h-7 w-7 rounded-full object-cover ring-2 ring-primary/20"
-                  onError={() => setImgError(true)}
+                  onError={() => setFailedAvatar(avatarUrl ?? null)}
                 />
               ) : (
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-white text-xs font-semibold">
