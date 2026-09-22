@@ -17,7 +17,7 @@ export default async function CandidateProfilePage({ params }: PageProps) {
     .from("seeker_profiles")
     .select("*")
     .eq("id", id)
-    .eq("visibility", "actively_looking")
+    .in("visibility", ["actively_looking", "open"])
     .single();
 
   if (!profile) {

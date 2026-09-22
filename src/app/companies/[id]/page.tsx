@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import JobCard, { Job } from "@/components/JobCard";
@@ -10,14 +11,16 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const supabase = await createClient();
 
-  const { data: company } = await supabase
+  const { data: company, error: metadataError } = await supabase
     .from("companies")
     .select("company_name")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
+  if (metadataError) return { title: "Temporarily unavailable | JobLinks" };
   if (!company) {
     return { title: "Company Not Found | JobLinks" };
   }
@@ -38,48 +41,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function CompanyPage({ params }: PageProps) {
   const { id } = await params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const supabase = await createClient();
 
   const { data: company, error } = await supabase
     .from("companies")
     .select("*")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (error || !company) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <svg
-          className="mx-auto h-16 w-16 text-text-light/40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-        <h1 className="mt-4 text-2xl font-bold font-display text-text">
-          Company Not Found
-        </h1>
-        <p className="mt-2 text-text-light">
-          This company profile doesn&apos;t exist or has been removed.
-        </p>
-        <Link
-          href="/jobs"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-light transition-colors"
-        >
-          Browse jobs
-        </Link>
-      </div>
-    );
-  }
+  if (error) throw new Error("Service temporarily unavailable");
+  if (!company) notFound();
 
   // Fetch active jobs from this company
   const now = new Date().toISOString();
-  const { data: jobs } = await supabase
+  const { data: jobs, error: jobsError } = await supabase
     .from("job_listings")
     .select("*")
     .eq("company_id", id)
@@ -88,6 +64,7 @@ export default async function CompanyPage({ params }: PageProps) {
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 
+  if (jobsError) throw new Error("Job listings temporarily unavailable");
   const mappedJobs: Job[] = (jobs || []).map((job) => {
     const jobTypeLabel =
       JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type;

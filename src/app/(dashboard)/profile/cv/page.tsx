@@ -1,4 +1,5 @@
 "use client";
+import SmartResumePreview from "@/components/cv/SmartResumePreview";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth } from "@/components/AuthProvider";
@@ -39,6 +40,8 @@ export default function CvBuilderPage() {
   const [exporting, setExporting] = useState(false);
   const [smartLoading, setSmartLoading] = useState(false);
   const [smartPreview, setSmartPreview] = useState<Record<string, unknown> | null>(null);
+  const [previewCreatedAt, setPreviewCreatedAt] = useState("");
+  const [awaitingPayment, setAwaitingPayment] = useState(false);
   const [smartPurchased, setSmartPurchased] = useState(false);
   const [smartError, setSmartError] = useState("");
   const [showIntake, setShowIntake] = useState(false);
@@ -78,33 +81,34 @@ export default function CvBuilderPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
+      // Load the remote CV after authentication resolves.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchCv();
-      fetch("/api/ai/resume/status")
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.purchased) setSmartPurchased(true);
-          if (d.preview) setSmartPreview(d.preview);
-        })
-        .catch(() => {});
-
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("unlock") === "true") {
-        setSmartPurchased(true);
-        fetch("/api/ai/resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mode: "unlock" }),
-        })
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.success) {
-              setSmartPreview(null);
-              fetchCv();
-              window.history.replaceState({}, "", "/profile/cv");
-            }
-          })
-          .catch(() => {});
+      const awaitingCheckout = new URLSearchParams(window.location.search).get("unlock") === "true";
+      let cancelled = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      let attempts = 0;
+      async function refreshResumeStatus() {
+        try {
+          const res = await fetch("/api/ai/resume/status");
+          const data = await res.json();
+          if (!res.ok) throw new Error("Could not check payment status. Please refresh shortly.");
+          if (cancelled) return;
+          setSmartPurchased(!!data.purchased);
+          setAwaitingPayment(awaitingCheckout && !data.purchased);
+          if (data.preview) setSmartPreview(data.preview);
+          if (data.previewCreatedAt) setPreviewCreatedAt(data.previewCreatedAt);
+          if (awaitingCheckout && !data.purchased && attempts++ < 20) timer = setTimeout(refreshResumeStatus, 3000);
+        } catch (error) {
+          if (!cancelled) {
+            setAwaitingPayment(awaitingCheckout);
+            setSmartError(error instanceof Error ? error.message : "Could not load resume status.");
+          }
+        }
       }
+      void refreshResumeStatus();
+      return () => { cancelled = true; if (timer) clearTimeout(timer); };
+
     }
   }, [user, authLoading, fetchCv]);
 
@@ -123,7 +127,7 @@ export default function CvBuilderPage() {
           mode: "preview",
           intake: {
             targetRole: intakeForm.targetRole,
-            yearsExperience: Number(intakeForm.yearsExperience) || 1,
+            yearsExperience: Number(intakeForm.yearsExperience) || 0,
             pastRoles: intakeForm.pastRoles,
             topSkills: intakeForm.topSkills,
             education: intakeForm.education,
@@ -136,6 +140,7 @@ export default function CvBuilderPage() {
         return;
       }
       setSmartPreview(data.preview);
+      setPreviewCreatedAt(data.previewCreatedAt);
       setShowIntake(false);
     } catch {
       setSmartError("Something went wrong. Please try again.");
@@ -408,9 +413,9 @@ export default function CvBuilderPage() {
         )}
 
         {/* Smart Resume Preview + Paywall */}
-        {smartPreview && !smartPurchased && (
+        {smartPreview && (
           <div className="mt-6 max-w-lg mx-auto">
-            <SmartResumePreview preview={smartPreview} />
+            <SmartResumePreview preview={smartPreview} purchased={smartPurchased} awaitingPayment={awaitingPayment} createdAt={previewCreatedAt} onSaved={async () => { setSmartPreview(null); await fetchCv(); }} />
           </div>
         )}
 
@@ -490,9 +495,9 @@ export default function CvBuilderPage() {
         </div>
       )}
 
-      {smartPreview && !smartPurchased && (
+      {smartPreview && (
         <div className="mb-6">
-          <SmartResumePreview preview={smartPreview} />
+          <SmartResumePreview preview={smartPreview} purchased={smartPurchased} awaitingPayment={awaitingPayment} createdAt={previewCreatedAt} onSaved={async () => { setSmartPreview(null); await fetchCv(); }} />
         </div>
       )}
 
@@ -1265,114 +1270,6 @@ function SmartResumeIntake({ form, onChange, onGenerate, loading, error, onBack 
           </span>
         ) : "Generate my Resume — Free Preview"}
       </button>
-    </div>
-  );
-}
-
-function SmartResumePreview({ preview }: { preview: Record<string, unknown> }) {
-  const data = preview as {
-    summary?: string;
-    experiences?: { job_title: string; company_name: string; description: string }[];
-    education?: { degree: string; institution: string }[];
-    skills?: string[];
-    languages?: { name: string; proficiency: string }[];
-    projects?: { title: string }[];
-    volunteer?: { organization: string }[];
-  };
-
-  const firstExp = data.experiences?.[0];
-  const remainingExps = (data.experiences?.length ?? 0) - 1;
-
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ boxShadow: "var(--shadow-lg)" }}>
-      {/* Top — teal gradient header */}
-      <div className="bg-gradient-to-br from-primary-dark via-primary to-primary-light p-5 text-white">
-        <div className="flex items-center gap-2 mb-3">
-          <svg className="h-4 w-4 text-accent-warm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
-          </svg>
-          <span className="text-xs font-bold uppercase tracking-[0.15em] text-white/80">Your Resume is Ready</span>
-        </div>
-        <p className="text-xs text-white/70">Here&apos;s a sample of what we wrote for you. The full version is below.</p>
-      </div>
-
-      {/* Full summary — show the actual AI quality */}
-      {data.summary && (
-        <div className="bg-white px-5 py-5 border-b border-border/40">
-          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Professional Summary</p>
-          <p className="text-sm text-text leading-relaxed">{data.summary}</p>
-        </div>
-      )}
-
-      {/* Full first experience — proves the writing quality */}
-      {firstExp && (
-        <div className="bg-white px-5 py-5 border-b border-border/40">
-          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Latest Experience</p>
-          <p className="text-sm font-semibold text-text">{firstExp.job_title}</p>
-          <p className="text-xs text-text-muted mb-2">{firstExp.company_name}</p>
-          {firstExp.description && (
-            <p className="text-sm text-text leading-relaxed whitespace-pre-line">{firstExp.description}</p>
-          )}
-        </div>
-      )}
-
-      {/* Blurred remaining content — creates urgency */}
-      {remainingExps > 0 && (
-        <div className="relative bg-white px-5 py-5 border-b border-border/40 overflow-hidden">
-          <div
-            className="select-none"
-            style={{ filter: "blur(5px)", pointerEvents: "none" }}
-            aria-hidden="true"
-          >
-            <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Previous Experience</p>
-            <p className="text-sm font-semibold text-text">Senior Server &amp; Bartender</p>
-            <p className="text-xs text-text-muted mb-2">Casa Roots Restaurant</p>
-            <p className="text-sm text-text leading-relaxed">
-              Delivered consistent five-star service across 80+ covers per shift while maintaining a 96% positive guest review rate. Trained 4 incoming staff on POS systems and beverage service standards, reducing onboarding time by 30%.
-            </p>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-white via-white/90 to-white/40">
-            <div className="text-center">
-              <p className="text-sm font-semibold text-text">+{remainingExps} more {remainingExps === 1 ? "role" : "roles"} written for you</p>
-              <p className="mt-0.5 text-xs text-text-muted">Plus skills, education, and more — unlock to see everything</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Skills preview chips */}
-      {data.skills && data.skills.length > 0 && (
-        <div className="bg-white px-5 py-4 border-b border-border/40">
-          <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2">Skills</p>
-          <div className="flex flex-wrap gap-1.5">
-            {data.skills.slice(0, 8).map((s, i) => (
-              <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-primary/5 text-primary font-medium">{s}</span>
-            ))}
-            {data.skills.length > 8 && (
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-bg-alt text-text-muted">+{data.skills.length - 8} more</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* CTA */}
-      <div className="bg-[--color-bg] px-5 py-5">
-        <button
-          onClick={async () => {
-            try {
-              const res = await fetch("/api/stripe/smart-resume-checkout", { method: "POST" });
-              const d = await res.json();
-              if (d.url) window.location.href = d.url;
-            } catch { /* ignore */ }
-          }}
-          className="w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-white hover:bg-accent-hover transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-        >
-          Unlock my full resume — EC$10
-        </button>
-        <p className="mt-2 text-center text-[11px] text-text-muted">
-          AI-written, ready in 30 seconds. <span className="font-semibold text-text">Don&apos;t love it? Full refund.</span>
-        </p>
-      </div>
     </div>
   );
 }

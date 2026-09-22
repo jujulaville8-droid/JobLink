@@ -62,6 +62,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (payload.cv_url) {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const { data: owned, error } = await createAdminClient().rpc('owns_cv_object', {
+        p_user_id: user.id, p_path: payload.cv_url,
+      })
+      if (error) return NextResponse.json({ error: 'Storage temporarily unavailable' }, { status: 503 })
+      if (!owned) return NextResponse.json({ error: 'Choose a CV you uploaded to your own account' }, { status: 400 })
+    }
+
     // Check if user has a built resume (for completion calc)
     const { data: cvProfile } = await supabase
       .from('cv_profiles')

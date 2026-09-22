@@ -9,6 +9,7 @@ const JOBS_PER_PAGE = 12;
 interface JobResultsProps {
   searchParams: {
     q?: string;
+    location?: string;
     category?: string;
     job_type?: string | string[];
     page?: string;
@@ -63,6 +64,10 @@ export default async function JobResults({
   if (searchParams.q) {
     const keyword = `%${searchParams.q}%`;
     query = query.or(`title.ilike.${keyword},description.ilike.${keyword}`);
+  }
+
+  if (searchParams.location) {
+    query = query.ilike("location", `%${searchParams.location.replace(/[%_]/g, "")}%`);
   }
 
   if (searchParams.category) {

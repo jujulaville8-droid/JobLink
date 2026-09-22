@@ -21,13 +21,14 @@ export async function GET(req: NextRequest) {
     const admin = createAdminClient();
 
     // Check if already purchased
-    const { data: existing } = await admin
+    const { data: existing, error: purchaseError } = await admin
       .from("ai_purchases")
       .select("id")
       .eq("user_id", user.id)
-      .eq("feature", "smart_resume")
+      .eq("feature", "smart_resume").limit(1)
       .maybeSingle();
 
+    if (purchaseError) throw purchaseError;
     if (existing) {
       return NextResponse.redirect(new URL("/profile/cv", origin));
     }
@@ -81,13 +82,14 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient();
 
-    const { data: existing } = await admin
+    const { data: existing, error: purchaseError } = await admin
       .from("ai_purchases")
       .select("id")
       .eq("user_id", user.id)
-      .eq("feature", "smart_resume")
+      .eq("feature", "smart_resume").limit(1)
       .maybeSingle();
 
+    if (purchaseError) throw purchaseError;
     if (existing) {
       return NextResponse.json({ url: "/profile/cv" });
     }

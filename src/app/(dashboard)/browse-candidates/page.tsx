@@ -28,7 +28,7 @@ async function CandidateResults({
   let query = supabase
     .from("seeker_profiles")
     .select("*")
-    .eq("visibility", "actively_looking")
+    .in("visibility", ["actively_looking", "open"])
     .gte("profile_complete_pct", 30)
     .not("first_name", "is", null)
     .neq("first_name", "")

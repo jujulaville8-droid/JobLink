@@ -15,25 +15,27 @@ export async function GET() {
 
     const admin = createAdminClient();
 
-    const [{ data: purchase }, { data: preview }] = await Promise.all([
+    const [{ data: purchase, error: purchaseError }, { data: preview, error: previewError }] = await Promise.all([
       admin
         .from("ai_purchases")
         .select("id")
         .eq("user_id", user.id)
-        .eq("feature", "smart_resume")
+        .eq("feature", "smart_resume").limit(1)
         .maybeSingle(),
       admin
         .from("ai_resume_previews")
-        .select("preview_data")
+        .select("preview_data, created_at")
         .eq("user_id", user.id)
         .maybeSingle(),
     ]);
 
+    if (purchaseError || previewError) throw purchaseError || previewError;
     return NextResponse.json({
+      previewCreatedAt: preview?.created_at ?? null,
       purchased: !!purchase,
       preview: preview?.preview_data ?? null,
     });
   } catch {
-    return NextResponse.json({ purchased: false, preview: null });
+    return NextResponse.json({ error: "Resume service temporarily unavailable" }, { status: 503 });
   }
 }

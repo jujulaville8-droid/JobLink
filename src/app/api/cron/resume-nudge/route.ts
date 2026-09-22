@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/email'
+import { sendReminder } from '@/lib/reminder-outbox'
 
 /**
  * Resume Nudge Cron Job (2-step drip)
@@ -47,20 +47,22 @@ export async function GET(request: NextRequest) {
     const userIds = seekers.map((s) => s.user_id)
 
     // Filter out seekers who have a built resume
-    const { data: cvProfiles } = await supabase
+    const { data: cvProfiles, error: cvError } = await supabase
       .from('cv_profiles')
       .select('user_id')
       .in('user_id', userIds)
 
+    if (cvError) throw cvError
     const hasBuiltResume = new Set((cvProfiles ?? []).map((c) => c.user_id))
 
     // Get all nudge events for these users
-    const { data: nudgeEvents } = await supabase
+    const { data: nudgeEvents, error: nudgeError } = await supabase
       .from('cv_events')
       .select('user_id, event_type, created_at')
       .in('event_type', ['resume_nudge_sent', 'resume_nudge_2_sent'])
       .in('user_id', userIds)
 
+    if (nudgeError) throw nudgeError
     // Build lookup: user_id → { drip1_sent_at, drip2_sent }
     const nudgeMap = new Map<string, { drip1_at: string | null; drip2_sent: boolean }>()
     for (const event of nudgeEvents ?? []) {
@@ -75,11 +77,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get emails
-    const { data: users } = await supabase
+    const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, email')
       .in('id', userIds)
 
+    if (usersError) throw usersError
     const emailMap = new Map((users ?? []).map((u) => [u.id, u.email]))
 
     let sentDrip1 = 0
@@ -97,16 +100,13 @@ export async function GET(request: NextRequest) {
 
       // Drip 1: Never been nudged
       if (!nudges?.drip1_at) {
-        await sendEmail({
+        const sent = await sendReminder(supabase, {
+          userId: seeker.user_id,
           to: email,
           type: 'resume_nudge',
           data: { applicant_name: seeker.first_name || undefined },
         })
-        await supabase.from('cv_events').insert({
-          user_id: seeker.user_id,
-          event_type: 'resume_nudge_sent',
-          metadata: { email },
-        })
+        if (!sent) continue
         sentDrip1++
         continue
       }
@@ -115,16 +115,13 @@ export async function GET(request: NextRequest) {
       if (nudges.drip1_at && !nudges.drip2_sent) {
         const drip1Date = new Date(nudges.drip1_at)
         if (drip1Date <= fiveDaysAgo) {
-          await sendEmail({
+          const sent = await sendReminder(supabase, {
+          userId: seeker.user_id,
             to: email,
             type: 'resume_nudge_2',
             data: { applicant_name: seeker.first_name || undefined },
           })
-          await supabase.from('cv_events').insert({
-            user_id: seeker.user_id,
-            event_type: 'resume_nudge_2_sent',
-            metadata: { email },
-          })
+          if (!sent) continue
           sentDrip2++
         }
       }

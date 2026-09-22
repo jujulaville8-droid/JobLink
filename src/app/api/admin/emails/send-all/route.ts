@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/email'
+import { sendReminder } from '@/lib/reminder-outbox'
 import { requireVerifiedUser } from '@/lib/api-auth'
 
 const DRIP_CONFIG = [
@@ -61,11 +61,12 @@ export async function POST() {
   }
 
   const userIds = unverifiedUsers.map((u) => u.id)
-  const { data: existingLogs } = await supabase
+  const { data: existingLogs, error: logError } = await supabase
     .from('signup_reminder_log')
     .select('auth_user_id, drip_step')
     .in('auth_user_id', userIds)
 
+  if (logError) return NextResponse.json({ error: 'Reminder history unavailable' }, { status: 503 })
   const maxDripSent = new Map<string, number>()
   for (const log of existingLogs ?? []) {
     const current = maxDripSent.get(log.auth_user_id) ?? 0
@@ -76,6 +77,7 @@ export async function POST() {
 
   const now = Date.now()
   let totalSent = 0
+  let failed = 0
 
   for (const u of unverifiedUsers) {
     const hoursSinceSignup = (now - new Date(u.created_at).getTime()) / (1000 * 60 * 60)
@@ -85,18 +87,12 @@ export async function POST() {
       if (drip.step <= lastDripSent) continue
       if (hoursSinceSignup < drip.delayHours) break
 
-      await sendEmail({ to: u.email, type: drip.emailType, data: {} })
-
-      await supabase.from('signup_reminder_log').insert({
-        auth_user_id: u.id,
-        email: u.email,
-        drip_step: drip.step,
-      })
-
-      totalSent++
+      try {
+        if (await sendReminder(supabase, { userId: u.id, to: u.email, type: drip.emailType })) totalSent++
+      } catch { failed++ }
       break
     }
   }
 
-  return NextResponse.json({ sent: totalSent })
+  return NextResponse.json({ sent: totalSent, failed }, { status: failed ? 503 : 200 })
 }

@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
@@ -12,14 +13,16 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const supabase = await createClient();
 
-  const { data: job } = await supabase
+  const { data: job, error: metadataError } = await supabase
     .from("job_listings")
     .select("title, status, expires_at, company:companies(company_name, logo_url)")
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
+  if (metadataError) return { title: "Temporarily unavailable | JobLinks" };
   if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
     return { title: "Job Not Found | JobLinks" };
   }
@@ -82,6 +85,7 @@ function timeAgo(dateStr: string): string {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) notFound();
   const supabase = await createClient();
 
   const { data: job, error } = await supabase
@@ -102,46 +106,10 @@ export default async function JobDetailPage({ params }: PageProps) {
     `
     )
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
-  if (error || !job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <svg
-          className="mx-auto h-16 w-16 text-text-muted/40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <h1 className="mt-4 font-display text-2xl text-text">Job Not Found</h1>
-        <p className="mt-2 text-text-light">
-          This listing may have been removed or is no longer active.
-        </p>
-        <Link
-          href="/jobs"
-          className="mt-6 inline-flex items-center gap-2 btn-primary text-sm"
-        >
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Browse all jobs
-        </Link>
-      </div>
-    );
-  }
+  if (error) throw new Error("Service temporarily unavailable");
+  if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) notFound();
 
   const company = job.company as unknown as {
     id: string;
@@ -186,7 +154,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       .from("users")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (!userData || userData.role !== "seeker") {
       applyState = "not-seeker";

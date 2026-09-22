@@ -143,17 +143,23 @@ export async function POST(
 
     if (otherPart) {
       // Get sender name and job context for notification
+      // Membership was verified above. Recipient notification reads are server-only.
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      const admin = createAdminClient()
+      const { data: senderCompany } = await admin.from('companies').select('company_name').eq('user_id', user.id).maybeSingle()
+      const { data: senderProfile } = await admin.from('seeker_profiles').select('first_name, last_name').eq('user_id', user.id).maybeSingle()
+      const senderName = senderCompany?.company_name || [senderProfile?.first_name, senderProfile?.last_name].filter(Boolean).join(' ') || 'Someone'
       const { data: convMeta } = await supabase.rpc('get_conversation_meta', {
-        p_user_id: otherPart.user_id,
+        p_user_id: user.id,
         p_conversation_id: conversationId,
       })
 
       const meta = convMeta?.[0]
       if (meta) {
-        await sendMessageNotification(supabase, {
+        await sendMessageNotification(admin, {
           conversationId,
           recipientId: otherPart.user_id,
-          senderName: meta.other_display_name || 'Someone',
+          senderName,
           jobTitle: meta.job_title || 'a position',
           messagePreview: body.trim().slice(0, 100),
         })

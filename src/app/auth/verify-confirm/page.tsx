@@ -162,6 +162,8 @@ function VerifyConfirmContent() {
     const supabase = createClient()
 
     if (tokenHash && type === 'signup') {
+      // Synchronize verification status with the external auth provider.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       verifyWithToken(supabase, tokenHash)
       return
     }

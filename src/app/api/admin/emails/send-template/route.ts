@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
   }
 
-  await sendEmail({ to, type, data: data || {} })
+  const result = await sendEmail({ to, type, data: data || {} })
+  if (!result.ok) return NextResponse.json({ error: "Email delivery failed" }, { status: 503 })
 
   return NextResponse.json({ success: true, to, type })
 }
