@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:ui": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx",
+    "test:ui": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
     "discover": "npx tsx scripts/discover-businesses.ts"
   },
   "dependencies": {

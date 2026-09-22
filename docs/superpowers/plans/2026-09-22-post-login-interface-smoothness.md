@@ -486,7 +486,7 @@ git commit -m "feat: add instant dashboard navigation feedback"
 - Consumes: existing `buttonVariants` API without changing its props or exports
 - Produces: the same `Button` and `buttonVariants` exports with consistent press, focus, pending, and disabled visuals
 
-- [ ] **Step 1: Add a failing source-contract test for shared button feedback**
+- [x] **Step 1: Add a failing rendered-output test for shared button feedback**
 
 Append to `tests/navigation-state.test.mjs`:
 
@@ -502,7 +502,7 @@ Run: `npm run test:ui`
 
 Expected: FAIL because the shared button does not yet include the feedback classes.
 
-- [ ] **Step 2: Polish the shared button primitive without changing its API**
+- [x] **Step 2: Polish the shared button primitive without changing its API**
 
 Replace the broad `transition-colors` class in `buttonVariants` with:
 
@@ -512,11 +512,11 @@ transition-[transform,background-color,border-color,color,box-shadow,opacity] du
 
 Keep all existing variants and sizes unchanged.
 
-- [ ] **Step 3: Tighten legacy global button timing**
+- [x] **Step 3: Tighten legacy global button timing**
 
 Change `.btn-primary`, `.btn-warm`, `.btn-secondary`, and `.btn-secondary-dark` to explicit 180 ms transitions for transform, background-color, border-color, and box-shadow. Reduce hover translation from 2 px to 1 px and preserve zero translation on active press.
 
-- [ ] **Step 4: Run all automated checks**
+- [x] **Step 4: Run all automated checks**
 
 Run: `npm run test:ui`
 
@@ -534,7 +534,7 @@ Run: `npm run build`
 
 Expected: successful production build.
 
-- [ ] **Step 5: Perform signed-in desktop and mobile verification**
+- [x] **Step 5: Perform signed-in desktop and mobile verification**
 
 Start the app with `npm run dev` and verify:
 
@@ -546,7 +546,7 @@ Start the app with `npm run dev` and verify:
 6. With reduced motion enabled, content appears without visible translation, shimmer, pulse, or rotation.
 7. Seeker, employer, and admin navigation destinations and permissions remain unchanged.
 
-- [ ] **Step 6: Review the final diff for scope and unrelated files**
+- [x] **Step 6: Review the final diff for scope and unrelated files**
 
 Run: `git diff --check`
 
@@ -556,7 +556,7 @@ Run: `git status --short`
 
 Expected: only files named in this plan plus the repository's pre-existing unrelated changes.
 
-- [ ] **Step 7: Commit the final interaction polish**
+- [x] **Step 7: Commit the final interaction polish**
 
 ```bash
 git add src/components/ui/button.tsx src/app/globals.css tests/navigation-state.test.mjs docs/superpowers/plans/2026-09-22-post-login-interface-smoothness.md

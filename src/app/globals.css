@@ -287,11 +287,14 @@ body {
   font-weight: 600;
   font-size: 15px;
   padding: 12px 28px;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-primary:hover {
   background: var(--color-primary-dark);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(13, 115, 119, 0.25);
 }
 .btn-primary:active {
@@ -310,11 +313,14 @@ body {
   font-weight: 600;
   font-size: 15px;
   padding: 12px 28px;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-warm:hover {
   background: var(--color-accent-warm-hover);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(232, 151, 62, 0.3);
 }
 .btn-warm:active {
@@ -333,7 +339,11 @@ body {
   font-size: 15px;
   padding: 12px 28px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    border-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -357,7 +367,11 @@ body {
   font-size: 15px;
   padding: 12px 28px;
   border: 1px solid var(--color-border);
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    border-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-secondary-dark:hover {
   background: var(--color-bg-alt);
