@@ -6,6 +6,7 @@ import { Suspense } from "react";
 interface PageProps {
   searchParams: Promise<{
     q?: string;
+    location?: string;
     category?: string;
     job_type?: string | string[];
     page?: string;
@@ -50,6 +51,8 @@ export default async function JobsPage({ searchParams }: PageProps) {
           <JobSearchBar defaultValue={params.q} />
         </div>
       </div>
+
+      {params.location && <p className="mb-4 text-sm text-text-light">Location: <strong>{params.location}</strong></p>}
 
       {/* Search query indicator */}
       {params.q && (

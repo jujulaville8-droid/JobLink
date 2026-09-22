@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import "./globals.css";
+import "@/components/home/home.css";
 
 const displayFont = DM_Serif_Display({
   variable: "--font-heading",
