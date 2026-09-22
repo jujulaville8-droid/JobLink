@@ -47,7 +47,7 @@
 - Produces: `isModifiedNavigation(event: Pick<MouseEvent, "button" | "metaKey" | "ctrlKey" | "shiftKey" | "altKey">): boolean`
 - Consumes: no application modules
 
-- [ ] **Step 1: Write the failing route-state tests**
+- [x] **Step 1: Write the failing route-state tests**
 
 ```js
 import test from "node:test";
@@ -76,7 +76,7 @@ test("modified and non-primary clicks preserve native browser navigation", () =>
 });
 ```
 
-- [ ] **Step 2: Add the test command and prove the test fails**
+- [x] **Step 2: Add the test command and prove the test fails**
 
 Add to `package.json` scripts:
 
@@ -88,7 +88,7 @@ Run: `npm run test:ui`
 
 Expected: FAIL with `ERR_MODULE_NOT_FOUND` for `src/lib/navigation-state.ts`.
 
-- [ ] **Step 3: Implement the minimal pure helpers**
+- [x] **Step 3: Implement the minimal pure helpers**
 
 ```ts
 type NavigationEvent = Pick<
@@ -112,7 +112,7 @@ export function isModifiedNavigation(event: NavigationEvent) {
 }
 ```
 
-- [ ] **Step 4: Run the focused test and type checks**
+- [x] **Step 4: Run the focused test and type checks**
 
 Run: `npm run test:ui`
 
@@ -122,7 +122,7 @@ Run: `npx tsc --noEmit`
 
 Expected: exit code 0.
 
-- [ ] **Step 5: Commit the tested primitives**
+- [x] **Step 5: Commit the tested primitives**
 
 ```bash
 git add package.json src/lib/navigation-state.ts tests/navigation-state.test.mjs
