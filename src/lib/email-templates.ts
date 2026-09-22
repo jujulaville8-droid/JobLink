@@ -351,7 +351,6 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             ${btn('Upload My Resume', '/profile')}
           </div>
           <p style="text-align: center; margin-top: 12px;">
-            <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or build one using our Resume Builder</a>
           </p>
         `),
       }
@@ -379,7 +378,6 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             ${btn('Add My Resume Now', '/profile')}
           </div>
           <p style="text-align: center; margin-top: 12px;">
-            <a href="${SITE}/profile/cv" style="color: #14919b; font-size: 14px; text-decoration: underline;">Or use our free Resume Builder</a>
           </p>
         `),
       }
@@ -414,7 +412,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           </p>
 
           <p style="color: #374151; line-height: 1.6; font-weight: 600;">
-            You have two easy options:
+            Upload your resume to your profile:
           </p>
 
           <div style="display: flex; gap: 12px; margin: 24px 0;">
@@ -422,11 +420,6 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
               <p style="color: #0d7377; font-weight: 700; margin: 0 0 6px 0; font-size: 15px;">Upload Your Resume</p>
               <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">Already have a CV? Upload it in seconds.</p>
               <a href="${SITE}/profile" style="display: inline-block; background-color: #0d7377; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Upload Now</a>
-            </div>
-            <div style="flex: 1; background-color: #f0fafa; border-radius: 12px; padding: 20px; text-align: center;">
-              <p style="color: #0d7377; font-weight: 700; margin: 0 0 6px 0; font-size: 15px;">Build One on JobLinks</p>
-              <p style="color: #6b7280; font-size: 13px; margin: 0 0 12px 0;">No resume? Build a professional one for free.</p>
-              <a href="${SITE}/profile/cv" style="display: inline-block; background-color: #14919b; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">Build My Resume</a>
             </div>
           </div>
 
