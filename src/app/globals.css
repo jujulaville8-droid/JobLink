@@ -27,6 +27,9 @@
   --radius-card: 16px;
   --radius-button: 12px;
   --radius-input: 10px;
+  --motion-fast: 120ms;
+  --motion-page: 180ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 
@@ -60,18 +63,6 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* ── Smooth theme transition (dark ↔ light) ── */
-html,
-html *,
-html *::before,
-html *::after {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 ::selection {
@@ -144,6 +135,17 @@ html {
   100% { background-position: 200% 0; }
 }
 
+@keyframes dashboard-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ── Animation utility classes ── */
 .animate-fade-up {
   animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -159,6 +161,10 @@ html {
 
 .animate-scale-in {
   animation: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-page-enter {
+  animation: dashboard-page-in var(--motion-page) var(--motion-ease-out) both;
 }
 
 /* ── Stagger children ── */
@@ -210,6 +216,7 @@ html {
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
+  pointer-events: none;
 }
 
 
@@ -377,3 +384,17 @@ html {
   box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.12);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

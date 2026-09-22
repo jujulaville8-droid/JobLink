@@ -142,7 +142,7 @@ git commit -m "test: add dashboard navigation state coverage"
 - Produces: `DashboardPageTransition({ children }: { children: React.ReactNode }): React.ReactElement`
 - Produces: a framework-owned default export from `loading.tsx`
 
-- [ ] **Step 1: Add a failing source-contract test for the shared shell**
+- [x] **Step 1: Add a failing source-contract test for the shared shell**
 
 Append to `tests/navigation-state.test.mjs`:
 
@@ -162,13 +162,13 @@ test("dashboard shell defines a loading boundary and reduced-motion fallback", a
 });
 ```
 
-- [ ] **Step 2: Run the test and confirm the missing boundary fails**
+- [x] **Step 2: Run the test and confirm the missing boundary fails**
 
 Run: `npm run test:ui`
 
 Expected: FAIL with `ENOENT` for `src/app/(dashboard)/loading.tsx`.
 
-- [ ] **Step 3: Add the route-keyed content wrapper**
+- [x] **Step 3: Add the route-keyed content wrapper**
 
 Create `DashboardPageTransition.tsx`:
 
@@ -192,7 +192,7 @@ export default function DashboardPageTransition({
 }
 ```
 
-- [ ] **Step 4: Add a geometry-preserving dashboard skeleton**
+- [x] **Step 4: Add a geometry-preserving dashboard skeleton**
 
 Create `src/app/(dashboard)/loading.tsx` with an `aria-hidden="true"` root, a title row, three responsive summary cards, and five list rows. Each placeholder uses the existing `skeleton` class, with the outer layout matching the dashboard content width rather than introducing another page container.
 
@@ -228,7 +228,7 @@ export default function DashboardLoading() {
 }
 ```
 
-- [ ] **Step 5: Wire the stable content viewport into the authenticated layout**
+- [x] **Step 5: Wire the stable content viewport into the authenticated layout**
 
 Import `DashboardPageTransition` and replace the raw `{children}` at `layout.tsx:115` with:
 
@@ -238,7 +238,7 @@ Import `DashboardPageTransition` and replace the raw `{children}` at `layout.tsx
 
 Add `min-w-0` to the main element and `w-full` to its inner container so page widths do not push the shell.
 
-- [ ] **Step 6: Replace blanket transitions with targeted motion**
+- [x] **Step 6: Replace blanket transitions with targeted motion**
 
 In `globals.css`, remove the `html, html *, html *::before, html *::after` transition rule and the global `html { scroll-behavior: smooth; }` rule. Add motion tokens to `:root`, a 180 ms `dashboard-page-in` animation using `translateY(5px)`, a 120 ms navigation feedback transition, and the reduced-motion block:
 
@@ -271,7 +271,7 @@ In `globals.css`, remove the `html, html *, html *::before, html *::after` trans
 
 Also set `.skeleton { pointer-events: none; }` so loading placeholders cannot intercept input.
 
-- [ ] **Step 7: Run the tests, lint the touched files, and build**
+- [x] **Step 7: Run the tests, lint the touched files, and build**
 
 Run: `npm run test:ui`
 
@@ -285,7 +285,7 @@ Run: `npm run build`
 
 Expected: successful production build.
 
-- [ ] **Step 8: Commit the stable shell**
+- [x] **Step 8: Commit the stable shell**
 
 ```bash
 git add 'src/app/(dashboard)/layout.tsx' 'src/app/(dashboard)/loading.tsx' src/components/DashboardPageTransition.tsx src/app/globals.css tests/navigation-state.test.mjs
