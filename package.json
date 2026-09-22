@@ -8,9 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "smoke": "node scripts/smoke-local.mjs",
-    "discover": "npx tsx scripts/discover-businesses.ts",
-    "check:env": "node scripts/validate-env.mjs",
-    "test": "tsx --test tests/*.test.ts"
+    "discover": "npx tsx scripts/discover-businesses.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.127.0",
