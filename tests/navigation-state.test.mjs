@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  getActiveHref,
+  getActivePathname,
+  getPendingHref,
   isModifiedNavigation,
   isRouteActive,
 } from "../src/lib/navigation-state.ts";
@@ -48,4 +51,25 @@ test("modified and non-primary clicks preserve native browser navigation", () =>
     }),
     true,
   );
+});
+
+test("a pending destination becomes active immediately", () => {
+  assert.equal(getActivePathname("/dashboard", "/messages"), "/messages");
+  assert.equal(getActivePathname("/messages", null), "/messages");
+});
+
+test("the most specific dashboard destination owns a nested route", () => {
+  const links = ["/", "/profile", "/profile/cv", "/messages"];
+
+  assert.equal(getActiveHref("/profile/cv", links), "/profile/cv");
+  assert.equal(getActiveHref("/messages/abc", links), "/messages");
+  assert.equal(getActiveHref("/settings", links), null);
+});
+
+test("pending feedback clears as soon as the pathname changes", () => {
+  const pending = { href: "/messages", fromPathname: "/dashboard" };
+
+  assert.equal(getPendingHref("/dashboard", pending), "/messages");
+  assert.equal(getPendingHref("/messages", pending), null);
+  assert.equal(getPendingHref("/dashboard", null), null);
 });

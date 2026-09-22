@@ -305,7 +305,7 @@ git commit -m "feat: add stable dashboard loading transitions"
 - Consumes: `isModifiedNavigation` and `isRouteActive` from `@/lib/navigation-state`
 - Produces: `useNavigationFeedback(): { activePathname: string; pendingHref: string | null; beginNavigation(event: React.MouseEvent<HTMLAnchorElement>, href: string): void; prefetch(href: string): void; isActive(href: string): boolean; isPending(href: string): boolean }`
 
-- [ ] **Step 1: Extend route-state tests for the pending active pathname contract**
+- [x] **Step 1: Extend route-state tests for the pending active pathname contract**
 
 Add `getActivePathname` to the existing import from `navigation-state.ts`, then append this test:
 
@@ -320,7 +320,7 @@ Run: `npm run test:ui`
 
 Expected: FAIL because `getActivePathname` is not exported.
 
-- [ ] **Step 2: Implement the pending-path helper and client hook**
+- [x] **Step 2: Implement the pending-path helper and client hook**
 
 Add to `navigation-state.ts`:
 
@@ -392,7 +392,7 @@ export function useNavigationFeedback() {
 }
 ```
 
-- [ ] **Step 3: Apply feedback to the sidebar**
+- [x] **Step 3: Apply feedback to the sidebar**
 
 Replace direct `usePathname` use with `useNavigationFeedback`. Each link must include:
 
@@ -407,11 +407,11 @@ onTouchStart={() => prefetch(link.href)}
 
 Use the pending destination for the active visual state. Add `dashboard-nav-link` and `data-pending={isPending || undefined}`. Render a 14 px CSS spinner before the badge when pending while leaving badges mounted to avoid width changes.
 
-- [ ] **Step 4: Apply nested matching and touch feedback to mobile navigation**
+- [x] **Step 4: Apply nested matching and touch feedback to mobile navigation**
 
 Replace the exact `pathname === path` check in `BottomNav` with the hook's `isActive`. Add the same prefetch and click handlers as the sidebar, `aria-current`, `aria-busy`, `dashboard-bottom-nav-link`, and `data-pending`. Keep every item at least 44 px tall and render the active dot with `aria-hidden="true"`; pending dots use the CSS pulse animation.
 
-- [ ] **Step 5: Add narrowly scoped navigation CSS**
+- [x] **Step 5: Add narrowly scoped navigation CSS**
 
 Add the following narrowly scoped rules. The reduced-motion block from Task 2 disables the pulse and rotation automatically.
 
@@ -454,7 +454,7 @@ Add the following narrowly scoped rules. The reduced-motion block from Task 2 di
 }
 ```
 
-- [ ] **Step 6: Verify behavior and quality gates**
+- [x] **Step 6: Verify behavior and quality gates**
 
 Run: `npm run test:ui`
 
@@ -468,7 +468,7 @@ Run: `npm run build`
 
 Expected: successful production build.
 
-- [ ] **Step 7: Commit navigation feedback**
+- [x] **Step 7: Commit navigation feedback**
 
 ```bash
 git add src/lib/navigation-state.ts src/components/useNavigationFeedback.ts src/components/SidebarNav.tsx src/components/BottomNav.tsx src/app/globals.css tests/navigation-state.test.mjs

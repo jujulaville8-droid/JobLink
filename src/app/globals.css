@@ -167,6 +167,43 @@ body {
   animation: dashboard-page-in var(--motion-page) var(--motion-ease-out) both;
 }
 
+.dashboard-nav-link,
+.dashboard-bottom-nav-link {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--motion-fast) var(--motion-ease-out),
+    background-color var(--motion-fast) var(--motion-ease-out),
+    border-color var(--motion-fast) var(--motion-ease-out),
+    opacity var(--motion-fast) var(--motion-ease-out),
+    transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.dashboard-nav-link:active,
+.dashboard-bottom-nav-link:active {
+  transform: scale(0.98);
+}
+
+@keyframes dashboard-nav-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dashboard-nav-pulse {
+  50% { opacity: 0.45; transform: translateX(-50%) scale(0.78); }
+}
+
+.dashboard-nav-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: dashboard-nav-spin 600ms linear infinite;
+}
+
+.dashboard-bottom-nav-link[data-pending="true"] .dashboard-nav-dot {
+  animation: dashboard-nav-pulse 600ms ease-in-out infinite;
+}
+
 /* ── Stagger children ── */
 .stagger-children > * {
   opacity: 0;
