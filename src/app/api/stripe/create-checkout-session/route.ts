@@ -40,6 +40,7 @@ export async function POST() {
 
     const params: Record<string, unknown> = {
       mode: 'subscription' as const,
+      subscription_data: { metadata: { user_id: user.id, ...(company?.id ? { company_id: company.id } : {}) } },
       line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,

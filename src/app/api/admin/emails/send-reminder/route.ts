@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/email'
+import { sendReminder } from '@/lib/reminder-outbox'
 import { requireVerifiedUser } from '@/lib/api-auth'
 
 /**
@@ -50,13 +50,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'This reminder was already sent' }, { status: 409 })
   }
 
-  await sendEmail({ to: email, type: emailType, data: {} })
-
-  await supabase.from('signup_reminder_log').insert({
-    auth_user_id,
-    email,
-    drip_step,
-  })
+  try {
+    const { data: recipient, error } = await supabase.auth.admin.getUserById(auth_user_id)
+    if (error || recipient.user?.email !== email) return NextResponse.json({ error: 'Recipient mismatch' }, { status: 400 })
+    const sent = await sendReminder(supabase, { userId: auth_user_id, to: email, type: emailType })
+    if (!sent) return NextResponse.json({ error: 'Already sent or queued' }, { status: 409 })
+  } catch {
+    return NextResponse.json({ error: 'Delivery failed; queued for retry' }, { status: 503 })
+  }
 
   return NextResponse.json({ success: true, email, drip_step })
 }

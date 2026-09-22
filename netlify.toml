@@ -1,8 +1,2 @@
-[functions."expire-listings"]
-schedule = "@hourly"
-
-[functions."resume-nudge"]
-schedule = "0 10 * * *"
-
-[functions."signup-reminder"]
-schedule = "0 11 * * *"
+# Backup hosting only. Vercel is the sole scheduler.
+# Do not add scheduled functions here while Vercel cron is active.

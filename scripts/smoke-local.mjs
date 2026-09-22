@@ -1,84 +1,33 @@
 import { spawn } from 'node:child_process'
-
-const baseUrl = 'http://127.0.0.1:3000'
-const child = spawn('npm', ['run', 'dev'], {
-  detached: true,
-  stdio: ['ignore', 'pipe', 'pipe'],
+import { once } from 'node:events'
+import assert from 'node:assert/strict'
+const port = Number(process.env.SMOKE_PORT || 3188)
+const baseUrl = `http://127.0.0.1:${port}`
+const child = spawn(process.execPath, ['node_modules/next/dist/bin/next','start','-p',String(port)], {
+  stdio:['ignore','pipe','pipe'], env:{...process.env,NEXT_PUBLIC_SUPABASE_URL:'http://127.0.0.1:1',NEXT_PUBLIC_SUPABASE_ANON_KEY:'local-placeholder',MAINTENANCE_MODE:'false'},
 })
-
-let serverOutput = ''
-child.stdout.on('data', (chunk) => {
-  serverOutput += chunk
-})
-child.stderr.on('data', (chunk) => {
-  serverOutput += chunk
-})
-
-async function waitForServer() {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    try {
-      await fetch(baseUrl)
-      return
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 250))
-    }
-  }
-
-  throw new Error(`Local server did not start.\n${serverOutput}`)
+let output=''; child.stdout.on('data',c=>output+=c);child.stderr.on('data',c=>output+=c)
+async function probe(path,statuses,options={}) {
+ const r=await fetch(`${baseUrl}${path}`,{redirect:'manual',...options})
+ assert.ok(statuses.includes(r.status),`${path}: got ${r.status}, expected ${statuses}`)
+ console.log(`${options.method || 'GET'} ${path}: ${r.status}`)
+ return r
 }
-
-async function probe(label, path, options = {}, expectedStatuses = [200]) {
-  const response = await fetch(`${baseUrl}${path}`, {
-    redirect: 'manual',
-    ...options,
-  })
-  const status = response.status
-  const location = response.headers.get('location') || ''
-  console.log(`${label.padEnd(42)} status=${status}${location ? ` location=${location}` : ''}`)
-
-  if (!expectedStatuses.includes(status)) {
-    throw new Error(`${label} returned ${status}; expected ${expectedStatuses.join(' or ')}`)
-  }
-}
-
 try {
-  await waitForServer()
-
-  await probe('GET /', '/')
-  await probe('GET /jobs', '/jobs')
-  await probe('GET /about', '/about')
-  await probe('GET /login', '/login')
-  await probe('GET /signup?role=employer', '/signup?role=employer')
-  await probe('GET /jobs/not-a-real-job-id', '/jobs/not-a-real-job-id')
-  await probe('GET /companies/not-a-real-company-id', '/companies/not-a-real-company-id')
-
-  await probe('GET /dashboard', '/dashboard', {}, [302, 303, 307, 308])
-  await probe('GET /admin/approvals', '/admin/approvals', {}, [302, 303, 307, 308])
-  await probe('GET /browse-jobs', '/browse-jobs', {}, [302, 303, 307, 308])
-
-  const jsonPost = {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: '{}',
-  }
-  await probe('POST /api/profile', '/api/profile', jsonPost, [401])
-  await probe('POST /api/jobs/apply', '/api/jobs/apply', jsonPost, [401])
-  await probe('POST /api/messages/invite', '/api/messages/invite', jsonPost, [401])
-  await probe('POST /api/switch-role', '/api/switch-role', jsonPost, [401])
-
-  await probe('GET /api/cron/expire-listings', '/api/cron/expire-listings', {}, [401])
-  await probe(
-    'GET cron with spoofed x-vercel-cron',
-    '/api/cron/expire-listings',
-    { headers: { 'x-vercel-cron': '1' } },
-    [401]
-  )
-
-  console.log('Smoke checks passed.')
+ for(let i=0;i<60;i++) {try {await fetch(`${baseUrl}/api/health`);break}catch {if(i===59) throw new Error(output);await new Promise(r=>setTimeout(r,250))}}
+ // Streaming HTML may have committed 200 before a render error. Health is the readiness signal.
+ const home=await probe('/',[200,500]); const html=await home.text()
+ assert.ok(html.includes('Temporarily unavailable') || html.includes('NEXT_ERROR') || home.status===500,'Outage must not render an empty home page')
+ await probe('/api/health',[503])
+ for(const path of ['/jobs','/about','/login','/signup?role=employer']) await probe(path,[200])
+ for(const path of ['/jobs/not-a-real-job-id','/companies/not-a-real-company-id']) await probe(path,[404])
+ for(const path of ['/dashboard','/admin/approvals','/browse-jobs']) await probe(path,[302,303,307,308])
+ const json={method:'POST',headers:{'content-type':'application/json'},body:'{}'}
+ for(const path of ['/api/profile','/api/jobs/apply','/api/messages/invite','/api/switch-role','/api/ai/resume']) await probe(path,[401],json)
+ for(const path of ['/api/cron/expire-listings','/api/cron/email-outbox','/api/cron/signup-reminder','/api/cron/resume-nudge']) await probe(path,[401])
+ await probe('/api/cron/expire-listings',[401],{headers:{'x-vercel-cron':'1'}})
+ await probe('/api/webhooks/stripe',[400],json)
+ console.log('Local production outage/auth smoke checks passed; no live services used.')
 } finally {
-  try {
-    process.kill(-child.pid, 'SIGTERM')
-  } catch {
-    child.kill('SIGTERM')
-  }
+ if(child.exitCode===null) {child.kill('SIGTERM');await once(child,'exit')}
 }

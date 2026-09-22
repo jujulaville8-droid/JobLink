@@ -218,7 +218,7 @@ export default function PostJobPage() {
 
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id, is_pro')
+        .select('id, is_pro, pro_expires_at')
         .eq('user_id', user.id)
         .single();
 
@@ -231,12 +231,13 @@ export default function PostJobPage() {
       }
 
       // Double-check listing limit for non-Pro on new listings
-      if (!editId && !company.is_pro) {
+      if (!editId && !(company.is_pro && (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date()))) {
         const { count } = await supabase
           .from('job_listings')
           .select('id', { count: 'exact', head: true })
           .eq('company_id', company.id)
-          .eq('status', 'active');
+          .in('status', ['active', 'pending_approval'])
+          .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
         if ((count ?? 0) >= 1) {
           setListingGated(true);
@@ -349,7 +350,7 @@ export default function PostJobPage() {
             You&apos;ve used your free listing
           </h2>
           <p className="mt-2 text-sm text-text-light leading-relaxed">
-            Free accounts include <span className="font-semibold text-text">1 active listing</span>. You&apos;re currently using it. Upgrade to JobLink Pro to post unlimited listings and get featured placement.
+            Free accounts include <span className="font-semibold text-text">1 active or pending listing</span>. You&apos;re currently using it. Upgrade to JobLink Pro to post unlimited listings and get featured placement.
           </p>
 
           {/* Usage bar */}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail } from '@/lib/email'
+import { sendReminder } from '@/lib/reminder-outbox'
 
 /**
  * Signup Reminder Cron Job (3-step drip)
@@ -66,10 +66,12 @@ export async function GET(request: NextRequest) {
 
     // Get existing reminder logs for these users
     const userIds = unverifiedUsers.map((u) => u.id)
-    const { data: existingLogs } = await supabase
+    const { data: existingLogs, error: logError } = await supabase
       .from('signup_reminder_log')
       .select('auth_user_id, drip_step')
       .in('auth_user_id', userIds)
+
+    if (logError) throw logError
 
     // Build lookup: auth_user_id → max drip_step sent
     const maxDripSent = new Map<string, number>()
@@ -93,17 +95,14 @@ export async function GET(request: NextRequest) {
         if (drip.step <= lastDripSent) continue
         if (hoursSinceSignup < drip.delayHours) break
 
-        await sendEmail({
+        const sent = await sendReminder(supabase, {
+          userId: user.id,
           to: user.email,
           type: drip.emailType,
           data: {},
         })
 
-        await supabase.from('signup_reminder_log').insert({
-          auth_user_id: user.id,
-          email: user.email,
-          drip_step: drip.step,
-        })
+        if (!sent) break
 
         results[`drip${drip.step}`]++
         totalSent++

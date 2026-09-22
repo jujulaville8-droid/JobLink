@@ -13,6 +13,8 @@ export default function BottomNav() {
   const isHidden = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
   const isActive = (path: string) => pathname === path;
 
+  if (pathname === "/" || pathname === "/design-preview") return null;
+
   if (isHidden) return null;
 
   const linkClass = (path: string) =>

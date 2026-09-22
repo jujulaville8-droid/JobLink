@@ -33,6 +33,7 @@ export async function GET(req: NextRequest) {
     // Build checkout session — works with or without a company profile
     const params: Record<string, unknown> = {
       mode: 'subscription' as const,
+      subscription_data: { metadata: { user_id: user.id, ...(company?.id ? { company_id: company.id } : {}) } },
       line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
       success_url: `${origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/employers/upgrade`,

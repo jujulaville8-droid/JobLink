@@ -1,45 +1,25 @@
 import { Resend } from 'resend'
-
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
-
 export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://joblinkantigua.com'
+interface SendEmailParams { to: string; type: string; data?: Record<string, unknown>; idempotencyKey?: string }
+export type EmailResult = { ok: true; id: string } | { ok: false }
 
-interface SendEmailParams {
-  to: string
-  type: string
-  data?: Record<string, unknown>
-}
-
-/**
- * Fire-and-forget email helper.
- * Calls Resend directly (server-side only).
- * Never throws — logs errors instead so email failures don't break user flows.
- */
-export async function sendEmail({ to, type, data }: SendEmailParams): Promise<void> {
+/** Explicit result: callers must not record delivery when a provider call failed. */
+export async function sendEmail({ to, type, data, idempotencyKey }: SendEmailParams): Promise<EmailResult> {
   try {
-    const apiKey = process.env.RESEND_API_KEY
-    if (!apiKey) {
-      console.warn(`[sendEmail] RESEND_API_KEY not set — skipping "${type}" email to ${to}`)
-      return
-    }
-
-    // Dynamic import to keep the email builder co-located with the helper
+    if (!process.env.RESEND_API_KEY) return { ok: false }
     const { buildEmailHtml } = await import('./email-templates')
-
     const { subject, html } = buildEmailHtml(type, data || {})
-
-    const resend = new Resend(apiKey)
-    const { error } = await resend.emails.send({
-      from: FROM_ADDRESS,
-      to,
-      subject,
-      html,
-    })
-
-    if (error) {
-      console.error(`[sendEmail] Failed "${type}" to ${to}:`, error.message)
+    const { data: result, error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
+      from: FROM_ADDRESS, to, subject, html,
+    }, idempotencyKey ? { idempotencyKey } : undefined)
+    if (error || !result?.id) {
+      console.error('[sendEmail] Provider rejected', type, error?.name)
+      return { ok: false }
     }
-  } catch (err) {
-    console.error(`[sendEmail] ${type} to ${to} error:`, err)
+    return { ok: true, id: result.id }
+  } catch {
+    console.error('[sendEmail] Delivery failed', type)
+    return { ok: false }
   }
 }

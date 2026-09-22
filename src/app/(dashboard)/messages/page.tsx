@@ -66,6 +66,8 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
+    // Refresh the remote inbox when its subscription inputs change.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchInbox(tab === "archived");
   }, [user, authLoading, tab, fetchInbox]);
 

@@ -14,7 +14,7 @@ export async function ensureCvProfile(userId: string): Promise<string> {
     .from('cv_profiles')
     .select('id')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle().throwOnError()
 
   if (existing) return existing.id
 
@@ -22,7 +22,7 @@ export async function ensureCvProfile(userId: string): Promise<string> {
     .from('cv_profiles')
     .insert({ user_id: userId })
     .select('id')
-    .single()
+    .maybeSingle().throwOnError()
 
   if (error || !created) throw new Error('Failed to create CV profile')
   return created.id
@@ -39,7 +39,7 @@ export async function fetchFullCv(userId: string, useAdmin = false): Promise<CvF
     .from('cv_profiles')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle().throwOnError()
 
   if (!profile) return null
 
@@ -55,16 +55,16 @@ export async function fetchFullCv(userId: string, useAdmin = false): Promise<CvF
     { data: memberships },
     { data: references },
   ] = await Promise.all([
-    supabase.from('cv_work_experiences').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_education').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_skills').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_awards').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_certifications').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_projects').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_languages').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_volunteer').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_memberships').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
-    supabase.from('cv_references').select('*').eq('cv_profile_id', profile.id).order('sort_order'),
+    supabase.from('cv_work_experiences').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_education').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_skills').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_awards').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_certifications').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_projects').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_languages').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_volunteer').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_memberships').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
+    supabase.from('cv_references').select('*').eq('cv_profile_id', profile.id).order('sort_order').throwOnError(),
   ])
 
   // Contact info from seeker_profiles + users
@@ -72,14 +72,14 @@ export async function fetchFullCv(userId: string, useAdmin = false): Promise<CvF
     .from('seeker_profiles')
     .select('first_name, last_name, phone, location')
     .eq('user_id', userId)
-    .single()
+    .maybeSingle().throwOnError()
 
   // Get email from users table
   const { data: userRow } = await supabase
     .from('users')
     .select('email')
     .eq('id', userId)
-    .single()
+    .maybeSingle().throwOnError()
 
   return {
     profile,
@@ -116,7 +116,7 @@ export async function recalculateCompletion(userId: string): Promise<number> {
   await supabase
     .from('cv_profiles')
     .update({ completion_percentage: percentage })
-    .eq('user_id', userId)
+    .eq('user_id', userId).throwOnError()
 
   return percentage
 }

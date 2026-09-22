@@ -25,6 +25,8 @@ export default function ComposeBox({
   // Accept external value (from template insertion)
   useEffect(() => {
     if (externalValue) {
+      // Consume an externally selected message template.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBody(externalValue);
       onExternalValueConsumed?.();
       setTimeout(() => {

@@ -77,7 +77,7 @@ export async function sendMessageNotification(
     if (!recipientUser?.email) return
 
     // Send the email
-    await sendEmail({
+    const delivery = await sendEmail({
       to: recipientUser.email,
       type: 'new_message',
       data: {
@@ -87,6 +87,8 @@ export async function sendMessageNotification(
         conversation_url: `/messages/${conversationId}`,
       },
     })
+
+    if (!delivery.ok) throw new Error("Notification delivery failed")
 
     // Log as sent
     await supabase.from('notification_log').insert({
