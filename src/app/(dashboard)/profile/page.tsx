@@ -227,7 +227,6 @@ function ProfileView({
   onAvatarChange,
   onVisibilityChange,
   hasBuiltResume,
-  builtResumeCompletion,
 }: {
   profile: ProfileData;
   profileId: string;
@@ -537,6 +536,11 @@ function ProfileView({
           </button>
         </div>
         <div className="rounded-lg border border-border bg-white divide-y divide-border/40">
+          <a href="/profile/cv" className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50"><IconFile className="h-6 w-6 text-primary" /></div>
+            <div className="min-w-0 flex-1"><p className="text-sm font-medium text-text">{hasBuiltResume ? 'Edit your resume' : 'Build your resume'}</p><p className="text-xs text-text-light mt-0.5">A focused editor, live preview, and a polished PDF</p></div>
+            <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
+          </a>
           {/* Uploaded Resume */}
           {profile.cv_url ? (
             <button
@@ -580,7 +584,7 @@ function ProfileView({
           {/* JobLink Built Resume */}
           {hasBuiltResume && (
             <a
-              href="/api/cv/export"
+              href="/api/cv/export?theme=studio"
               className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50">
@@ -594,7 +598,7 @@ function ProfileView({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-text">JobLink Built Resume</p>
                 <p className="text-xs text-text-light mt-0.5">
-                  {builtResumeCompletion}% complete — Download PDF
+                  Download your saved resume as a PDF
                 </p>
               </div>
               <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/SidebarNav";
-import DashboardPageTransition from "@/components/DashboardPageTransition";
+import DashboardCanvas from "@/components/DashboardCanvas";
 import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
 import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
@@ -9,6 +9,7 @@ import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/profile", label: "My Profile", icon: "user" },
+  { href: "/profile/cv", label: "Resume Builder", icon: "file-text" },
   { href: "/jobs", label: "Browse Jobs", icon: "search" },
   { href: "/applications", label: "My Applications", icon: "file-text" },
   { href: "/messages", label: "Messages", icon: "mail" },
@@ -86,8 +87,8 @@ export default async function DashboardLayout({
   });
 
   return (
-    <div className="flex min-h-screen">
-      {/* Desktop Sidebar */}
+    <>
+    <DashboardCanvas sidebar={
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:top-16 md:bottom-0 border-r border-border bg-[--color-surface] z-30">
         <div className="flex flex-col flex-1 overflow-y-auto px-3 py-6">
           <SidebarNav links={navLinks} />
@@ -108,16 +109,10 @@ export default async function DashboardLayout({
           </div>
         </div>
       </aside>
-
-      {/* Main content */}
-      <main className="min-w-0 flex-1 overflow-x-hidden md:ml-64">
-        <div className="w-full max-w-6xl px-4 py-6 pb-20 sm:px-6 md:pb-6 lg:px-8">
-          <DashboardPageTransition>{children}</DashboardPageTransition>
-        </div>
-      </main>
+    }>{children}</DashboardCanvas>
 
       {/* Presence heartbeat */}
       <PresenceHeartbeat />
-    </div>
+    </>
   );
 }

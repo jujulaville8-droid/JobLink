@@ -186,6 +186,7 @@ export default function Navbar() {
         },
       ];
 
+  if (pathname === "/profile/cv") return null;
   if (pathname === "/" || pathname === "/design-preview") return <HomeHeader />;
 
   return (

@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+import ResumeStudio from '@/components/cv/studio/ResumeStudio';
 
-export default function ResumeBuilderPaused() {
-  redirect("/profile");
+export const metadata = { title: 'Resume Builder', robots: { index: false, follow: false } };
+
+export default function ResumeBuilderPage() {
+  return <ResumeStudio />;
 }

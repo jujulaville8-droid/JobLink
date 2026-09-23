@@ -7,7 +7,7 @@ import { useNavigationFeedback } from "@/components/useNavigationFeedback";
 import { getActiveHref } from "@/lib/navigation-state";
 
 // Only hide the bottom nav when actively posting a job
-const HIDDEN_PREFIXES = ["/post-job"];
+const HIDDEN_PREFIXES = ["/post-job", "/profile/cv"];
 
 export default function BottomNav() {
   const { isAuthenticated, userRole } = useAuth();

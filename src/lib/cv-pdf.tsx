@@ -1,8 +1,10 @@
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import type { CvFull } from '@/lib/types'
+import { createResumeDocument } from '@/lib/resume-pdf'
 
 export type ThemeId =
+  | 'studio'
   | 'classic'
   | 'sidebar'
   | 'banner'
@@ -15,6 +17,7 @@ export type ThemeId =
   | 'elegant'
 
 export const THEME_LIST: { id: ThemeId; name: string; description: string; color: string; layout: string }[] = [
+  { id: 'studio', name: 'Studio', description: 'Complete, clean document', color: '#0d7377', layout: 'single' },
   { id: 'classic', name: 'Classic', description: 'Clean single column, ATS optimized', color: '#1a1a1a', layout: 'single' },
   { id: 'sidebar', name: 'Sidebar', description: 'Dark left sidebar with contact and skills', color: '#1e293b', layout: 'two-col' },
   { id: 'banner', name: 'Banner', description: 'Bold colored header block', color: '#0d7377', layout: 'single' },
@@ -34,6 +37,7 @@ function fmtDate(d: string | null | undefined): string {
 
 export function createCvDocument(cv: CvFull, theme: ThemeId = 'classic') {
   switch (theme) {
+    case 'studio': return createResumeDocument(cv)
     case 'sidebar': return <SidebarTemplate cv={cv} />
     case 'banner': return <BannerTemplate cv={cv} />
     case 'minimal': return <MinimalTemplate cv={cv} />
