@@ -135,16 +135,6 @@ body {
   100% { background-position: 200% 0; }
 }
 
-@keyframes dashboard-page-in {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* ── Animation utility classes ── */
 .animate-fade-up {
@@ -163,9 +153,6 @@ body {
   animation: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.dashboard-page-enter {
-  animation: dashboard-page-in var(--motion-page) var(--motion-ease-out) both;
-}
 
 .dashboard-nav-link,
 .dashboard-bottom-nav-link {

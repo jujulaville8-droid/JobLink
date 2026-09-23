@@ -16,6 +16,12 @@ export function useNavigationFeedback() {
   const router = useRouter();
   const [pendingNavigation, setPendingNavigation] =
     useState<PendingNavigation | null>(null);
+  const [previousPathname, setPreviousPathname] = useState(pathname);
+  // Clear before children render; otherwise Back can resurrect an old pending link.
+  if (previousPathname !== pathname) {
+    setPreviousPathname(pathname);
+    setPendingNavigation(null);
+  }
   const pendingHref = getPendingHref(pathname, pendingNavigation);
 
   useEffect(() => {
