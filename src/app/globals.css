@@ -34,6 +34,7 @@
 
 
 @theme inline {
+  --color-background: var(--color-surface);
   --color-primary: var(--color-primary);
   --color-primary-light: var(--color-primary-light);
   --color-primary-dark: var(--color-primary-dark);
@@ -55,6 +56,51 @@
   --font-display: var(--font-heading);
   --shadow-lg: var(--shadow-lg);
   --color-primary-50: var(--color-primary-50);
+
+  --animate-aurora: aurora 8s ease-in-out infinite alternate;
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-orbit: orbit calc(var(--duration) * 1s) linear infinite;
+  --animate-shine: shine var(--duration) infinite linear;
+  --animate-magic-pulse: magic-pulse var(--duration) ease-out infinite;
+  --animate-pulse-ripple: pulse-ripple var(--duration) cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  --animate-blink-cursor: blink-cursor 1.2s step-end infinite;
+
+  @keyframes aurora {
+    0% { background-position: 0% 50%; transform: rotate(-5deg) scale(0.9); }
+    25% { background-position: 50% 100%; transform: rotate(5deg) scale(1.1); }
+    50% { background-position: 100% 50%; transform: rotate(-3deg) scale(0.95); }
+    75% { background-position: 50% 0%; transform: rotate(3deg) scale(1.05); }
+    100% { background-position: 0% 50%; transform: rotate(-5deg) scale(0.9); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% - var(--gap))); }
+  }
+  @keyframes orbit {
+    0% { transform: rotate(calc(var(--angle) * 1deg)) translateY(calc(var(--radius) * 1px)) rotate(calc(var(--angle) * -1deg)); }
+    100% { transform: rotate(calc(var(--angle) * 1deg + 360deg)) translateY(calc(var(--radius) * 1px)) rotate(calc((var(--angle) * -1deg) - 360deg)); }
+  }
+  @keyframes shine {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    to { background-position: 0% 0%; }
+  }
+  @keyframes magic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--pulse-color); }
+    50% { box-shadow: 0 0 0 var(--distance) var(--pulse-color); }
+  }
+  @keyframes pulse-ripple {
+    0% { box-shadow: 0 0 0 0 var(--pulse-color); }
+    100% { box-shadow: 0 0 0 var(--distance) transparent; }
+  }
+  @keyframes blink-cursor {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -63,6 +109,78 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility: disable all decorative loops for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-aurora, .animate-marquee, .animate-marquee-vertical,
+  .animate-orbit, .animate-shine, .animate-magic-pulse,
+  .animate-pulse-ripple, .animate-blink-cursor {
+    animation: none !important;
+  }
+
+  .home-dot-pattern {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  .home-role-rotate > div {
+    font-size: 0 !important;
+    position: relative;
+  }
+
+  .home-role-rotate span {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+
+  .home-role-rotate > div::after {
+    content: "Chef";
+    position: absolute;
+    inset: 0 auto auto 0;
+    color: #209080;
+    font-size: .875rem;
+    font-weight: 600;
+  }
+
+  .home-search-demo > span {
+    display: none;
+  }
+
+  .home-search-demo::after {
+    content: "bartender in St. John's";
+    overflow: hidden;
+    color: #64748b;
+    font-size: .875rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  [data-reduced-value] {
+    font-size: 0 !important;
+  }
+
+  [data-reduced-value]::after {
+    content: attr(data-reduced-value);
+    font-size: 2.25rem;
+  }
+
+  .home-bento-stat-bg [data-reduced-value]::after {
+    font-size: 3.75rem;
+  }
+
+  .home-job-grid > div,
+  .home-how ol > li > div {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 ::selection {
