@@ -1,5 +1,6 @@
-import HomePage from "@/components/home/HomePage";
+import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
@@ -55,9 +56,59 @@ async function getFeaturedJobs(): Promise<Job[]> {
   }
 }
 
+async function getHomepageStats(): Promise<HomepageStats> {
+  try {
+    const supabase = createAdminClient();
+    const now = new Date().toISOString();
+
+    const [jobsResult, hiringResult, seekersResult, applicationsResult] =
+      await Promise.all([
+        supabase
+          .from("job_listings")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active")
+          .or(`expires_at.is.null,expires_at.gt.${now}`),
+        supabase
+          .from("companies")
+          .select("id, job_listings!inner(id)", { count: "exact", head: true })
+          .eq("job_listings.status", "active")
+          .or(`expires_at.is.null,expires_at.gt.${now}`, {
+            referencedTable: "job_listings",
+          }),
+        supabase
+          .from("seeker_profiles")
+          .select("id", { count: "exact", head: true }),
+        supabase
+          .from("applications")
+          .select("id", { count: "exact", head: true }),
+      ]);
+
+    const firstError = [
+      jobsResult.error,
+      hiringResult.error,
+      seekersResult.error,
+      applicationsResult.error,
+    ].find(Boolean);
+
+    if (firstError) throw firstError;
+
+    return {
+      jobs: jobsResult.count ?? 0,
+      employers: hiringResult.count ?? 0,
+      jobSeekers: seekersResult.count ?? 0,
+      applications: applicationsResult.count ?? 0,
+    };
+  } catch {
+    return { jobs: 0, employers: 0, jobSeekers: 0, applications: 0 };
+  }
+}
+
 
 export default async function Home() {
-  const jobs = await getFeaturedJobs();
+  const [jobs, stats] = await Promise.all([
+    getFeaturedJobs(),
+    getHomepageStats(),
+  ]);
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -82,6 +133,6 @@ export default async function Home() {
   };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
-    <HomePage jobs={jobs} />
+    <HomePage jobs={jobs} stats={stats} />
   </>;
 }
