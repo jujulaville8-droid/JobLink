@@ -416,6 +416,15 @@ body {
 .input-base::placeholder {
   color: var(--color-text-muted);
 }
+
+/* Readable mobile form text also prevents input-focus zoom on iOS. */
+@media (max-width: 40rem) {
+  .onboarding-form input,
+  .onboarding-form select,
+  .onboarding-form textarea {
+    font-size: 16px;
+  }
+}
 .input-base:focus {
   outline: none;
   border-color: var(--color-primary);

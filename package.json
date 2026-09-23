@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:ui": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
+    "test:onboarding": "vitest run",
     "discover": "npx tsx scripts/discover-businesses.ts"
   },
   "dependencies": {
@@ -36,13 +37,18 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "happy-dom": "^20.14.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vite": "^6.4.3",
+    "vitest": "^4.1.11"
   }
 }

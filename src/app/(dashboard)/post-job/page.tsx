@@ -73,6 +73,8 @@ export default function PostJobPage() {
   const [serverError, setServerError] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [listingGated, setListingGated] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [companyName, setCompanyName] = useState('');
@@ -103,15 +105,16 @@ export default function PostJobPage() {
         return;
       }
 
-      const { data: company } = await supabase
+      const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id, is_pro, company_name, logo_url')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (companyError) throw companyError;
 
       if (!company) {
-        setServerError('Company profile not found.');
-        setLoading(false);
+        router.replace('/company-profile');
         return;
       }
 
@@ -153,8 +156,11 @@ export default function PostJobPage() {
       setLoading(false);
     }
 
-    load();
-  }, [editId]);
+    load().catch(() => {
+      setLoadError(true);
+      setLoading(false);
+    });
+  }, [editId, router, loadAttempt]);
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -319,6 +325,14 @@ export default function PostJobPage() {
         <p className="mt-4 text-sm text-text-muted">Loading listing...</p>
       </div>
     );
+  }
+
+  if (loadError) {
+    return <div className="mx-auto max-w-3xl py-12">
+      <h1 className="text-2xl font-display text-primary">Post a job</h1>
+      <p role="alert" className="my-4 text-text-light">We could not load your company. Check your connection and try again.</p>
+      <button type="button" className="btn-primary" onClick={() => { setLoadError(false); setLoading(true); setLoadAttempt((attempt) => attempt + 1); }}>Try again</button>
+    </div>;
   }
 
   if (listingGated) {

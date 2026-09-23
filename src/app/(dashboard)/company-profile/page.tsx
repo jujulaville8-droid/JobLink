@@ -20,6 +20,9 @@ export default function CompanyProfilePage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{
@@ -27,6 +30,7 @@ export default function CompanyProfilePage() {
     text: string;
   } | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [isSetup, setIsSetup] = useState(true);
   const [form, setForm] = useState<CompanyForm>({
     company_name: '',
     industry: '',
@@ -40,24 +44,30 @@ export default function CompanyProfilePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
+      try {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push('/login');
+        router.replace('/employer/login');
         return;
       }
 
-      const { data: company } = await supabase
+      const { data: company, error } = await supabase
         .from('companies')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
+
+      if (cancelled) return;
+      if (error) throw error;
 
       if (company) {
+        setIsSetup(false);
         setCompanyId(company.id);
         setForm({
           company_name: company.company_name ?? '',
@@ -71,9 +81,16 @@ export default function CompanyProfilePage() {
         });
       }
       setLoading(false);
+      } catch {
+        if (!cancelled) {
+          setLoadError(true);
+          setLoading(false);
+        }
+      }
     }
     load();
-  }, [router]);
+    return () => { cancelled = true; };
+  }, [router, loadAttempt]);
 
   function updateField(key: keyof CompanyForm, value: string | boolean) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -90,7 +107,20 @@ export default function CompanyProfilePage() {
     const errs: Record<string, string> = {};
     if (!form.company_name.trim())
       errs.company_name = 'Company name is required';
+    try { normalizedWebsite(); } catch {
+      errs.website = 'Enter a website such as www.example.com, or leave this blank.';
+    }
     return errs;
+  }
+
+  function normalizedWebsite() {
+    const value = form.website.trim();
+    if (!value) return '';
+    const url = new URL(/^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`);
+    if (!['https:', 'http:'].includes(url.protocol) || !url.hostname.includes('.') || url.username || url.password) {
+      throw new Error('Invalid website');
+    }
+    return url.href;
   }
 
   function resizeImage(file: File, maxSize: number): Promise<Blob> {
@@ -102,17 +132,18 @@ export default function CompanyProfilePage() {
         const canvas = document.createElement('canvas');
         canvas.width = maxSize;
         canvas.height = maxSize;
-        const ctx = canvas.getContext('2d')!;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { reject(new Error('Unable to process this image')); return; }
 
         // White background for transparency
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, maxSize, maxSize);
 
-        // Center-crop to square
-        const size = Math.min(img.width, img.height);
-        const sx = (img.width - size) / 2;
-        const sy = (img.height - size) / 2;
-        ctx.drawImage(img, sx, sy, size, size, 0, 0, maxSize, maxSize);
+        // Keep the entire logo visible, including wide wordmarks.
+        const scale = Math.min(maxSize / img.width, maxSize / img.height);
+        const width = img.width * scale;
+        const height = img.height * scale;
+        ctx.drawImage(img, (maxSize - width) / 2, (maxSize - height) / 2, width, height);
 
         canvas.toBlob(
           (blob) => (blob ? resolve(blob) : reject(new Error('Failed to process image'))),
@@ -150,7 +181,7 @@ export default function CompanyProfilePage() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      if (!user) return;
+      if (!user) throw new Error('Session expired');
 
       // Resize to 256x256 square PNG for consistent display
       const resized = await resizeImage(file, 256);
@@ -174,21 +205,25 @@ export default function CompanyProfilePage() {
       } = supabase.storage.from('company-logos').getPublicUrl(fileName);
 
       updateField('logo_url', publicUrl);
-      setMessage({ type: 'success', text: 'Logo uploaded successfully.' });
+      setMessage({ type: 'success', text: 'Logo ready. Save your profile to keep this change.' });
     } catch {
       setMessage({ type: 'error', text: 'Upload failed. Please try again.' });
     } finally {
       setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (saving || uploading) return;
     setMessage(null);
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      if (validationErrors.website) setDetailsOpen(true);
+      requestAnimationFrame(() => document.getElementById(Object.keys(validationErrors)[0])?.focus());
       return;
     }
 
@@ -206,28 +241,13 @@ export default function CompanyProfilePage() {
         return;
       }
 
-      // Ensure public.users row exists (trigger may have failed during signup)
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (!existingUser) {
-        await supabase.from('users').insert({
-          id: user.id,
-          email: user.email!,
-          role: 'employer' as const,
-        });
-      }
-
       const payload = {
         user_id: user.id,
         company_name: form.company_name.trim(),
         industry: form.industry,
         location: form.location,
         description: form.description.trim(),
-        website: form.website.trim(),
+        website: normalizedWebsite(),
         logo_url: form.logo_url,
       };
 
@@ -236,10 +256,13 @@ export default function CompanyProfilePage() {
         const { error } = await supabase
           .from('companies')
           .update(payload)
-          .eq('id', companyId);
+          .eq('id', companyId)
+          .eq('user_id', user.id)
+          .select('id')
+          .single();
 
         if (error) {
-          setMessage({ type: 'error', text: error.message });
+          setMessage({ type: 'error', text: 'Your profile could not be saved. Your details are still here — please try again.' });
           setSaving(false);
           return;
         }
@@ -252,7 +275,7 @@ export default function CompanyProfilePage() {
           .single();
 
         if (error) {
-          setMessage({ type: 'error', text: error.message });
+          setMessage({ type: 'error', text: 'Your profile could not be saved. Your details are still here — please try again.' });
           setSaving(false);
           return;
         }
@@ -261,8 +284,9 @@ export default function CompanyProfilePage() {
       }
 
       setMessage({ type: 'success', text: 'Company profile saved successfully!' });
+      if (isSetup) router.push('/post-job');
     } catch {
-      setMessage({ type: 'error', text: 'Something went wrong.' });
+      setMessage({ type: 'error', text: 'We could not save your profile. Your details are still here — please try again.' });
     } finally {
       setSaving(false);
     }
@@ -270,24 +294,44 @@ export default function CompanyProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div role="status" className="mx-auto max-w-3xl px-4 py-12">
+        <span className="sr-only">Loading company profile</span>
+        <div aria-hidden="true" className="animate-pulse space-y-6">
+          <div className="h-8 w-2/3 rounded-lg bg-border" />
+          <div className="h-4 w-1/2 rounded bg-border" />
+          <div className="h-80 rounded-2xl bg-bg-alt border border-border" />
+        </div>
       </div>
     );
   }
 
+  if (loadError) {
+    return <div className="mx-auto max-w-3xl px-4 py-12">
+      <h1 className="text-2xl font-display text-primary">Company profile</h1>
+      <p role="alert" className="my-4 text-text-light">We couldn&apos;t load your company details. Please check your connection and try again.</p>
+      <button type="button" className="btn-primary" onClick={() => { setLoadError(false); setLoading(true); setLoadAttempt((value) => value + 1); }}>Try again</button>
+    </div>;
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
+      {isSetup && <ol aria-label="Employer setup progress" className="mb-8 flex items-center gap-3 text-xs sm:text-sm text-text-light">
+        <li className="text-primary">✓ Account</li>
+        <li aria-hidden="true" className="h-px flex-1 bg-border" />
+        <li aria-current="step" className="font-semibold text-primary">2. Company</li>
+        <li aria-hidden="true" className="h-px flex-1 bg-border" />
+        <li>3. First job</li>
+      </ol>}
       <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
-        Company Profile
+        {isSetup ? 'Tell us about your company' : 'Company profile'}
       </h1>
       <p className="mt-2 text-sm text-text-light">
-        Set up your company profile so job seekers can learn about your
-        organization.
+        {isSetup ? 'Start with your company name. Everything else is optional and can be added later.' : 'Help candidates get to know your organization. You can update these details anytime.'}
       </p>
 
       {message && (
         <div
+          role={message.type === 'error' ? 'alert' : 'status'}
           className={`mt-4 rounded-lg border p-4 text-sm ${
             message.type === 'success'
               ? 'border-green-200 bg-green-50 text-green-700'
@@ -299,7 +343,7 @@ export default function CompanyProfilePage() {
       )}
 
       {/* Badges */}
-      <div className="mt-6 flex flex-wrap gap-3">
+      {!isSetup && <div className="mt-6 flex flex-wrap gap-3">
         {form.is_verified && (
           <div className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
             <svg
@@ -345,59 +389,10 @@ export default function CompanyProfilePage() {
             Upgrade to Pro
           </a>
         )}
-      </div>
+      </div>}
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate>
-        {/* Logo */}
-        <div>
-          <label className="block text-sm font-medium text-text">
-            Company Logo
-          </label>
-          <div className="mt-2 flex items-center gap-4">
-            {form.logo_url ? (
-              <img
-                src={form.logo_url}
-                alt="Company logo"
-                className="h-16 w-16 rounded-xl border border-border object-cover"
-              />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg border-2 border-dashed border-border bg-bg-alt text-text-light">
-                <svg
-                  className="h-8 w-8"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </div>
-            )}
-            <div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-bg-alt disabled:opacity-50"
-              >
-                {uploading ? 'Uploading...' : 'Upload Logo'}
-              </button>
-              <p className="mt-1 text-xs text-text-light">
-                PNG, JPG up to 5MB. Will be resized to a square.
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
-            </div>
-          </div>
-        </div>
-
+      <form onSubmit={handleSubmit} className="onboarding-form mt-8 rounded-2xl border border-border bg-white p-5 sm:p-8" noValidate aria-busy={saving}>
+        <fieldset disabled={saving} className="space-y-6">
         {/* Company Name */}
         <div>
           <label
@@ -409,6 +404,10 @@ export default function CompanyProfilePage() {
           <input
             id="company_name"
             type="text"
+            autoComplete="organization"
+            required
+            aria-invalid={!!errors.company_name}
+            aria-describedby={errors.company_name ? 'company-name-error' : undefined}
             value={form.company_name}
             onChange={(e) => updateField('company_name', e.target.value)}
             placeholder="e.g. Caribbean Solutions Ltd."
@@ -419,7 +418,7 @@ export default function CompanyProfilePage() {
             }`}
           />
           {errors.company_name && (
-            <p className="mt-1 text-xs text-red-600">{errors.company_name}</p>
+            <p id="company-name-error" className="mt-1 text-xs text-red-600">{errors.company_name}</p>
           )}
         </div>
 
@@ -430,7 +429,7 @@ export default function CompanyProfilePage() {
               htmlFor="industry"
               className="block text-sm font-medium text-text"
             >
-              Industry
+              Industry <span className="font-normal text-text-light">(optional)</span>
             </label>
             <select
               id="industry"
@@ -452,11 +451,12 @@ export default function CompanyProfilePage() {
               htmlFor="comp_location"
               className="block text-sm font-medium text-text"
             >
-              Location
+              Location <span className="font-normal text-text-light">(optional)</span>
             </label>
             <input
               id="comp_location"
               type="text"
+              autoComplete="address-level2"
               value={form.location}
               onChange={(e) => updateField('location', e.target.value)}
               placeholder="e.g. St. John's, Antigua"
@@ -465,13 +465,32 @@ export default function CompanyProfilePage() {
           </div>
         </div>
 
+        <details open={detailsOpen} onToggle={(event) => setDetailsOpen(event.currentTarget.open)} className="border-t border-border pt-5">
+          <summary className="cursor-pointer py-2 text-sm font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">Logo and more details <span className="font-normal text-text-light">(optional)</span></summary>
+          <div className="mt-5 space-y-6">
+            <div>
+              <p className="text-sm font-medium text-text">Company logo</p>
+              <div className="mt-2 flex items-center gap-4">
+                {form.logo_url ? (
+                  // Uploaded logos use public storage URLs and may be changed before saving.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.logo_url} alt="Company logo preview" className="h-16 w-16 rounded-xl border border-border object-contain" />
+                ) : <div aria-hidden="true" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-bg-alt text-xl text-primary">{form.company_name.trim().charAt(0).toUpperCase() || '+'}</div>}
+                <div>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || saving} className="min-h-11 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-bg-alt disabled:opacity-50">{uploading ? 'Uploading…' : 'Upload logo'}</button>
+                  <p className="mt-1 text-xs text-text-light">PNG or JPG, up to 5 MB. Your full logo stays visible.</p>
+                  <input ref={fileInputRef} type="file" accept="image/png,image/jpeg" aria-label="Choose company logo" onChange={handleLogoUpload} className="hidden" />
+                </div>
+              </div>
+            </div>
+
         {/* Description */}
         <div>
           <label
             htmlFor="comp_description"
             className="block text-sm font-medium text-text"
           >
-            Description
+            About your company (optional)
           </label>
           <textarea
             id="comp_description"
@@ -489,11 +508,14 @@ export default function CompanyProfilePage() {
             htmlFor="website"
             className="block text-sm font-medium text-text"
           >
-            Website
+            Website (optional)
           </label>
           <input
             id="website"
             type="url"
+            autoComplete="url"
+            aria-invalid={!!errors.website}
+            aria-describedby={errors.website ? 'website-error' : undefined}
             value={form.website}
             onChange={(e) => updateField('website', e.target.value)}
             placeholder="www.example.com"
@@ -502,18 +524,22 @@ export default function CompanyProfilePage() {
             }`}
           />
           {errors.website && (
-            <p className="mt-1 text-xs text-red-600">{errors.website}</p>
+            <p id="website-error" className="mt-1 text-xs text-red-600">{errors.website}</p>
           )}
         </div>
+          </div>
+        </details>
 
         {/* Submit */}
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || uploading}
           className="w-full rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed sm:w-auto"
         >
-          {saving ? 'Saving...' : 'Save Profile'}
+          {saving ? 'Saving…' : uploading ? 'Waiting for logo…' : isSetup ? 'Save and continue' : 'Save Profile'}
         </button>
+        {isSetup && <p className="text-xs text-text-light">Next: write your first job post. Nothing is published at this step.</p>}
+        </fieldset>
       </form>
     </div>
   );

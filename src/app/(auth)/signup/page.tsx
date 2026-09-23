@@ -46,8 +46,12 @@ function CheckBadge() {
 
 export default function SignupPage() {
   const searchParams = useSearchParams()
-  const preselectedRole = searchParams.get('role') as Role | null
+  const requestedRole = searchParams.get('role')
+  const preselectedRole = requestedRole === 'employer' || requestedRole === 'seeker' ? requestedRole : null
+  return <SignupForm key={preselectedRole ?? 'choose'} preselectedRole={preselectedRole} />
+}
 
+function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
   const [step, setStep] = useState<Step>(preselectedRole ? 'signup-form' : 'role-selection')
   const [role, setRole] = useState<Role | null>(preselectedRole)
   const [email, setEmail] = useState('')
@@ -57,14 +61,35 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendWait, setResendWait] = useState(0)
+  const [resendMessage, setResendMessage] = useState('')
+  const signInHref = role === 'employer' ? '/employer/login' : '/login'
 
-  // Respect URL ?role= param
   useEffect(() => {
-    if (preselectedRole === 'seeker' || preselectedRole === 'employer') {
-      setRole(preselectedRole)
-      setStep('signup-form')
-    }
-  }, [preselectedRole])
+    if (resendWait <= 0) return
+    const timer = window.setTimeout(() => setResendWait((seconds) => seconds - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [resendWait])
+
+  async function resendVerification() {
+    if (resending || resendWait > 0) return
+    setResending(true)
+    setError(null)
+    setResendMessage('')
+    try {
+      const { error } = await createClient().auth.resend({
+        type: 'signup', email: email.trim(),
+        options: { emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup` },
+      })
+      if (error) throw error
+      setResendMessage('Verification email sent. Please check your inbox and spam folder.')
+      setResendWait(60)
+    } catch {
+      setError('We couldn’t resend the email. Please wait a moment and try again.')
+    } finally { setResending(false) }
+  }
 
   function handleContinue() {
     if (!role) return
@@ -78,9 +103,10 @@ export default function SignupPage() {
   }
 
   async function handleGoogleSignUp() {
-    if (!role) return
+    if (!role || loading || googleLoading) return
     setError(null)
     setGoogleLoading(true)
+    try {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -92,10 +118,15 @@ export default function SignupPage() {
       setError(error.message)
       setGoogleLoading(false)
     }
+    } catch {
+      setError('Could not connect to Google. Please try again.')
+      setGoogleLoading(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (loading || googleLoading) return
     setError(null)
 
     if (!role) {
@@ -103,7 +134,7 @@ export default function SignupPage() {
       return
     }
 
-    if (password !== confirmPassword) {
+    if (role !== 'employer' && password !== confirmPassword) {
       setError('Passwords do not match.')
       return
     }
@@ -115,9 +146,10 @@ export default function SignupPage() {
 
     setLoading(true)
 
+    try {
     const supabase = createClient()
     const { data: signUpData, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         data: { role },
@@ -138,13 +170,17 @@ export default function SignupPage() {
     }
 
     setSuccess(true)
-    setLoading(false)
+    setPassword('')
+    setConfirmPassword('')
+    } catch {
+      setError('We couldn’t create your account. Check your connection and try again.')
+    } finally { setLoading(false) }
   }
 
   // ─── SUCCESS STATE ───
   if (success) {
     return (
-      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center mx-auto max-w-md">
+      <div className="animate-scale-in bg-white rounded-2xl shadow-md border border-border p-6 sm:p-8 text-center mx-auto max-w-md">
         <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
           <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -158,9 +194,13 @@ export default function SignupPage() {
         <p className="text-text-light mb-6">
           Click the link in your email to verify your account — you&apos;ll be signed in automatically.
         </p>
-        <p className="text-xs text-text-muted">
-          Didn&apos;t get the email? Check your spam folder or try signing up again.
-        </p>
+        {role === 'employer' && <p className="mb-5 text-sm text-text-light">Next, add your company name and create your first job post.</p>}
+        {error && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
+        {resendMessage && <p role="status" className="mb-3 text-sm text-primary">{resendMessage}</p>}
+        <button type="button" onClick={resendVerification} disabled={resending || resendWait > 0} className="min-h-11 w-full rounded-xl border border-border px-4 py-2 text-sm font-medium text-primary disabled:opacity-60">
+          {resending ? 'Sending…' : resendWait > 0 ? `Resend email in ${resendWait}s` : 'Resend verification email'}
+        </button>
+        <p className="mt-4 text-xs text-text-muted">Check your spam folder too. Already verified? <a href={signInHref} className="text-primary underline">Sign in</a></p>
       </div>
     )
   }
@@ -272,12 +312,13 @@ export default function SignupPage() {
 
   // ─── STEP 2: SIGNUP FORM ───
   return (
-    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 mx-auto max-w-md">
+    <div className="animate-scale-in bg-white rounded-2xl shadow-md border border-border p-6 sm:p-8 mx-auto max-w-md">
       {/* Back button + heading */}
       <div className="flex items-center gap-3 mb-6">
         <button
           type="button"
           onClick={handleBack}
+          disabled={loading || googleLoading}
           className="flex items-center justify-center w-9 h-9 rounded-xl border border-border hover:bg-bg-alt transition-colors shrink-0"
           aria-label="Back to role selection"
         >
@@ -289,26 +330,26 @@ export default function SignupPage() {
           <h1 className="font-display text-xl text-text">
             {role === 'employer' ? 'Create your employer account' : 'Create your account'}
           </h1>
-          <p className="text-xs text-text-muted mt-0.5">
-            {role === 'employer' ? 'Post jobs and connect with candidates' : 'Find your next opportunity'}
+          <p className="text-xs text-text-light mt-0.5">
+            {role === 'employer' ? 'Your account → Company details → First job' : 'Find your next opportunity'}
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="onboarding-form space-y-5" aria-busy={loading || googleLoading}>
         {error && error !== 'duplicate_email' && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
+          <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
             {error}
           </div>
         )}
         {error === 'duplicate_email' && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-[--radius-input] px-4 py-3">
+          <div role="alert" className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-3">
             <p className="font-medium mb-1">This email already has an account.</p>
             <p className="mb-2">
               If you haven&apos;t verified yet, sign in and we&apos;ll help you resend the verification email.
             </p>
             <div className="flex gap-3">
-              <a href="/login" className="font-medium text-primary hover:text-primary-dark underline underline-offset-2">
+              <a href={signInHref} className="font-medium text-primary hover:text-primary-dark underline underline-offset-2">
                 Sign in
               </a>
               <a href="/forgot-password" className="font-medium text-primary hover:text-primary-dark underline underline-offset-2">
@@ -325,6 +366,11 @@ export default function SignupPage() {
           <input
             id="email"
             type="email"
+            name="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            disabled={loading || googleLoading}
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -339,33 +385,44 @@ export default function SignupPage() {
           </label>
           <input
             id="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
+            name="password"
+            autoComplete="new-password"
+            minLength={6}
+            aria-describedby="password-hint"
+            disabled={loading || googleLoading}
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="At least 6 characters"
             className="input-base"
           />
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p id="password-hint" className="text-xs text-text-light">Use at least 6 characters.</p>
+            <button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-pressed={showPassword} className="min-h-11 px-2 text-xs font-medium text-primary">{showPassword ? 'Hide password' : 'Show password'}</button>
+          </div>
         </div>
 
-        <div>
+        {role !== 'employer' && <div>
           <label htmlFor="confirm-password" className="block text-sm font-medium text-text-light mb-1.5">
             Confirm password
           </label>
           <input
             id="confirm-password"
             type="password"
+            autoComplete="new-password"
+            disabled={loading || googleLoading}
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Re-enter your password"
             className="input-base"
           />
-        </div>
+        </div>}
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="w-full btn-primary disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
           {loading ? (
@@ -391,8 +448,8 @@ export default function SignupPage() {
       <button
         type="button"
         onClick={handleGoogleSignUp}
-        disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 rounded-[--radius-button] border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        disabled={googleLoading || loading}
+        className="w-full flex min-h-11 items-center justify-center gap-3 rounded-xl border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {googleLoading ? <Spinner /> : <GoogleIcon />}
         Sign up with Google
@@ -400,7 +457,7 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-sm text-text-light">
         Already have an account?{' '}
-        <a href="/login" className="font-medium text-primary hover:text-primary-dark transition">
+        <a href={signInHref} className="font-medium text-primary hover:text-primary-dark transition">
           Sign in
         </a>
       </p>
