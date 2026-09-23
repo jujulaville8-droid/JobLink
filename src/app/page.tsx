@@ -61,7 +61,7 @@ async function getHomepageStats(): Promise<HomepageStats> {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
 
-    const [jobsResult, hiringResult, seekersResult, applicationsResult] =
+    const [jobsResult, hiringResult, membersResult, applicationsResult] =
       await Promise.all([
         supabase
           .from("job_listings")
@@ -76,7 +76,7 @@ async function getHomepageStats(): Promise<HomepageStats> {
             referencedTable: "job_listings",
           }),
         supabase
-          .from("seeker_profiles")
+          .from("users")
           .select("id", { count: "exact", head: true }),
         supabase
           .from("applications")
@@ -86,7 +86,7 @@ async function getHomepageStats(): Promise<HomepageStats> {
     const firstError = [
       jobsResult.error,
       hiringResult.error,
-      seekersResult.error,
+      membersResult.error,
       applicationsResult.error,
     ].find(Boolean);
 
@@ -95,11 +95,11 @@ async function getHomepageStats(): Promise<HomepageStats> {
     return {
       jobs: jobsResult.count ?? 0,
       employers: hiringResult.count ?? 0,
-      jobSeekers: seekersResult.count ?? 0,
+      members: membersResult.count ?? 0,
       applications: applicationsResult.count ?? 0,
     };
   } catch {
-    return { jobs: 0, employers: 0, jobSeekers: 0, applications: 0 };
+    return { jobs: 0, employers: 0, members: 0, applications: 0 };
   }
 }
 

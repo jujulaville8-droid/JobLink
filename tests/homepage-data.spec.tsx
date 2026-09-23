@@ -31,6 +31,7 @@ vi.mock("@/lib/supabase/admin", () => ({
         job_listings: 12,
         companies: 7,
         seeker_profiles: 34,
+        users: 73,
         applications: 19,
       }
 
@@ -54,7 +55,8 @@ describe("homepage data", () => {
 
     expect(markup).toContain('aria-label="12 jobs posted"')
     expect(markup).toContain('aria-label="7 employers hiring"')
-    expect(markup).toContain('aria-label="34 job seekers"')
+    expect(markup).toContain('aria-label="73 members"')
+    expect(markup).not.toContain('aria-label="34 job seekers"')
     expect(markup).toContain('aria-label="19 applications delivered"')
   })
 })

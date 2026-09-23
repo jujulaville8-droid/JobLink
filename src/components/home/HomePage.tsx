@@ -16,7 +16,6 @@ import {
 
 import type { Job } from "@/components/JobCard"
 import { AnimatedList } from "@/components/magicui/animated-list"
-import { AuroraText } from "@/components/magicui/aurora-text"
 import { AvatarCircles } from "@/components/magicui/avatar-circles"
 import { BentoCard, BentoGrid } from "@/components/magicui/bento-grid"
 import { BlurFade } from "@/components/magicui/blur-fade"
@@ -25,7 +24,6 @@ import { MagicCard } from "@/components/magicui/magic-card"
 import { Marquee } from "@/components/magicui/marquee"
 import { NumberTicker } from "@/components/magicui/number-ticker"
 import { OrbitingCircles } from "@/components/magicui/orbiting-circles"
-import { PulsatingButton } from "@/components/magicui/pulsating-button"
 import { ShineBorder } from "@/components/magicui/shine-border"
 import { TypingAnimation } from "@/components/magicui/typing-animation"
 import { WordRotate } from "@/components/magicui/word-rotate"
@@ -33,7 +31,7 @@ import { WordRotate } from "@/components/magicui/word-rotate"
 export interface HomepageStats {
   jobs: number
   employers: number
-  jobSeekers: number
+  members: number
   applications: number
 }
 
@@ -104,7 +102,7 @@ const testimonials = [
 const emptyStats: HomepageStats = {
   jobs: 0,
   employers: 0,
-  jobSeekers: 0,
+  members: 0,
   applications: 0,
 }
 
@@ -137,9 +135,7 @@ export default function HomePage({
           <p className="home-eyebrow">Opportunity, close to home</p>
           <h1 id="home-title">
             Your next chapter{" "}
-            <AuroraText colors={["#102040", "#104080", "#209080", "#60C0A0"]}>
-              starts here.
-            </AuroraText>
+            <span>starts here.</span>
           </h1>
           <span className="home-coral-stroke hero-stroke" />
           <p className="home-hero-description">
@@ -232,17 +228,17 @@ export default function HomePage({
           </div>
           <div className="home-stat">
             <NumberTicker
-              value={stats.jobSeekers}
-              data-reduced-value={stats.jobSeekers}
-              aria-label={`${stats.jobSeekers} job seekers`}
+              value={stats.members}
+              data-reduced-value={stats.members}
+              aria-label={`${stats.members} members`}
               className="text-4xl font-bold tabular-nums text-[#102040]"
             />
-            <p>Job seekers</p>
+            <p>Members</p>
           </div>
         </div>
         <div className="home-trust-people">
-          <AvatarCircles avatarUrls={avatarUrls} numPeople={stats.jobSeekers} />
-          <p>Job seekers across Antigua &amp; Barbuda</p>
+          <AvatarCircles avatarUrls={avatarUrls} numPeople={stats.members} />
+          <p>Members across Antigua &amp; Barbuda</p>
         </div>
       </section>
 
@@ -503,14 +499,12 @@ export default function HomePage({
               </ol>
             </div>
             <form action="/post-job">
-              <PulsatingButton
+              <button
                 type="submit"
-                pulseColor="#209080"
-                duration="2.5s"
-                className="bg-[#104080] px-8 py-3 text-white"
+                className="rounded-lg bg-[#104080] px-8 py-3 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#104080]"
               >
                 Find your next hire
-              </PulsatingButton>
+              </button>
             </form>
           </div>
         </BentoGrid>

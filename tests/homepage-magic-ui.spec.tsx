@@ -28,7 +28,7 @@ describe("Magic UI homepage", () => {
     const markup = renderToStaticMarkup(
       <HomePage
         jobs={jobs}
-        stats={{ jobs: 12, employers: 7, jobSeekers: 34, applications: 19 }}
+        stats={{ jobs: 12, employers: 7, members: 73, applications: 19 }}
       />,
     )
 
@@ -36,13 +36,13 @@ describe("Magic UI homepage", () => {
     expect(markup).toContain("Your next chapter")
     expect(markup).toContain("starts here.")
     expect(markup).toContain("Find work. Meet local employers. Build your future")
-    expect(markup).toContain("animate-aurora")
+    expect(markup).not.toContain("animate-aurora")
     expect(markup).toContain("animate-blink-cursor")
 
     expect(markup).toContain("Jobs posted")
     expect(markup).toContain("Employers hiring")
-    expect(markup).toContain("Job seekers")
-    expect(markup).toContain("Job seekers across Antigua &amp; Barbuda")
+    expect(markup).toContain("Members")
+    expect(markup).toContain("Members across Antigua &amp; Barbuda")
 
     expect(markup).toContain('id="opportunities"')
     expect(markup).toContain("Front Desk Agent")
@@ -66,7 +66,7 @@ describe("Magic UI homepage", () => {
     expect(markup).toContain("motion-safe:animate-shine")
     expect(markup).toContain("animate-marquee")
     expect(markup).toContain("animate-orbit")
-    expect(markup).toContain("animate-magic-pulse")
+    expect(markup).not.toContain("animate-magic-pulse")
     expect(markup).toContain("home-job-grid-1")
     expect(markup).toContain('data-job-index="0"')
     expect(markup).toContain('data-reduced-value="12"')
