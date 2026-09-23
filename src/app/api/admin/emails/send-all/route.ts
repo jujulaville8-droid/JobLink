@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { requireVerifiedUser } from '@/lib/api-auth'
@@ -13,7 +13,7 @@ const DRIP_CONFIG = [
  * POST /api/admin/emails/send-all
  * Trigger all pending signup reminders at once (same logic as cron, admin-triggered).
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   const auth = await requireVerifiedUser()
   if ('error' in auth) return auth.error
   const { user } = auth

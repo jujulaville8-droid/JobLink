@@ -203,12 +203,6 @@ export default function ConversationPage({ params }: { params: Promise<{ id: str
     }
   }
 
-  function handleTemplateSelect(templateBody: string) {
-    setShowTemplates(false);
-    // The ComposeBox will receive this via a callback
-    handleSend(templateBody);
-  }
-
   function handleTemplateInsert(templateBody: string) {
     setShowTemplates(false);
     setComposeValue(templateBody);

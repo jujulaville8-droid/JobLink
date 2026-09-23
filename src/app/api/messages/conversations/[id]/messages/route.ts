@@ -150,7 +150,7 @@ export async function POST(
 
       const meta = convMeta?.[0]
       if (meta) {
-        sendMessageNotification(supabase, {
+        await sendMessageNotification(supabase, {
           conversationId,
           recipientId: otherPart.user_id,
           senderName: meta.other_display_name || 'Someone',

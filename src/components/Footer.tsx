@@ -1,4 +1,5 @@
 "use client";
+import HomeFooter from "@/components/home/HomeFooter";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -13,6 +14,8 @@ const DASHBOARD_PREFIXES = [
 export default function Footer() {
   const pathname = usePathname();
   const isDashboard = DASHBOARD_PREFIXES.some((p) => pathname.startsWith(p));
+
+  if (pathname === "/" || pathname === "/design-preview") return <HomeFooter />;
 
   if (isDashboard) return null;
 

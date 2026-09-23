@@ -4,10 +4,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
 import { BASE_URL } from '@/lib/email'
 import { buildEmailHtml } from '@/lib/email-templates'
-import { processJobAlerts } from '@/lib/job-alert-matcher'
 
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
+// Kept ready for a future opt-in broadcast workflow.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function notifyJobSeekers(jobId: string) {
   try {
     const admin = createAdminClient()
@@ -226,13 +227,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: listingError?.message || 'Failed to create listing' }, { status: 500 })
   }
 
-  // Send notifications and wait for completion
-  await notifyJobSeekers(listing.id)
-
-  // Send targeted alert emails to seekers with matching alerts
-  processJobAlerts(listing.id).catch((err) =>
-    console.error('[POST /admin/post-job] Alert processing failed:', err)
-  )
+  // Automatic emails disabled — use admin dashboard to manually notify seekers
 
   return NextResponse.json({ success: true, listingId: listing.id, companyId: resolvedCompanyId })
 }

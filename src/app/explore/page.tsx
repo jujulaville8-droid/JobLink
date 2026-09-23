@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
-  Search, Briefcase, BookmarkCheck, User, Bell, Settings,
+  Search, Briefcase, BookmarkCheck, User, Settings,
   PlusCircle, List, Users, Building, BarChart3, ShieldCheck,
   Star, Compass,
 } from "lucide-react";

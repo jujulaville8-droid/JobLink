@@ -121,9 +121,12 @@ export default function VerifyEmailPage() {
 
   // Auto-check on mount
   useEffect(() => {
-    checkVerification().finally(() => {
+    async function initialize() {
+      await checkVerification()
       setInitialLoading(false)
-    })
+    }
+
+    initialize()
   }, [checkVerification])
 
   // Cooldown timer

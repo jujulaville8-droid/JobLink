@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
@@ -17,11 +16,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, company:companies(company_name, logo_url)")
+    .select("title, status, expires_at, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
-  if (!job) {
+  if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
     return { title: "Job Not Found | JobLinks" };
   }
 
@@ -105,7 +104,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single();
 
-  if (error || !job || job.status !== "active") {
+  if (error || !job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
         <svg
@@ -249,13 +248,24 @@ export default async function JobDetailPage({ params }: PageProps) {
     volunteer: "VOLUNTEER",
   };
 
+  const rawLocality = (job.location || company?.location || "").trim();
+  const addressLocality = rawLocality
+    ? rawLocality.replace(/,\s*Antigua( and Barbuda)?\s*$/i, "").trim() || "St. John's"
+    : "St. John's";
+
   const jobPostingSchema = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
+    identifier: {
+      "@type": "PropertyValue",
+      name: "JobLinks",
+      value: job.id,
+    },
     title: job.title,
     description: job.description || `${job.title} position at ${company?.company_name || "a company"} in Antigua and Barbuda.`,
     datePosted: job.created_at,
     employmentType: employmentTypeMap[job.job_type] || "FULL_TIME",
+    ...(job.category ? { industry: job.category } : {}),
     hiringOrganization: {
       "@type": "Organization",
       name: company?.company_name || "Company",
@@ -266,10 +276,16 @@ export default async function JobDetailPage({ params }: PageProps) {
       "@type": "Place",
       address: {
         "@type": "PostalAddress",
-        addressLocality: job.location || company?.location || "St. John's",
+        addressLocality,
+        addressRegion: "Saint John",
         addressCountry: "AG",
       },
     },
+    applicantLocationRequirements: {
+      "@type": "Country",
+      name: "Antigua and Barbuda",
+    },
+    jobLocationType: rawLocality.toLowerCase().includes("remote") ? "TELECOMMUTE" : undefined,
     ...(job.expires_at ? { validThrough: new Date(job.expires_at).toISOString() } : {}),
     directApply: true,
     ...(job.salary_visible && (job.salary_min || job.salary_max)

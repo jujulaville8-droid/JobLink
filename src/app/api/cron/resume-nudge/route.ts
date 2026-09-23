@@ -8,18 +8,15 @@ import { sendEmail } from '@/lib/email'
  * Drip 1: 24 hours after signup, if no resume → send first nudge
  * Drip 2: 5 days after first nudge, if still no resume → send second nudge
  *
- * Protected by CRON_SECRET. Runs daily at 10am via Vercel Cron.
+ * Protected by CRON_SECRET. Runs daily via the hosting provider's scheduler.
  */
 
 export async function GET(request: NextRequest) {
-  // Vercel Cron sends this header automatically
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
-  // Also allow manual trigger with CRON_SECRET
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-  if (!isVercelCron && !hasValidSecret) {
+  if (!hasValidSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

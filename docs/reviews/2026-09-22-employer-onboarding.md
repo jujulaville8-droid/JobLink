@@ -29,3 +29,9 @@ These changes are merged locally, not pushed or deployed. A live verification-em
 The repository has pre-existing broad lint failures. The dependency audit also reports vulnerabilities in existing dependencies, including a critical advisory for the installed Next.js version. Production dependencies were not upgraded as part of this UI change. Address those advisories and rerun release validation before deployment.
 
 Unrelated user changes, including `scripts/discover-businesses.ts` and untracked assets, were preserved.
+
+## Production release preparation
+
+The subsequent request to publish prompted a fresh comparison with remote `main`. The release now incorporates remote commit `0901ec3`, preserving the newer homepage, shared unread-badge fix, security hardening, and disabled AI/resume features. The live domain and GitHub commit status confirm Vercel is the active host, despite the repository also containing Netlify configuration.
+
+Next.js and its ESLint configuration are pinned to `16.3.6`, the September 22 security release. Upstream production dependency resolutions were preserved when combining the lockfiles. The dependency audit now reports zero vulnerabilities. The combined release passed all 25 tests, TypeScript checking, and the production build. Earlier notes about the old Next.js version describe the pre-release state, not this prepared release.

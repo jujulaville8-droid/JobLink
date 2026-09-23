@@ -9,39 +9,6 @@ function VerifyConfirmContent() {
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('Verifying your email...')
 
-  useEffect(() => {
-    const tokenHash = searchParams.get('token_hash')
-    const type = searchParams.get('type')
-    const code = searchParams.get('code')
-
-    console.log('[verify-confirm] Starting verification', {
-      hasTokenHash: !!tokenHash,
-      hasCode: !!code,
-      type,
-      url: window.location.href,
-    })
-
-    const supabase = createClient()
-
-    // Case 1: Direct token verification (custom email template)
-    if (tokenHash && type === 'signup') {
-      verifyWithToken(supabase, tokenHash)
-      return
-    }
-
-    // Case 2: PKCE code exchange (ConfirmationURL flow)
-    if (code) {
-      verifyWithCode(supabase, code)
-      return
-    }
-
-    // Case 3: No token or code — maybe the ConfirmationURL already
-    // verified server-side and just redirected here. Check if the user
-    // is already verified.
-    console.log('[verify-confirm] No token_hash or code, checking if already verified')
-    checkAlreadyVerified(supabase)
-  }, [searchParams])
-
   async function verifyWithToken(supabase: ReturnType<typeof createClient>, tokenHash: string) {
     try {
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
@@ -179,6 +146,36 @@ function VerifyConfirmContent() {
     setStatus('Verification complete! Redirecting...')
     window.location.href = dest
   }
+
+  useEffect(() => {
+    const tokenHash = searchParams.get('token_hash')
+    const type = searchParams.get('type')
+    const code = searchParams.get('code')
+
+    console.log('[verify-confirm] Starting verification', {
+      hasTokenHash: !!tokenHash,
+      hasCode: !!code,
+      type,
+      url: window.location.href,
+    })
+
+    const supabase = createClient()
+
+    if (tokenHash && type === 'signup') {
+      verifyWithToken(supabase, tokenHash)
+      return
+    }
+
+    if (code) {
+      verifyWithCode(supabase, code)
+      return
+    }
+
+    console.log('[verify-confirm] No token_hash or code, checking if already verified')
+    checkAlreadyVerified(supabase)
+    // The verification helpers intentionally run once for this URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   async function handleSignOut() {
     const supabase = createClient()

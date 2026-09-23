@@ -1,0 +1,81 @@
+/* Approved Local Roots composition, using the existing JobLinks brand palette. */
+body:has(.local-roots-home){background:#faf8f5}
+main:has(.local-roots-home){min-height:0;padding-bottom:0}
+.home-header,.local-roots-home,.home-footer{--home-ink:#095355;--home-teal:#0d7377;max-width:1600px;margin-inline:auto}
+.home-header{height:112px;padding:14px 3.65%;display:flex;align-items:flex-start;gap:38px;position:relative;z-index:5;color:var(--home-ink)}
+.home-brand{display:flex;align-items:center;flex-shrink:0;gap:0;text-decoration:none;color:#0d7377}
+.home-brand img{width:76px;height:76px;object-fit:contain;margin-left:-14px}
+.home-brand strong{font-family:var(--font-body),sans-serif;display:block;font-size:36px;font-weight:800;letter-spacing:-1.8px;line-height:1.13}
+.home-brand small{display:block;font-size:12px;font-weight:600;letter-spacing:-.35px;margin-top:4px}
+.home-desktop-links{display:flex;align-items:center;gap:30px;padding-top:23px;font-size:14px;font-weight:600;white-space:nowrap}
+.home-header-actions{margin-left:auto;display:flex;gap:26px;align-items:center;font-size:14px;font-weight:600;white-space:nowrap}
+.home-button{display:inline-flex;align-items:center;justify-content:center;gap:16px;background:#0d7377;color:white;border:0;border-radius:5px;padding:17px 24px;font:inherit;font-weight:600;text-decoration:none;cursor:pointer;transition:background .18s,transform .18s}
+.home-button:hover{background:#095355;transform:translateY(-1px)}
+.home-button svg{width:21px;height:21px;stroke-width:1.6}
+.home-header-actions .home-button{padding:13px 23px}
+.home-menu-toggle,.home-mobile-menu{display:none}
+.local-roots-home{color:var(--home-ink)}
+.home-hero{position:relative;min-height:calc(min(100vw,1600px) * .53);isolation:isolate}
+.home-hero-art{position:absolute;right:0;top:0;bottom:0;width:54%;overflow:hidden;border-radius:49% 12px 0 0 / 31% 12px 0 0;z-index:-1}
+.home-hero-art img{object-fit:cover;object-position:center}
+.home-hero-copy{position:relative;padding:14px 0 17px 3.65%;width:57%;}
+.home-eyebrow{text-transform:uppercase;font-size:10px;line-height:1.8;letter-spacing:3.5px;font-weight:700}
+.home-hero h1{font-family:var(--font-heading),Georgia,serif;font-size:clamp(72px,8.4vw,134px);line-height:.86;letter-spacing:-4px;transform:scaleX(.86);transform-origin:left center;font-weight:400;margin:19px 0 8px;max-width:700px}
+.home-coral-stroke{display:block;width:37px;height:3px;background:#e76f51;border-radius:100% 20% 100% 20%;transform:rotate(-2deg)}
+.hero-stroke{width:166px;height:7px;margin:14px 0 25px}
+.home-hero-description{font-size:clamp(16px,1.58vw,23px);line-height:1.5;margin:0;max-width:620px;letter-spacing:-.5px}
+.home-search{display:flex;align-items:center;position:relative;width:100%;background:#fff;border:1px solid #dedbd5;border-radius:6px;padding:7px;gap:0;margin-top:30px;box-shadow:0 2px 10px #09535503}
+.home-keyword,.home-location{display:flex;align-items:center;gap:15px;min-width:0;padding:9px 14px}
+.home-keyword{flex:1.2}.home-location{flex:1;border-left:1px solid #dedbd5;position:relative}
+.home-search label>svg{width:23px;height:23px;flex-shrink:0;stroke-width:1.7}
+.home-search input,.home-search select{min-width:0;width:100%;border:0;background:transparent;font-family:inherit;font-size:14px;color:#4b5967;padding:6px 0;outline-offset:5px}
+.home-search input::placeholder{color:#596575;opacity:1}
+.home-search select{appearance:none;padding-right:16px;cursor:pointer}.home-search .home-select-arrow{position:absolute;right:10px;width:16px;pointer-events:none}
+.home-search .home-button{white-space:nowrap;align-self:stretch;font-size:16px;padding:17px 21px}
+.home-community{display:flex;gap:18px;align-items:center;margin-top:25px}.home-community>svg{width:40px;height:50px;stroke-width:1}.home-community p{font-size:8px;letter-spacing:2.4px;line-height:2.1;text-transform:uppercase;font-weight:600}
+.home-opportunities{padding:34px 3.65% 30px;background:#fffefa}
+.home-section-heading{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:15px 0 24px}
+.home-section-heading h2,.home-employers h2{font-family:var(--font-heading),Georgia,serif;font-weight:400;font-size:clamp(38px,4.6vw,70px);letter-spacing:-2.4px;line-height:1.02;margin:0}
+.home-section-heading .home-eyebrow{font-size:8px;letter-spacing:2.8px;white-space:nowrap}
+.home-job-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.home-job-card{display:grid;grid-template-columns:54px 1fr 22px;grid-template-rows:1fr auto;gap:16px 14px;border:1px solid #dedbd5;border-radius:4px;padding:22px;background:#fff;transition:box-shadow .2s,border-color .2s;text-decoration:none;min-height:147px}
+.home-job-card:hover{box-shadow:0 6px 22px #0953550c;border-color:#0d7377}
+.home-job-monogram{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:24px;color:#fff;background:#0d7377;overflow:hidden}.home-job-monogram img{object-fit:contain;width:100%;height:100%;background:white}
+.home-monogram-1{background:#e76f51}.home-monogram-2{background:#63817c}
+.home-job-details{grid-column:2/4;align-self:center;min-width:0}.home-job-details h3{font-size:15px;font-weight:700;letter-spacing:-.5px;line-height:1.35;margin:0 0 5px}.home-job-details p,.home-company-name{font-size:12px;line-height:1.6;color:#65717c}.home-company-name{grid-column:1/3}.home-job-arrow{width:22px;align-self:center;stroke-width:1.5}
+.home-browse{display:flex;gap:15px;align-items:center;justify-content:flex-end;margin-top:23px;font-size:13px;font-weight:600}.home-browse svg{width:21px;stroke-width:1.6}
+.home-empty{padding:30px;border:1px solid #dedbd5;border-radius:4px;background:white}.home-empty h3{font-family:var(--font-heading),Georgia,serif;font-size:27px}.home-empty p{color:#65717c;font-size:14px;margin:10px 0 18px}.home-empty a{display:inline-flex;align-items:center;gap:12px;font-weight:600;font-size:14px}.home-empty svg{width:20px}
+.home-employers{display:grid;grid-template-columns:43.5% 56.5%;background:#f5f0ea;min-height:310px;scroll-margin-top:20px;overflow:hidden}
+.home-employer-photo{position:relative;min-height:310px;clip-path:polygon(0 0,94% 0,100% 100%,0 100%)}.home-employer-photo img{object-fit:cover;object-position:center 42%}
+.home-employer-copy{padding:32px 34px 34px 37px;position:relative}.home-employers h2{font-size:clamp(38px,4.25vw,64px);line-height:1.02}.home-employer-copy p{font-size:14px;line-height:1.7;margin:15px 0 18px;letter-spacing:-.35px}.home-employer-copy .home-button{font-size:14px;padding:13px 21px}
+.home-footer{padding:29px 3.65% 34px;display:flex;align-items:center;gap:34px;color:#095355;background:#faf8f5}.home-footer .home-brand strong{font-size:29px}.home-footer .home-brand small{font-size:10px}.home-footer .home-brand img{width:65px;height:65px}.home-footer nav{display:flex;flex:1;justify-content:center;gap:25px;font-size:11px}.home-footer>p{padding-left:30px;border-left:1px solid #d1ceca;text-align:center;font-size:7px;letter-spacing:2px;line-height:2.2;color:#65717c}.home-footer .home-coral-stroke{margin:14px auto 0;width:26px;height:2px}
+.home-preview-note{text-align:center;padding:10px;margin:0;background:#f5f0ea;color:#64716e;font-size:9px;letter-spacing:2px}
+.home-header a:focus-visible,.local-roots-home a:focus-visible,.local-roots-home button:focus-visible,.home-footer a:focus-visible{outline:2px solid #0d7377;outline-offset:5px}
+@media(min-width:1600px){.home-header{padding-inline:58px}.home-hero-copy{padding-left:58px}.home-opportunities,.home-footer{padding-left:58px;padding-right:58px}}
+@media(max-width:1100px) and (min-width:701px){.home-header{height:100px;gap:24px}.home-brand strong{font-size:29px}.home-brand small{font-size:10px}.home-brand img{width:64px;height:64px}.home-desktop-links{gap:21px;font-size:12px;padding-top:20px}.home-header-actions{gap:17px;font-size:12px}.home-header-actions .home-button{padding:12px 15px}.home-hero-copy{padding-top:20px;width:61%}.home-hero h1{letter-spacing:-4px;font-size:8.5vw}.home-hero-art{top:0}.home-eyebrow{font-size:8px;letter-spacing:3px}.home-search{margin-top:29px;padding:5px}.home-keyword,.home-location{gap:7px;padding:8px}.home-search input,.home-search select{font-size:11px}.home-search .home-button{font-size:13px;padding:13px}.home-search label>svg{width:18px;height:18px}.home-community{margin-top:25px}.home-job-card{padding:16px;gap:14px 10px;grid-template-columns:45px 1fr 20px}.home-job-monogram{width:45px;height:45px;font-size:20px}.home-job-details h3{font-size:13px}.home-job-details p,.home-company-name{font-size:11px}.home-footer{gap:20px}.home-footer nav{gap:15px}.home-footer>p{padding-left:20px}}
+@media(max-width:700px){
+.home-header{height:92px;padding:12px 22px;align-items:center;justify-content:space-between}.home-brand img{width:62px;height:62px;margin-left:-13px}.home-brand strong{font-size:28px;letter-spacing:-1.3px}.home-brand small{font-size:9px}.home-desktop-links,.home-header-actions{display:none}.home-menu-toggle{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid #dedbd5;border-radius:5px;background:transparent;color:#095355}.home-mobile-menu{display:flex;position:absolute;top:85px;left:16px;right:16px;padding:12px;flex-direction:column;background:#faf8f5;border:1px solid #dedbd5;box-shadow:0 12px 25px #09535515;border-radius:6px;z-index:10}.home-mobile-menu a{padding:13px 12px;font-size:15px}
+.home-hero{display:flex;flex-direction:column;min-height:0}.home-hero-copy{padding:25px 24px 27px;width:100%}.home-eyebrow{font-size:8px;letter-spacing:2.5px}.home-hero h1{font-size:clamp(57px,12.8vw,87px);letter-spacing:-3px;line-height:1.01;margin:19px 0 10px}.hero-stroke{width:120px;height:5px;margin:15px 0 21px}.home-hero-description{font-size:15px;max-width:360px;line-height:1.7;letter-spacing:-.25px}.home-desktop-break{display:none}.home-search{width:100%;flex-wrap:wrap;gap:0;margin-top:25px;padding:7px}.home-keyword{flex-basis:100%;border-bottom:1px solid #e8e3db;margin-bottom:6px;padding:12px 8px}.home-location{border-left:0;flex:1;padding:9px 8px}.home-search input,.home-search select{font-size:13px}.home-search .home-button{font-size:13px;gap:9px;padding:14px}.home-search label>svg{width:20px;height:20px}.home-community{margin-top:23px;gap:12px}.home-community p{font-size:7px;letter-spacing:1.9px}.home-community>svg{width:31px;height:40px}.home-hero-art{position:relative;top:auto;bottom:auto;width:calc(100% - 24px);margin-left:24px;aspect-ratio:1.15;order:2;border-radius:44% 44% 0 0 / 39% 39% 0 0}.home-hero-art img{object-position:center 35%}
+.home-opportunities{padding:28px 24px}.home-section-heading{display:block;margin:15px 0 22px}.home-section-heading h2{font-size:39px;letter-spacing:-1.8px;max-width:330px}.home-section-heading .home-eyebrow{margin-top:16px;font-size:7px}.home-job-grid{grid-template-columns:1fr;gap:12px}.home-job-card{min-height:130px;padding:18px;gap:13px}.home-job-details h3{font-size:14px}.home-job-details p,.home-company-name{font-size:12px}.home-browse{font-size:12px;margin-top:21px}.home-employers{grid-template-columns:1fr}.home-employer-photo{min-height:0;aspect-ratio:1.6;clip-path:none}.home-employer-copy{padding:29px 24px 35px}.home-employers h2{font-size:43px;letter-spacing:-2px}.home-employer-copy p{font-size:13px}.home-employer-copy p br{display:none}.home-footer{padding:25px 24px 30px;flex-wrap:wrap;gap:20px}.home-footer nav{flex-basis:100%;justify-content:flex-start;flex-wrap:wrap;gap:19px;font-size:11px}.home-footer>p{border:0;padding:0;text-align:left;font-size:7px}.home-footer .home-coral-stroke{margin:10px 0 0}.home-preview-note{font-size:7px;letter-spacing:1px}
+}
+@media(prefers-reduced-motion:reduce){.home-button,.home-job-card{transition:none}.home-button:hover{transform:none}}
+@media(max-width:700px){.home-hero h1{transform:none;font-size:clamp(53px,12vw,82px);line-height:1.01;letter-spacing:-3px}}
+
+/* Explicit lines prevent Safari from reflowing the editorial headline. */
+.home-hero h1 span{display:block;white-space:nowrap}
+.home-industries{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:22px 3.65%;border-top:1px solid #e8e3db;border-bottom:1px solid #e8e3db;background:#f5f0ea}
+.home-industries>span{font-size:9px;text-transform:uppercase;letter-spacing:2px;font-weight:700;white-space:nowrap}
+.home-industries a{display:flex;align-items:center;gap:17px;font-size:12px;font-weight:600;text-decoration:none}
+.home-industries svg{width:15px;height:15px;stroke-width:1.5}
+.home-industries a:hover{color:#14919b}
+.home-how{display:grid;grid-template-columns:1fr 1fr;gap:70px;padding:48px 7%;border-top:1px solid #e8e3db;background:#faf8f5}
+.home-how h2{font-family:var(--font-heading),Georgia,serif;font-size:clamp(36px,3.8vw,56px);line-height:1.06;letter-spacing:-1.8px;margin:14px 0 22px}
+.home-how-intro>a{display:inline-flex;align-items:center;gap:14px;font-size:13px;font-weight:600;border-bottom:1px solid #0d737750;padding-bottom:6px}
+.home-how-intro>a svg{width:18px;height:18px}
+.home-how ol{list-style:none;margin:0;padding:0;display:grid;gap:20px}
+.home-how li{display:flex;gap:20px;align-items:flex-start}
+.home-how li>span{font-family:var(--font-heading),Georgia,serif;color:#e76f51;font-size:28px;line-height:1.2}
+.home-how h3{font-size:15px;font-weight:700;margin:0 0 5px}
+.home-how li p{font-size:13px;color:#65717c;line-height:1.7;max-width:350px;margin:0}
+@media(max-width:950px){.home-industries{flex-wrap:wrap;justify-content:flex-start;gap:18px 27px}.home-industries>span{width:100%}.home-how{gap:35px;padding:35px 4%}}
+@media(max-width:700px){.home-industries{padding:22px 24px;gap:18px 0}.home-industries>span{flex-basis:100%}.home-industries a{flex-basis:50%;font-size:11px;gap:10px}.home-how{grid-template-columns:1fr;padding:32px 24px;gap:27px}.home-how h2{font-size:38px}.home-how-intro .home-eyebrow{font-size:7px}.home-how ol{gap:23px}.home-how li p{font-size:12px}.home-hero h1{font-size:clamp(49px,11.3vw,79px)}}

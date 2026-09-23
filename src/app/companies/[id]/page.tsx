@@ -78,11 +78,13 @@ export default async function CompanyPage({ params }: PageProps) {
   }
 
   // Fetch active jobs from this company
+  const now = new Date().toISOString();
   const { data: jobs } = await supabase
     .from("job_listings")
     .select("*")
     .eq("company_id", id)
     .eq("status", "active")
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 

@@ -97,7 +97,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
         ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
         : "bg-white border border-border hover:border-primary/20"
     }`}>
-      <Link href={`/jobs/${job.id}`} className="block">
+      <div className="block">
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (
             <img
@@ -161,7 +161,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
                   <button
                     onClick={toggleSave}
                     disabled={savingBookmark}
-                    className={`cursor-pointer transition-colors ${saved ? "text-primary" : "text-border hover:text-primary"} disabled:opacity-50`}
+                    className={`relative z-10 cursor-pointer transition-colors ${saved ? "text-primary" : "text-border hover:text-primary"} disabled:opacity-50`}
                     aria-label={saved ? "Unsave job" : "Save job"}
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -173,7 +173,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
                   href={`https://wa.me/?text=${whatsappText}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-border hover:text-green-600 transition-colors"
+                  className="relative z-10 text-border hover:text-green-600 transition-colors"
                   aria-label="Share on WhatsApp"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -185,7 +185,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
             </div>
           </div>
         </div>
-      </Link>
+      </div>
+      <Link
+        href={`/jobs/${job.id}`}
+        className="absolute inset-0 rounded-[--radius-card] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        aria-label={`View ${job.title} at ${job.company_name}`}
+      />
     </div>
   );
 }

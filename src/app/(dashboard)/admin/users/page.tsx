@@ -2,10 +2,12 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { User } from '@/lib/types'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 async function toggleBan(formData: FormData) {
   'use server'
-  const supabase = await createClient()
+  await requireRole('admin')
+  const supabase = createAdminClient()
   const userId = formData.get('user_id') as string
   const currentlyBanned = formData.get('is_banned') === 'true'
 
@@ -19,7 +21,8 @@ async function toggleBan(formData: FormData) {
 
 async function toggleVerify(formData: FormData) {
   'use server'
-  const supabase = await createClient()
+  await requireRole('admin')
+  const supabase = createAdminClient()
   const userId = formData.get('user_id') as string
   const currentlyVerified = formData.get('email_verified') === 'true'
 

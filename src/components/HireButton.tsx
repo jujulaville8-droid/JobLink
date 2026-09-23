@@ -8,7 +8,7 @@ interface HireButtonProps {
   jobId: string;
 }
 
-export default function HireButton({ applicationId, jobId }: HireButtonProps) {
+export default function HireButton({ applicationId }: HireButtonProps) {
   const router = useRouter();
   const [showPrompt, setShowPrompt] = useState(false);
   const [loading, setLoading] = useState(false);

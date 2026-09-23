@@ -49,12 +49,7 @@ export default function AlertsPage() {
   }, []);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!authUser) {
-      setError("Please sign in to manage job alerts.");
-      setLoading(false);
-      return;
-    }
+    if (authLoading || !authUser) return;
 
     async function init() {
       const supabase = createClient();
@@ -146,10 +141,21 @@ export default function AlertsPage() {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId));
   };
 
-  if (authLoading || loading) {
+  if (authLoading || (authUser && loading)) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
+      </div>
+    );
+  }
+
+  if (!authUser) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold font-display text-text mb-6">Job Alerts</h1>
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Please sign in to manage job alerts.
+        </div>
       </div>
     );
   }

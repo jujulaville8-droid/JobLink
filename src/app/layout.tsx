@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import "./globals.css";
+import "@/components/home/home.css";
 
 const displayFont = DM_Serif_Display({
   variable: "--font-heading",
@@ -81,7 +83,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en-AG" suppressHydrationWarning>
       <head>
         <meta name="impact-site-verification" content="f3103db6-1ece-4ed4-afbb-e66b3501d3d4" />
       </head>
@@ -92,6 +94,7 @@ export default function RootLayout({
           <Footer />
           <BottomNav />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

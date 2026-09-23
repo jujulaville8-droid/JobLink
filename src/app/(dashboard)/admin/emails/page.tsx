@@ -78,7 +78,7 @@ export default async function AdminEmailsPage() {
     }
   }
 
-  const now = Date.now()
+  const now = new Date().getTime()
 
   // Build pending users list (those with an eligible next drip)
   const pendingUsers = unverifiedUsers

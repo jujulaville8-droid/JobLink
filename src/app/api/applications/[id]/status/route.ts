@@ -122,7 +122,7 @@ export async function PATCH(
             hold: 'On Hold',
           };
 
-          sendEmail({
+          await sendEmail({
             to: seekerUser.email,
             type: 'status_update',
             data: {
@@ -134,9 +134,9 @@ export async function PATCH(
           });
         }
 
-        // Send system message into the conversation thread (fire-and-forget)
+        // Send system message into the conversation thread
         const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies;
-        sendStatusChangeMessage(supabase, {
+        await sendStatusChangeMessage(supabase, {
           applicationId: id,
           employerUserId: user.id,
           seekerUserId: seekerProfile.user_id,

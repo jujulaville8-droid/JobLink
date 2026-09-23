@@ -30,7 +30,8 @@ export async function POST() {
     }
 
     const admin = createAdminClient()
-    const role = (user.user_metadata?.role as string) || 'seeker'
+    const metadataRole = user.user_metadata?.role
+    const role = metadataRole === 'employer' ? 'employer' : 'seeker'
 
     // Check if user row exists
     const { data: existingUser } = await admin

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,26 +26,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    // Only users with is_admin=true can switch to the admin role
+    const admin = createAdminClient();
+    const { data: userData } = await admin
+      .from("users")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!userData) {
+      return NextResponse.json({ error: "User record not found" }, { status: 404 });
+    }
+
+    // Only users with a server-managed is_admin flag can switch to admin.
     if (role === "admin") {
-      // Try DB first, fall back to auth metadata
-      const { data: userData } = await supabase
-        .from("users")
-        .select("is_admin")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      const hasAdminAccess =
-        userData?.is_admin === true ||
-        user.user_metadata?.is_admin === true;
-
-      if (!hasAdminAccess) {
+      if (!userData.is_admin) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
       }
     }
 
-    // Update role in users table
-    const { error: updateError } = await supabase
+    // Privileged public.users fields are server-managed.
+    const { error: updateError } = await admin
       .from("users")
       .update({ role })
       .eq("id", user.id);

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Message } from "@/lib/types";
 
@@ -410,7 +410,7 @@ export default function MessageThread({
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(messages.length);
-  const [initialScrollDone, setInitialScrollDone] = useState(false);
+  const initialScrollDoneRef = useRef(false);
 
   // Auto-scroll to bottom on new messages (only if already near bottom)
   useEffect(() => {
@@ -433,11 +433,11 @@ export default function MessageThread({
   // Initial scroll to bottom (no animation for existing messages)
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (container && messages.length > 0 && !initialScrollDone) {
+    if (container && messages.length > 0 && !initialScrollDoneRef.current) {
       container.scrollTop = container.scrollHeight;
-      setInitialScrollDone(true);
+      initialScrollDoneRef.current = true;
     }
-  }, [messages.length, initialScrollDone]);
+  }, [messages.length]);
 
   // Scroll-to-load: detect when user scrolls to top
   const handleScroll = useCallback(() => {

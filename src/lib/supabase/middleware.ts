@@ -43,17 +43,19 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Public paths — no auth or verification required
+  // Public paths — no auth or verification required.
+  // /jobs and /jobs/[id] MUST be public so Google can crawl/index them.
   const publicPaths = [
     '/login', '/signup', '/employer/login', '/employer/signup',
     '/forgot-password', '/reset-password', '/verify-email',
     '/auth/', '/about', '/privacy', '/terms', '/explore',
-    '/api/', '/companies', '/employers/upgrade',
+    '/api/', '/companies', '/employers/upgrade', '/jobs',
   ]
   const isPublic = pathname === '/' || publicPaths.some(p => pathname.startsWith(p))
 
-  // Protected paths — require login, redirect to signup if not authenticated
-  const authRequiredPaths = ['/jobs', '/browse-jobs']
+  // Protected paths — require login, redirect to signup if not authenticated.
+  // /browse-jobs is the dashboard variant; the public /jobs is open.
+  const authRequiredPaths = ['/browse-jobs']
   const requiresAuth = authRequiredPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
   if (requiresAuth && !user) {
@@ -91,10 +93,11 @@ export async function updateSession(request: NextRequest) {
                 .update({ email_verified: true })
                 .eq('id', user.id)
             } else {
+              const metadataRole = user.user_metadata?.role
               await admin.from('users').insert({
                 id: user.id,
                 email: user.email!,
-                role: (user.user_metadata?.role as string) || 'seeker',
+                role: metadataRole === 'employer' ? 'employer' : 'seeker',
                 email_verified: true,
               })
             }

@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(req: NextRequest) {
   // Simple secret so only your agent can call this
+  const agentSecret = process.env.AGENT_WEBHOOK_SECRET
+  if (!agentSecret) {
+    console.error('[send-outreach] AGENT_WEBHOOK_SECRET not configured')
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
   const authHeader = req.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.AGENT_WEBHOOK_SECRET}`) {
+  if (authHeader !== `Bearer ${agentSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -17,6 +21,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.error('[send-outreach] RESEND_API_KEY not configured')
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+  }
+
+  const resend = new Resend(apiKey)
   const supabase = createAdminClient()
 
   // Check if contacted in last 30 days

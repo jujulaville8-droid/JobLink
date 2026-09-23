@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,14 +12,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Verify admin role
-    const { data: userData } = await supabase
+    // Verify the server-managed admin flag.
+    const admin = createAdminClient()
+    const { data: userData } = await admin
       .from('users')
-      .select('role')
+      .select('is_admin')
       .eq('id', user.id)
       .single()
 
-    if (userData?.role !== 'admin') {
+    if (!userData?.is_admin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

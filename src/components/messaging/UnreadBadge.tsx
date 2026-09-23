@@ -28,10 +28,11 @@ export default function UnreadBadge() {
     // Poll every 30s for new messages
     const interval = setInterval(fetchCount, 30000);
 
-    // Also listen for realtime changes on conversation_participants
+    // Desktop and mobile badges can mount together. Supabase reuses channels
+    // by topic, so each effect needs its own topic (including Strict Mode remounts).
     const supabase = createClient();
     const channel = supabase
-      .channel("unread-badge")
+      .channel(`unread-badge:${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         {

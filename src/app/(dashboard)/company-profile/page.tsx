@@ -473,7 +473,6 @@ export default function CompanyProfilePage() {
               <div className="mt-2 flex items-center gap-4">
                 {form.logo_url ? (
                   // Uploaded logos use public storage URLs and may be changed before saving.
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={form.logo_url} alt="Company logo preview" className="h-16 w-16 rounded-xl border border-border object-contain" />
                 ) : <div aria-hidden="true" className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-bg-alt text-xl text-primary">{form.company_name.trim().charAt(0).toUpperCase() || '+'}</div>}
                 <div>

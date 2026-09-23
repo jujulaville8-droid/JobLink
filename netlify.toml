@@ -1,0 +1,8 @@
+[functions."expire-listings"]
+schedule = "@hourly"
+
+[functions."resume-nudge"]
+schedule = "0 10 * * *"
+
+[functions."signup-reminder"]
+schedule = "0 11 * * *"

@@ -9,7 +9,7 @@ import { sendEmail } from '@/lib/email'
  * Drip 2: 3 days after signup, if still unverified
  * Drip 3: 7 days after signup, if still unverified (final)
  *
- * Protected by CRON_SECRET. Runs daily at 10am via Vercel Cron.
+ * Protected by CRON_SECRET. Runs daily via the hosting provider's scheduler.
  */
 
 const DRIP_CONFIG = [
@@ -19,12 +19,11 @@ const DRIP_CONFIG = [
 ] as const
 
 export async function GET(request: NextRequest) {
-  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
   const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-  if (!isVercelCron && !hasValidSecret) {
+  if (!hasValidSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

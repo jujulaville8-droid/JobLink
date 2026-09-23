@@ -22,7 +22,6 @@ type ProfileCardProps = {
 export default function CandidateProfileCard({
   id,
   name,
-  role,
   status,
   avatar,
   tags = [],

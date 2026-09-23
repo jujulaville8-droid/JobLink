@@ -23,12 +23,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (!userRow) {
+      const metadataRole = user.user_metadata?.role
       const { error: userInsertError } = await supabase
         .from('users')
         .insert({
           id: user.id,
           email: user.email!,
-          role: (user.user_metadata?.role as string) || 'seeker',
+          role: metadataRole === 'employer' ? 'employer' : 'seeker',
         })
 
       if (userInsertError && userInsertError.code !== '23505') {
