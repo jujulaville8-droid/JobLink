@@ -27,6 +27,9 @@
   --radius-card: 16px;
   --radius-button: 12px;
   --radius-input: 10px;
+  --motion-fast: 120ms;
+  --motion-page: 180ms;
+  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 
@@ -60,18 +63,6 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* ── Smooth theme transition (dark ↔ light) ── */
-html,
-html *,
-html *::before,
-html *::after {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-html {
-  scroll-behavior: smooth;
 }
 
 ::selection {
@@ -144,6 +135,7 @@ html {
   100% { background-position: 200% 0; }
 }
 
+
 /* ── Animation utility classes ── */
 .animate-fade-up {
   animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -159,6 +151,44 @@ html {
 
 .animate-scale-in {
   animation: scale-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+
+.dashboard-nav-link,
+.dashboard-bottom-nav-link {
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color var(--motion-fast) var(--motion-ease-out),
+    background-color var(--motion-fast) var(--motion-ease-out),
+    border-color var(--motion-fast) var(--motion-ease-out),
+    opacity var(--motion-fast) var(--motion-ease-out),
+    transform var(--motion-fast) var(--motion-ease-out);
+}
+
+.dashboard-nav-link:active,
+.dashboard-bottom-nav-link:active {
+  transform: scale(0.98);
+}
+
+@keyframes dashboard-nav-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes dashboard-nav-pulse {
+  50% { opacity: 0.45; transform: translateX(-50%) scale(0.78); }
+}
+
+.dashboard-nav-spinner {
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: dashboard-nav-spin 600ms linear infinite;
+}
+
+.dashboard-bottom-nav-link[data-pending="true"] .dashboard-nav-dot {
+  animation: dashboard-nav-pulse 600ms ease-in-out infinite;
 }
 
 /* ── Stagger children ── */
@@ -210,6 +240,7 @@ html {
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;
+  pointer-events: none;
 }
 
 
@@ -243,11 +274,14 @@ html {
   font-weight: 600;
   font-size: 15px;
   padding: 12px 28px;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-primary:hover {
   background: var(--color-primary-dark);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(13, 115, 119, 0.25);
 }
 .btn-primary:active {
@@ -266,11 +300,14 @@ html {
   font-weight: 600;
   font-size: 15px;
   padding: 12px 28px;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-warm:hover {
   background: var(--color-accent-warm-hover);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(232, 151, 62, 0.3);
 }
 .btn-warm:active {
@@ -289,7 +326,11 @@ html {
   font-size: 15px;
   padding: 12px 28px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    border-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -313,7 +354,11 @@ html {
   font-size: 15px;
   padding: 12px 28px;
   border: 1px solid var(--color-border);
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 180ms var(--motion-ease-out),
+    background-color 180ms var(--motion-ease-out),
+    border-color 180ms var(--motion-ease-out),
+    box-shadow 180ms var(--motion-ease-out);
 }
 .btn-secondary-dark:hover {
   background: var(--color-bg-alt);
@@ -371,9 +416,32 @@ html {
 .input-base::placeholder {
   color: var(--color-text-muted);
 }
+
+/* Readable mobile form text also prevents input-focus zoom on iOS. */
+@media (max-width: 40rem) {
+  .onboarding-form input,
+  .onboarding-form select,
+  .onboarding-form textarea {
+    font-size: 16px;
+  }
+}
 .input-base:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(13, 115, 119, 0.12);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

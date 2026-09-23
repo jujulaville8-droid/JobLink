@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SidebarNav from "@/components/SidebarNav";
+import DashboardPageTransition from "@/components/DashboardPageTransition";
 import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
 import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
@@ -109,9 +110,9 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-64 overflow-x-hidden">
-        <div className="px-4 py-6 pb-20 md:pb-6 sm:px-6 lg:px-8 max-w-6xl">
-          {children}
+      <main className="min-w-0 flex-1 overflow-x-hidden md:ml-64">
+        <div className="w-full max-w-6xl px-4 py-6 pb-20 sm:px-6 md:pb-6 lg:px-8">
+          <DashboardPageTransition>{children}</DashboardPageTransition>
         </div>
       </main>
 

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { getActiveHref } from "@/lib/navigation-state";
+import { useNavigationFeedback } from "@/components/useNavigationFeedback";
 
 interface NavLink {
   href: string;
@@ -105,24 +106,48 @@ function SidebarIcon({ icon }: { icon: string }) {
 }
 
 export default function SidebarNav({ links }: { links: NavLink[] }) {
-  const pathname = usePathname();
+  const {
+    activePathname,
+    beginNavigation,
+    isPending,
+    prefetch,
+  } = useNavigationFeedback();
+  const activeHref = getActiveHref(
+    activePathname,
+    links.map((link) => link.href),
+  );
 
   return (
     <nav className="flex flex-col gap-1">
       {links.map((link) => {
-        const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+        const isActive = activeHref === link.href;
+        const pending = isPending(link.href);
+
         return (
           <Link
             key={link.href}
             href={link.href}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+            aria-busy={pending || undefined}
+            aria-current={isActive ? "page" : undefined}
+            data-pending={pending || undefined}
+            onClick={(event) => beginNavigation(event, link.href)}
+            onFocus={() => prefetch(link.href)}
+            onMouseEnter={() => prefetch(link.href)}
+            onTouchStart={() => prefetch(link.href)}
+            className={`dashboard-nav-link flex items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium ${
               isActive
-                ? "bg-primary/[0.08] text-primary border-l-2 border-primary"
-                : "text-text-light hover:bg-bg-alt hover:text-primary"
+                ? "border-primary bg-primary/[0.08] text-primary"
+                : "border-transparent text-text-light hover:bg-bg-alt hover:text-primary"
             }`}
           >
             <SidebarIcon icon={link.icon} />
             <span className="flex-1">{link.label}</span>
+            {pending && (
+              <span
+                aria-hidden="true"
+                className="dashboard-nav-spinner shrink-0"
+              />
+            )}
             {link.badge}
           </Link>
         );

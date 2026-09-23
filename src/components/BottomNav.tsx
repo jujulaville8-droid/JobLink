@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { useNavigationFeedback } from "@/components/useNavigationFeedback";
+import { getActiveHref } from "@/lib/navigation-state";
 
 // Only hide the bottom nav when actively posting a job
 const HIDDEN_PREFIXES = ["/post-job"];
@@ -11,80 +13,110 @@ export default function BottomNav() {
   const { isAuthenticated, userRole } = useAuth();
   const pathname = usePathname();
   const isHidden = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
-  const isActive = (path: string) => pathname === path;
+  const {
+    activePathname,
+    beginNavigation,
+    isPending,
+    prefetch,
+  } = useNavigationFeedback();
+  const visiblePaths = [
+    "/",
+    "/jobs",
+    ...(isAuthenticated && userRole === "employer" ? ["/post-job"] : []),
+    ...(isAuthenticated ? ["/messages"] : []),
+    ...(isAuthenticated ? ["/profile", "/dashboard"] : ["/login"]),
+  ];
+  const activeHref = getActiveHref(activePathname, visiblePaths);
+  const isActive = (path: string) => activeHref === path;
 
   if (pathname === "/" || pathname === "/design-preview") return null;
 
   if (isHidden) return null;
 
   const linkClass = (path: string) =>
-    `flex flex-col items-center gap-0.5 text-[11px] font-medium py-1 min-w-[56px] relative ${
+    `dashboard-bottom-nav-link relative flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-1 text-[11px] font-medium ${
       isActive(path) ? "text-primary" : "text-text-muted"
     }`;
 
   const iconClass = (path: string) =>
     `h-5.5 w-5.5 ${isActive(path) ? "text-primary" : "text-text-muted"}`;
 
-  const activeDot = (
-    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+  const navigationProps = (path: string) => ({
+    "aria-busy": isPending(path) || undefined,
+    "aria-current": isActive(path) ? ("page" as const) : undefined,
+    "data-pending": isPending(path) || undefined,
+    onClick: (event: React.MouseEvent<HTMLAnchorElement>) =>
+      beginNavigation(event, path),
+    onFocus: () => prefetch(path),
+    onMouseEnter: () => prefetch(path),
+    onTouchStart: () => prefetch(path),
+  });
+
+  const activeDot = (path: string) => (
+    <span
+      aria-hidden="true"
+      className="dashboard-nav-dot absolute -bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary"
+    >
+      {isPending(path) && <span className="sr-only">Loading</span>}
+    </span>
   );
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-[--color-surface]/90 backdrop-blur-xl md:hidden">
       <div className="flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <Link href="/" className={linkClass("/")}>
+        <Link href="/" className={linkClass("/")} {...navigationProps("/")}>
           <svg className={iconClass("/")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
           <span>Home</span>
-          {isActive("/") && activeDot}
+          {isActive("/") && activeDot("/")}
         </Link>
 
-        <Link href="/jobs" className={linkClass("/jobs")}>
+        <Link href="/jobs" className={linkClass("/jobs")} {...navigationProps("/jobs")}>
           <svg className={iconClass("/jobs")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <span>Jobs</span>
-          {isActive("/jobs") && activeDot}
+          {isActive("/jobs") && activeDot("/jobs")}
         </Link>
 
         {isAuthenticated && userRole === "employer" && (
-          <Link href="/post-job" className={linkClass("/post-job")}>
+          <Link href="/post-job" className={linkClass("/post-job")} {...navigationProps("/post-job")}>
             <svg className={iconClass("/post-job")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="16" />
               <line x1="8" y1="12" x2="16" y2="12" />
             </svg>
             <span>Post</span>
-            {isActive("/post-job") && activeDot}
+            {isActive("/post-job") && activeDot("/post-job")}
           </Link>
         )}
 
         {isAuthenticated && (
-          <Link href="/messages" className={linkClass("/messages")}>
+          <Link href="/messages" className={linkClass("/messages")} {...navigationProps("/messages")}>
             <svg className={iconClass("/messages")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
               <polyline points="22,6 12,13 2,6" />
             </svg>
             <span>{userRole === "employer" ? "Inbox" : "Messages"}</span>
-            {isActive("/messages") && activeDot}
+            {isActive("/messages") && activeDot("/messages")}
           </Link>
         )}
 
 
         {isAuthenticated ? (
           <>
-            <Link href="/profile" className={linkClass("/profile")}>
+            <Link href="/profile" className={linkClass("/profile")} {...navigationProps("/profile")}>
               <svg className={iconClass("/profile")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
               <span>Profile</span>
-              {isActive("/profile") && activeDot}
+              {isActive("/profile") && activeDot("/profile")}
             </Link>
-            <Link href="/dashboard" className={linkClass("/dashboard")}>
+            <Link href="/dashboard" className={linkClass("/dashboard")} {...navigationProps("/dashboard")}>
               <svg className={iconClass("/dashboard")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="7" />
                 <rect x="14" y="3" width="7" height="7" />
@@ -92,17 +124,17 @@ export default function BottomNav() {
                 <rect x="3" y="14" width="7" height="7" />
               </svg>
               <span>Dashboard</span>
-              {isActive("/dashboard") && activeDot}
+              {isActive("/dashboard") && activeDot("/dashboard")}
             </Link>
           </>
         ) : (
-          <Link href="/login" className={linkClass("/login")}>
+          <Link href="/login" className={linkClass("/login")} {...navigationProps("/login")}>
             <svg className={iconClass("/login")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
             <span>Sign In</span>
-            {isActive("/login") && activeDot}
+            {isActive("/login") && activeDot("/login")}
           </Link>
         )}
       </div>
