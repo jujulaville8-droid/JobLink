@@ -22,11 +22,11 @@ const bodyFont = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   metadataBase: new URL("https://joblinkantigua.com"),
   title: {
-    default: "JobLinks — Jobs in Antigua and Barbuda",
+    default: "JobLinks | Jobs in Antigua and Barbuda",
     template: "%s | JobLinks",
   },
   description:
-    "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume — free. Employers post listings and find talent instantly.",
+    "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume for free. Employers post listings and find talent instantly.",
   keywords: [
     "jobs in Antigua",
     "Antigua jobs",
@@ -47,24 +47,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_AG",
     siteName: "JobLinks",
-    title: "JobLinks — Jobs in Antigua and Barbuda",
+    title: "JobLinks | Jobs in Antigua and Barbuda",
     description:
-      "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume — free.",
+      "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume for free.",
     url: "https://joblinkantigua.com",
     images: [
       {
         url: "/images/colorful-buildings.jpg",
         width: 1200,
         height: 630,
-        alt: "JobLinks — Find work in Antigua",
+        alt: "Find work in Antigua with JobLinks",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "JobLinks — Jobs in Antigua and Barbuda",
+    title: "JobLinks | Jobs in Antigua and Barbuda",
     description:
-      "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume — free.",
+      "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume for free.",
     images: ["/images/colorful-buildings.jpg"],
   },
   alternates: {
