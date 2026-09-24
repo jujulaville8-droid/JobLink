@@ -48,7 +48,6 @@ export default function Navbar() {
     ? [
         { href: "/admin/approvals", label: "Approvals" },
         { href: "/admin/users", label: "Users" },
-        { href: "/admin/discovered", label: "Discovered" },
         aboutOrExplore,
         { href: "/dashboard", label: "Dashboard" },
       ]
