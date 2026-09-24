@@ -24,7 +24,7 @@ const jobs: Job[] = [
 ]
 
 describe("Magic UI homepage", () => {
-  it("keeps the existing journey while adding live trust and story content", () => {
+  it("keeps the existing journey and live statistics without sample testimonials", () => {
     const markup = renderToStaticMarkup(
       <HomePage
         jobs={jobs}
@@ -60,8 +60,10 @@ describe("Magic UI homepage", () => {
     expect(markup).toContain('action="/post-job"')
     expect(markup).toContain("Find your next hire")
 
-    expect(markup).toContain("Success stories")
-    expect(markup).toContain("Sample testimonial")
+    expect(markup).not.toContain("Success stories")
+    expect(markup).not.toContain("Sample testimonial")
+    expect(markup).not.toContain('class="home-success"')
+    expect(markup).not.toContain("We posted on Monday and had strong local applicants")
 
     expect(markup).toContain("motion-safe:animate-shine")
     expect(markup).toContain("animate-marquee")

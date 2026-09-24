@@ -59,46 +59,6 @@ const categories = [
   "Customer Service",
 ]
 
-// TODO(owner): replace these placeholder testimonials with real ones
-const testimonials = [
-  {
-    quote:
-      "We posted on Monday and had strong local applicants before the end of the week.",
-    name: "Sample testimonial",
-    role: "Hotel manager in English Harbour",
-  },
-  {
-    quote:
-      "My profile made it easier to show my experience and apply with confidence.",
-    name: "Sample testimonial",
-    role: "Recent hire in St. John's",
-  },
-  {
-    quote:
-      "Finding people who already understand the local market made hiring feel more personal.",
-    name: "Sample testimonial",
-    role: "Retail owner in All Saints",
-  },
-  {
-    quote:
-      "I could see new opportunities in one place and focus on the roles that suited me.",
-    name: "Sample testimonial",
-    role: "Job seeker in Liberta",
-  },
-  {
-    quote:
-      "The application process felt clear, welcoming and built for people here at home.",
-    name: "Sample testimonial",
-    role: "Hospitality applicant in Jolly Harbour",
-  },
-  {
-    quote:
-      "It gave our small team a simple way to reach motivated candidates across the island.",
-    name: "Sample testimonial",
-    role: "Restaurant manager in St. John's",
-  },
-]
-
 const emptyStats: HomepageStats = {
   jobs: 0,
   employers: 0,
@@ -508,46 +468,6 @@ export default function HomePage({
             </form>
           </div>
         </BentoGrid>
-      </section>
-
-      <section className="home-success" aria-labelledby="success-title">
-        <span className="home-coral-stroke" />
-        <div className="home-section-heading">
-          <h2 id="success-title">Success stories</h2>
-          <p className="home-eyebrow">Community voices</p>
-        </div>
-        <div className="home-testimonial-marquees">
-          <Marquee pauseOnHover className="[--duration:45s]">
-            {testimonials.slice(0, 3).map((testimonial) => (
-              <figure
-                key={testimonial.role}
-                className="w-80 rounded-xl border bg-white p-5 shadow-sm"
-              >
-                <blockquote className="text-sm text-slate-600">
-                  &quot;{testimonial.quote}&quot;
-                </blockquote>
-                <figcaption className="mt-3 text-sm font-medium text-[#102040]">
-                  {testimonial.name}, {testimonial.role}
-                </figcaption>
-              </figure>
-            ))}
-          </Marquee>
-          <Marquee pauseOnHover reverse className="[--duration:45s]">
-            {testimonials.slice(3).map((testimonial) => (
-              <figure
-                key={testimonial.role}
-                className="w-80 rounded-xl border bg-white p-5 shadow-sm"
-              >
-                <blockquote className="text-sm text-slate-600">
-                  &quot;{testimonial.quote}&quot;
-                </blockquote>
-                <figcaption className="mt-3 text-sm font-medium text-[#102040]">
-                  {testimonial.name}, {testimonial.role}
-                </figcaption>
-              </figure>
-            ))}
-          </Marquee>
-        </div>
       </section>
 
       {preview && (

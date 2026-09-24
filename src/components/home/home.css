@@ -132,13 +132,8 @@ main:has(.local-roots-home){min-height:0;padding-bottom:0}
 .home-employer-steps li{counter-increment:employer-step;min-width:130px;color:#102040;font-size:15px;font-weight:700;line-height:1.4}
 .home-employer-steps li::before{content:"0" counter(employer-step);display:block;margin-bottom:8px;font-family:var(--font-heading),Georgia,serif;color:#209080;font-size:28px;font-weight:400}
 .home-employer-steps form{flex-shrink:0;padding:16px}
-.home-success{min-height:420px;padding:42px 0 46px;overflow:hidden;background:#fffefa}
-.home-success>.home-coral-stroke,.home-success>.home-section-heading{margin-left:3.65%;margin-right:3.65%}
-.home-success .home-section-heading h2{font-family:var(--font-heading),Georgia,serif;font-weight:400;font-size:clamp(38px,4.6vw,70px);letter-spacing:-2.4px;line-height:1.02;margin:0}
-.home-testimonial-marquees{display:grid;gap:8px;overflow:hidden}
-.home-testimonial-marquees figure{min-height:142px;border-color:#e8e3db;border-radius:8px}
 
-@media(min-width:1600px){.home-trust,.home-employers{padding-left:58px;padding-right:58px}.home-success>.home-coral-stroke,.home-success>.home-section-heading{margin-left:58px;margin-right:58px}}
+@media(min-width:1600px){.home-trust,.home-employers{padding-left:58px;padding-right:58px}}
 @media(max-width:950px){.home-trust{gap:24px}.home-trust-people{min-width:260px;flex-direction:column;align-items:flex-start;gap:12px}.home-employer-steps{align-items:flex-start;flex-direction:column;justify-content:center}.home-employer-steps form{padding:0}}
 @media(max-width:700px){
 .home-dot-pattern{opacity:.5}
@@ -151,5 +146,4 @@ main:has(.local-roots-home){min-height:0;padding-bottom:0}
 .home-step-card{padding:16px}.home-step-card p{font-size:12px}
 .home-employers{padding:28px 24px}.home-employer-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.home-employer-grid h3{font-size:25px}
 .home-orbit-visual{height:265px}.home-employer-steps{min-height:22rem;gap:24px;padding:25px 20px}.home-employer-steps ol{gap:10px}.home-employer-steps li{min-width:0;font-size:12px}.home-employer-steps form{width:100%}.home-employer-steps button{width:100%}
-.home-success{min-height:400px;padding:30px 0 34px}.home-success>.home-coral-stroke,.home-success>.home-section-heading{margin-left:24px;margin-right:24px}.home-success .home-section-heading h2{font-size:39px}.home-testimonial-marquees figure{width:300px;min-height:150px}
 }
