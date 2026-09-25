@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Bulk work needs more than the default function timeout.
+export const maxDuration = 300
+
 const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
 const RATE_LIMIT_MS = 250
 const SITE = 'https://joblinkantigua.com'

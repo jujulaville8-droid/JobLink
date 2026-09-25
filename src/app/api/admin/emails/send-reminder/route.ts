@@ -3,6 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { requireVerifiedUser } from '@/lib/api-auth'
 
+// Bulk work needs more than the default function timeout.
+export const maxDuration = 300
+
 /**
  * POST /api/admin/emails/send-reminder
  * Manually send a signup reminder to a specific unverified user.

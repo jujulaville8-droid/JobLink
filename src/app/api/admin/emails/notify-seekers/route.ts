@@ -5,6 +5,9 @@ import { buildEmailHtml } from '@/lib/email-templates'
 import { BASE_URL } from '@/lib/email'
 import { requireVerifiedUser } from '@/lib/api-auth'
 
+// Bulk work needs more than the default function timeout.
+export const maxDuration = 300
+
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
 /**

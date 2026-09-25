@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { fetchFullCv } from '@/lib/cv-helpers'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createCvDocument, type ThemeId, THEME_LIST } from '@/lib/cv-pdf'
+import { requireUser } from '@/lib/api-auth'
+
+// Bulk work needs more than the default function timeout.
+export const maxDuration = 300
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireUser()
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
     const { searchParams } = new URL(request.url)
     const targetUserId = searchParams.get('userId') || user.id
