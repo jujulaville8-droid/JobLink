@@ -46,6 +46,10 @@ Apply migrations before deploying code that depends on them:
 supabase db push
 ```
 
+This assumes the project has reconciled CLI migration history. Production
+currently uses manually applied migrations; see `docs/deployment.md` before
+running `db push` against it.
+
 Two migrations carry security guarantees the application cannot enforce on its
 own, because `companies` and `job_listings` are written directly from the
 browser with the anon key:
@@ -63,8 +67,8 @@ asserts the invariants hold, so a future migration cannot quietly undo them.
 ## Deployment
 
 Vercel is the deployment target; `vercel.json` defines the three cron jobs.
-`netlify.toml` and `netlify/functions/` mirror the same schedule and are kept
-only until the Vercel cutover is confirmed — see `docs/deployment.md`.
+Production response headers and successful runs of all three cron jobs were
+verified on Vercel on September 25, 2026. See `docs/deployment.md`.
 
 ## Architecture notes
 

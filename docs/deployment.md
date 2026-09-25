@@ -1,9 +1,8 @@
 # Deployment
 
-Vercel is the intended target. Netlify config is still present and still
-functional; it is kept only until the Vercel cutover is confirmed, because
-deleting it while Netlify is the live host would silently stop all three cron
-jobs.
+Vercel serves production. Response headers and successful production runs of
+all three cron jobs were verified on September 25, 2026. The legacy Netlify
+configuration and cron wrappers have been removed.
 
 ## Which host is live?
 
@@ -35,9 +34,23 @@ it differs between test and live mode.
 
 Apply migrations before the deploy that depends on them:
 
+For a project with reconciled Supabase CLI migration history:
+
 ```bash
 supabase db push
 ```
+
+Production was originally managed through the SQL editor and had no
+`supabase_migrations.schema_migrations` table on September 25, 2026. Do not run
+a blanket `db push` there until the historical migrations have been baselined:
+it could replay the initial schema migrations. The round-two hardening migration
+was applied directly through the SQL editor in one transaction, after checking
+the existing schema and normalizing two company website URLs to include HTTPS.
+Its three triggers, four supporting tables, two customer columns and eleven
+validated constraints were verified before code deployment.
+The prerequisite `20260601_security_hardening.sql` was also found unapplied
+and applied through the SQL editor, adding the user-field protection trigger
+and removing the obsolete client-side conversation creation policies.
 
 `20260925_security_hardening_2.sql` is required. Until it is applied:
 
@@ -52,7 +65,7 @@ The migration is idempotent and safe to re-run.
 
 ## Scheduled jobs
 
-Both hosts run the same three jobs. Whichever host is live, they authenticate
+Vercel runs the following jobs. They authenticate
 with `Authorization: Bearer $CRON_SECRET`.
 
 | Job                | Schedule (UTC) | Route                        |
@@ -61,18 +74,7 @@ with `Authorization: Bearer $CRON_SECRET`.
 | `resume-nudge`     | 10:00 daily    | `/api/cron/resume-nudge`     |
 | `signup-reminder`  | 11:00 daily    | `/api/cron/signup-reminder`  |
 
-Vercel reads `vercel.json`; Netlify reads `netlify.toml` plus the wrappers in
-`netlify/functions/`.
-
-## Completing the Vercel cutover
-
-Once `curl -sI` confirms Vercel is serving and the crons have fired there at
-least once:
-
-1. Delete `netlify.toml` and `netlify/functions/`.
-2. Delete `docs/netlify-deployment.md`.
-3. Remove the Netlify site, or at least unpublish it, so it cannot serve a
-   stale build from an old branch.
+Vercel reads the schedules from `vercel.json`.
 
 ## Long-running routes
 
