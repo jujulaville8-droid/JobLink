@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react"
 import {
   motion,
   useMotionTemplate,
@@ -54,6 +54,9 @@ function isOrbMode(props: MagicCardProps): props is MagicCardOrbProps {
   return props.mode === "orb"
 }
 
+/** Never fires: the hydration snapshot is constant once mounted. */
+const subscribeToNothing = () => () => {}
+
 export function MagicCard(props: MagicCardProps) {
   const {
     children,
@@ -73,9 +76,15 @@ export function MagicCard(props: MagicCardProps) {
   const glowBlur = isOrbMode(props) ? (props.glowBlur ?? 60) : 60
   const glowOpacity = isOrbMode(props) ? (props.glowOpacity ?? 0.9) : 0.9
   const { theme, systemTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
 
-  useEffect(() => setMounted(true), [])
+  // "Have we hydrated yet?" without a setState-in-effect: the server snapshot
+  // is false, the client snapshot is true, and React swaps them during
+  // hydration without an extra render pass.
+  const mounted = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false
+  )
 
   const isDarkTheme = useMemo(() => {
     if (!mounted) return true

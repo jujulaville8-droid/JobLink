@@ -42,8 +42,7 @@ export default function VerifyEmailPage() {
       setEmail(user.email ?? null)
 
       console.log('[verify-email] Checking verification', {
-        email: user.email,
-        emailConfirmedAt: user.email_confirmed_at,
+        emailConfirmed: !!user.email_confirmed_at,
       })
 
       // Check auth-level verification
@@ -179,7 +178,6 @@ export default function VerifyEmailPage() {
       }
 
       console.log('[verify-email] Resend verification requested', {
-        email: user.email,
         userId: user.id,
       })
 
@@ -206,7 +204,7 @@ export default function VerifyEmailPage() {
           setError("We couldn't resend the verification email right now. Please try again in a moment.")
         }
       } else {
-        console.log('[verify-email] Resend success', { email: user.email })
+        console.log('[verify-email] Resend success')
         setSent(true)
         setCooldown(RESEND_COOLDOWN_SECONDS)
       }

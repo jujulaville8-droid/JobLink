@@ -45,7 +45,7 @@ export default function LoginPage() {
     setResentSuccess(false)
     setLoading(true)
 
-    console.log('[login] Sign-in attempt', { email })
+    console.log('[login] Sign-in attempt')
 
     const supabase = createClient()
     const { data: signInData, error } = await supabase.auth.signInWithPassword({
@@ -95,14 +95,14 @@ export default function LoginPage() {
     // Block unverified users — redirect to verify-email (keep session so
     // they can resend verification). Do NOT sign out.
     if (!emailVerified) {
-      console.log('[login] Unverified user, redirecting to verify-email', { email })
+      console.log('[login] Unverified user, redirecting to verify-email')
       setLoading(false)
       // Full page nav to avoid AuthRedirect race
       window.location.href = '/verify-email'
       return
     }
 
-    console.log('[login] Sign-in success, redirecting', { email, role: userRole })
+    console.log('[login] Sign-in success, redirecting', { role: userRole })
 
     // Redirect based on role — full page nav to avoid AuthRedirect race
     let dest = '/jobs'
@@ -119,7 +119,7 @@ export default function LoginPage() {
     setResentSuccess(false)
     setError(null)
 
-    console.log('[login] Resend verification requested', { email })
+    console.log('[login] Resend verification requested')
 
     try {
       const supabase = createClient()
@@ -134,7 +134,7 @@ export default function LoginPage() {
         }
         setUnverified(true)
       } else {
-        console.log('[login] Resend success', { email })
+        console.log('[login] Resend success')
         setResentSuccess(true)
         setError('You need to verify your email before accessing your account.')
         setUnverified(true)

@@ -7,8 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test:ui": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
+    "test:node": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs",
+    "test:unit": "vitest run",
     "test:onboarding": "vitest run",
+    "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:node",
     "smoke": "node scripts/smoke-local.mjs",
     "discover": "npx tsx scripts/discover-businesses.ts"
   },

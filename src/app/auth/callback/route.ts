@@ -8,11 +8,12 @@ export async function GET(request: NextRequest) {
   const signupRole = searchParams.get('role')
   const flow = searchParams.get('flow')
 
+  // Never log `request.url` here: it carries the single-use OAuth `code`, and
+  // anything written to the platform log is retained and searchable.
   console.log('[auth-callback] Received', {
     hasCode: !!code,
     signupRole,
     flow,
-    url: request.url,
   })
 
   if (code) {
@@ -48,8 +49,7 @@ export async function GET(request: NextRequest) {
       const admin = createAdminClient()
       console.log('[auth-callback] User authenticated', {
         userId: user.id,
-        email: user.email,
-        emailConfirmedAt: user.email_confirmed_at,
+        emailConfirmed: !!user.email_confirmed_at,
         provider: user.app_metadata?.provider,
       })
 

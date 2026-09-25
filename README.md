@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# JobLinks
 
-## Getting Started
+The job board for Antigua and Barbuda. Job seekers browse and apply, build a
+resume, and message employers; employers post listings, review applicants, and
+upgrade to Pro for candidate access and priority placement.
 
-First, run the development server:
+Built with Next.js 16 (App Router), Supabase (Postgres, Auth, Storage), Stripe
+and Resend.
+
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env.local   # then fill in the values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Every variable in `.env.example` is required for a full local run. The app
+starts without the Stripe and Resend values, but checkout and email will fail.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Command                  | What it does                                            |
+| ------------------------ | ------------------------------------------------------- |
+| `npm run dev`            | Development server                                       |
+| `npm run build`          | Production build                                         |
+| `npm run start`          | Serve a production build                                 |
+| `npm run lint`           | ESLint                                                   |
+| `npm run typecheck`      | `tsc --noEmit`                                           |
+| `npm run test:unit`      | Vitest component and unit specs                          |
+| `npm run test:node`      | Node test runner: navigation, database security invariants |
+| `npm run test`           | Typecheck, lint, and both test suites                    |
+| `npm run smoke`          | Local smoke check against a running dev server           |
 
-To learn more about Next.js, take a look at the following resources:
+## Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Migrations live in `supabase/migrations/` and are applied in filename order.
+`schema-clean.sql` is a flattened snapshot of the base schema, used by the
+tests rather than for deployment.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Apply migrations before deploying code that depends on them:
 
-## Deploy on Vercel
+```bash
+supabase db push
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Two migrations carry security guarantees the application cannot enforce on its
+own, because `companies` and `job_listings` are written directly from the
+browser with the anon key:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `20260601_security_hardening.sql` — privileged fields on `public.users` are
+  service-role only.
+- `20260925_security_hardening_2.sql` — the same for company billing fields
+  (`is_pro`, `is_verified`, `pro_expires_at`), listing moderation
+  (`status`, `is_featured`), the free-tier listing cap, candidate-data access,
+  input length limits, and the rate-limit and Stripe-idempotency tables.
+
+`tests/security-hardening.test.mjs` loads both into an in-memory Postgres and
+asserts the invariants hold, so a future migration cannot quietly undo them.
+
+## Deployment
+
+Vercel is the deployment target; `vercel.json` defines the three cron jobs.
+`netlify.toml` and `netlify/functions/` mirror the same schedule and are kept
+only until the Vercel cutover is confirmed — see `docs/deployment.md`.
+
+## Architecture notes
+
+- `src/lib/api-auth.ts` — `requireUser`, `requireVerifiedUser` and
+  `requireAdmin`. Every route that writes uses `requireVerifiedUser`; admin
+  accounts are exempt from the email-verification requirement so server-side
+  automation is not gated on an inbox.
+- `src/lib/rate-limit.ts` — Postgres-backed fixed-window limiting. Fails open.
+- `src/lib/safe-sql.ts` — escaping for JSON-LD output and PostgREST filter
+  expressions.
+- `src/proxy.ts` — Next.js 16's renamed middleware. Refreshes the Supabase
+  session, redirects unverified users, and blocks banned accounts.
