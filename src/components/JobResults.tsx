@@ -3,6 +3,7 @@ import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
 import AlertToggle from "@/components/AlertToggle";
 import Link from "next/link";
+import { ilikePattern } from "@/lib/safe-sql";
 
 const JOBS_PER_PAGE = 12;
 
@@ -62,12 +63,14 @@ export default async function JobResults({
     .range(from, to);
 
   if (searchParams.q) {
-    const keyword = `%${searchParams.q}%`;
+    // Quoted + wildcard-escaped: a raw value here breaks the or() expression
+    // apart, so any search containing a comma used to 400.
+    const keyword = ilikePattern(searchParams.q);
     query = query.or(`title.ilike.${keyword},description.ilike.${keyword}`);
   }
 
   if (searchParams.location) {
-    query = query.ilike("location", `%${searchParams.location.replace(/[%_]/g, "")}%`);
+    query = query.ilike("location", `%${searchParams.location.replace(/[\\%_]/g, "")}%`);
   }
 
   if (searchParams.category) {

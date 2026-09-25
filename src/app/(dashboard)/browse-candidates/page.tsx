@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/auth";
 import CandidateFilters from "@/components/CandidateFilters";
 import CandidateProfileCard from "@/components/ui/info-card";
 import { Suspense } from "react";
+import { ilikePattern } from "@/lib/safe-sql";
 
 interface PageProps {
   searchParams: Promise<{
@@ -37,7 +38,7 @@ async function CandidateResults({
     .order("updated_at", { ascending: false });
 
   if (searchParams.q) {
-    const keyword = `%${searchParams.q}%`;
+    const keyword = ilikePattern(searchParams.q);
     query = query.or(
       `first_name.ilike.${keyword},last_name.ilike.${keyword},bio.ilike.${keyword}`
     );
