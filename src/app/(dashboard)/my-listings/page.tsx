@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { after } from 'next/server';
+import { processJobAlerts } from '@/lib/job-alert-matcher';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { requireAuth } from '@/lib/auth';
 import { JOB_TYPE_LABELS, type JobListing, type JobStatus, type JobType } from '@/lib/types';
 import DeleteListingButton from '@/components/DeleteListingButton';
+
+export const maxDuration = 300;
 
 function StatusBadge({ status }: { status: JobStatus }) {
   const styles: Record<JobStatus, string> = {
@@ -378,7 +382,7 @@ function RepostListing({ listingId }: { listingId: string }) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    await supabase.from('job_listings').insert({
+    const { data: reposted, error } = await supabase.from('job_listings').insert({
       company_id: original.company_id,
       title: original.title,
       description: original.description,
@@ -391,7 +395,10 @@ function RepostListing({ listingId }: { listingId: string }) {
       requires_work_permit: original.requires_work_permit,
       status: 'active',
       expires_at: expiresAt.toISOString(),
-    });
+    }).select('id').single();
+
+    if (error || !reposted) throw new Error('Unable to repost this job. Please try again.');
+    after(async () => { await processJobAlerts(reposted.id); });
 
     redirect('/my-listings');
   }

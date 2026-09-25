@@ -1,379 +1,123 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useAuth } from "@/components/AuthProvider";
-import { INDUSTRIES, JOB_TYPE_LABELS, JobType } from "@/lib/types";
-
-interface JobAlert {
-  id: string;
-  keywords: string[];
-  industry: string | null;
-  job_type: string | null;
-  created_at: string;
-}
-
-const JOB_TYPES: { value: JobType; label: string }[] = Object.entries(
-  JOB_TYPE_LABELS
-).map(([value, label]) => ({ value: value as JobType, label }));
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { Bell, Mail, Plus, Pencil, Trash2, Check, Search, SlidersHorizontal } from 'lucide-react';
+import { INDUSTRIES, JOB_TYPE_LABELS, type JobType } from '@/lib/types';
+import { alertCriteriaSchema, type JobAlert } from '@/lib/job-alert-criteria';
+import styles from './alerts.module.css';
 
 export default function AlertsPage() {
-  const { user: authUser, isLoading: authLoading } = useAuth();
   const [alerts, setAlerts] = useState<JobAlert[]>([]);
-  const [seekerProfileId, setSeekerProfileId] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Form state
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+  const [errorCode, setErrorCode] = useState('');
+  const [notice, setNotice] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [keywordInput, setKeywordInput] = useState("");
-  const [keywords, setKeywords] = useState<string[]>([]);
-  const [industry, setIndustry] = useState("");
-  const [jobType, setJobType] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [keywords, setKeywords] = useState('');
+  const [industry, setIndustry] = useState('');
+  const [jobType, setJobType] = useState('');
+  const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const loadAlerts = useCallback(async (profileId: string) => {
-    const supabase = createClient();
-    const { data, error: fetchError } = await supabase
-      .from("job_alerts")
-      .select("*")
-      .eq("seeker_id", profileId)
-      .order("created_at", { ascending: false });
-
-    if (fetchError) {
-      setError("Failed to load alerts. Please try again.");
-      return;
-    }
-    setAlerts(data || []);
+  const load = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch('/api/alerts', { cache: 'no-store', signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(15000)]) : AbortSignal.timeout(15000) });
+      const data = await response.json();
+      if (!response.ok) { setErrorCode(data.code || ''); throw new Error(data.error || 'Unable to load alerts. Try again.'); }
+      setAlerts(data.alerts); setEmail(data.email || ''); setReady(true);
+    } catch (err) {
+      if (!signal?.aborted) setError(err instanceof Error && err.name !== 'TimeoutError' ? err.message : 'Unable to load alerts. Check your connection and try again.');
+    } finally { if (!signal?.aborted) setLoading(false); }
   }, []);
 
   useEffect(() => {
-    if (authLoading || !authUser) return;
+    const controller = new AbortController();
+    // load only updates state after the asynchronous request completes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
+  useEffect(() => { if (showForm) inputRef.current?.focus(); }, [showForm, editingId]);
 
-    async function init() {
-      const supabase = createClient();
-      const { data: profile } = await supabase
-        .from("seeker_profiles")
-        .select("id")
-        .eq("user_id", authUser!.id)
-        .maybeSingle();
+  function openForm(alert?: JobAlert) {
+    setEditingId(alert?.id || null); setKeywords(alert?.keywords?.join(', ') || '');
+    setIndustry(alert?.industry || ''); setJobType(alert?.job_type || '');
+    setFormError(''); setNotice(''); setConfirmDelete(null); setShowForm(true);
+  }
 
-      if (!profile) {
-        setError("Please complete your profile first to set up job alerts.");
-        setLoading(false);
-        return;
-      }
-
-      setSeekerProfileId(profile.id);
-      await loadAlerts(profile.id);
-      setLoading(false);
-    }
-
-    init();
-  }, [authLoading, authUser, loadAlerts]);
-
-  const resetForm = () => {
-    setKeywordInput("");
-    setKeywords([]);
-    setIndustry("");
-    setJobType("");
-    setFormError(null);
-  };
-
-  const handleAddKeyword = () => {
-    const kw = keywordInput.trim();
-    if (kw && !keywords.includes(kw)) {
-      setKeywords((prev) => [...prev, kw]);
-    }
-    setKeywordInput("");
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddKeyword();
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!seekerProfileId) return;
-    if (keywords.length === 0 && !industry && !jobType) {
-      setFormError("Please add at least one keyword, industry, or job type.");
-      return;
-    }
-
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (saving) return;
+    setFormError(''); setNotice('');
+    const parsed = alertCriteriaSchema.safeParse({ keywords: keywords.split(','), industry, job_type: jobType });
+    if (!parsed.success) { setFormError(parsed.error.issues[0]?.message || 'Check your criteria.'); return; }
     setSaving(true);
-    setFormError(null);
-
-    const supabase = createClient();
-    const { error: insertError } = await supabase.from("job_alerts").insert({
-      seeker_id: seekerProfileId,
-      keywords: keywords.length > 0 ? keywords : null,
-      industry: industry || null,
-      job_type: jobType || null,
-    });
-
-    if (insertError) {
-      setFormError("Failed to create alert. Please try again.");
-      setSaving(false);
-      return;
-    }
-
-    await loadAlerts(seekerProfileId);
-    resetForm();
-    setShowForm(false);
-    setSaving(false);
-  };
-
-  const handleDelete = async (alertId: string) => {
-    const supabase = createClient();
-    const { error: deleteError } = await supabase
-      .from("job_alerts")
-      .delete()
-      .eq("id", alertId);
-
-    if (deleteError) {
-      setError("Failed to delete alert.");
-      return;
-    }
-
-    setAlerts((prev) => prev.filter((a) => a.id !== alertId));
-  };
-
-  if (authLoading || (authUser && loading)) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
-      </div>
-    );
+    try {
+      const response = await fetch('/api/alerts', { method: editingId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...parsed.data, ...(editingId ? { id: editingId } : {}) }), signal: AbortSignal.timeout(15000) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to save. Try again.');
+      setAlerts(current => editingId ? current.map(alert => alert.id === editingId ? data.alert : alert) : [data.alert, ...current]);
+      setShowForm(false); setNotice(editingId ? 'Alert updated.' : 'Alert saved. We’ll email you when a new job matches.');
+    } catch (err) { setFormError(err instanceof Error && err.name !== 'TimeoutError' ? err.message : 'Unable to save. Check your connection and try again.'); }
+    finally { setSaving(false); }
   }
 
-  if (!authUser) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold font-display text-text mb-6">Job Alerts</h1>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          Please sign in to manage job alerts.
-        </div>
-      </div>
-    );
+  async function remove(id: string) {
+    if (deleting) return;
+    setDeleting(id); setError(''); setNotice('');
+    try {
+      const response = await fetch('/api/alerts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }), signal: AbortSignal.timeout(15000) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Unable to delete. Try again.');
+      setAlerts(current => current.filter(alert => alert.id !== id)); setConfirmDelete(null);
+      if (editingId === id) setShowForm(false);
+      setNotice('Alert deleted. You won’t receive new emails for these criteria.');
+    } catch { setError('Unable to delete this alert. Check your connection and try again.'); }
+    finally { setDeleting(null); }
   }
 
-  if (error && !seekerProfileId) {
-    return (
-      <div>
-        <h1 className="text-2xl font-bold font-display text-text mb-6">Job Alerts</h1>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          {error}
-        </div>
-      </div>
-    );
-  }
+  return <div className={styles.page}>
+    <header className={styles.header}>
+      <div><div className={styles.heading}><Bell aria-hidden="true" size={27} /><h1>Job alerts</h1></div><p>Your next opportunity, straight to your inbox.</p></div>
+      <button className={styles.primary} onClick={() => openForm()} disabled={!ready || saving || !!deleting}><Plus size={18} aria-hidden="true" />New alert</button>
+    </header>
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-text">Job Alerts</h1>
-          <p className="mt-1 text-sm text-text-light">
-            Get notified when new jobs match your criteria
-          </p>
-        </div>
-        {!showForm && (
-          <button
-            onClick={() => { resetForm(); setShowForm(true); }}
-            className="inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            New Alert
-          </button>
-        )}
-      </div>
+    {email && <div className={styles.delivery}><Mail size={22} aria-hidden="true" /><div><span>Delivery address</span><strong>{email}</strong></div><span className={styles.emailTag}>Email alerts</span></div>}
+    {notice && <p className={styles.success} role="status"><Check size={18} aria-hidden="true" />{notice}</p>}
+    {error && <div className={styles.error} role="alert"><p>{error}</p>{errorCode === 'profile_required' ? <Link href="/profile">Set up your seeker profile</Link> : errorCode === 'verify_email' ? <Link href="/verify-email">Verify email</Link> : errorCode === 'sign_in' ? <Link href="/login?next=/alerts">Sign in</Link> : !ready && <button onClick={() => { setLoading(true); setError(''); setErrorCode(''); void load(); }}>Try again</button>}</div>}
 
-      {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+    <div className={styles.layout}>
+      <section className={styles.saved} aria-labelledby="saved-alerts-heading">
+        <div className={styles.sectionTitle}><h2 id="saved-alerts-heading">Your saved alerts</h2>{ready && <span>{alerts.length}</span>}</div>
+        {loading ? <p role="status" className={styles.empty}>Loading your alerts…</p> : ready && !alerts.length ? <div className={styles.empty}><div className={styles.emptyIcon}><Search size={30} aria-hidden="true" /></div><h3>Tell us what you’re looking for</h3><p>Choose a role, an industry, or a job type. We’ll keep an eye out for new matches in Antigua and Barbuda.</p><button className={styles.secondary} onClick={() => openForm()}>Create your first alert</button></div> : alerts.map(alert => <article key={alert.id} className={styles.card}>
+          <div className={styles.cardHeading}><h3>{alert.keywords?.length ? alert.keywords.join(' or ') : alert.industry || `${JOB_TYPE_LABELS[alert.job_type as JobType] || 'New'} opportunities`}</h3><span className={styles.active}><span />Active</span></div>
+          <div className={styles.tags}><span>{alert.industry || 'Any industry'}</span><span>{JOB_TYPE_LABELS[alert.job_type as JobType] || 'Any job type'}</span></div>
+          <p className={styles.matchNote}>{alert.keywords?.length ? 'Matches any of these keywords in the job title or description.' : 'Matches new jobs with these filters.'}</p>
+          <div className={styles.cardFooter}><span>Created {new Date(alert.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span><div className={styles.actions}><button onClick={() => openForm(alert)} aria-label={`Edit alert: ${alert.keywords?.join(', ') || alert.industry || 'job type'}`} disabled={saving || !!deleting}><Pencil size={16} aria-hidden="true" />Edit</button><button onClick={() => { setConfirmDelete(alert.id); setError(''); }} aria-label={`Delete alert: ${alert.keywords?.join(', ') || alert.industry || 'job type'}`} disabled={saving || !!deleting}><Trash2 size={16} aria-hidden="true" />Delete</button></div></div>
+          {confirmDelete === alert.id && <div className={styles.confirm}><p>Delete this alert? Emails for these criteria will stop.</p><div className={styles.actions}><button className={styles.danger} onClick={() => void remove(alert.id)} disabled={!!deleting}>{deleting === alert.id ? 'Deleting…' : 'Confirm delete'}</button><button onClick={() => setConfirmDelete(null)} disabled={!!deleting}>Keep alert</button></div></div>}
+        </article>)}
+      </section>
 
-      {/* Create Alert Form */}
-      {showForm && (
-        <div className="mb-6 rounded-lg border border-border bg-white p-6">
-          <h2 className="text-base font-semibold font-display text-text mb-4">Create a new alert</h2>
-
-          <div className="space-y-4">
-            {/* Keywords */}
-            <div>
-              <label className="block text-sm font-medium text-text-light mb-1.5">
-                Keywords
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={keywordInput}
-                  onChange={(e) => setKeywordInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="e.g. marketing, chef, IT support"
-                  className="flex-1 rounded-lg border border-border px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddKeyword}
-                  className="rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
-                >
-                  Add
-                </button>
-              </div>
-              {keywords.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {keywords.map((kw) => (
-                    <span
-                      key={kw}
-                      className="inline-flex items-center gap-1 rounded-md bg-bg-alt px-2.5 py-1 text-xs font-medium text-text-light"
-                    >
-                      {kw}
-                      <button
-                        onClick={() => setKeywords((prev) => prev.filter((k) => k !== kw))}
-                        className="text-text-muted hover:text-text-light"
-                      >
-                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Industry */}
-            <div>
-              <label className="block text-sm font-medium text-text-light mb-1.5">
-                Industry
-              </label>
-              <select
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-              >
-                <option value="">Any industry</option>
-                {INDUSTRIES.map((ind) => (
-                  <option key={ind} value={ind}>{ind}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Job Type */}
-            <div>
-              <label className="block text-sm font-medium text-text-light mb-1.5">
-                Job Type
-              </label>
-              <select
-                value={jobType}
-                onChange={(e) => setJobType(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-              >
-                <option value="">Any type</option>
-                {JOB_TYPES.map((jt) => (
-                  <option key={jt.value} value={jt.value}>{jt.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {formError && (
-              <p className="text-sm text-red-600">{formError}</p>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={handleCreate}
-                disabled={saving}
-                className="rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
-              >
-                {saving ? "Creating..." : "Create Alert"}
-              </button>
-              <button
-                onClick={() => { resetForm(); setShowForm(false); }}
-                className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Alerts List */}
-      {alerts.length === 0 ? (
-        <div className="rounded-lg border border-border bg-white p-10 text-center">
-          <svg className="mx-auto h-12 w-12 text-border" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <h3 className="mt-4 text-lg font-semibold font-display text-text">No alerts yet</h3>
-          <p className="mt-1 text-sm text-text-light">
-            Create an alert to get notified when new jobs match your criteria.
-          </p>
-          {!showForm && (
-            <button
-              onClick={() => { resetForm(); setShowForm(true); }}
-              className="mt-4 inline-flex items-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
-            >
-              Create your first alert
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="flex items-start gap-4 rounded-lg border border-border bg-white p-4"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 flex-shrink-0">
-                <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                </svg>
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap gap-1.5">
-                  {alert.keywords && alert.keywords.length > 0 && alert.keywords.map((kw) => (
-                    <span key={kw} className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                      {kw}
-                    </span>
-                  ))}
-                  {alert.industry && (
-                    <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                      {alert.industry}
-                    </span>
-                  )}
-                  {alert.job_type && (
-                    <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
-                      {JOB_TYPE_LABELS[alert.job_type as JobType] || alert.job_type}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1.5 text-xs text-text-muted">
-                  Created {new Date(alert.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                </p>
-              </div>
-
-              <button
-                onClick={() => handleDelete(alert.id)}
-                className="flex-shrink-0 rounded-lg p-2 text-text-muted hover:text-red-600 hover:bg-red-50 transition-colors"
-                title="Delete alert"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+      <aside className={styles.sidebar}>
+        {showForm ? <form className={styles.form} onSubmit={save} aria-label={editingId ? 'Edit alert' : 'New alert'}>
+          <div className={styles.formTitle}><SlidersHorizontal size={20} aria-hidden="true" /><h2>{editingId ? 'Edit your alert' : 'What should we look for?'}</h2></div>
+          <p>Use one filter or combine a few to narrow your matches.</p>
+          <label htmlFor="alert-keywords">Keywords</label><input ref={inputRef} id="alert-keywords" value={keywords} onChange={event => setKeywords(event.target.value)} placeholder="e.g. receptionist, front desk" aria-describedby="keywords-help" maxLength={809} disabled={saving} />
+          <small id="keywords-help">Separate keywords with commas. We’ll match any one of them. Up to 10 keywords.</small>
+          <label htmlFor="alert-industry">Industry</label><select id="alert-industry" value={industry} onChange={event => setIndustry(event.target.value)} disabled={saving}><option value="">Any industry</option>{INDUSTRIES.map(value => <option key={value}>{value}</option>)}</select>
+          <label htmlFor="alert-job-type">Job type</label><select id="alert-job-type" value={jobType} onChange={event => setJobType(event.target.value)} disabled={saving}><option value="">Any job type</option>{Object.entries(JOB_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+          <p className={styles.rule}>If you choose an industry or job type, the job must match those too.</p>
+          {formError && <p role="alert" className={styles.error}>{formError}</p>}
+          <button type="submit" className={styles.primary} disabled={saving}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Save alert'}</button><button type="button" className={styles.cancel} onClick={() => setShowForm(false)} disabled={saving}>Cancel</button>
+        </form> : <div className={styles.guide}><Mail size={26} aria-hidden="true" /><h2>Less searching.<br />More possibilities.</h2><p>When a newly published job matches a saved alert, we’ll email you a link to view it and apply.</p><p>Already-listed jobs won’t trigger a new alert. You can edit or delete your alerts here anytime.</p><Link href="/jobs">Browse jobs available now</Link></div>}
+      </aside>
     </div>
-  );
+  </div>;
 }

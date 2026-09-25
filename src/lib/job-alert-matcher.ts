@@ -1,148 +1,68 @@
-import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail, BASE_URL } from '@/lib/email'
+import { createAdminClient } from '@/lib/supabase/admin';
+import { sendEmail, BASE_URL } from '@/lib/email';
+import type { AlertCriteria } from '@/lib/job-alert-criteria';
 
-interface AlertRow {
-  id: string
-  seeker_id: string
-  keywords: string[] | null
-  industry: string | null
-  job_type: string | null
-}
+interface AlertRow extends AlertCriteria { id: string; seeker_id: string }
 
-/**
- * Matches a newly-activated job against all job alerts and sends
- * emails to seekers whose alerts match. Fire-and-forget — never throws.
+/** Run after publication. A seeker scope supports targeted recovery without a broadcast.
+ * Callers must use Next.js after() or await this; never fire and forget on serverless.
+ * Failed sends remain unlogged so an operator can safely retry them.
  */
-export async function processJobAlerts(jobId: string): Promise<void> {
+export async function processJobAlerts(jobId: string, scope?: { seekerId: string }) {
+  const result = { sent: 0, failed: 0, messageIds: [] as string[] };
   try {
-    const db = createAdminClient()
+    const db = createAdminClient();
+    const { data: job, error: jobError } = await db.from('job_listings')
+      .select('id, title, description, category, job_type, status, expires_at, companies(company_name)')
+      .eq('id', jobId).single();
+    if (jobError) throw jobError;
+    if (!job || job.status !== 'active' || (job.expires_at && new Date(job.expires_at).getTime() <= Date.now())) return result;
 
-    // Fetch the job with company name
-    const { data: job, error: jobErr } = await db
-      .from('job_listings')
-      .select('id, title, description, category, job_type, companies(company_name)')
-      .eq('id', jobId)
-      .single()
-
-    if (jobErr || !job) {
-      console.error('[processJobAlerts] Job not found:', jobId, jobErr?.message)
-      return
-    }
-
-    const companyInfo = Array.isArray(job.companies) ? job.companies[0] : job.companies
-    const companyName = companyInfo?.company_name || 'Unknown Company'
-    const searchText = `${job.title} ${job.description || ''}`.toLowerCase()
-
-    // Fetch all alerts
-    const { data: alerts, error: alertErr } = await db
-      .from('job_alerts')
-      .select('id, seeker_id, keywords, industry, job_type')
-
-    if (alertErr || !alerts || alerts.length === 0) return
-
-    // Match alerts against the job
-    const matchingAlerts: AlertRow[] = alerts.filter((alert: AlertRow) => {
-      // Keywords: ANY keyword must appear in title+description
-      if (alert.keywords && alert.keywords.length > 0) {
-        const hasKeyword = alert.keywords.some((kw) =>
-          searchText.includes(kw.toLowerCase())
-        )
-        if (!hasKeyword) return false
+    const company = Array.isArray(job.companies) ? job.companies[0] : job.companies;
+    const text = `${job.title} ${job.description || ''}`.toLowerCase();
+    const matches: AlertRow[] = [];
+    // Do not silently stop at the Data API's default row limit.
+    for (let offset = 0; ; offset += 500) {
+      let query = db.from('job_alerts').select('id, seeker_id, keywords, industry, job_type').order('id').range(offset, offset + 499);
+      if (scope) query = query.eq('seeker_id', scope.seekerId);
+      const { data: alerts, error } = await query;
+      if (error) throw error;
+      for (const alert of (alerts || []) as AlertRow[]) {
+        const words = (alert.keywords || []).map(word => word.trim().toLowerCase()).filter(Boolean);
+        if (!words.length && !alert.industry && !alert.job_type) continue;
+        if (words.length && !words.some(word => text.includes(word))) continue;
+        if (alert.industry && alert.industry !== job.category) continue;
+        if (alert.job_type && alert.job_type !== job.job_type) continue;
+        matches.push(alert);
       }
-
-      // Industry: exact match on category
-      if (alert.industry && alert.industry !== job.category) return false
-
-      // Job type: exact match
-      if (alert.job_type && alert.job_type !== job.job_type) return false
-
-      return true
-    })
-
-    if (matchingAlerts.length === 0) return
-
-    // Check which alert+job pairs have already been sent
-    const alertIds = matchingAlerts.map((a) => a.id)
-    const { data: alreadySent } = await db
-      .from('job_alert_log')
-      .select('alert_id')
-      .eq('job_id', jobId)
-      .in('alert_id', alertIds)
-
-    const sentSet = new Set((alreadySent || []).map((r: { alert_id: string }) => r.alert_id))
-    const unsent = matchingAlerts.filter((a) => !sentSet.has(a.id))
-
-    if (unsent.length === 0) return
-
-    // Group by seeker_id (one email per seeker)
-    const seekerAlertMap = new Map<string, string[]>()
-    for (const alert of unsent) {
-      const existing = seekerAlertMap.get(alert.seeker_id) || []
-      existing.push(alert.id)
-      seekerAlertMap.set(alert.seeker_id, existing)
+      if (!alerts || alerts.length < 500) break;
     }
 
-    // Get seeker emails
-    const seekerIds = Array.from(seekerAlertMap.keys())
-    const { data: seekerProfiles } = await db
-      .from('seeker_profiles')
-      .select('id, user_id')
-      .in('id', seekerIds)
+    const groups = new Map<string, AlertRow[]>();
+    for (const alert of matches) groups.set(alert.seeker_id, [...(groups.get(alert.seeker_id) || []), alert]);
+    for (const [seekerId, alerts] of groups) {
+      try {
+        const { data: logs, error: logError } = await db.from('job_alert_log').select('alert_id').eq('job_id', jobId).in('alert_id', alerts.map(alert => alert.id));
+        if (logError) throw logError;
+        // A person with overlapping alerts receives one email for this job.
+        if (logs?.length) continue;
+        const { data: profile, error: profileError } = await db.from('seeker_profiles').select('user_id').eq('id', seekerId).maybeSingle();
+        if (profileError) throw profileError;
+        if (!profile) continue;
+        const { data: user, error: userError } = await db.from('users').select('email, email_verified, is_banned').eq('id', profile.user_id).maybeSingle();
+        if (userError) throw userError;
+        if (!user?.email || user.email_verified !== true || user.is_banned) continue;
 
-    if (!seekerProfiles || seekerProfiles.length === 0) return
-
-    const userIds = seekerProfiles.map((p: { user_id: string }) => p.user_id)
-    const { data: users } = await db
-      .from('users')
-      .select('id, email')
-      .in('id', userIds)
-
-    if (!users || users.length === 0) return
-
-    const userEmailMap = new Map<string, string>()
-    for (const u of users) {
-      if (u.email) userEmailMap.set(u.id, u.email)
+        const sent = await sendEmail({ to: user.email, type: 'job_alert',
+          idempotencyKey: `job-alert/${jobId}/${seekerId}`,
+          data: { jobs: [{ title: job.title, company: company?.company_name || 'An employer', url: `${BASE_URL}/jobs/${job.id}` }] },
+        });
+        if (!sent.success) { result.failed++; continue; }
+        result.sent++; result.messageIds.push(sent.id);
+        const { error: writeError } = await db.from('job_alert_log').upsert(alerts.map(alert => ({ alert_id: alert.id, job_id: jobId })), { onConflict: 'alert_id,job_id', ignoreDuplicates: true });
+        if (writeError) throw writeError;
+      } catch (error) { result.failed++; console.error('[processJobAlerts] Recipient processing failed:', error); }
     }
-
-    const seekerUserMap = new Map<string, string>()
-    for (const p of seekerProfiles) {
-      seekerUserMap.set(p.id, p.user_id)
-    }
-
-    // Send emails and log
-    const jobUrl = `${BASE_URL}/jobs/${job.id}`
-    const logInserts: { alert_id: string; job_id: string }[] = []
-
-    for (const [seekerId, alertIdList] of seekerAlertMap) {
-      const userId = seekerUserMap.get(seekerId)
-      if (!userId) continue
-      const email = userEmailMap.get(userId)
-      if (!email) continue
-
-      sendEmail({
-        to: email,
-        type: 'job_alert',
-        data: {
-          jobs: [{ title: job.title, company: companyName, url: jobUrl }],
-        },
-      })
-
-      for (const alertId of alertIdList) {
-        logInserts.push({ alert_id: alertId, job_id: jobId })
-      }
-    }
-
-    // Log sent alerts (ignore conflicts for dedup safety)
-    if (logInserts.length > 0) {
-      await db
-        .from('job_alert_log')
-        .upsert(logInserts, { onConflict: 'alert_id,job_id', ignoreDuplicates: true })
-    }
-
-    console.log(
-      `[processJobAlerts] Job ${jobId}: matched ${unsent.length} alerts, emailed ${seekerAlertMap.size} seekers`
-    )
-  } catch (err) {
-    console.error('[processJobAlerts] Error:', err)
-  }
+  } catch (error) { result.failed++; console.error('[processJobAlerts] Failed:', error); }
+  return result;
 }

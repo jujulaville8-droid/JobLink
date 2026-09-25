@@ -165,7 +165,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
               .join('') || '<p style="color: #6b7280;">No jobs to display.</p>'
           }
           ${btn('Browse All Jobs', '/jobs')}
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 16px;">You can manage your alerts from your dashboard settings.</p>
+          <p style="color: #6b7280; font-size: 13px; margin-top: 16px;">You received this because you saved a matching job alert. <a href="${SITE}/alerts" style="color: #0d7377;">Manage or delete your alerts</a> to change which emails you receive.</p>
         `),
       }
 
