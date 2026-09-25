@@ -12,27 +12,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/jobs`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
     { url: `${BASE_URL}/signup`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
+    { url: `${BASE_URL}/employer/signup`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
+    { url: `${BASE_URL}/employers/upgrade`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
     { url: `${BASE_URL}/privacy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
     { url: `${BASE_URL}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  // Dynamic job pages — include active + recently closed (last 30 days)
-  // so Google has time to discover and index short-lived listings
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Only live listings. /jobs/[id] returns 404 for anything closed or expired,
+  // so listing those here would submit known-404 URLs to Search Console.
+  const now = new Date().toISOString();
 
   const { data: jobs } = await supabase
     .from("job_listings")
-    .select("id, created_at, status")
-    .in("status", ["active", "closed"])
-    .gte("created_at", thirtyDaysAgo.toISOString())
+    .select("id, created_at")
+    .eq("status", "active")
+    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("created_at", { ascending: false });
 
   const jobPages: MetadataRoute.Sitemap = (jobs || []).map((job) => ({
     url: `${BASE_URL}/jobs/${job.id}`,
     lastModified: new Date(job.created_at),
     changeFrequency: "daily" as const,
-    priority: job.status === "active" ? 0.8 : 0.5,
+    priority: 0.8,
   }));
 
   // Dynamic company pages
