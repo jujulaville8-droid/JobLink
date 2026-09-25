@@ -8,6 +8,13 @@ const JOB_TYPES: { value: JobType; label: string }[] = Object.entries(
   JOB_TYPE_LABELS
 ).map(([value, label]) => ({ value: value as JobType, label }));
 
+// URLSearchParams encodes spaces as "+", while every other internal link
+// (e.g. the homepage industry links) uses encodeURIComponent's "%20". Use one
+// format so each category has a single URL. A literal "+" is already "%2B".
+function toQuery(params: URLSearchParams): string {
+  return params.toString().replace(/\+/g, "%20");
+}
+
 export default function JobFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -30,14 +37,14 @@ export default function JobFilters() {
       }
     }
 
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${toQuery(params)}`);
   }
 
   function clearAll() {
     const params = new URLSearchParams();
     const q = searchParams.get("q");
     if (q) params.set("q", q);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${toQuery(params)}`);
   }
 
   function toggleJobType(type: string) {
