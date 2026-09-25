@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
-    return { title: "Job Not Found | JobLinks" };
+    return { title: { absolute: "Job Not Found | JobLinks" } };
   }
 
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
@@ -32,7 +32,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const url = `https://joblinkantigua.com/jobs/${id}`;
 
   return {
-    title,
+    // absolute: the root layout's "%s | JobLinks" template would otherwise
+    // append the suffix a second time ("... | JobLinks | JobLinks").
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
     openGraph: {
@@ -63,6 +65,22 @@ function formatSalary(min: number | null, max: number | null): string {
   if (min && max) return `${fmt(min)} - ${fmt(max)}`;
   if (min) return `From ${fmt(min)}`;
   return `Up to ${fmt(max!)}`;
+}
+
+// Google requires the JobPosting description as HTML. Descriptions are stored
+// as plain text (rendered with whitespace-pre-wrap), so escape it and keep the
+// paragraph / line breaks the reader sees on the page.
+function textToHtml(text: string): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return escaped
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+    .join("");
 }
 
 function timeAgo(dateStr: string): string {
@@ -218,10 +236,35 @@ export default async function JobDetailPage({ params }: PageProps) {
     volunteer: "VOLUNTEER",
   };
 
+  // Only send a locality we actually have. A bare "Antigua" / "Antigua and
+  // Barbuda" is the country, not a town, and a hardcoded default town/parish
+  // would be false location data under Google's job posting policies.
   const rawLocality = (job.location || company?.location || "").trim();
   const addressLocality = rawLocality
-    ? rawLocality.replace(/,\s*Antigua( and Barbuda)?\s*$/i, "").trim() || "St. John's"
-    : "St. John's";
+    .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
+    .replace(/,?\s*Barbuda\s*$/i, "")
+    .trim();
+
+  // salary_min/max are only meaningful with a pay period. The forms collect a
+  // salary_type but it is not stored yet, so only send unitText once it is.
+  const salaryUnitMap: Record<string, string> = {
+    hourly: "HOUR",
+    weekly: "WEEK",
+    monthly: "MONTH",
+    annually: "YEAR",
+  };
+  const salaryUnit = job.salary_type ? salaryUnitMap[job.salary_type] : undefined;
+
+  // Google for Jobs does not allow "job postings on behalf of an organization
+  // without authorization". Listings the JobLink team created or imported from
+  // public posts (posted_by_admin, or the standard import footer in the
+  // description) therefore get no JobPosting markup; the page itself stays
+  // indexable. A dedicated column would be cleaner but needs a migration.
+  // Closed/expired jobs never reach this point (they 404 above).
+  const isImportedListing =
+    !!job.posted_by_admin ||
+    /imported by JobLink from a public job post/i.test(job.description || "");
+  const emitJobPosting = !!company?.company_name && !isImportedListing;
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
@@ -232,13 +275,13 @@ export default async function JobDetailPage({ params }: PageProps) {
       value: job.id,
     },
     title: job.title,
-    description: job.description || `${job.title} position at ${company?.company_name || "a company"} in Antigua and Barbuda.`,
+    description: textToHtml(job.description || ""),
     datePosted: job.created_at,
-    employmentType: employmentTypeMap[job.job_type] || "FULL_TIME",
+    ...(employmentTypeMap[job.job_type] ? { employmentType: employmentTypeMap[job.job_type] } : {}),
     ...(job.category ? { industry: job.category } : {}),
     hiringOrganization: {
       "@type": "Organization",
-      name: company?.company_name || "Company",
+      name: company?.company_name,
       ...(company?.logo_url ? { logo: company.logo_url } : {}),
       ...(company?.website ? { sameAs: company.website } : {}),
     },
@@ -246,8 +289,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       "@type": "Place",
       address: {
         "@type": "PostalAddress",
-        addressLocality,
-        addressRegion: "Saint John",
+        ...(addressLocality ? { addressLocality } : {}),
         addressCountry: "AG",
       },
     },
@@ -257,7 +299,9 @@ export default async function JobDetailPage({ params }: PageProps) {
     },
     jobLocationType: rawLocality.toLowerCase().includes("remote") ? "TELECOMMUTE" : undefined,
     ...(job.expires_at ? { validThrough: new Date(job.expires_at).toISOString() } : {}),
-    directApply: true,
+    // Applying requires signing in and completing a profile/CV first, which
+    // Google does not count as a direct apply experience.
+    directApply: false,
     ...(job.salary_visible && (job.salary_min || job.salary_max)
       ? {
           baseSalary: {
@@ -270,7 +314,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 : job.salary_min
                   ? { value: job.salary_min }
                   : { value: job.salary_max }),
-              unitText: "MONTH",
+              ...(salaryUnit ? { unitText: salaryUnit } : {}),
             },
           },
         }
@@ -289,10 +333,12 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50/60">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(jobPostingSchema) }}
-      />
+      {emitJobPosting && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jobPostingSchema) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
