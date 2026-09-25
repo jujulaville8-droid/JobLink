@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { sendMessageNotification } from '@/lib/messaging-notifications'
+import { requireUser, requireVerifiedUser } from '@/lib/api-auth'
+import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 // POST: Create a conversation + first message for an application
 // GET: List inbox conversations (supports ?archived=true)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
+
+    const limited = await enforceRateLimit(`conversation:${user.id}`, RateLimits.conversation)
+    if (limited) return limited
 
     const { application_id, body } = await request.json()
     if (!application_id || !body?.trim()) {
@@ -147,9 +151,9 @@ export async function POST(request: NextRequest) {
 // GET: Inbox list using optimized RPC
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     const archived = request.nextUrl.searchParams.get('archived') === 'true'
 

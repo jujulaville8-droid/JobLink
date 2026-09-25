@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/api-auth'
 
 // GET: Single conversation metadata via optimized RPC
 export async function GET(
@@ -8,9 +8,9 @@ export async function GET(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     const { data, error } = await supabase.rpc('get_conversation_meta', {
       p_user_id: user.id,

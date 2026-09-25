@@ -8,6 +8,15 @@ const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
 const SIGNUP_URL = 'https://joblinkantigua.com/signup?role=employer'
 const CALENDLY_URL = 'https://calendly.com/joblink-anu/ecom'
 const RATE_LIMIT_MS = 100 // Resend premium — faster sends
+/**
+ * Recipients per invocation. At RATE_LIMIT_MS plus Resend's own latency this
+ * keeps a run comfortably inside maxDuration; the caller resumes with the
+ * `next_offset` from the response.
+ */
+const MAX_PER_INVOCATION = 100
+
+// Bulk sending needs more than the default function timeout.
+export const maxDuration = 300
 
 interface Employer {
   company_name: string
@@ -39,7 +48,8 @@ function emailWrapper(content: string): string {
     <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
       <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
       <p style="color: #9ca3af; font-size: 11px; margin-top: 4px;">
-        Don't want emails from us? <a href="#" style="color: #9ca3af;">Unsubscribe</a>
+        Don't want emails from us?
+        <a href="mailto:hello@joblinkantigua.com?subject=Unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
       </p>
     </div>
   </div>
@@ -172,7 +182,14 @@ function delay(ms: number): Promise<void> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { secret, email, signupCount = 5, dryRun = false } = body
+    const {
+      secret,
+      email,
+      signupCount = 5,
+      dryRun = false,
+      offset = 0,
+      batchSize = MAX_PER_INVOCATION,
+    } = body
 
     // Auth via secret key (for automated calls without user session)
     const expectedSecret = process.env.OUTREACH_SECRET
@@ -204,11 +221,20 @@ export async function POST(req: NextRequest) {
       recipients = employers
     }
 
+    // A single invocation must finish inside the function timeout. Sending all
+    // 382 recipients sequentially took longer than any serverless limit allows,
+    // so the run is chunked and the caller walks `next_offset` to completion.
+    const totalRecipients = recipients.length
+    const start = Math.max(0, Number(offset) || 0)
+    const size = Math.min(Math.max(1, Number(batchSize) || MAX_PER_INVOCATION), MAX_PER_INVOCATION)
+    const batch = recipients.slice(start, start + size)
+    const nextOffset = start + batch.length < totalRecipients ? start + batch.length : null
+
     const results: { company: string; email: string; status: string; error?: string }[] = []
     let sentCount = 0
     let failCount = 0
 
-    for (const emp of recipients) {
+    for (const emp of batch) {
       // Build email content
       let emailContent: { subject: string; html: string }
       if (email === 1) {
@@ -232,6 +258,12 @@ export async function POST(req: NextRequest) {
           subject: emailContent.subject,
           html: emailContent.html,
           replyTo: 'hello@joblinkantigua.com',
+          // The footer link alone was href="#", which is a dead unsubscribe on
+          // cold outreach. These headers give mail clients a real one.
+          headers: {
+            'List-Unsubscribe': '<mailto:hello@joblinkantigua.com?subject=Unsubscribe>',
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+          },
         })
 
         if (sendError) {
@@ -253,11 +285,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       summary: {
         emailNumber: email,
-        totalRecipients: recipients.length,
+        totalRecipients,
+        batchStart: start,
+        batchSize: batch.length,
         sent: sentCount,
         failed: failCount,
         dryRun,
       },
+      // Non-null when more recipients remain: call again with this as `offset`.
+      next_offset: nextOffset,
+      complete: nextOffset === null,
       results,
     })
   } catch (err) {

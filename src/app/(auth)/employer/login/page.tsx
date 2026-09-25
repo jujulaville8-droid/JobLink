@@ -38,7 +38,7 @@ export default function EmployerLoginPage() {
     setResentSuccess(false)
     setLoading(true)
 
-    console.log('[employer-login] Sign-in attempt', { email })
+    console.log('[employer-login] Sign-in attempt')
 
     const supabase = createClient()
     const { data: signInData, error } = await supabase.auth.signInWithPassword({
@@ -88,13 +88,13 @@ export default function EmployerLoginPage() {
     // Block unverified users — redirect to verify-email (keep session so
     // they can resend verification). Do NOT sign out.
     if (!emailVerified) {
-      console.log('[employer-login] Unverified user, redirecting to verify-email', { email })
+      console.log('[employer-login] Unverified user, redirecting to verify-email')
       setLoading(false)
       window.location.href = '/verify-email'
       return
     }
 
-    console.log('[employer-login] Sign-in success, redirecting', { email, role: userRole })
+    console.log('[employer-login] Sign-in success, redirecting', { role: userRole })
     window.location.href = userRole === 'admin' ? '/dashboard' : '/post-job'
   }
 
@@ -103,7 +103,7 @@ export default function EmployerLoginPage() {
     setResentSuccess(false)
     setError(null)
 
-    console.log('[employer-login] Resend verification requested', { email })
+    console.log('[employer-login] Resend verification requested')
 
     try {
       const supabase = createClient()
@@ -118,7 +118,7 @@ export default function EmployerLoginPage() {
         }
         setUnverified(true)
       } else {
-        console.log('[employer-login] Resend success', { email })
+        console.log('[employer-login] Resend success')
         setResentSuccess(true)
         setError('You need to verify your email before accessing your account.')
         setUnverified(true)

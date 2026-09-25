@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { requireVerifiedUser } from '@/lib/api-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail, BASE_URL } from '@/lib/email';
 import { sendStatusChangeMessage } from '@/lib/messaging-system-messages';
@@ -13,20 +13,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = await createClient();
-
-    // Authenticate
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requireVerifiedUser();
+    if ('error' in auth) return auth.error;
+    const { user, supabase } = auth;
 
     // Parse body
     const body = await request.json();

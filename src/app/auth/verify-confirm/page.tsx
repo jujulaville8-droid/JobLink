@@ -77,8 +77,7 @@ function VerifyConfirmContent() {
       if (!user) return false
 
       console.log('[verify-confirm] Checking existing session', {
-        email: user.email,
-        emailConfirmedAt: user.email_confirmed_at,
+        emailConfirmed: !!user.email_confirmed_at,
       })
 
       if (user.email_confirmed_at) {
@@ -156,11 +155,18 @@ function VerifyConfirmContent() {
       hasTokenHash: !!tokenHash,
       hasCode: !!code,
       type,
-      url: window.location.href,
+      // Deliberately not window.location.href: it carries the one-time
+      // verification token_hash / OAuth code.
     })
 
     const supabase = createClient()
 
+    // Redeeming the token against Supabase is synchronising with an external
+    // system, which is what effects are for. The helpers below set status
+    // state before their first await, which the lint rule reads as a
+    // cascading render; running them anywhere else would redeem the one-time
+    // token during render.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (tokenHash && type === 'signup') {
       verifyWithToken(supabase, tokenHash)
       return
@@ -173,6 +179,7 @@ function VerifyConfirmContent() {
 
     console.log('[verify-confirm] No token_hash or code, checking if already verified')
     checkAlreadyVerified(supabase)
+    /* eslint-enable react-hooks/set-state-in-effect */
     // The verification helpers intentionally run once for this URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])

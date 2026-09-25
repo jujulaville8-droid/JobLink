@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Bulk work needs more than the default function timeout.
+export const maxDuration = 300
+
 /**
  * Expire Listings Cron Job
  *

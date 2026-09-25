@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { safeJsonLd } from "@/lib/safe-sql";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
@@ -104,43 +106,11 @@ export default async function JobDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single();
 
+  // A closed, expired or missing listing must return a real 404. Rendering a
+  // "not found" body with a 200 makes it a soft 404: Google keeps the URL in
+  // the index and reports it as an error in Search Console.
   if (error || !job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <svg
-          className="mx-auto h-16 w-16 text-text-muted/40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <h1 className="mt-4 font-display text-2xl text-text">Job Not Found</h1>
-        <p className="mt-2 text-text-light">
-          This listing may have been removed or is no longer active.
-        </p>
-        <Link
-          href="/jobs"
-          className="mt-6 inline-flex items-center gap-2 btn-primary text-sm"
-        >
-          <svg
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Browse all jobs
-        </Link>
-      </div>
-    );
+    notFound();
   }
 
   const company = job.company as unknown as {
@@ -321,11 +291,11 @@ export default async function JobDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-gray-50/60">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jobPostingSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-fade-up">
         {/* Back link */}

@@ -1,6 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import * as route from '@/app/api/alerts/route';
 import { NextRequest } from 'next/server';
+const rate = vi.hoisted(() => ({ blocked: false }));
+vi.mock('@/lib/rate-limit', () => ({ RateLimits: { alert: {} }, enforceRateLimit: async () => rate.blocked ? Response.json({ error: 'Too many requests' }, { status: 429 }) : null }));
 const state = vi.hoisted(() => ({ user: { id: 'owner', email: 'owner@example.com', email_confirmed_at: '2026-01-01' } as Record<string, unknown> | null, rows: [] as Record<string, unknown>[], fail: false }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
   auth: { getUser: async () => ({ data: { user: state.user }, error: null }) },
@@ -25,7 +27,16 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
   }
 }) }));
 const req = (body: unknown, method = 'POST') => new NextRequest('http://localhost/api/alerts', { method, body: JSON.stringify(body) });
-beforeEach(() => { state.user = { id: 'owner', email: 'owner@example.com', email_confirmed_at: '2026-01-01' }; state.rows = []; state.fail = false; });
+beforeEach(() => { state.user = { id: 'owner', email: 'owner@example.com', email_confirmed_at: '2026-01-01' }; state.rows = []; state.fail = false; rate.blocked = false; });
+it('rate limits creation, editing and deletion before changing alerts', async () => {
+  rate.blocked = true;
+  const id = '11111111-1111-4111-8111-111111111111';
+  state.rows = [{ id, seeker_id: 'profile', keywords: ['chef'] }];
+  expect((await route.POST(req({ keywords: ['cook'] }))).status).toBe(429);
+  expect((await route.PATCH(req({ id, keywords: ['cook'] }, 'PATCH'))).status).toBe(429);
+  expect((await route.DELETE(req({ id }, 'DELETE'))).status).toBe(429);
+  expect(state.rows).toEqual([{ id, seeker_id: 'profile', keywords: ['chef'] }]);
+});
 it('rejects whitespace-only and malformed criteria', async () => {
   for (const body of [{ keywords: ['  '] }, { keywords: [12] }, { industry: 'invented' }, { job_type: {} }]) expect((await route.POST(req(body))).status).toBe(400);
 });

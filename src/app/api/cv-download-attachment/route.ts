@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/api-auth";
 
 /**
  * Serves CV/resume attachments from chat messages.
@@ -13,15 +13,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing path" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if ('error' in auth) return auth.error;
+  const { user } = auth;
 
   // Use admin client for authorization lookups to bypass RLS
   const { createAdminClient } = await import("@/lib/supabase/admin");
@@ -39,15 +33,19 @@ export async function GET(request: NextRequest) {
     // Check 2: Is the user an employer/admin who has an applicant with this CV?
     const { data: userData } = await adminClient
       .from("users")
-      .select("role")
+      .select("role, is_admin")
       .eq("id", user.id)
       .single();
 
-    if (userData?.role !== "employer" && userData?.role !== "admin") {
+    // is_admin is the server-managed flag and survives a role switch; `role`
+    // alone would drop admin access the moment an admin switched to seeker.
+    const isAdmin = userData?.is_admin === true;
+
+    if (!isAdmin && userData?.role !== "employer") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    if (userData?.role === "admin") {
+    if (isAdmin) {
       // Admins can access any CV — skip relationship check
     } else {
       // Verify this employer is a participant in a conversation containing this attachment

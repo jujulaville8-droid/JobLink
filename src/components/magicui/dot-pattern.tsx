@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useId, useRef, useState } from "react"
+import React, { useEffect, useId, useMemo, useRef, useState } from "react"
 import { motion } from "motion/react"
 
 import { cn } from "@/lib/utils"
@@ -90,23 +90,31 @@ export function DotPattern({
     return () => window.removeEventListener("resize", updateDimensions)
   }, [])
 
-  const dots = Array.from(
-    {
-      length:
-        Math.ceil(dimensions.width / width) *
-        Math.ceil(dimensions.height / height),
-    },
-    (_, i) => {
-      const col = i % Math.ceil(dimensions.width / width)
-      const row = Math.floor(i / Math.ceil(dimensions.width / width))
-      return {
-        x: col * width + cx + x,
-        y: row * height + cy + y,
-        delay: Math.random() * 5,
-        duration: Math.random() * 3 + 2,
-      }
+  // Math.random() during render is impure: it produces a different value on
+  // every pass and a different one on the server than the client. A cheap
+  // deterministic hash of the dot index gives the same scattered look while
+  // staying stable across renders.
+  const dots = useMemo(() => {
+    const scatter = (i: number, salt: number) => {
+      const n = Math.sin((i + 1) * 12.9898 + salt * 78.233) * 43758.5453
+      return n - Math.floor(n)
     }
-  )
+    const cols = Math.ceil(dimensions.width / width)
+
+    return Array.from(
+      { length: cols * Math.ceil(dimensions.height / height) },
+      (_, i) => {
+        const col = i % cols
+        const row = Math.floor(i / cols)
+        return {
+          x: col * width + cx + x,
+          y: row * height + cy + y,
+          delay: scatter(i, 1) * 5,
+          duration: scatter(i, 2) * 3 + 2,
+        }
+      }
+    )
+  }, [dimensions.width, dimensions.height, width, height, cx, cy, x, y])
 
   return (
     <svg

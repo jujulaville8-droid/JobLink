@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
   const profileId = request.nextUrl.searchParams.get('profileId')
@@ -8,15 +8,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing profileId' }, { status: 400 })
   }
 
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const auth = await requireUser()
+  if ('error' in auth) return auth.error
+  const { user } = auth
 
   const { createAdminClient } = await import('@/lib/supabase/admin')
   const adminClient = createAdminClient()

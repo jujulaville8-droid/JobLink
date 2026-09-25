@@ -6,7 +6,10 @@ const s = vi.hoisted(() => ({ previous: 'pending_approval', queue: [] as (() => 
 vi.mock('next/server', async importOriginal => ({ ...await importOriginal<typeof import('next/server')>(), after: (fn: () => Promise<unknown>) => s.queue.push(fn) }));
 vi.mock('@/lib/job-alert-matcher', () => ({ processJobAlerts: async (id: string) => { s.processed.push(id); } }));
 vi.mock('@/lib/email', () => ({ sendEmail: async () => {}, BASE_URL: 'https://joblinkantigua.com' }));
-vi.mock('@/lib/api-auth', () => ({ requireVerifiedUser: async () => ({ user: { id: 'admin' } }) }));
+vi.mock('@/lib/api-auth', () => ({
+  requireVerifiedUser: async () => ({ user: { id: 'admin' } }),
+  requireAdmin: async () => ({ user: { id: 'admin' }, isAdmin: true }),
+}));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: 'admin' } } }) } }) }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ from: (table: string) => {
   let write = false;

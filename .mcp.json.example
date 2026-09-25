@@ -6,12 +6,9 @@
     },
     "playwright-extension": {
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest",
-        "--extension"
-      ],
+      "args": ["@playwright/mcp@latest", "--extension"],
       "env": {
-        "PLAYWRIGHT_MCP_EXTENSION_TOKEN": "FDpL-tTi5nPfpcM3F2CWyi8Bd6lNIgmM-LPmqvhJuwk"
+        "PLAYWRIGHT_MCP_EXTENSION_TOKEN": "<your local extension token>"
       }
     }
   }

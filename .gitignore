@@ -48,3 +48,6 @@ next-env.d.ts
 # local browser captures and review artifacts
 .playwright-mcp/
 redesign-homepage-full.png
+
+# Local MCP server config (contains a per-machine extension token)
+.mcp.json

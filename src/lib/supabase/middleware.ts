@@ -65,21 +65,30 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (!isPublic && user) {
-    // Check auth-level verification (primary source of truth)
-    let isVerified = !!user.email_confirmed_at
+    const { data: userData } = await supabase
+      .from('users')
+      .select('email_verified, is_banned, is_admin')
+      .eq('id', user.id)
+      .single()
 
-    if (isVerified) {
-      // Also check database-level verification (synchronized on callback)
-      const { data: userData } = await supabase
-        .from('users')
-        .select('email_verified')
-        .eq('id', user.id)
-        .single()
+    // A banned account keeps its session but loses access to everything behind
+    // the login. Previously is_banned was only checked when applying to a job,
+    // so a ban did almost nothing. The homepage is public, so this cannot loop.
+    if (userData?.is_banned === true) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      url.search = '?suspended=1'
+      return NextResponse.redirect(url)
+    }
 
+    // Admin accounts are exempt, so server-side automation is not gated on an
+    // inbox. is_admin is service-managed and cannot be self-granted.
+    let isVerified = userData?.is_admin === true || !!user.email_confirmed_at
+
+    if (isVerified && userData?.is_admin !== true) {
       if (!userData || userData.email_verified !== true) {
-        // Auth says verified but DB doesn't — try to auto-sync using admin client.
-        // This is a safety net for when the verify-confirm page's sync failed
-        // (e.g., RLS blocked it or network error).
+        // Auth says verified but the database row does not. Repair it with the
+        // service role -- a safety net for a failed verify-confirm sync.
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
         if (serviceKey && supabaseUrl) {
           try {
@@ -87,24 +96,27 @@ export async function updateSession(request: NextRequest) {
               auth: { autoRefreshToken: false, persistSession: false },
             })
 
-            if (userData) {
-              await admin
-                .from('users')
-                .update({ email_verified: true })
-                .eq('id', user.id)
-            } else {
-              const metadataRole = user.user_metadata?.role
-              await admin.from('users').insert({
-                id: user.id,
-                email: user.email!,
-                role: metadataRole === 'employer' ? 'employer' : 'seeker',
-                email_verified: true,
-              })
+            // supabase-js RETURNS errors rather than throwing them, so the
+            // result has to be inspected. The previous try/catch could never
+            // fire, and a failed repair was silently treated as success.
+            const { error: syncError } = userData
+              ? await admin
+                  .from('users')
+                  .update({ email_verified: true })
+                  .eq('id', user.id)
+              : await admin.from('users').insert({
+                  id: user.id,
+                  email: user.email!,
+                  role: user.user_metadata?.role === 'employer' ? 'employer' : 'seeker',
+                  email_verified: true,
+                })
+
+            if (syncError) {
+              console.error('[auth-middleware] Auto-sync failed:', syncError.message)
+              isVerified = false
             }
-            console.log('[auth-middleware] Auto-synced email_verified for user', user.id)
-            // Sync succeeded — user is verified, don't block
           } catch (syncErr) {
-            console.error('[auth-middleware] Auto-sync failed', syncErr)
+            console.error('[auth-middleware] Auto-sync threw:', syncErr)
             isVerified = false
           }
         } else {

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 
+// Bulk work needs more than the default function timeout.
+export const maxDuration = 300
+
 /**
  * Signup Reminder Cron Job (3-step drip)
  *

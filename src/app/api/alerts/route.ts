@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { alertCriteriaSchema, sameAlert } from '@/lib/job-alert-criteria';
+import { enforceRateLimit, RateLimits } from '@/lib/rate-limit';
 
 const fields = 'id, keywords, industry, job_type, created_at';
 const fail = (error: string, status: number, code?: string) => NextResponse.json({ error, code }, { status });
@@ -10,11 +11,10 @@ async function context() {
   const db = await createClient();
   const { data: { user }, error } = await db.auth.getUser();
   if (error || !user) return { error: fail('Please sign in to manage alerts.', 401, 'sign_in') };
-  if (!user.email_confirmed_at) return { error: fail('Verify your email to receive alerts.', 403, 'verify_email') };
-  const { data: account, error: accountError } = await db.from('users').select('email_verified, is_banned').eq('id', user.id).maybeSingle();
+  const { data: account, error: accountError } = await db.from('users').select('email_verified, is_banned, is_admin').eq('id', user.id).maybeSingle();
   if (accountError) return { error: fail('Unable to load your account. Try again.', 503) };
   if (account?.is_banned) return { error: fail('This account cannot manage alerts.', 403) };
-  if (!account?.email_verified) return { error: fail('Verify your email to receive alerts.', 403, 'verify_email') };
+  if (!account?.is_admin && (!user.email_confirmed_at || !account?.email_verified)) return { error: fail('Verify your email to receive alerts.', 403, 'verify_email') };
   const { data: profile, error: profileError } = await db.from('seeker_profiles').select('id').eq('user_id', user.id).maybeSingle();
   if (profileError) return { error: fail('Unable to load your profile. Try again.', 503) };
   if (!profile) return { error: fail('Complete your job seeker profile to create alerts.', 403, 'profile_required') };
@@ -35,6 +35,8 @@ async function save(request: Request, editing: boolean) {
   try {
     const ctx = await context();
     if ('error' in ctx) return ctx.error!;
+    const limited = await enforceRateLimit(`alert:${ctx.user.id}`, RateLimits.alert);
+    if (limited) return limited;
     const body = await request.json().catch(() => null);
     const parsed = alertCriteriaSchema.safeParse(body);
     if (!parsed.success) return fail(parsed.error.issues[0]?.message || 'Check your alert criteria.', 400);
@@ -62,6 +64,8 @@ export async function DELETE(request: Request) {
   try {
     const ctx = await context();
     if ('error' in ctx) return ctx.error!;
+    const limited = await enforceRateLimit(`alert:${ctx.user.id}`, RateLimits.alert);
+    if (limited) return limited;
     const body = await request.json().catch(() => null);
     const id = z.uuid().safeParse(body?.id);
     if (!id.success) return fail('Invalid alert.', 400);

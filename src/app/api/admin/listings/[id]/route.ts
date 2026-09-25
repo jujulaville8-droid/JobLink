@@ -1,8 +1,8 @@
 import { after, NextRequest, NextResponse } from 'next/server'
 import { processJobAlerts } from '@/lib/job-alert-matcher'
-import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireAdmin } from '@/lib/api-auth'
 
 export const maxDuration = 300
 
@@ -11,31 +11,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
     const { id } = await params
 
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     const admin = createAdminClient()
-
-    // Verify caller has the server-managed admin flag.
-    const { data: adminUser, error: adminError } = await admin
-      .from('users')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    if (adminError || !adminUser?.is_admin) {
-      return NextResponse.json({ error: 'Forbidden: admin access required' }, { status: 403 })
-    }
 
     const body = await request.json()
     const { status, is_featured } = body

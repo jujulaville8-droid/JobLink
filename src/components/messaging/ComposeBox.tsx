@@ -22,18 +22,30 @@ export default function ComposeBox({
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Accept external value (from template insertion)
+  // Accept external value (from template insertion).
+  // Adjusting state during render rather than in an effect: this is React's
+  // documented pattern for "reset state when a prop changes", and it avoids
+  // the extra render pass an effect would cause.
+  // https://react.dev/learn/you-might-not-need-an-effect
+  const [lastExternalValue, setLastExternalValue] = useState<string | undefined>(
+    undefined
+  );
+  if (externalValue && externalValue !== lastExternalValue) {
+    setLastExternalValue(externalValue);
+    setBody(externalValue);
+  }
+
+  // Focusing the textarea is a real side effect, so it stays in an effect.
   useEffect(() => {
-    if (externalValue) {
-      setBody(externalValue);
-      onExternalValueConsumed?.();
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus({ preventScroll: true });
-          resizeTextarea();
-        }
-      }, 0);
-    }
+    if (!externalValue) return;
+    onExternalValueConsumed?.();
+    const frame = requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus({ preventScroll: true });
+        resizeTextarea();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [externalValue, onExternalValueConsumed]);
 
   async function handleSubmit(e: React.FormEvent) {

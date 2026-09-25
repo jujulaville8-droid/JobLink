@@ -1,24 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireVerifiedUser } from '@/lib/api-auth'
+import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Enforce email verification
-    if (!user.email_confirmed_at) {
-      return NextResponse.json({ error: 'Please verify your email first' }, { status: 403 })
-    }
+    const limited = await enforceRateLimit(`report:${user.id}`, RateLimits.report)
+    if (limited) return limited
 
     const body = await request.json()
     const { job_id, reason } = body

@@ -1,14 +1,26 @@
 import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { safeJsonLd } from "@/lib/safe-sql";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+/**
+ * The homepage shows three featured jobs and four counters -- all public data,
+ * identical for every visitor, with the auth-dependent chrome rendered
+ * client-side. force-dynamic ran five Supabase queries on every single visit
+ * with no caching; a short revalidate window collapses that to one render per
+ * minute while keeping listings fresh.
+ */
+export const revalidate = 60;
 
 async function getFeaturedJobs(): Promise<Job[]> {
   try {
-    const supabase = await createClient();
+    // The admin client, like getHomepageStats below: the cookie-bound client
+    // reads cookies, which opts the whole route out of static rendering and
+    // makes the revalidate window above do nothing. The query is restricted to
+    // active, unexpired listings, which is what the public RLS policy allows
+    // anyway.
+    const supabase = createAdminClient();
     const now = new Date().toISOString();
 
     const { data: jobs, error } = await supabase
@@ -51,8 +63,13 @@ async function getFeaturedJobs(): Promise<Job[]> {
         is_pro_company: company?.is_pro ?? false,
       };
     });
-  } catch {
-    throw new Error("Job listings temporarily unavailable");
+  } catch (err) {
+    // Degrade to an empty featured row rather than throwing, matching
+    // getHomepageStats below. Throwing here took the whole marketing page down
+    // on a transient database error, and under ISR it also failed the build
+    // outright if Supabase was unreachable while prerendering.
+    console.error("[homepage] Could not load featured jobs:", err);
+    return [];
   }
 }
 
@@ -132,7 +149,7 @@ export default async function Home() {
     ],
   };
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }} />
     <HomePage jobs={jobs} stats={stats} />
   </>;
 }

@@ -66,6 +66,11 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (authLoading || !user) return;
+    // Fetching the inbox is synchronising with an external system (the API),
+    // which is what effects are for. fetchInbox flips `loading` before its
+    // first await, which the lint rule reads as a cascading render; the
+    // alternative -- deferring the spinner -- would show stale rows instead.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchInbox(tab === "archived");
   }, [user, authLoading, tab, fetchInbox]);
 

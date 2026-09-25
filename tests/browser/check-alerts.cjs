@@ -1,6 +1,6 @@
-const { chromium } = require('playwright');
-const assert = require('node:assert/strict');
 (async () => {
+  const { chromium } = await import('playwright');
+  const { default: assert } = await import('node:assert/strict');
   const browser = await chromium.launch({ headless: true });
   try {
     for (const width of [390, 1440, 320]) {

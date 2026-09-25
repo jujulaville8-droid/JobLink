@@ -1,11 +1,25 @@
-"use client";
-
+import type { Metadata } from "next";
 import AuthRedirect from "@/components/AuthRedirect";
+
+/**
+ * Auth screens are noindex by default.
+ *
+ * They were previously indexable and, because none of them set their own
+ * canonical, they inherited the root layout's `canonical: joblinkantigua.com`
+ * — telling Google that /login, /forgot-password and /reset-password were all
+ * duplicates of the homepage.
+ *
+ * The two signup pages are genuine acquisition entry points and opt back in
+ * via their own layouts.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+};
 
 export default function AuthLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="min-h-screen bg-mesh-teal flex flex-col items-center justify-start px-4 pt-16 pb-12 relative">
@@ -17,5 +31,5 @@ export default function AuthLayout({
         <AuthRedirect>{children}</AuthRedirect>
       </div>
     </div>
-  )
+  );
 }

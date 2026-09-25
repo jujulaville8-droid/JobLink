@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireVerifiedUser } from '@/lib/api-auth'
 
 // POST: Block the other participant in this conversation
 export async function POST(
@@ -9,9 +9,9 @@ export async function POST(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
     const admin = createAdminClient()
     const { data: caller } = await admin
@@ -56,9 +56,9 @@ export async function DELETE(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
     const admin = createAdminClient()
     const { data: caller } = await admin

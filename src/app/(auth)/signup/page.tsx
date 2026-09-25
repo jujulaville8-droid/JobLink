@@ -139,8 +139,8 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
       return
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
       return
     }
 
@@ -394,11 +394,11 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 6 characters"
+            placeholder="At least 8 characters"
             className="input-base"
           />
           <div className="mt-1 flex items-center justify-between gap-2">
-            <p id="password-hint" className="text-xs text-text-light">Use at least 6 characters.</p>
+            <p id="password-hint" className="text-xs text-text-light">Use at least 8 characters.</p>
             <button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-pressed={showPassword} className="min-h-11 px-2 text-xs font-medium text-primary">{showPassword ? 'Hide password' : 'Show password'}</button>
           </div>
         </div>
