@@ -1,4 +1,6 @@
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
+import { processJobAlerts } from '@/lib/job-alert-matcher'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
@@ -9,6 +11,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import RejectJobButton from '@/components/RejectJobButton'
 
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+
+export const maxDuration = 300
 
 async function notifyEmployer(supabase: Awaited<ReturnType<typeof createClient>>, jobId: string, type: 'listing_approved' | 'listing_rejected', rejectionReason?: string) {
   const { data: job } = await supabase
@@ -140,13 +144,18 @@ async function approveJob(formData: FormData) {
   const supabase = createAdminClient()
   const jobId = formData.get('job_id') as string
 
-  await supabase
+  const { data: approved, error } = await supabase
     .from('job_listings')
     .update({ status: 'active' })
     .eq('id', jobId)
+    .eq('status', 'pending_approval')
+    .select('id')
+    .maybeSingle()
 
+  if (error) throw new Error('Unable to approve this job. Please try again.')
+  if (!approved) return
+  after(async () => { await processJobAlerts(approved.id) })
   await notifyEmployer(supabase, jobId, 'listing_approved')
-  // Automatic seeker emails disabled — use admin dashboard to manually notify
   revalidatePath('/admin/approvals')
 }
 

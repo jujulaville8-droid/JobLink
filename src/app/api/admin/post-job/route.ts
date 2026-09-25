@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
+import { processJobAlerts } from '@/lib/job-alert-matcher'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
@@ -6,6 +7,8 @@ import { BASE_URL } from '@/lib/email'
 import { buildEmailHtml } from '@/lib/email-templates'
 
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+
+export const maxDuration = 300
 
 // Kept ready for a future opt-in broadcast workflow.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -227,7 +230,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: listingError?.message || 'Failed to create listing' }, { status: 500 })
   }
 
-  // Automatic emails disabled — use admin dashboard to manually notify seekers
+  after(async () => { await processJobAlerts(listing.id) })
 
   return NextResponse.json({ success: true, listingId: listing.id, companyId: resolvedCompanyId })
 }

@@ -15,7 +15,11 @@ interface AlertToggleProps {
   emphasis?: boolean;
 }
 
-export default function AlertToggle({
+export default function AlertToggle(props: AlertToggleProps) {
+  return <AlertToggleContent key={JSON.stringify([props.query, props.category, props.jobType, props.loggedIn])} {...props} />;
+}
+
+function AlertToggleContent({
   query,
   category,
   jobType,
@@ -25,8 +29,10 @@ export default function AlertToggle({
   const [status, setStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [error, setError] = useState('');
 
-  const hasFilters = !!(query || category || jobType);
+  const resolvedJobType = Array.isArray(jobType) ? jobType[0] : jobType;
+  const hasFilters = !!(query?.trim() || category || resolvedJobType);
 
   // Hide entirely on the success-state header if no filters set —
   // there's nothing meaningful to alert on. Empty-state always shows.
@@ -75,14 +81,16 @@ export default function AlertToggle({
     );
   }
 
-  const resolvedJobType = Array.isArray(jobType) ? jobType[0] : jobType;
+  if (!hasFilters) return <a href="/alerts" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Set up a job alert</a>;
 
   async function handleCreate() {
     setStatus("saving");
+    setError('');
     try {
       const res = await fetch("/api/alerts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(15000),
         body: JSON.stringify({
           keywords: query ? [query] : null,
           industry: category || null,
@@ -96,6 +104,7 @@ export default function AlertToggle({
           setStatus("saved");
         } else {
           setStatus("error");
+          setError(data.error || 'Unable to save your alert. Try again.');
         }
         return;
       }
@@ -103,6 +112,7 @@ export default function AlertToggle({
       setStatus("saved");
     } catch {
       setStatus("error");
+      setError('Unable to save your alert. Check your connection and try again.');
     }
   }
 
@@ -132,7 +142,7 @@ export default function AlertToggle({
   }
 
   return (
-    <button
+    <div><button
       onClick={handleCreate}
       disabled={status === "saving"}
       className={
@@ -154,6 +164,6 @@ export default function AlertToggle({
         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       </svg>
       {status === "saving" ? "Saving..." : emphasis ? "Notify me when one posts" : "Notify me of new matches"}
-    </button>
+    </button>{error && <p role="alert" className="mt-2 text-sm text-red-700">{error} <a href="/alerts" className="underline">Manage alerts</a></p>}</div>
   );
 }

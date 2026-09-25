@@ -1,85 +1,73 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { createClient } from '@/lib/supabase/server';
+import { alertCriteriaSchema, sameAlert } from '@/lib/job-alert-criteria';
 
-export async function POST(request: NextRequest) {
+const fields = 'id, keywords, industry, job_type, created_at';
+const fail = (error: string, status: number, code?: string) => NextResponse.json({ error, code }, { status });
+
+async function context() {
+  const db = await createClient();
+  const { data: { user }, error } = await db.auth.getUser();
+  if (error || !user) return { error: fail('Please sign in to manage alerts.', 401, 'sign_in') };
+  if (!user.email_confirmed_at) return { error: fail('Verify your email to receive alerts.', 403, 'verify_email') };
+  const { data: account, error: accountError } = await db.from('users').select('email_verified, is_banned').eq('id', user.id).maybeSingle();
+  if (accountError) return { error: fail('Unable to load your account. Try again.', 503) };
+  if (account?.is_banned) return { error: fail('This account cannot manage alerts.', 403) };
+  if (!account?.email_verified) return { error: fail('Verify your email to receive alerts.', 403, 'verify_email') };
+  const { data: profile, error: profileError } = await db.from('seeker_profiles').select('id').eq('user_id', user.id).maybeSingle();
+  if (profileError) return { error: fail('Unable to load your profile. Try again.', 503) };
+  if (!profile) return { error: fail('Complete your job seeker profile to create alerts.', 403, 'profile_required') };
+  return { db, profile, user };
+}
+
+export async function GET() {
   try {
-    const supabase = await createClient()
+    const ctx = await context();
+    if ('error' in ctx) return ctx.error!;
+    const { data, error } = await ctx.db.from('job_alerts').select(fields).eq('seeker_id', ctx.profile.id).order('created_at', { ascending: false });
+    if (error) return fail('Unable to load alerts. Try again.', 503);
+    return NextResponse.json({ alerts: data || [], email: ctx.user.email }, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch { return fail('Unable to load alerts. Try again.', 503); }
+}
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+async function save(request: Request, editing: boolean) {
+  try {
+    const ctx = await context();
+    if ('error' in ctx) return ctx.error!;
+    const body = await request.json().catch(() => null);
+    const parsed = alertCriteriaSchema.safeParse(body);
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message || 'Check your alert criteria.', 400);
+    const id = editing ? z.uuid().safeParse(body.id) : null;
+    if (id && !id.success) return fail('Invalid alert.', 400);
+    const { data: existing, error: readError } = await ctx.db.from('job_alerts').select(fields).eq('seeker_id', ctx.profile.id);
+    if (readError) return fail('Unable to check saved alerts. Try again.', 503);
+    const editingId = id?.success ? id.data : null;
+    if (editingId && !existing?.some(alert => alert.id === editingId)) return fail('Alert not found.', 404);
+    const duplicate = existing?.find(alert => alert.id !== editingId && sameAlert(alert, parsed.data));
+    if (duplicate) return NextResponse.json({ exists: true, error: 'You already have an alert with these criteria.', alert: duplicate }, { status: 409 });
+    const query = editingId
+      ? ctx.db.from('job_alerts').update(parsed.data).eq('id', editingId).eq('seeker_id', ctx.profile.id)
+      : ctx.db.from('job_alerts').insert({ ...parsed.data, seeker_id: ctx.profile.id });
+    const { data: alert, error } = await query.select(fields).single();
+    if (error || !alert) return fail('Unable to save your alert. Try again.', 503);
+    return NextResponse.json({ alert }, { status: editing ? 200 : 201 });
+  } catch { return fail('Unable to save your alert. Try again.', 503); }
+}
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+export const POST = (request: Request) => save(request, false);
+export const PATCH = (request: Request) => save(request, true);
 
-    // Get seeker profile
-    const { data: profile } = await supabase
-      .from('seeker_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    if (!profile) {
-      return NextResponse.json({ error: 'Seeker profile not found' }, { status: 404 })
-    }
-
-    const { keywords, industry, job_type } = await request.json()
-
-    // Validate at least one filter
-    const hasKeywords = keywords && Array.isArray(keywords) && keywords.length > 0
-    if (!hasKeywords && !industry && !job_type) {
-      return NextResponse.json({ error: 'At least one filter is required' }, { status: 400 })
-    }
-
-    // Check for duplicate alert
-    let dupeQuery = supabase
-      .from('job_alerts')
-      .select('id')
-      .eq('seeker_id', profile.id)
-
-    if (hasKeywords) {
-      dupeQuery = dupeQuery.contains('keywords', keywords)
-    } else {
-      dupeQuery = dupeQuery.is('keywords', null)
-    }
-
-    if (industry) {
-      dupeQuery = dupeQuery.eq('industry', industry)
-    } else {
-      dupeQuery = dupeQuery.is('industry', null)
-    }
-
-    if (job_type) {
-      dupeQuery = dupeQuery.eq('job_type', job_type)
-    } else {
-      dupeQuery = dupeQuery.is('job_type', null)
-    }
-
-    const { data: existing } = await dupeQuery.maybeSingle()
-
-    if (existing) {
-      return NextResponse.json({ exists: true, message: 'Alert already exists' }, { status: 409 })
-    }
-
-    // Create the alert
-    const { error: insertError } = await supabase
-      .from('job_alerts')
-      .insert({
-        seeker_id: profile.id,
-        keywords: hasKeywords ? keywords : null,
-        industry: industry || null,
-        job_type: job_type || null,
-      })
-
-    if (insertError) {
-      console.error('[POST /api/alerts] Insert error:', insertError.message)
-      return NextResponse.json({ error: 'Failed to create alert' }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true }, { status: 201 })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+export async function DELETE(request: Request) {
+  try {
+    const ctx = await context();
+    if ('error' in ctx) return ctx.error!;
+    const body = await request.json().catch(() => null);
+    const id = z.uuid().safeParse(body?.id);
+    if (!id.success) return fail('Invalid alert.', 400);
+    const { data, error } = await ctx.db.from('job_alerts').delete().eq('id', id.data).eq('seeker_id', ctx.profile.id).select('id');
+    if (error) return fail('Unable to delete your alert. Try again.', 503);
+    if (!data?.length) return fail('Alert not found.', 404);
+    return NextResponse.json({ success: true });
+  } catch { return fail('Unable to delete your alert. Try again.', 503); }
 }

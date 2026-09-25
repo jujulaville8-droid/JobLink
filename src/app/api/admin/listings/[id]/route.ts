@@ -1,7 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
+import { processJobAlerts } from '@/lib/job-alert-matcher'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
+
+export const maxDuration = 300
 
 export async function PATCH(
   request: NextRequest,
@@ -119,7 +122,9 @@ export async function PATCH(
       }
     }
 
-    // Automatic alert emails disabled — use admin dashboard to manually notify seekers
+    if (status === 'active' && currentListing && currentListing.status !== 'active') {
+      after(async () => { await processJobAlerts(id) })
+    }
 
     return NextResponse.json({ listing: updatedListing })
   } catch {
