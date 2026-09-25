@@ -29,6 +29,17 @@ const CONTENT_SECURITY_POLICY = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "hfcfuvbyqxkvnenfykex.supabase.co",
+        port: "",
+        pathname: "/storage/v1/object/public/company-logos/**",
+        search: "",
+      },
+    ],
+  },
   async headers() {
     return [
       {

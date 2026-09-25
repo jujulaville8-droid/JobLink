@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import type { Job } from "@/components/JobCard"
+import CompanyLogo from "@/components/home/CompanyLogo"
 import { AnimatedList } from "@/components/magicui/animated-list"
 import { AvatarCircles } from "@/components/magicui/avatar-circles"
 import { BentoCard, BentoGrid } from "@/components/magicui/bento-grid"
@@ -253,15 +254,7 @@ export default function HomePage({
                   className="home-job-card"
                 >
                   <div className={`home-job-monogram home-monogram-${index % 3}`}>
-                    {job.company_logo ? (
-                      <Image src={job.company_logo} alt="" width={52} height={52} />
-                    ) : (
-                      job.company_name
-                        .split(/\s+/)
-                        .map((word) => word[0])
-                        .slice(0, 2)
-                        .join("")
-                    )}
+                    <CompanyLogo src={job.company_logo || null} name={job.company_name} />
                   </div>
                   <div className="home-job-details">
                     <h3>{job.title}</h3>
