@@ -3,6 +3,7 @@ import Link from "next/link";
 import JobCard, { Job } from "@/components/JobCard";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -19,14 +20,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!company) {
-    return { title: "Company Not Found | JobLinks" };
+    return { title: { absolute: "Company Not Found | JobLinks" } };
   }
+
+  // A profile with no live jobs is a thin page that Google reports as a soft
+  // 404. Keep it crawlable but noindex until it has an open listing.
+  const { count } = await supabase
+    .from("job_listings")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", id)
+    .eq("status", "active")
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
   const url = `https://joblinkantigua.com/companies/${id}`;
   return {
-    title: `${company.company_name} — Jobs & Company Profile`,
-    description: `View ${company.company_name}'s profile and open job listings on JobLinks, Antigua and Barbuda's #1 job platform.`,
+    title: count
+      ? `${company.company_name} Jobs in Antigua (${count} open)`
+      : `${company.company_name} — Jobs & Company Profile`,
+    description: count
+      ? `${company.company_name} is hiring: ${count} open ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. View the company profile and apply on JobLinks.`
+      : `View ${company.company_name}'s profile and open job listings on JobLinks, Antigua and Barbuda's #1 job platform.`,
     alternates: { canonical: url },
+    ...(count ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title: `${company.company_name} — Jobs & Company Profile`,
       description: `View ${company.company_name}'s profile and open job listings on JobLinks.`,
@@ -46,35 +61,9 @@ export default async function CompanyPage({ params }: PageProps) {
     .eq("id", id)
     .single();
 
+  // A missing company must be a real 404, not a 200 "not found" page.
   if (error || !company) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <svg
-          className="mx-auto h-16 w-16 text-text-light/40"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-        <h1 className="mt-4 text-2xl font-bold font-display text-text">
-          Company Not Found
-        </h1>
-        <p className="mt-2 text-text-light">
-          This company profile doesn&apos;t exist or has been removed.
-        </p>
-        <Link
-          href="/jobs"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-light transition-colors"
-        >
-          Browse jobs
-        </Link>
-      </div>
-    );
+    notFound();
   }
 
   // Fetch active jobs from this company

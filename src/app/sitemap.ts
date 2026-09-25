@@ -11,8 +11,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${BASE_URL}/jobs`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
-    { url: `${BASE_URL}/signup`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
-    { url: `${BASE_URL}/employer/signup`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
     { url: `${BASE_URL}/employers/upgrade`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
     { url: `${BASE_URL}/privacy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
     { url: `${BASE_URL}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
@@ -24,7 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const { data: jobs } = await supabase
     .from("job_listings")
-    .select("id, created_at")
+    .select("id, company_id, created_at")
     .eq("status", "active")
     .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("created_at", { ascending: false });
@@ -36,11 +34,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Dynamic company pages
-  const { data: companies } = await supabase
-    .from("companies")
-    .select("id, created_at")
-    .order("created_at", { ascending: false });
+  // Company pages: only those with a live job. Profiles without one are
+  // noindex (thin pages Google reported as soft 404s), so listing them here
+  // would submit URLs we ask Google not to index.
+  const hiringCompanyIds = Array.from(new Set((jobs || []).map((job) => job.company_id)));
+  const { data: companies } = hiringCompanyIds.length
+    ? await supabase
+        .from("companies")
+        .select("id, created_at")
+        .in("id", hiringCompanyIds)
+        .order("created_at", { ascending: false })
+    : { data: [] as { id: string; created_at: string }[] };
 
   const companyPages: MetadataRoute.Sitemap = (companies || []).map((company) => ({
     url: `${BASE_URL}/companies/${company.id}`,
