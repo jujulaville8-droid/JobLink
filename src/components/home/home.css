@@ -1,4 +1,7 @@
 /* Approved Local Roots composition, using the existing JobLinks brand palette. */
+.home-members-link{border-radius:4px;text-decoration:none;min-height:44px}
+.home-members-link:hover p{text-decoration:underline;text-underline-offset:4px}
+.home-members-link:focus-visible{outline:3px solid #095355;outline-offset:6px}
 body:has(.local-roots-home){background:#faf8f5}
 main:has(.local-roots-home){min-height:0;padding-bottom:0}
 .home-header,.local-roots-home,.home-footer{--home-ink:#095355;--home-teal:#0d7377;max-width:1600px;margin-inline:auto}

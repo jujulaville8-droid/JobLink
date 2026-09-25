@@ -187,7 +187,7 @@ export default function HomePage({
             />
             <p>Employers hiring</p>
           </div>
-          <div className="home-stat">
+          <Link href="/members" prefetch={false} className="home-stat home-members-link" aria-label="Members — browse candidates">
             <NumberTicker
               value={stats.members}
               data-reduced-value={stats.members}
@@ -195,12 +195,12 @@ export default function HomePage({
               className="text-4xl font-bold tabular-nums text-[#102040]"
             />
             <p>Members</p>
-          </div>
+          </Link>
         </div>
-        <div className="home-trust-people">
-          <AvatarCircles avatarUrls={avatarUrls} numPeople={stats.members} />
+        <Link href="/members" prefetch={false} className="home-trust-people home-members-link">
+          <AvatarCircles avatarUrls={avatarUrls} numPeople={stats.members} decorative />
           <p>Members across Antigua &amp; Barbuda</p>
-        </div>
+        </Link>
       </section>
 
       <nav className="home-industries" aria-label="Browse jobs by industry">

@@ -29,7 +29,8 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
 
     // Only redirect if fully verified — don't interfere with login/signup handlers
     if (isAuthenticated && isEmailVerified) {
-      window.location.href = "/dashboard";
+      const fromMembers = new URLSearchParams(window.location.search).get('returnTo') === '/members';
+      window.location.href = fromMembers ? '/members' : '/dashboard';
     }
   }, [isAuthenticated, isEmailVerified, isLoading, isResetPassword]);
 

@@ -10,21 +10,22 @@ interface AvatarCirclesProps {
   className?: string
   numPeople?: number
   avatarUrls: Avatar[]
+  decorative?: boolean
 }
 
 export const AvatarCircles = ({
   numPeople,
   className,
   avatarUrls,
+  decorative = false,
 }: AvatarCirclesProps) => {
+  const Wrapper = decorative ? 'span' : 'a'
   return (
     <div className={cn("z-10 flex -space-x-4 rtl:space-x-reverse", className)}>
       {avatarUrls.map((url, index) => (
-        <a
+        <Wrapper
           key={index}
-          href={url.profileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+          {...(!decorative ? { href: url.profileUrl, target: '_blank', rel: 'noopener noreferrer' } : {})}
         >
           <img
             key={index}
@@ -32,17 +33,17 @@ export const AvatarCircles = ({
             src={url.imageUrl}
             width={40}
             height={40}
-            alt={`Avatar ${index + 1}`}
+            alt={decorative ? '' : `Avatar ${index + 1}`}
           />
-        </a>
+        </Wrapper>
       ))}
       {(numPeople ?? 0) > 0 && (
-        <a
+        <Wrapper
           className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-black text-center text-xs font-medium text-white hover:bg-gray-600 dark:border-gray-800 dark:bg-white dark:text-black"
-          href=""
+          {...(!decorative ? { href: '' } : { 'aria-hidden': true as const })}
         >
           +{numPeople}
-        </a>
+        </Wrapper>
       )}
     </div>
   )

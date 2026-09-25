@@ -110,7 +110,7 @@ export default function VerifyEmailPage() {
       }
 
       // Full page navigation to ensure middleware sees updated session/cookies
-      window.location.href = dest
+      window.location.href = new URLSearchParams(window.location.search).get('returnTo') === '/members' ? '/members' : dest
       return true
     } catch (err) {
       console.error('[verify-email] Error checking verification', err)
@@ -184,6 +184,9 @@ export default function VerifyEmailPage() {
       const { error: resendError } = await supabase.auth.resend({
         type: 'signup',
         email: user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup${new URLSearchParams(window.location.search).get('returnTo') === '/members' ? '&returnTo=%2Fmembers' : ''}`,
+        },
       })
 
       if (resendError) {
@@ -264,6 +267,12 @@ export default function VerifyEmailPage() {
 
           <a
             href="/login"
+            onClick={(event) => {
+              if (new URLSearchParams(window.location.search).get('returnTo') === '/members') {
+                event.preventDefault()
+                window.location.href = '/login?returnTo=%2Fmembers'
+              }
+            }}
             className="inline-block w-full btn-primary py-3 text-center"
           >
             Go to Sign In

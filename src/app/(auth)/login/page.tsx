@@ -98,7 +98,7 @@ export default function LoginPage() {
       console.log('[login] Unverified user, redirecting to verify-email')
       setLoading(false)
       // Full page nav to avoid AuthRedirect race
-      window.location.href = '/verify-email'
+      window.location.href = returnTo === '/members' ? '/verify-email?returnTo=%2Fmembers' : '/verify-email'
       return
     }
 
@@ -293,7 +293,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
-          href="/signup"
+          href={returnTo === '/members' ? '/signup?role=employer&returnTo=%2Fmembers' : '/signup'}
           className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one

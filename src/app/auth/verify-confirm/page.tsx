@@ -143,7 +143,7 @@ function VerifyConfirmContent() {
     }
     console.log('[verify-confirm] Redirecting', { dest, role: userRole })
     setStatus('Verification complete! Redirecting...')
-    window.location.href = dest
+    window.location.href = searchParams.get('returnTo') === '/members' ? '/members' : dest
   }
 
   useEffect(() => {
@@ -187,7 +187,7 @@ function VerifyConfirmContent() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    window.location.href = searchParams.get('returnTo') === '/members' ? '/login?returnTo=%2Fmembers' : '/login'
   }
 
   if (error) {

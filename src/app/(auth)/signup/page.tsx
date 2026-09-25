@@ -48,10 +48,11 @@ export default function SignupPage() {
   const searchParams = useSearchParams()
   const requestedRole = searchParams.get('role')
   const preselectedRole = requestedRole === 'employer' || requestedRole === 'seeker' ? requestedRole : null
-  return <SignupForm key={preselectedRole ?? 'choose'} preselectedRole={preselectedRole} />
+  const fromMembers = searchParams.get('returnTo') === '/members'
+  return <SignupForm key={`${preselectedRole ?? 'choose'}-${fromMembers}`} preselectedRole={preselectedRole} fromMembers={fromMembers} />
 }
 
-function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
+function SignupForm({ preselectedRole, fromMembers }: { preselectedRole: Role | null; fromMembers: boolean }) {
   const [step, setStep] = useState<Step>(preselectedRole ? 'signup-form' : 'role-selection')
   const [role, setRole] = useState<Role | null>(preselectedRole)
   const [email, setEmail] = useState('')
@@ -65,7 +66,8 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
   const [resending, setResending] = useState(false)
   const [resendWait, setResendWait] = useState(0)
   const [resendMessage, setResendMessage] = useState('')
-  const signInHref = role === 'employer' ? '/employer/login' : '/login'
+  const returnQuery = fromMembers ? '&returnTo=%2Fmembers' : ''
+  const signInHref = fromMembers ? '/login?returnTo=%2Fmembers' : role === 'employer' ? '/employer/login' : '/login'
 
   useEffect(() => {
     if (resendWait <= 0) return
@@ -81,7 +83,7 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
     try {
       const { error } = await createClient().auth.resend({
         type: 'signup', email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup` },
+        options: { emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup${returnQuery}` },
       })
       if (error) throw error
       setResendMessage('Verification email sent. Please check your inbox and spam folder.')
@@ -111,7 +113,7 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        redirectTo: `${window.location.origin}/auth/callback?role=${role}${returnQuery}`,
       },
     })
     if (error) {
@@ -153,7 +155,7 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
       password,
       options: {
         data: { role },
-        emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup`,
+        emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup${returnQuery}`,
       },
     })
 
@@ -194,7 +196,7 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
         <p className="text-text-light mb-6">
           Click the link in your email to verify your account — you&apos;ll be signed in automatically.
         </p>
-        {role === 'employer' && <p className="mb-5 text-sm text-text-light">Next, add your company name and create your first job post.</p>}
+        {role === 'employer' && <p className="mb-5 text-sm text-text-light">{fromMembers ? 'After verification, continue straight to Browse Candidates.' : 'Next, add your company name and create your first job post.'}</p>}
         {error && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
         {resendMessage && <p role="status" className="mb-3 text-sm text-primary">{resendMessage}</p>}
         <button type="button" onClick={resendVerification} disabled={resending || resendWait > 0} className="min-h-11 w-full rounded-xl border border-border px-4 py-2 text-sm font-medium text-primary disabled:opacity-60">
@@ -331,7 +333,7 @@ function SignupForm({ preselectedRole }: { preselectedRole: Role | null }) {
             {role === 'employer' ? 'Create your employer account' : 'Create your account'}
           </h1>
           <p className="text-xs text-text-light mt-0.5">
-            {role === 'employer' ? 'Your account → Company details → First job' : 'Find your next opportunity'}
+            {role === 'employer' ? fromMembers ? 'Create account → Verify email → Browse candidates' : 'Your account → Company details → First job' : 'Find your next opportunity'}
           </p>
         </div>
       </div>
