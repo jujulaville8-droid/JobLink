@@ -3,6 +3,7 @@ import { safeJsonLd } from "@/lib/safe-sql";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
+import { getEmployerApproval } from "@/lib/seo/employerApproved";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
@@ -149,8 +150,15 @@ export default async function JobDetailPage({ params }: PageProps) {
   const salary =
     job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : null;
 
+  // Employer-approved imported listings (see lib/seo/employerApproved.ts).
+  // A job type override there corrects both the visible label and the
+  // JobPosting markup, so the two always agree.
+  const employerApproval = getEmployerApproval(company?.id ?? job.company_id);
+  const jobType: string =
+    employerApproval?.jobTypeOverrides?.[job.id] ?? job.job_type;
+
   const jobTypeLabel =
-    JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type;
+    JOB_TYPE_LABELS[jobType as JobType] || jobType;
 
   const jobUrl = `https://joblinkantigua.com/jobs/${job.id}`;
   const whatsappText = encodeURIComponent(
@@ -256,15 +264,18 @@ export default async function JobDetailPage({ params }: PageProps) {
   const salaryUnit = job.salary_type ? salaryUnitMap[job.salary_type] : undefined;
 
   // Google for Jobs does not allow "job postings on behalf of an organization
-  // without authorization". Listings the JobLink team created or imported from
-  // public posts (posted_by_admin, or the standard import footer in the
-  // description) therefore get no JobPosting markup; the page itself stays
+  // without authorization". JobPosting markup is emitted only when the
+  // employer posted the job themselves, or the employer is on the approved
+  // list in lib/seo/employerApproved.ts. Listings the JobLink team created or
+  // imported from public posts (posted_by_admin, or the standard import footer
+  // in the description) are otherwise skipped; the page itself stays
   // indexable. A dedicated column would be cleaner but needs a migration.
   // Closed/expired jobs never reach this point (they 404 above).
   const isImportedListing =
     !!job.posted_by_admin ||
     /imported by JobLink from a public job post/i.test(job.description || "");
-  const emitJobPosting = !!company?.company_name && !isImportedListing;
+  const emitJobPosting =
+    !!company?.company_name && (!isImportedListing || !!employerApproval);
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
@@ -277,7 +288,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     title: job.title,
     description: textToHtml(job.description || ""),
     datePosted: job.created_at,
-    ...(employmentTypeMap[job.job_type] ? { employmentType: employmentTypeMap[job.job_type] } : {}),
+    ...(employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
     ...(job.category ? { industry: job.category } : {}),
     hiringOrganization: {
       "@type": "Organization",
