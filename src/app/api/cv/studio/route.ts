@@ -7,9 +7,13 @@ async function authorize() {
   const client = await createClient();
   const { data: { user }, error } = await client.auth.getUser();
   if (error || !user) return { response: json({ error: 'Sign in to continue.' }, 401) };
-  const account = await client.from('users').select('role,email_verified').eq('id', user.id).single();
+  const account = await client.from('users').select('role,email_verified,is_banned,is_admin').eq('id', user.id).single();
   if (account.error) return { response: json({ error: 'Could not verify your account. Please try again.' }, 503) };
-  if (!user.email_confirmed_at || !account.data?.email_verified || account.data.role !== 'seeker') return { response: json({ error: 'A verified job-seeker account is required.' }, 403) };
+  if (account.data?.is_banned) return { response: json({ error: 'This account has been suspended.' }, 403) };
+  // Admin accounts skip the verification requirement, matching requireVerifiedUser.
+  const verified = account.data?.is_admin === true
+    || (!!user.email_confirmed_at && account.data?.email_verified === true);
+  if (!verified || account.data?.role !== 'seeker') return { response: json({ error: 'A verified job-seeker account is required.' }, 403) };
   return { client, user };
 }
 

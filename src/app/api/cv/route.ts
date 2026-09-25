@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { fetchFullCv, recalculateCompletion } from '@/lib/cv-helpers'
+import { requireUser, requireVerifiedUser } from '@/lib/api-auth'
 
 // GET: Fetch full CV with all sections
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireUser()
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
     const cv = await fetchFullCv(user.id)
     if (!cv) return NextResponse.json({ exists: false })
@@ -21,9 +21,9 @@ export async function GET() {
 // POST: Create or update CV profile (job_title, summary)
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     const body = await request.json()
     const payload: Record<string, unknown> = {}
@@ -61,9 +61,9 @@ export async function POST(request: NextRequest) {
 // DELETE: Delete entire CV (cascades to all sections)
 export async function DELETE() {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     const { error } = await supabase
       .from('cv_profiles')

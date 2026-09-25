@@ -1,34 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
+import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
-    // Verify authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const limited = await enforceRateLimit(`apply:${user.id}`, RateLimits.apply)
+    if (limited) return limited
 
     // Verify user is a seeker
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role, is_banned')
+      .select('role')
       .eq('id', user.id)
       .single()
 
     if (userError || !userData) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    if (userData.is_banned) {
-      return NextResponse.json({ error: 'Account is banned' }, { status: 403 })
     }
 
     if (userData.role !== 'seeker') {

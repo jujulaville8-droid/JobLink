@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireVerifiedUser } from '@/lib/api-auth'
 
 export async function GET(req: NextRequest) {
   const origin = req.nextUrl.origin
 
   try {
-    // Auth check server-side
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.redirect(new URL('/login?returnTo=/employers/upgrade', origin))
+    // Auth check server-side. This entry point is a browser navigation, so an
+    // unauthenticated or unverified visitor is redirected rather than shown JSON.
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) {
+      const destination =
+        auth.error.status === 401 ? '/login?returnTo=/employers/upgrade' : '/verify-email'
+      return NextResponse.redirect(new URL(destination, origin))
     }
+    const { user } = auth
 
     const admin = createAdminClient()
 

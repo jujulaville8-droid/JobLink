@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireVerifiedUser } from '@/lib/api-auth'
 
 // POST: Archive a conversation (per-user)
 export async function POST(
@@ -8,9 +8,9 @@ export async function POST(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     const { error } = await supabase
       .from('conversation_participants')
@@ -36,9 +36,9 @@ export async function DELETE(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     const { error } = await supabase
       .from('conversation_participants')

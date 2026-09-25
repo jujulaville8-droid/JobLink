@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireVerifiedUser } from "@/lib/api-auth";
+import { enforceRateLimit, RateLimits } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const auth = await requireVerifiedUser();
+    if ("error" in auth) return auth.error;
+    const { user, supabase } = auth;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const limited = await enforceRateLimit(`role-switch:${user.id}`, RateLimits.roleSwitch);
+    if (limited) return limited;
 
     const body = await request.json();
     const { role } = body;

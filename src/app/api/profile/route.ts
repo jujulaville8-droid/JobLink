@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { calculateProfileCompletion } from '@/lib/profile-completion'
+import { requireVerifiedUser } from '@/lib/api-auth'
+import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const limited = await enforceRateLimit(`profile:${user.id}`, RateLimits.profileWrite)
+    if (limited) return limited
 
     // Ensure user row exists in public.users (trigger may have failed)
     const { data: userRow } = await supabase

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireVerifiedUser } from '@/lib/api-auth'
 
 // DELETE: Remove a conversation for the current user
 // This removes the user as a participant (soft delete — the other user keeps their copy)
@@ -9,9 +9,9 @@ export async function DELETE(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     // Verify user is a participant
     const { data: participant } = await supabase

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { requireUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -13,13 +13,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
  */
 export async function POST() {
   try {
-    // Verify the user is actually authenticated
-    const supabase = await createClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-
-    if (error || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+    // Deliberately NOT requireVerifiedUser: this route is what grants
+    // verification, so requiring it would deadlock the callback. requireUser
+    // still authenticates the caller and rejects banned accounts.
+    const auth = await requireUser()
+    if ('error' in auth) return auth.error
+    const { user } = auth
 
     // Only sync if Supabase auth confirms the email is verified
     if (!user.email_confirmed_at) {

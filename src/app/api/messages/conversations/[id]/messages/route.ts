@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { sendMessageNotification } from '@/lib/messaging-notifications'
+import { requireUser, requireVerifiedUser } from '@/lib/api-auth'
+import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 // GET: Paginated messages for a conversation (supports cursor-based loading)
 export async function GET(
@@ -9,9 +10,9 @@ export async function GET(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
 
     // Verify user is a participant
     const { data: participant } = await supabase
@@ -63,9 +64,12 @@ export async function POST(
 ) {
   try {
     const { id: conversationId } = await params
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const auth = await requireVerifiedUser()
+    if ('error' in auth) return auth.error
+    const { user, supabase } = auth
+
+    const limited = await enforceRateLimit(`message:${user.id}`, RateLimits.message)
+    if (limited) return limited
 
     const { body } = await request.json()
     if (!body?.trim()) {
