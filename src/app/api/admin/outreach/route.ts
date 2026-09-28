@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import outreachData from './outreach-data.json'
 import { outreachProof } from '@/lib/testimonials'
-import { insertProof } from '@/lib/testimonial-content'
+import { insertProof, escapeHtml } from '@/lib/testimonial-content'
+import { PILOT_URL } from '@/lib/employer-pilot'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
-const SIGNUP_URL = 'https://joblinkantigua.com/signup?role=employer'
-const CALENDLY_URL = 'https://calendly.com/joblink-anu/ecom'
+const HELP_URL = `${PILOT_URL}?source=employer-outreach`
 const RATE_LIMIT_MS = 100 // Resend premium — faster sends
 /**
  * Recipients per invocation. At RATE_LIMIT_MS plus Resend's own latency this
@@ -61,115 +61,17 @@ function emailWrapper(content: string): string {
 
 // ─── Email Templates ────────────────────────────────────────────────────────
 
-function buildEmail1(companyName: string): { subject: string; html: string } {
+function buildPilotEmail(companyName: string, emailNumber: number): { subject: string; html: string } {
+  const company = escapeHtml(companyName)
+  const subjects = ['Can we help with your next vacancy?', 'Still looking for staff?', 'Hiring help, whenever you need it']
+  const introductions = [
+    'I’m Julian, the founder of JobLinks Antigua. I’m opening a hands-on hiring pilot for local employers.',
+    'A quick follow-up: if you have a vacancy to fill, I’d be happy to discuss how JobLinks can help.',
+    'I’ll leave this with you for now. If you need help with a vacancy, you can send it over when the timing is right.',
+  ]
   return {
-    subject: `${companyName}, something new for Antigua businesses`,
-    html: emailWrapper(`
-      <p style="color: #374151; line-height: 1.6; font-size: 15px;">Hi there,</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        I'm reaching out to local businesses in Antigua and <strong>${companyName}</strong> stood out as a business we'd love to have on our platform.
-      </p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        We just launched <strong style="color: #0d7377;">JobLinks</strong> &mdash; Antigua &amp; Barbuda's own job platform, built specifically for local businesses like yours. Whether you're hiring now or might need someone down the road, your free employer profile puts you in front of hundreds of active job seekers across the island.
-      </p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">Here's what you get <strong>for free</strong>:</p>
-      <div style="background-color: #f0fafa; border-radius: 10px; padding: 20px; margin: 16px 0;">
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">A company profile page with your logo, description, and location</td></tr>
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">Post a job listing whenever you need staff &mdash; reaches job seekers island-wide</td></tr>
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">Instant notifications when someone applies</td></tr>
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #0d7377; font-size: 16px;">&check;</td><td style="padding: 8px 0; color: #374151; font-size: 14px; line-height: 1.5;">A dashboard to review applicants, shortlist, and manage everything in one place</td></tr>
-        </table>
-      </div>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        It takes about 2 minutes to set up. No credit card, no commitment &mdash; and it's there for you whenever you need it.
-      </p>
-      <p style="text-align: center; margin-top: 28px;">
-        <a href="${SIGNUP_URL}" style="background-color: #0d7377; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; font-size: 15px;">Create Your Free Employer Account</a>
-      </p>
-      <div style="background-color: #f9fafb; border-radius: 10px; padding: 16px 20px; margin: 24px 0; text-align: center;">
-        <p style="color: #374151; font-size: 14px; margin: 0 0 8px 0;"><strong>Want a quick walkthrough?</strong> Book a free 15-minute demo and we'll show you around.</p>
-        <a href="${CALENDLY_URL}" style="color: #0d7377; font-size: 14px; text-decoration: none; font-weight: 600;">Book a Demo Call &rarr;</a>
-      </div>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">If you have any questions, just reply to this email &mdash; I'm happy to help you get set up.</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 24px;">
-        Wishing you all the best,<br><strong>Julian</strong><br><span style="color: #6b7280; font-size: 14px;">JobLinks Antigua</span>
-      </p>
-    `),
-  }
-}
-
-function buildEmail2(companyName: string, signupCount: number): { subject: string; html: string } {
-  return {
-    subject: `${signupCount} Antigua businesses joined this week — here's what makes JobLinks different`,
-    html: emailWrapper(`
-      <p style="color: #374151; line-height: 1.6; font-size: 15px;">Hi there,</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        Quick follow-up from my last email &mdash; <strong style="color: #0d7377;">${signupCount} local businesses</strong> across Antigua have already created their employer profiles on JobLinks since we launched.
-      </p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">I wanted to share a few things that make JobLinks different from posting on Facebook or using overseas job sites:</p>
-      <div style="margin: 20px 0;">
-        <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 12px;">
-          <p style="color: #0d7377; margin: 0 0 4px 0; font-weight: 700; font-size: 14px;">Built for Antigua, not the world</p>
-          <p style="color: #374151; margin: 0; font-size: 13px; line-height: 1.5;">Every feature is designed around how Antiguans actually work &mdash; seasonal and part-time toggles for the tourism industry, work permit filters, and a mobile-first design.</p>
-        </div>
-        <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 12px;">
-          <p style="color: #0d7377; margin: 0 0 4px 0; font-weight: 700; font-size: 14px;">One-click applications</p>
-          <p style="color: #374151; margin: 0; font-size: 13px; line-height: 1.5;">Job seekers build a profile once and apply to your listing in one click &mdash; with their CV, skills, and experience all attached.</p>
-        </div>
-        <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 12px;">
-          <p style="color: #0d7377; margin: 0 0 4px 0; font-weight: 700; font-size: 14px;">WhatsApp-ready sharing</p>
-          <p style="color: #374151; margin: 0; font-size: 13px; line-height: 1.5;">Share your job listing straight to WhatsApp with a clean link and preview. In Antigua, that's how things spread.</p>
-        </div>
-        <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 14px 18px; border-radius: 0 8px 8px 0;">
-          <p style="color: #0d7377; margin: 0 0 4px 0; font-weight: 700; font-size: 14px;">Real applicant tracking</p>
-          <p style="color: #374151; margin: 0; font-size: 13px; line-height: 1.5;">Shortlist, reject, schedule interviews, and message candidates &mdash; all from one dashboard.</p>
-        </div>
-      </div>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 20px;">We'd love to have <strong>${companyName}</strong> on the platform. Your account is free and ready whenever you are.</p>
-      <p style="text-align: center; margin-top: 28px;">
-        <a href="${SIGNUP_URL}" style="background-color: #0d7377; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; font-size: 15px;">Set Up Your Free Profile</a>
-      </p>
-      <div style="background-color: #f9fafb; border-radius: 10px; padding: 16px 20px; margin: 24px 0; text-align: center;">
-        <p style="color: #374151; font-size: 14px; margin: 0 0 8px 0;"><strong>Prefer a walkthrough?</strong> Book a free demo and we'll get you set up in minutes.</p>
-        <a href="${CALENDLY_URL}" style="color: #0d7377; font-size: 14px; text-decoration: none; font-weight: 600;">Book a Demo Call &rarr;</a>
-      </div>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 20px; text-align: center;">Free forever. Post when you're ready.</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 24px;">Best,<br><strong>Julian</strong><br><span style="color: #6b7280; font-size: 14px;">JobLinks Antigua</span></p>
-    `),
-  }
-}
-
-function buildEmail3(companyName: string, location: string): { subject: string; html: string } {
-  return {
-    subject: `Last chance: exclusive perks for early ${companyName} signup`,
-    html: emailWrapper(`
-      <p style="color: #374151; line-height: 1.6; font-size: 15px;">Hi there,</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">This is my last email about this &mdash; I don't want to be in your inbox if it's not useful.</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">But before I go: we're offering something exclusive to the <strong style="color: #0d7377;">first 50 employers</strong> who create a profile on JobLinks.</p>
-      <div style="background: linear-gradient(135deg, #062829 0%, #0d7377 100%); border-radius: 12px; padding: 24px; margin: 20px 0; color: white;">
-        <p style="font-weight: 700; font-size: 16px; margin: 0 0 16px 0; color: #ffffff;">Your Early Adopter Perks:</p>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #5eead4; font-size: 18px;">&starf;</td><td style="padding: 8px 0; color: #e5e7eb; font-size: 14px; line-height: 1.5;"><strong style="color: #ffffff;">Verified Employer</strong> badge on your company profile</td></tr>
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #5eead4; font-size: 18px;">&starf;</td><td style="padding: 8px 0; color: #e5e7eb; font-size: 14px; line-height: 1.5;">Your first job listing <strong style="color: #ffffff;">featured on the homepage</strong></td></tr>
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #5eead4; font-size: 18px;">&starf;</td><td style="padding: 8px 0; color: #e5e7eb; font-size: 14px; line-height: 1.5;"><strong style="color: #ffffff;">Priority support</strong> &mdash; we'll personally help set up your profile</td></tr>
-          <tr><td style="padding: 8px 12px 8px 0; vertical-align: top; width: 24px; color: #5eead4; font-size: 18px;">&starf;</td><td style="padding: 8px 0; color: #e5e7eb; font-size: 14px; line-height: 1.5;"><strong style="color: #ffffff;">Direct messaging</strong> &mdash; message candidates right on the platform</td></tr>
-        </table>
-      </div>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        I'm reaching out to <strong>${companyName}</strong> specifically because you're an established business in <strong>${location}</strong> and having you on the platform makes the whole community stronger.
-      </p>
-      <p style="text-align: center; margin-top: 28px;">
-        <a href="${SIGNUP_URL}" style="background-color: #0d7377; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; font-size: 15px;">Claim Your Spot &mdash; It's Free</a>
-      </p>
-      <div style="background-color: #f9fafb; border-radius: 10px; padding: 16px 20px; margin: 20px 0; text-align: center;">
-        <p style="color: #374151; font-size: 14px; margin: 0 0 8px 0;"><strong>Want us to walk you through it?</strong> Book a free demo — takes 15 minutes.</p>
-        <a href="${CALENDLY_URL}" style="color: #0d7377; font-size: 14px; text-decoration: none; font-weight: 600;">Book a Demo Call &rarr;</a>
-      </div>
-      <p style="color: #6b7280; font-size: 13px; margin-top: 16px; text-align: center;">Limited to the first 50 employers. No credit card required.</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 24px;">Thanks for your time, and all the best with <strong>${companyName}</strong>.</p>
-      <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;"><strong>Julian</strong><br><span style="color: #6b7280; font-size: 14px;">JobLinks Antigua</span></p>
-    `),
+    subject: subjects[emailNumber - 1],
+    html: emailWrapper('<p>Hi there,</p><p>' + introductions[emailNumber - 1] + '</p><p>For ' + company + ', our free first-vacancy pilot includes help preparing the advert, reaching relevant job seekers and checking applications against the requirements we agree with you.</p><p>No account is needed to request help. We’ll confirm the role and whether the pilot is a fit before we start, and agree the details with you before publishing.</p><p><a href="' + HELP_URL + '" style="display:inline-block;padding:14px 24px;background:#0d7377;color:white;border-radius:8px;text-decoration:none;font-weight:bold">Send us your vacancy</a></p><p>You can also reply with your existing advert or tell me what has been difficult about filling the role.</p><p>Best,<br>Julian<br>JobLinks Antigua</p>'),
   }
 }
 
@@ -187,7 +89,6 @@ export async function POST(req: NextRequest) {
     const {
       secret,
       email,
-      signupCount = 5,
       dryRun = false,
       offset = 0,
       batchSize = MAX_PER_INVOCATION,
@@ -238,14 +139,7 @@ export async function POST(req: NextRequest) {
 
     for (const emp of batch) {
       // Build email content
-      let emailContent: { subject: string; html: string }
-      if (email === 1) {
-        emailContent = buildEmail1(emp.company_name)
-      } else if (email === 2) {
-        emailContent = buildEmail2(emp.company_name, signupCount)
-      } else {
-        emailContent = buildEmail3(emp.company_name, emp.location || 'Antigua')
-      }
+      const emailContent = buildPilotEmail(emp.company_name, email)
 
       if (dryRun) {
         results.push({ company: emp.company_name, email: emp.email, status: 'dry_run' })

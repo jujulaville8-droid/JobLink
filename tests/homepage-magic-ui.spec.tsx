@@ -53,12 +53,13 @@ describe("Magic UI homepage", () => {
     expect(markup).toContain("Find your opportunity")
     expect(markup).toContain("Make your next move")
 
-    expect(markup).toContain("Good people.")
-    expect(markup).toContain("Great possibilities.")
+    expect(markup).toContain("Hiring? Let us help.")
+    expect(markup).toContain('/employers/hiring-help')
+    expect(markup).toContain('Send us your vacancy')
     expect(markup).toContain("Applications delivered")
-    expect(markup).toContain("Post your vacancy")
-    expect(markup).toContain('action="/post-job"')
-    expect(markup).toContain("Find your next hire")
+    expect(markup).toContain("Agree the details together")
+    expect(markup).toContain('action="/employers/hiring-help"')
+    expect(markup).toContain("Meet suitable applicants")
 
     expect(markup).not.toContain("Success stories")
     expect(markup).not.toContain("Sample testimonial")

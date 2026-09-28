@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/employer-enquiries",
+      "schedule": "25 * * * *"
+    },
+    {
       "path": "/api/cron/testimonials",
       "schedule": "15 * * * *"
     },

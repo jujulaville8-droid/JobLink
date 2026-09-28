@@ -59,6 +59,8 @@ export default function AdminPostJobPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [enquiryId, setEnquiryId] = useState('');
+  const [permissionConfirmed, setPermissionConfirmed] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [companies, setCompanies] = useState<CompanyOption[]>([]);
@@ -99,6 +101,19 @@ export default function AdminPostJobPage() {
         setCompanies(data.companies || []);
       }
 
+      const enquiry = new URLSearchParams(window.location.search).get('enquiry');
+      if (enquiry) {
+        setEnquiryId(enquiry);
+        const response = await fetch(`/api/admin/employer-enquiries/${encodeURIComponent(enquiry)}`);
+        if (response.ok) {
+          const request = await response.json();
+          setForm(prev => ({ ...prev, title: request.job_title, description: request.details }));
+          setCompanySearch(request.company_name);
+          setNewCompany(prev => ({ ...prev, company_name: request.company_name }));
+        } else {
+          setServerError('Could not load this employer request. Return to Employer Requests and try again.');
+        }
+      }
       setLoading(false);
     }
     load();
@@ -139,6 +154,11 @@ export default function AdminPostJobPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError('');
+
+    if (enquiryId && !permissionConfirmed) {
+      setServerError('Confirm the employer approved the final vacancy before publishing.');
+      return;
+    }
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -227,6 +247,11 @@ export default function AdminPostJobPage() {
       className="mx-auto max-w-2xl space-y-6"
     >
       {/* Header */}
+      {enquiryId && <div className="rounded-xl border border-teal-200 bg-teal-50 p-5 text-sm">
+        <p>The employer’s request is prefilled below. Check the company, remove private contact details from the description, and confirm the final wording, job type, pay and hours with them. After publishing, save the job URL in Employer Requests.</p>
+        <label className="mt-3 flex items-start gap-2"><input type="checkbox" checked={permissionConfirmed} onChange={e => setPermissionConfirmed(e.target.checked)} className="mt-1" />The employer has approved this final vacancy for publication.</label>
+        <a className="mt-3 inline-block underline" href={`/admin/employer-enquiries#${enquiryId}`}>Back to employer request</a>
+      </div>}
       <motion.div variants={item}>
         <h1 className="text-2xl font-bold font-display text-text">Post a Job</h1>
         <p className="mt-1 text-sm text-text-muted">
