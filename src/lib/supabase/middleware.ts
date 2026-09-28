@@ -49,7 +49,7 @@ export async function updateSession(request: NextRequest) {
     '/login', '/signup', '/employer/login', '/employer/signup',
     '/forgot-password', '/reset-password', '/verify-email',
     '/auth/', '/about', '/privacy', '/terms', '/explore',
-    '/api/', '/companies', '/employers/upgrade', '/jobs', '/success-stories',
+    '/api/', '/companies', '/employers/upgrade', '/employers/hiring-help', '/jobs', '/success-stories',
   ]
   // Members performs its own account checks and preserves its signup destination.
   const isPublic = pathname === '/' || pathname === '/members' || publicPaths.some(p => pathname.startsWith(p))

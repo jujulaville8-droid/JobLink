@@ -61,7 +61,7 @@ export default function Footer() {
               Employers
             </h3>
             <ul className="space-y-2.5">
-              <li><Link href="/signup" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Post a Job</Link></li>
+              <li><Link href="/employers/hiring-help" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Get hiring help</Link></li>
               <li><Link href="/dashboard" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Dashboard</Link></li>
               <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Why JobLinks</Link></li>
             </ul>

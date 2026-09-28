@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { outreachProof } from '@/lib/testimonials'
 import { insertProof } from '@/lib/testimonial-content'
+import { pilotEmailCta } from '@/lib/employer-pilot'
 
 // Bulk work needs more than the default function timeout.
 export const maxDuration = 300
@@ -57,8 +58,8 @@ export async function POST(req: NextRequest) {
   const { error: sendError } = await resend.emails.send({
     from: 'JobLinks Antigua <team@joblinkantigua.com>',
     to: email,
-    subject: `Post your ${role} vacancy on JobLinks Antigua — it's free`,
-    html: insertProof(email_html, await outreachProof())
+    subject: `Help with your ${role} vacancy — JobLinks Antigua`,
+    html: insertProof(email_html, pilotEmailCta() + await outreachProof())
   })
 
   if (sendError) {

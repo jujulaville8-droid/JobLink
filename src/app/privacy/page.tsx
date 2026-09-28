@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <h1 className="text-3xl md:text-4xl font-bold font-display text-primary mb-2">
           Privacy Policy
         </h1>
-        <p className="text-text-light mb-10">Last updated: March 2026</p>
+        <p className="text-text-light mb-10">Last updated: September 28, 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
           <section>
@@ -31,6 +31,17 @@ export default function PrivacyPage() {
               education, and uploaded documents such as your CV and cover
               letters. Employers provide company information including company
               name, description, industry, and logo.
+            </p>
+            <p className="mt-3 text-text-light leading-relaxed">
+              If you request hiring help without an account, we collect your
+              business name, contact name, email, optional phone number and the
+              vacancy details you submit. We use these to respond to your request
+              and coordinate the service. These contact details and our follow-up
+              notes are available to authorised JobLinks administrators, not
+              published as part of the request. We agree any public vacancy
+              details with you before publishing. Requesting help does not
+              subscribe you to marketing emails. Contact us to correct or request
+              removal of your enquiry.
             </p>
           </section>
 

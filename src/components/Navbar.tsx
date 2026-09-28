@@ -14,6 +14,7 @@ import UnreadBadge from "@/components/messaging/UnreadBadge";
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const isHiringPilot = pathname === '/employers/hiring-help';
   const { isAuthenticated, user, userRole, isAdminUser, avatarUrl, logout, setUserRole, isLoading } = useAuth();
   const [switching, setSwitching] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -59,6 +60,7 @@ export default function Navbar() {
       ]
     : [
         { href: "/jobs", label: "Find Jobs" },
+        ...(!isAuthenticated ? [{ href: "/employers/hiring-help", label: "For Employers" }] : []),
         aboutOrExplore,
         ...(isAuthenticated ? [{ href: "/dashboard", label: "Dashboard" }] : []),
       ];
@@ -293,10 +295,10 @@ export default function Navbar() {
                     Sign In
                   </Link>
                   <Link
-                    href="/signup"
+                    href={isHiringPilot ? '#vacancy' : '/signup'}
                     className="btn-warm text-xs px-4 py-2"
                   >
-                    Create Account
+                    {isHiringPilot ? 'Send us your vacancy' : 'Create Account'}
                   </Link>
                 </div>
               )}
@@ -444,8 +446,8 @@ export default function Navbar() {
                   <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-[--color-surface]/50 transition-all duration-200">
                     Sign In
                   </Link>
-                  <Link href="/signup" className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
-                    Create Account
+                  <Link href={isHiringPilot ? '#vacancy' : '/signup'} className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
+                    {isHiringPilot ? 'Send us your vacancy' : 'Create Account'}
                   </Link>
                 </div>
               )}

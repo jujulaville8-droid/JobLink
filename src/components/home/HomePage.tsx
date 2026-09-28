@@ -374,15 +374,15 @@ export default function HomePage({
 
       <section className="home-employers" id="employers" aria-labelledby="employers-title">
         <h2 id="employers-title" className="sr-only">
-          Good people. Great possibilities.
+          Hiring? Let us help.
         </h2>
         <BentoGrid className="home-employer-grid">
           <BentoCard
-            name="Good people. Great possibilities."
-            description="Reach talented, motivated people across Antigua & Barbuda. Post a job and be part of what's next."
+            name="Hiring? Let us help."
+            description="Send us your vacancy. Our free first-vacancy pilot helps you prepare the advert, reach job seekers and review applications."
             Icon={Building2}
-            href="/post-job"
-            cta="Start hiring"
+            href="/employers/hiring-help"
+            cta="Send us your vacancy"
             background={
               <div className="home-bento-photo">
                 <Image
@@ -399,8 +399,8 @@ export default function HomePage({
             name="Applications delivered"
             description="A real-time view of activity across JobLink."
             Icon={FileCheck}
-            href="/post-job"
-            cta="Start hiring"
+            href="/employers/hiring-help"
+            cta="Send us your vacancy"
             background={
               <div className="home-bento-stat-bg">
                 <NumberTicker
@@ -415,10 +415,10 @@ export default function HomePage({
           />
           <BentoCard
             name="A connected hiring loop"
-            description="Post, review and hire in one local network."
+            description="Personal support from your first vacancy request to reviewing applicants."
             Icon={Users}
-            href="/post-job"
-            cta="Start hiring"
+            href="/employers/hiring-help"
+            cta="Send us your vacancy"
             background={
               <div className="home-orbit-visual">
                 <Image
@@ -446,17 +446,17 @@ export default function HomePage({
             <div>
               <p className="home-eyebrow">For employers</p>
               <ol>
-                <li>Post your vacancy</li>
-                <li>Review applications</li>
-                <li>Hire</li>
+                <li>Send us your vacancy</li>
+                <li>Agree the details together</li>
+                <li>Meet suitable applicants</li>
               </ol>
             </div>
-            <form action="/post-job">
+            <form action="/employers/hiring-help">
               <button
                 type="submit"
                 className="rounded-lg bg-[#104080] px-8 py-3 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#104080]"
               >
-                Find your next hire
+                Send us your vacancy
               </button>
             </form>
           </div>

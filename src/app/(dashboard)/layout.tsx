@@ -39,6 +39,7 @@ const adminLinks = [
   { href: "/admin/featured", label: "Featured Jobs", icon: "star" },
   { href: "/admin/emails", label: "Emails", icon: "send" },
   { href: "/admin/testimonials", label: "Hiring Stories", icon: "star" },
+  { href: "/admin/employer-enquiries", label: "Employer Requests", icon: "mail" },
 ];
 
 export default async function DashboardLayout({
