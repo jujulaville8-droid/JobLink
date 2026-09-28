@@ -56,7 +56,7 @@ export default async function HiringHelpPage() {
       ['Do I have to create an account?', 'You can request help without an account. If we need an employer account later to manage applications, we’ll help you set it up.'],
       ['Will this publish my contact details?', 'Your name, email and phone are for following up on your request. We’ll agree any public contact details with you before publishing the vacancy.'],
     ].map(([question, answer]) => <details key={question} className="border-b border-slate-200 py-5"><summary className="cursor-pointer text-lg font-medium">{question}</summary><p className="mt-3 leading-7 text-slate-600">{answer}</p></details>)}
-      <p className="mt-8 text-sm text-slate-600">Prefer email? Send your vacancy to <a className="underline" href="mailto:hello@joblinkantigua.com?subject=Help%20with%20my%20vacancy">hello@joblinkantigua.com</a>.</p>
+      <p className="mt-8 text-sm text-slate-600">Questions before you start? Include them with your request and we’ll discuss them with you.</p>
     </section>
   </main>
 }

@@ -19,15 +19,15 @@ export async function POST(request: NextRequest) {
       const hash = createHash('sha256').update(value).digest('hex')
       const { data, error } = await db.rpc('consume_rate_limit', { p_bucket: `employer-enquiry:${kind}:${hash}`, p_limit: limit, p_window_seconds: 3600 })
       const result = Array.isArray(data) ? data[0] : data
-      if (error || !result) return NextResponse.json({ error: 'Requests are temporarily unavailable. Please email hello@joblinkantigua.com.' }, { status: 503 })
-      if (!result.allowed) return NextResponse.json({ error: 'Too many requests. Please try later or email hello@joblinkantigua.com.' }, { status: 429, headers: { 'Retry-After': String(result.retry_after_seconds || 3600) } })
+      if (error || !result) return NextResponse.json({ error: 'Requests are temporarily unavailable. Please try again later.' }, { status: 503 })
+      if (!result.allowed) return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429, headers: { 'Retry-After': String(result.retry_after_seconds || 3600) } })
     }
     const { website: _honeypot, ...fields } = body.data
     void _honeypot
     const { error } = await db.from('employer_enquiries').insert(fields)
     // Repeated submission of the same opaque ID must not create another lead or notification.
     if (error?.code === '23505') return NextResponse.json({ success: true })
-    if (error) return NextResponse.json({ error: 'Could not save your request. Please try again or email hello@joblinkantigua.com.' }, { status: 503 })
+    if (error) return NextResponse.json({ error: 'Could not save your request. Please try again.' }, { status: 503 })
     after(async () => { try { await notifyEmployerEnquiry(fields.id) } catch { console.error('[employer-enquiry] Notification queued for retry') } })
     return NextResponse.json({ success: true }, { status: 201 })
   } catch {

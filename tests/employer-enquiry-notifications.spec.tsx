@@ -18,7 +18,7 @@ it('sends escaped intake only to the internal inbox with a stable idempotency ke
   const saved = result(null)
   mocks.from.mockReturnValueOnce(result({ ...request })).mockReturnValueOnce(result({ id: request.id })).mockReturnValueOnce(saved)
   expect(await notifyEmployerEnquiry(request.id)).toBe(true)
-  expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'hello@joblinkantigua.com', replyTo: 'owner@example.test', html: expect.stringContaining('&lt;script&gt;') }), { idempotencyKey: 'employer-enquiry/request' })
+  expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'jujulaville8@gmail.com', replyTo: 'owner@example.test', html: expect.stringContaining('&lt;script&gt;') }), { idempotencyKey: 'employer-enquiry/request' })
   expect(saved.update).toHaveBeenCalledWith(expect.objectContaining({ notification_sent_at: expect.any(String) }))
 })
 it('does not mark provider failures as sent', async () => {
