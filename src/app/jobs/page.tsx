@@ -1,6 +1,7 @@
 import JobResults from "@/components/JobResults";
 import JobFilters from "@/components/JobFilters";
 import JobSearchBar from "@/components/JobSearchBar";
+import JobIndustryShortcuts from "@/components/JobIndustryShortcuts";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
@@ -106,6 +107,10 @@ export default async function JobsPage({ searchParams }: PageProps) {
       </div>
 
       {params.location && <p className="mb-4 text-sm text-text-light">Location: <strong>{params.location}</strong></p>}
+
+      {!params.q && !params.category && !params.location && !params.job_type && (
+        <Suspense fallback={null}><JobIndustryShortcuts /></Suspense>
+      )}
 
       {/* Search query indicator */}
       {params.q && (

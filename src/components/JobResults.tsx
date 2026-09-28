@@ -47,6 +47,7 @@ export default async function JobResults({
       is_featured,
       expires_at,
       created_at,
+      company_search:companies(),
       company:companies (
         id,
         company_name,
@@ -66,7 +67,9 @@ export default async function JobResults({
     // Quoted + wildcard-escaped: a raw value here breaks the or() expression
     // apart, so any search containing a comma used to 400.
     const keyword = ilikePattern(searchParams.q);
-    query = query.or(`title.ilike.${keyword},description.ilike.${keyword}`);
+    query = query
+      .ilike("company_search.company_name", `%${searchParams.q.trim().replace(/[\\%_]/g, (char) => `\\${char}`)}%`)
+      .or(`title.ilike.${keyword},description.ilike.${keyword},company_search.not.is.null`);
   }
 
   if (searchParams.location) {
@@ -217,7 +220,7 @@ export default async function JobResults({
       </div>
       <div className={`${gridClassName} stagger-children`}>
         {mappedJobs.map((job) => (
-          <JobCard key={job.id} job={job} isSaved={savedJobIds.has(job.id)} loggedIn={!!user} />
+          <JobCard key={job.id} job={job} isSaved={savedJobIds.has(job.id)} loggedIn={!!user} highlight />
         ))}
       </div>
       <Pagination currentPage={currentPage} totalPages={totalPages} />

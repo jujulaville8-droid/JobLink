@@ -26,6 +26,7 @@ export default function JobFilters() {
 
   function updateParams(updates: Record<string, string | string[] | null>) {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
 
     for (const [key, value] of Object.entries(updates)) {
       params.delete(key);
