@@ -44,7 +44,7 @@ function getJobType(type: string): { color: string; label: string } {
   return JOB_TYPE_STYLES[type] ?? { color: "bg-bg-alt text-text-light border border-border", label: type };
 }
 
-export default function JobCard({ job, isSaved = false, loggedIn = false }: { job: Job; isSaved?: boolean; loggedIn?: boolean }) {
+export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false }: { job: Job; isSaved?: boolean; loggedIn?: boolean; highlight?: boolean }) {
   const [saved, setSaved] = useState(isSaved);
   const [savingBookmark, setSavingBookmark] = useState(false);
 
@@ -92,11 +92,17 @@ export default function JobCard({ job, isSaved = false, loggedIn = false }: { jo
   const isFeatured = job.is_featured || job.is_pro_company;
 
   return (
-    <div className={`group relative rounded-[--radius-card] transition-all duration-300 p-5 hover-lift ${
+    <div onPointerMove={highlight ? (event) => {
+      if (event.pointerType !== "mouse" || !window.matchMedia("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)").matches) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      event.currentTarget.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
+      event.currentTarget.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
+    } : undefined} className={`group relative rounded-[--radius-card] transition-all duration-300 p-5 ${highlight ? "job-magic-card" : "hover-lift"} ${
       isFeatured
         ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
         : "bg-white border border-border hover:border-primary/20"
     }`}>
+      {highlight && <div aria-hidden="true" className="job-card-spotlight" />}
       <div className="block">
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (

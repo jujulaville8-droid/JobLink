@@ -11,6 +11,7 @@ export default function JobSearchBar({ defaultValue }: { defaultValue?: string }
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
     if (query.trim()) {
       params.set("q", query.trim());
     } else {
@@ -22,6 +23,7 @@ export default function JobSearchBar({ defaultValue }: { defaultValue?: string }
   function handleClear() {
     setQuery("");
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
     params.delete("q");
     router.push(`/jobs?${params.toString()}`);
   }
@@ -43,6 +45,7 @@ export default function JobSearchBar({ defaultValue }: { defaultValue?: string }
         </svg>
         <input
           type="text"
+          aria-label="Search jobs by title, keyword, or company"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by job title, keyword, or company..."
@@ -52,6 +55,7 @@ export default function JobSearchBar({ defaultValue }: { defaultValue?: string }
           {query && (
             <button
               type="button"
+              aria-label="Clear search"
               onClick={handleClear}
               className="flex items-center justify-center h-7 w-7 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
             >
