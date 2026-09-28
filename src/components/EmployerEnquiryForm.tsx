@@ -15,6 +15,13 @@ export default function EmployerEnquiryForm() {
     <h2 className="font-display text-3xl text-slate-900">You’ve taken the first step.</h2>
     <p className="mt-4 text-slate-700">We’ve saved your vacancy request. Julian at JobLinks will review it and contact you using the details you provided to confirm the role and whether the pilot is a fit.</p>
     <p className="mt-4 text-slate-700">Your vacancy is not published yet. We’ll agree the wording and next steps with you first.</p>
+    <div className="mt-6 rounded-xl border border-teal-200 bg-white p-5">
+      <h3 className="text-xl font-semibold text-slate-900">Get ready to manage your hiring</h3>
+      <p className="mt-2 text-slate-700">Create a free employer account so you can manage job listings and review applicants. Use the same email address you gave us so we can help connect your vacancy to your account.</p>
+      <Link href="/signup?role=employer" className="mt-4 inline-flex rounded-xl bg-teal-800 px-5 py-3 font-semibold text-white transition hover:bg-teal-900">Create your employer account</Link>
+      <p className="mt-3 text-sm text-slate-600">This is optional. Your request is already saved, and we’ll still contact you if you don’t sign up now.</p>
+      <p className="mt-3 text-sm text-slate-600">Already have an employer account? <Link href="/employer/login" className="font-semibold text-teal-800 underline">Sign in</Link></p>
+    </div>
     <p className="mt-4 text-sm text-slate-600">Reference: {reference}. Need to add something? You can send another request and include this reference so we can keep the details together.</p>
   </div>
   return <form className="space-y-5" onSubmit={async event => {
