@@ -6,7 +6,7 @@ The page explains a free first-vacancy pilot, provides a no-account request form
 
 ## Handling a request
 
-1. Open **Admin → Employer Requests**. A notification also goes to `hello@joblinkantigua.com`, with Reply-To set to the submitted address. The form itself is the employer's contact consent; this is not a marketing subscription or permission to publish.
+1. Open **Admin → Employer Requests**. A notification also goes to the existing verified owner forwarding inbox (`TEAM_INBOX` in `src/lib/team-inbox.ts`), with Reply-To set to the submitted address. The form itself is the employer's contact consent; this is not a marketing subscription or permission to publish.
 2. Contact the business. Confirm the vacancy is genuine and still open; agree location, duties, hours, pay, application method and requirements. Decide whether to accept the free pilot. Track contact attempts and agreed next steps in private notes.
 3. Use **Prepare listing from this request**. Select the correct existing company or create one using the existing admin form. The title and raw advert are prefilled. Remove any private details, finish the description and obtain approval of the final text. The form requires you to confirm that approval before publishing.
 4. After posting, copy the JobLinks job URL into the request and mark it **Listing live**. Tell the employer where it is published and agree how applications will be reviewed. The initial request does not publish a vacancy or message candidates automatically.
@@ -18,7 +18,9 @@ Each form uses a random request ID retained across retries. Storage happens befo
 
 `/api/cron/employer-enquiries` retries pending notifications hourly, protected by `CRON_SECRET`. Stable Resend idempotency keys prevent duplicate messages within its deduplication window. Retries stop at 23 hours; the admin inbox shows delivery uncertainty for investigation in Resend. Do not reset timestamps or blindly resend. Requests remain in the inbox even if notification fails.
 
-The public endpoint only emails the fixed JobLinks inbox, not arbitrary submitted addresses. No automatic acknowledgement email is sent to an unverified address. The receipt supplies a reference and support email.
+The public endpoint only emails the fixed JobLinks owner inbox, not arbitrary submitted addresses. No automatic acknowledgement email is sent to an unverified address. The receipt supplies a reference for follow-up requests.
+
+Production testing found `hello@joblinkantigua.com` hard-bounces with “User does not exist” at the domain’s Zoho mail provider. Pilot notifications and both outreach senders’ Reply-To now use the existing verified owner forwarding inbox instead. This does not create or repair the missing Zoho mailbox; it must be provisioned there before being used as a contact address again.
 
 ## Deployment and validation
 

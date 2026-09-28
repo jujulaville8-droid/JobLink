@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { escapeHtml } from '@/lib/testimonial-content'
+import { TEAM_INBOX } from '@/lib/team-inbox'
 
 export async function notifyEmployerEnquiry(id: string) {
   if (!process.env.RESEND_API_KEY) return false
@@ -19,7 +20,7 @@ export async function notifyEmployerEnquiry(id: string) {
   // Keep status/notes out of the message so retries have an identical payload.
   const { data, error: sendError } = await new Resend(process.env.RESEND_API_KEY).emails.send({
     from: 'JobLinks <notifications@joblinkantigua.com>',
-    to: 'hello@joblinkantigua.com',
+    to: TEAM_INBOX,
     replyTo: row.email,
     subject: 'New employer vacancy request — JobLinks',
     html: `<h1>A business has asked for hiring help</h1><p><strong>${escapeHtml(row.company_name)}</strong> — ${escapeHtml(row.job_title)}</p><p>Contact: ${escapeHtml(row.contact_name)} (${escapeHtml(row.email)})</p><p>Phone: ${escapeHtml(row.phone || 'Not provided')}</p><p style="white-space:pre-wrap">${escapeHtml(row.details)}</p><p><a href="https://joblinkantigua.com/admin/employer-enquiries#${id}">Review this request</a></p><p>The employer has agreed to be contacted about this vacancy. Confirm the final wording and permission before publishing.</p>`,

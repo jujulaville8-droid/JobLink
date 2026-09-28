@@ -15,7 +15,7 @@ export default function EmployerEnquiryForm() {
     <h2 className="font-display text-3xl text-slate-900">You’ve taken the first step.</h2>
     <p className="mt-4 text-slate-700">We’ve saved your vacancy request. Julian at JobLinks will review it and contact you using the details you provided to confirm the role and whether the pilot is a fit.</p>
     <p className="mt-4 text-slate-700">Your vacancy is not published yet. We’ll agree the wording and next steps with you first.</p>
-    <p className="mt-4 text-sm text-slate-600">Reference: {reference}. Need to add something? Email <a className="underline" href="mailto:hello@joblinkantigua.com">hello@joblinkantigua.com</a> with this reference.</p>
+    <p className="mt-4 text-sm text-slate-600">Reference: {reference}. Need to add something? You can send another request and include this reference so we can keep the details together.</p>
   </div>
   return <form className="space-y-5" onSubmit={async event => {
     event.preventDefault()
@@ -33,7 +33,7 @@ export default function EmployerEnquiryForm() {
       const body = await res.json()
       if (!res.ok) setError(body.error || 'Could not save your request. Please try again.')
       else { setReference(requestId.current.slice(0, 8).toUpperCase()); setDone(true) }
-    } catch { setError('Connection problem. Your details are still here—please try again, or email hello@joblinkantigua.com.') }
+    } catch { setError('Connection problem. Your details are still here—please try again.') }
     finally { setBusy(false) }
   }}>
     <div className="grid gap-5 sm:grid-cols-2">

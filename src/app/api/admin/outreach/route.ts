@@ -4,6 +4,7 @@ import outreachData from './outreach-data.json'
 import { outreachProof } from '@/lib/testimonials'
 import { insertProof, escapeHtml } from '@/lib/testimonial-content'
 import { PILOT_URL } from '@/lib/employer-pilot'
+import { TEAM_INBOX } from '@/lib/team-inbox'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ function emailWrapper(content: string): string {
       <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
       <p style="color: #9ca3af; font-size: 11px; margin-top: 4px;">
         Don't want emails from us?
-        <a href="mailto:hello@joblinkantigua.com?subject=Unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
+        <a href="mailto:${TEAM_INBOX}?subject=Unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
       </p>
     </div>
   </div>
@@ -153,12 +154,11 @@ export async function POST(req: NextRequest) {
           to: emp.email,
           subject: emailContent.subject,
           html: insertProof(emailContent.html, await outreachProof()),
-          replyTo: 'hello@joblinkantigua.com',
+          replyTo: TEAM_INBOX,
           // The footer link alone was href="#", which is a dead unsubscribe on
           // cold outreach. These headers give mail clients a real one.
           headers: {
-            'List-Unsubscribe': '<mailto:hello@joblinkantigua.com?subject=Unsubscribe>',
-            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            'List-Unsubscribe': `<mailto:${TEAM_INBOX}?subject=Unsubscribe>`,
           },
         })
 

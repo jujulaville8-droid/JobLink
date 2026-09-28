@@ -1,7 +1,8 @@
 import { Resend } from 'resend'
 import { NextRequest, NextResponse } from 'next/server'
+import { TEAM_INBOX } from '@/lib/team-inbox'
 
-const FORWARD_TO = 'jujulaville8@gmail.com'
+const FORWARD_TO = TEAM_INBOX
 const FROM_ADDRESS = 'JobLink Forwarding <notifications@joblinkantigua.com>'
 
 export async function POST(request: NextRequest) {

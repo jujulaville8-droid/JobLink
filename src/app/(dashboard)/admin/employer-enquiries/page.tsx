@@ -13,7 +13,7 @@ export default async function EmployerEnquiries({ searchParams }: { searchParams
   const { data, count, error } = await createAdminClient().from('employer_enquiries').select('*', { count: 'exact' }).order('created_at', { ascending: false }).range((page - 1) * 25, page * 25 - 1)
   if (error) throw new Error('Could not load employer requests')
   return <div className="mx-auto max-w-4xl space-y-6">
-    <h1 className="font-display text-3xl">Employer requests</h1><p className="text-text-light">Contact each business, agree the vacancy details and record permission before publishing. Notification emails go to hello@joblinkantigua.com. Requests are saved here even if email delivery fails.</p>
+    <h1 className="font-display text-3xl">Employer requests</h1><p className="text-text-light">Contact each business, agree the vacancy details and record permission before publishing. Notification emails go to your existing JobLinks forwarding inbox. Requests are saved here even if email delivery fails.</p>
     <Link href="/employers/hiring-help" className="inline-block text-primary underline">Open the employer pilot page</Link>
     {!data?.length && <p className="rounded-2xl border bg-white p-8">No requests on this page. Share the employer pilot link to start conversations.</p>}
     {data?.map(row => <article id={row.id} key={row.id} className="scroll-mt-24 rounded-2xl border bg-white p-6">
