@@ -6,6 +6,10 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
+    files: ["tests/browser/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
+  {
     // Profile and company images use user-configured remote URLs that cannot be
     // enumerated for Next Image optimization.
     rules: {

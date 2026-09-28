@@ -12,9 +12,11 @@ export default function HireButton({ applicationId }: HireButtonProps) {
   const router = useRouter();
   const [showPrompt, setShowPrompt] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleHire(closeJob: boolean) {
     setLoading(true);
+    setError('');
     try {
       const res = await fetch("/api/applications/hire", {
         method: "POST",
@@ -23,10 +25,14 @@ export default function HireButton({ applicationId }: HireButtonProps) {
       });
       if (res.ok) {
         router.refresh();
+        setShowPrompt(false);
+      } else {
+        setError((await res.json()).error || 'Could not confirm hire. Please try again.');
       }
+    } catch {
+      setError('Could not confirm hire. Please try again.');
     } finally {
       setLoading(false);
-      setShowPrompt(false);
     }
   }
 
@@ -34,11 +40,12 @@ export default function HireButton({ applicationId }: HireButtonProps) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
         <div className="bg-white rounded-2xl border border-border shadow-xl max-w-sm w-full p-6">
-          <h3 className="font-display text-lg text-text mb-2">Hire this applicant?</h3>
+          <h3 className="font-display text-lg text-text mb-2">Confirm this applicant was hired?</h3>
           <p className="text-sm text-text-light mb-5">
-            Would you also like to close this job listing so it no longer accepts new applications?
+            Only confirm once you have agreed the hire with the applicant. We’ll email you a short, optional request for feedback. Would you also like to close this listing?
           </p>
           <div className="flex flex-col gap-2.5">
+            {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
             <button
               onClick={() => handleHire(true)}
               disabled={loading}
@@ -71,7 +78,7 @@ export default function HireButton({ applicationId }: HireButtonProps) {
       onClick={() => setShowPrompt(true)}
       className="rounded-md border border-amber-300 text-amber-700 hover:bg-amber-50 px-3 py-1 text-xs font-medium transition-colors cursor-pointer"
     >
-      Hire
+      Confirm hire
     </button>
   );
 }

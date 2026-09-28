@@ -29,8 +29,10 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
 
     // Only redirect if fully verified — don't interfere with login/signup handlers
     if (isAuthenticated && isEmailVerified) {
-      const fromMembers = new URLSearchParams(window.location.search).get('returnTo') === '/members';
-      window.location.href = fromMembers ? '/members' : '/dashboard';
+      const returnTo = new URLSearchParams(window.location.search).get('returnTo');
+      const fromMembers = returnTo === '/members';
+      const fromFeedback = returnTo && /^\/placement-feedback\/[0-9a-f-]{36}$/i.test(returnTo);
+      window.location.href = fromMembers ? '/members' : fromFeedback ? returnTo : '/dashboard';
     }
   }, [isAuthenticated, isEmailVerified, isLoading, isResetPassword]);
 

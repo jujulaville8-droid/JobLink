@@ -1,116 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendEmail, BASE_URL } from '@/lib/email'
-import { sendStatusChangeMessage } from '@/lib/messaging-system-messages'
 import { requireVerifiedUser } from '@/lib/api-auth'
+import { requestTestimonial } from '@/lib/testimonials'
 
 export async function POST(request: NextRequest) {
-  try {
-    const auth = await requireVerifiedUser()
-    if ('error' in auth) return auth.error
-    const { user, supabase } = auth
-
-    const { application_id, close_job } = await request.json()
-
-    if (!application_id) {
-      return NextResponse.json({ error: 'application_id is required' }, { status: 400 })
-    }
-
-    // Get the application
-    const { data: application } = await supabase
-      .from('applications')
-      .select('id, job_id, seeker_id')
-      .eq('id', application_id)
-      .single()
-
-    if (!application) {
-      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
-    }
-
-    // Get listing and verify ownership
-    const { data: listing } = await supabase
-      .from('job_listings')
-      .select('id, company_id, title, companies(company_name)')
-      .eq('id', application.job_id)
-      .single()
-
-    if (!listing) {
-      return NextResponse.json({ error: 'Job listing not found' }, { status: 404 })
-    }
-
-    const { data: company } = await supabase
-      .from('companies')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('id', listing.company_id)
-      .single()
-
-    if (!company) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Update application status to hold (use admin client to bypass RLS,
-    // since we already verified ownership above)
-    const adminClient = createAdminClient()
-    const { error: updateError } = await adminClient
-      .from('applications')
-      .update({ status: 'hold' })
-      .eq('id', application_id)
-
-    if (updateError) {
-      console.error('[hire] update error:', updateError.message)
-      return NextResponse.json({ error: 'Failed to update application status' }, { status: 500 })
-    }
-
-    // Optionally close the job listing
-    if (close_job) {
-      await adminClient
-        .from('job_listings')
-        .update({ status: 'closed' })
-        .eq('id', application.job_id)
-    }
-
-    // Send notifications
-    const { data: seekerProfile } = await supabase
-      .from('seeker_profiles')
-      .select('user_id')
-      .eq('id', application.seeker_id)
-      .single()
-
-    if (seekerProfile?.user_id) {
-      const { data: seekerUser } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', seekerProfile.user_id)
-        .single()
-
-      if (seekerUser?.email) {
-        const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies
-        await sendEmail({
-          to: seekerUser.email,
-          type: 'status_update',
-          data: {
-            job_title: listing.title,
-            company_name: companyData?.company_name || 'the employer',
-            status: 'On Hold',
-            dashboard_url: `${BASE_URL}/applications`,
-          },
-        })
-      }
-
-      const companyData = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies
-      sendStatusChangeMessage(supabase, {
-        applicationId: application_id,
-        employerUserId: user.id,
-        seekerUserId: seekerProfile.user_id,
-        newStatus: 'hold',
-        jobTitle: listing.title,
-        companyName: companyData?.company_name || 'the employer',
-      })
-    }
-
-    return NextResponse.json({ success: true, closed: !!close_job })
-  } catch {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-  }
+  const auth = await requireVerifiedUser()
+  if ('error' in auth) return auth.error
+  const body = z.object({ application_id: z.uuid(), close_job: z.boolean() }).safeParse(await request.json().catch(() => null))
+  if (!body.success) return NextResponse.json({ error: 'Choose an application and whether to close the listing.' }, { status: 400 })
+  const { data, error } = await createAdminClient().rpc('confirm_placement', {
+    p_application: body.data.application_id, p_employer: auth.user.id, p_close: body.data.close_job,
+  })
+  if (error) return NextResponse.json({ error: 'Could not confirm this hire. Check that the application belongs to you and try again.' }, { status: 400 })
+  after(async () => {
+    try { await requestTestimonial(data) } catch { console.error('[testimonials] Request queued for retry') }
+  })
+  return NextResponse.json({ success: true, placement_id: data, closed: body.data.close_job })
 }

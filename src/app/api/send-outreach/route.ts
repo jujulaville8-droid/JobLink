@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { outreachProof } from '@/lib/testimonials'
+import { insertProof } from '@/lib/testimonial-content'
 
 // Bulk work needs more than the default function timeout.
 export const maxDuration = 300
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest) {
     from: 'JobLinks Antigua <team@joblinkantigua.com>',
     to: email,
     subject: `Post your ${role} vacancy on JobLinks Antigua — it's free`,
-    html: email_html
+    html: insertProof(email_html, await outreachProof())
   })
 
   if (sendError) {
