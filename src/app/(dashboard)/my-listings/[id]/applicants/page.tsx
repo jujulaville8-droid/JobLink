@@ -5,6 +5,7 @@ import Link from 'next/link';
 import type { ApplicationStatus } from '@/lib/types';
 import MessageButton from '@/components/messaging/MessageButton';
 import StatusActionButtons from '@/components/StatusActionButtons';
+import HireButton from '@/components/HireButton';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -130,6 +131,10 @@ export default async function ApplicantsPage({
   const { data: applications } = await query;
 
   const applicants = (applications ?? []) as unknown as ApplicantData[];
+  const { data: placements, error: placementsError } = await supabase.from('placements')
+    .select('id, application_id').eq('employer_id', user.id);
+  if (placementsError) throw new Error('Could not load confirmed hires');
+  const placementByApplication = new Map((placements ?? []).map(p => [p.application_id, p.id]));
 
   // Get unfiltered counts for the filter tabs
   const { data: allApplications } = await supabase
@@ -442,6 +447,7 @@ export default async function ApplicantsPage({
                       jobId={id}
                       currentStatus={app.status}
                     />
+                    {placementByApplication.has(app.id) ? <Link className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800" href={`/placement-feedback/${placementByApplication.get(app.id)}`}>Hire confirmed · Share feedback</Link> : <HireButton applicationId={app.id} jobId={id} />}
                     <span className="ml-1 text-[10px] text-text-muted self-center italic">
                       The applicant will be notified
                     </span>

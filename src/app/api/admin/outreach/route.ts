@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import outreachData from './outreach-data.json'
+import { outreachProof } from '@/lib/testimonials'
+import { insertProof } from '@/lib/testimonial-content'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -256,7 +258,7 @@ export async function POST(req: NextRequest) {
           from: FROM_ADDRESS,
           to: emp.email,
           subject: emailContent.subject,
-          html: emailContent.html,
+          html: insertProof(emailContent.html, await outreachProof()),
           replyTo: 'hello@joblinkantigua.com',
           // The footer link alone was href="#", which is a dead unsubscribe on
           // cold outreach. These headers give mail clients a real one.
