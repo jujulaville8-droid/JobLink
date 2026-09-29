@@ -379,9 +379,6 @@ function RepostListing({ listingId }: { listingId: string }) {
 
     if (!original) return;
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30);
-
     const { data: reposted, error } = await supabase.from('job_listings').insert({
       company_id: original.company_id,
       title: original.title,
@@ -394,7 +391,7 @@ function RepostListing({ listingId }: { listingId: string }) {
       salary_visible: original.salary_visible,
       requires_work_permit: original.requires_work_permit,
       status: 'active',
-      expires_at: expiresAt.toISOString(),
+      expires_at: null,
     }).select('id').single();
 
     if (error || !reposted) throw new Error('Unable to repost this job. Please try again.');

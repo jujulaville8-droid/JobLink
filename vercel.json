@@ -15,10 +15,6 @@
     {
       "path": "/api/cron/signup-reminder",
       "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/cron/expire-listings",
-      "schedule": "0 * * * *"
     }
   ]
 }

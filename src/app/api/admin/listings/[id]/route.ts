@@ -33,6 +33,7 @@ export async function PATCH(
         )
       }
       updates.status = status
+      if (status === 'active') updates.expires_at = null
     }
 
     if (typeof is_featured === 'boolean') {

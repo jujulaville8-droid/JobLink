@@ -25,7 +25,6 @@ interface JobFormData {
   salary_max: string;
   salary_type: SalaryType;
   salary_visible: boolean;
-  duration: '7' | '30' | 'unlimited';
 }
 
 interface NewCompanyData {
@@ -85,7 +84,6 @@ export default function AdminPostJobPage() {
     salary_max: '',
     salary_type: 'monthly',
     salary_visible: true,
-    duration: '7',
   });
 
   useEffect(() => {
@@ -177,7 +175,6 @@ export default function AdminPostJobPage() {
         salary_min: form.salary_min || null,
         salary_max: form.salary_max || null,
         salary_visible: form.salary_visible,
-        duration: form.duration,
       };
 
       if (companyMode === 'existing') {
@@ -495,31 +492,7 @@ export default function AdminPostJobPage() {
           </div>
         </motion.div>
 
-        {/* Duration */}
-        <motion.div variants={item} className={cardBase}>
-          <div className="px-6 py-5 border-b border-border/40">
-            <h2 className="text-sm font-semibold text-text">Listing Duration</h2>
-          </div>
-          <div className="px-6 py-5">
-            <div className="grid grid-cols-3 gap-3">
-              {(['7', '30', 'unlimited'] as const).map(d => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => updateField('duration', d)}
-                  className={cn(
-                    'rounded-xl border px-4 py-3 text-sm font-medium transition-all',
-                    form.duration === d
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-border/40 text-text-muted hover:border-primary/40'
-                  )}
-                >
-                  {d === '7' ? '7 days' : d === '30' ? '30 days' : 'No expiry'}
-                </button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        <p className="text-sm text-text-muted">Jobs stay active until you close them. No expiry date.</p>
 
         {/* Error + Submit */}
         {serverError && (

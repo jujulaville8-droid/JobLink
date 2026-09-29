@@ -146,7 +146,7 @@ async function approveJob(formData: FormData) {
 
   const { data: approved, error } = await supabase
     .from('job_listings')
-    .update({ status: 'active' })
+    .update({ status: 'active', expires_at: null })
     .eq('id', jobId)
     .eq('status', 'pending_approval')
     .select('id')

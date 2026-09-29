@@ -8,7 +8,6 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import {
   Briefcase01Icon,
   MoneyBag02Icon,
-  Clock01Icon,
   Tick01Icon,
   File01Icon,
   CircleArrowUpRight02Icon,
@@ -33,7 +32,6 @@ interface FormData {
   salary_max: string;
   salary_type: SalaryType;
   salary_visible: boolean;
-  duration: '7' | 'unlimited';
 }
 
 interface FormErrors {
@@ -90,7 +88,6 @@ export default function PostJobPage() {
     salary_max: '',
     salary_type: 'monthly' as SalaryType,
     salary_visible: true,
-    duration: '7',
   });
 
   // Load data: check Pro status + active listing count, and load edit data if needed
@@ -152,7 +149,6 @@ export default function PostJobPage() {
           salary_max: listing.salary_max ? String(listing.salary_max) : '',
           salary_type: (listing.salary_type as SalaryType) || 'monthly',
           salary_visible: listing.salary_visible ?? true,
-          duration: '7',
         });
       }
 
@@ -182,7 +178,6 @@ export default function PostJobPage() {
     if (!form.description.trim()) errs.description = 'Description is required';
     if (!form.category) errs.category = 'Please select a category';
     if (!form.location.trim()) errs.location = 'Location is required';
-    // Duration gating removed — all employers can select any duration
     if (form.salary_min && form.salary_max) {
       if (Number(form.salary_min) > Number(form.salary_max)) {
         errs.salary_max = 'Max salary must be greater than min salary';
@@ -260,6 +255,7 @@ export default function PostJobPage() {
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         salary_visible: form.salary_visible,
+        expires_at: null,
       };
 
       if (editId) {
@@ -278,14 +274,6 @@ export default function PostJobPage() {
         }
       } else {
         // Create new listing
-        let expiresAtStr: string | null = null;
-        if (form.duration !== 'unlimited') {
-          const now = new Date();
-          const expiresAt = new Date(now);
-          expiresAt.setDate(expiresAt.getDate() + Number(form.duration));
-          expiresAtStr = expiresAt.toISOString();
-        }
-
         const { error: insertError } = await supabase
           .from('job_listings')
           .insert({
@@ -293,7 +281,7 @@ export default function PostJobPage() {
             ...listingData,
             requires_work_permit: false,
             status: 'pending_approval',
-            expires_at: expiresAtStr,
+            expires_at: null,
           });
 
         if (insertError) {
@@ -784,61 +772,7 @@ export default function PostJobPage() {
             </div>
           </motion.div>
 
-          {/* Duration Card — only show for new listings */}
-          {!editId && (
-            <motion.div variants={item} className={cn(cardBase, 'p-6')}>
-              <div className="flex items-center gap-2.5 mb-5">
-                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-                  <HugeiconsIcon icon={Clock01Icon} size={16} className="text-purple-600" />
-                </div>
-                <h2 className="text-sm font-semibold text-text">Listing Duration</h2>
-              </div>
-
-              <div className="flex gap-3">
-                {/* 7 days — free */}
-                <label
-                  className={cn(
-                    'cursor-pointer rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center',
-                    form.duration === '7'
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="duration"
-                    value="7"
-                    checked={form.duration === '7'}
-                    onChange={() => updateField('duration', '7')}
-                    className="sr-only"
-                  />
-                  <span className="text-lg font-bold block">7</span>
-                  <span className="text-xs">days</span>
-                </label>
-
-                {/* Unlimited — available to all */}
-                <label
-                  className={cn(
-                    'relative rounded-xl border px-6 py-3 text-sm font-medium transition-all duration-200 flex-1 text-center cursor-pointer',
-                    form.duration === 'unlimited'
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="duration"
-                    value="unlimited"
-                    checked={form.duration === 'unlimited'}
-                    onChange={() => updateField('duration', 'unlimited')}
-                    className="sr-only"
-                  />
-                  <span className="text-lg font-bold block">&infin;</span>
-                  <span className="text-xs">unlimited</span>
-                </label>
-              </div>
-            </motion.div>
-          )}
+          <p className="text-sm text-text-muted">Jobs stay active until you close them. No expiry date.</p>
 
           {/* Submit */}
           <motion.div variants={item}>
@@ -959,7 +893,7 @@ export default function PostJobPage() {
             </div>
 
             <p className="mt-3 text-[11px] text-text-muted text-center">
-              {editId ? 'Editing listing' : form.duration === 'unlimited' ? 'Stays active until you close it' : `Expires after ${form.duration} days`}
+              {editId ? 'Editing listing' : 'Stays active until you close it'}
             </p>
           </motion.div>
         </div>

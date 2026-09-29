@@ -127,7 +127,6 @@ export async function POST(req: NextRequest) {
     salary_min,
     salary_max,
     salary_visible,
-    duration,
   } = body
 
   // Validate required job fields
@@ -199,14 +198,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Company is required' }, { status: 400 })
   }
 
-  // Calculate expiry
-  let expiresAt: string | null = null
-  if (duration && duration !== 'unlimited') {
-    const d = new Date()
-    d.setDate(d.getDate() + Number(duration))
-    expiresAt = d.toISOString()
-  }
-
   const { data: listing, error: listingError } = await admin
     .from('job_listings')
     .insert({
@@ -221,7 +212,7 @@ export async function POST(req: NextRequest) {
       requires_work_permit: false,
       status: 'active',
       posted_by_admin: true,
-      expires_at: expiresAt,
+      expires_at: null,
     })
     .select('id')
     .single()
