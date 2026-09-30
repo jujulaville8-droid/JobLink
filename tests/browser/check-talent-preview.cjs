@@ -62,6 +62,11 @@ const checkTalentPreview = async (page) => {
     await page.setViewportSize({ width, height: 1000 });
     await section.scrollIntoViewIfNeeded();
     check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `No horizontal overflow at ${width}px`);
+    check(await page.locator('.home-employer-actions > a').evaluate(el => {
+      const link = el.getBoundingClientRect();
+      const card = el.closest('.home-employer-steps').getBoundingClientRect();
+      return link.left >= card.left && link.right <= card.right && link.top >= card.top && link.bottom <= card.bottom;
+    }), `Employer signup stays inside its card at ${width}px`);
     check(await signup.isVisible() && await control.isVisible(), `Signup and pause usable at ${width}px`);
     if (width === 390 || width === 1440) await section.screenshot({ path: `output/playwright/talent-preview-${width}.png` });
   }
