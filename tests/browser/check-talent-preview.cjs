@@ -28,7 +28,7 @@ const checkTalentPreview = async (page) => {
   await page.mouse.move(0, 0);
   check(await signup.getAttribute('href') === '/signup?role=employer&returnTo=%2Fmembers', 'Anonymous CTA preserves employer intent and guarded return');
   check(await section.locator('#talent-preview-illustration').evaluate(el => getComputedStyle(el).filter) === 'blur(3px)', 'Frosted preview blur is applied in the production build');
-  check((await section.innerText()).includes('Illustrative preview. No real profiles shown.'), 'Honest illustration disclosure is visible');
+  check((await section.innerText()).includes('Create an employer account to browse candidates'), 'Positive employer-access caption is visible');
   check(!requests.some(url => /seeker_profiles|cv-download|cv\/export|browse-candidates/.test(url)), 'Anonymous browser makes no candidate/CV requests');
   check(!(await page.content()).includes('PRIVATE_CANDIDATE_CANARY'), 'Anonymous HTML and RSC contain no private candidate canary');
   check(await track.evaluate(el => getComputedStyle(el).animationPlayState) === 'running', 'Animation starts after hydration');

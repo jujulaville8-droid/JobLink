@@ -12,7 +12,8 @@ it('renders an honest, usable signup path in the initial server HTML', () => {
   const html = renderToString(<TalentPreview />);
   expect(html).toContain('Create employer account');
   expect(html).toContain('/signup?role=employer&amp;returnTo=%2Fmembers');
-  expect(html).toContain('Illustrative preview. No real profiles shown.');
+  expect(html).toContain('Create an employer account to browse candidates');
+  expect(html).not.toContain('No real profiles shown');
   expect(html).not.toMatch(/live profiles|online now|available now|\bmoving\b|<button/i);
 });
 
