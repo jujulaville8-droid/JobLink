@@ -1,10 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { onboardingReturnTo, withReturnTo } from '@/lib/claim-links'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-export default function EmployerLoginPage() {
+function EmployerLoginContent() {
+  const searchParams = useSearchParams()
+  const returnTo = onboardingReturnTo(searchParams.get('returnTo'))
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +25,7 @@ export default function EmployerLoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=employer`,
+        redirectTo: `${window.location.origin}${withReturnTo('/auth/callback?role=employer', returnTo)}`,
       },
     })
     if (error) {
@@ -90,12 +94,12 @@ export default function EmployerLoginPage() {
     if (!emailVerified) {
       console.log('[employer-login] Unverified user, redirecting to verify-email')
       setLoading(false)
-      window.location.href = '/verify-email'
+      window.location.href = withReturnTo('/verify-email', returnTo)
       return
     }
 
     console.log('[employer-login] Sign-in success, redirecting', { role: userRole })
-    window.location.href = userRole === 'admin' ? '/dashboard' : '/post-job'
+    window.location.href = returnTo ?? (userRole === 'admin' ? '/dashboard' : '/post-job')
   }
 
   async function handleResendVerification() {
@@ -107,7 +111,7 @@ export default function EmployerLoginPage() {
 
     try {
       const supabase = createClient()
-      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
+      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', returnTo)}` } })
 
       if (resendError) {
         console.error('[employer-login] Resend failed', { email, error: resendError.message })
@@ -274,7 +278,7 @@ export default function EmployerLoginPage() {
       <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
-          href="/employer/signup"
+          href={withReturnTo("/employer/signup", returnTo)}
           className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one
@@ -292,4 +296,8 @@ export default function EmployerLoginPage() {
       </p>
     </div>
   )
+}
+
+export default function EmployerLoginPage() {
+  return <Suspense fallback={<p role="status">Loading sign in…</p>}><EmployerLoginContent /></Suspense>
 }

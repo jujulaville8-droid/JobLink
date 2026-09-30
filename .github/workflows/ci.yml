@@ -13,6 +13,20 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: joblink_claims_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -34,6 +48,11 @@ jobs:
 
       - name: Node tests (incl. database security invariants)
         run: npm run test:node
+
+      - name: Concurrent claim transactions (local PostgreSQL fixture)
+        env:
+          CLAIMS_TEST_DATABASE_URL: postgres://postgres:local-test-only@127.0.0.1:5432/joblink_claims_test
+        run: npm run test:claims:concurrency
 
       - name: Build
         # Placeholder values: the build must not require real credentials, and

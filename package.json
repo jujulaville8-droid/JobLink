@@ -9,12 +9,13 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:ui": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
-    "test:node": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs",
+    "test:node": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs tests/company-claims.test.mjs",
     "test:unit": "vitest run",
     "test:onboarding": "vitest run",
     "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:node",
     "smoke": "node scripts/smoke-local.mjs",
-    "discover": "npx tsx scripts/discover-businesses.ts"
+    "discover": "npx tsx scripts/discover-businesses.ts",
+    "test:claims:concurrency": "node --test tests/company-claims-concurrency.test.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.0.0",
@@ -53,6 +54,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "happy-dom": "^20.14.5",
+    "pg": "^8.23.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "5.9.3",
