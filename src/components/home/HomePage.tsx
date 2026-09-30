@@ -16,6 +16,7 @@ import {
 
 import type { Job } from "@/components/JobCard"
 import CompanyLogo from "@/components/home/CompanyLogo"
+import TalentPreview from "@/components/home/TalentPreview"
 import { AnimatedList } from "@/components/magicui/animated-list"
 import { AvatarCircles } from "@/components/magicui/avatar-circles"
 import { BentoCard, BentoGrid } from "@/components/magicui/bento-grid"
@@ -371,6 +372,8 @@ export default function HomePage({
           </li>
         </ol>
       </section>
+
+      <TalentPreview />
 
       <section className="home-employers" id="employers" aria-labelledby="employers-title">
         <h2 id="employers-title" className="sr-only">
