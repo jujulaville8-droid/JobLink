@@ -80,7 +80,7 @@ export default function TalentPreview() {
           </div>
         </div>
         <div className={styles.caption}>
-          <p>Illustrative preview. No real profiles shown.</p>
+          <p>{employer ? "Browse candidates with your employer account." : isAuthenticated ? "Candidate browsing is available to employer accounts." : "Create an employer account to browse candidates"}</p>
           {ready && (
             <button
               type="button"
