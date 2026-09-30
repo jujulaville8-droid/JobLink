@@ -5,7 +5,7 @@ import JobIndustryShortcuts from "@/components/JobIndustryShortcuts";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { INDUSTRIES } from "@/lib/types";
+import { knownJobCategory } from "@/lib/job-category";
 
 interface PageProps {
   searchParams: Promise<{
@@ -52,9 +52,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   if (!params.category && !hasOtherFilters) return baseMetadata;
 
   const noindex = { index: false, follow: true };
-  const category = INDUSTRIES.find(
-    (c) => c.toLowerCase() === params.category?.trim().toLowerCase()
-  );
+  const category = knownJobCategory(params.category);
   if (!category || hasOtherFilters) {
     return { ...baseMetadata, robots: noindex };
   }

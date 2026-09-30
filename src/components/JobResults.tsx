@@ -1,3 +1,4 @@
+import { jobCategoryFilter } from "@/lib/job-category";
 import { createClient } from "@/lib/supabase/server";
 import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
@@ -22,6 +23,7 @@ export default async function JobResults({
   searchParams,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4",
 }: JobResultsProps) {
+  searchParams = { ...searchParams, category: jobCategoryFilter(searchParams.category) };
   const supabase = await createClient();
 
   const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1);

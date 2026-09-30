@@ -2,29 +2,23 @@ import Image from "next/image"
 import Link from "next/link"
 import {
   ArrowRight,
-  BadgeCheck,
-  BriefcaseBusiness,
-  Building2,
   ChevronDown,
-  FileCheck,
   MapPin,
-  Megaphone,
   Search,
   Sprout,
-  Users,
 } from "lucide-react"
 
 import type { Job } from "@/components/JobCard"
 import CompanyLogo from "@/components/home/CompanyLogo"
+import HomeEmployers from "@/components/home/HomeEmployers"
+import TalentPreview from "@/components/home/TalentPreview"
 import { AnimatedList } from "@/components/magicui/animated-list"
 import { AvatarCircles } from "@/components/magicui/avatar-circles"
-import { BentoCard, BentoGrid } from "@/components/magicui/bento-grid"
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { DotPattern } from "@/components/magicui/dot-pattern"
 import { MagicCard } from "@/components/magicui/magic-card"
 import { Marquee } from "@/components/magicui/marquee"
 import { NumberTicker } from "@/components/magicui/number-ticker"
-import { OrbitingCircles } from "@/components/magicui/orbiting-circles"
 import { ShineBorder } from "@/components/magicui/shine-border"
 import { TypingAnimation } from "@/components/magicui/typing-animation"
 import { WordRotate } from "@/components/magicui/word-rotate"
@@ -372,96 +366,9 @@ export default function HomePage({
         </ol>
       </section>
 
-      <section className="home-employers" id="employers" aria-labelledby="employers-title">
-        <h2 id="employers-title" className="sr-only">
-          Hiring? Let us help.
-        </h2>
-        <BentoGrid className="home-employer-grid">
-          <BentoCard
-            name="Hiring? Let us help."
-            description="Send us your vacancy. Our free first-vacancy pilot helps you prepare the advert, reach job seekers and review applications."
-            Icon={Building2}
-            href="/employers/hiring-help"
-            cta="Send us your vacancy"
-            background={
-              <div className="home-bento-photo">
-                <Image
-                  src="/images/people-sitting.webp"
-                  alt="A job seeker speaking with recruiters at a job fair"
-                  fill
-                  sizes="(max-width: 700px) 100vw, 66vw"
-                />
-              </div>
-            }
-            className="md:col-span-2"
-          />
-          <BentoCard
-            name="Applications delivered"
-            description="A real-time view of activity across JobLink."
-            Icon={FileCheck}
-            href="/employers/hiring-help"
-            cta="Send us your vacancy"
-            background={
-              <div className="home-bento-stat-bg">
-                <NumberTicker
-                  value={stats.applications}
-                  data-reduced-value={stats.applications}
-                  aria-label={`${stats.applications} applications delivered`}
-                  className="text-6xl font-bold tabular-nums text-[#102040]"
-                />
-              </div>
-            }
-            className="md:col-span-1"
-          />
-          <BentoCard
-            name="A connected hiring loop"
-            description="Personal support from your first vacancy request to reviewing applicants."
-            Icon={Users}
-            href="/employers/hiring-help"
-            cta="Send us your vacancy"
-            background={
-              <div className="home-orbit-visual">
-                <Image
-                  src="/logo-icon.png"
-                  alt="JobLink"
-                  width={56}
-                  height={56}
-                  className="rounded-full"
-                />
-                <OrbitingCircles iconSize={36} radius={90} duration={22}>
-                  <BriefcaseBusiness className="text-[#104080]" />
-                  <Building2 className="text-[#104080]" />
-                  <Megaphone className="text-[#209080]" />
-                </OrbitingCircles>
-                <OrbitingCircles iconSize={28} radius={150} duration={30} reverse>
-                  <Users className="text-[#209080]" />
-                  <FileCheck className="text-[#104080]" />
-                  <BadgeCheck className="text-[#209080]" />
-                </OrbitingCircles>
-              </div>
-            }
-            className="md:col-span-1"
-          />
-          <div className="home-employer-steps col-span-3 md:col-span-2">
-            <div>
-              <p className="home-eyebrow">For employers</p>
-              <ol>
-                <li>Send us your vacancy</li>
-                <li>Agree the details together</li>
-                <li>Meet suitable applicants</li>
-              </ol>
-            </div>
-            <form action="/employers/hiring-help">
-              <button
-                type="submit"
-                className="rounded-lg bg-[#104080] px-8 py-3 text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#104080]"
-              >
-                Send us your vacancy
-              </button>
-            </form>
-          </div>
-        </BentoGrid>
-      </section>
+      <TalentPreview />
+
+      <HomeEmployers stats={stats} />
 
       {preview && (
         <p className="home-preview-note">

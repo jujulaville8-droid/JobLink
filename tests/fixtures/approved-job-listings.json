@@ -1,0 +1,44 @@
+[
+  {
+    "id": "318d3b16-6aff-453c-b0d3-fc5f2d779783",
+    "company_id": "1b11e815-e80b-4b35-affe-55c1d1fc16db",
+    "title": "Gym Attendant",
+    "description": "MOfit Gym and Fitness Centre in Vista, Antigua is hiring a full-time Gym Attendant.\n\nHow to apply: send your CV and a short note to mofit268@outlook.com.",
+    "job_type": "full_time",
+    "location": null,
+    "status": "active",
+    "posted_by_admin": true,
+    "created_at": "2026-09-29T22:08:08.998576+00:00",
+    "expires_at": null,
+    "salary_visible": true,
+    "salary_min": null,
+    "salary_max": null,
+    "company": {
+      "id": "1b11e815-e80b-4b35-affe-55c1d1fc16db",
+      "website": null,
+      "location": "Vista, Antigua",
+      "company_name": "MOfit Gym and Fitness Centre"
+    }
+  },
+  {
+    "id": "bb1b011d-4e5c-4005-81b6-bc70c48acf4f",
+    "company_id": "6dde0e9d-e04a-4d95-a9d3-50fa9ffcc961",
+    "title": "Carpenter / Boatbuilder",
+    "description": "JOIN THE CREW AT WOODSTOCK BOATBUILDERS\n\nWoodstock BoatBuilders in English Harbour (Dockyard Drive) is hiring a full-time Carpenter / Boatbuilder.\n\nWe are looking for a competent, reliable, and punctual Carpenter to join our team in a fast-paced, dynamic, and highly rewarding work environment. Whether you are a seasoned marine carpenter or a skilled woodworker eager to transition into the yachting industry, we want to hear from you.\n\nWhat we are looking for\n- Experience: previous experience working on boats is preferable but not a necessity. Anyone with a passion to learn is welcome.\n- Work ethic: must be reliable, punctual, and committed to producing work of the highest quality in a dynamic setting.\n\nWhat we offer\n- Top compensation: some of the best pay rates on the island.\n- Exceptional projects: the opportunity to ply your trade on world-class vessels and develop highly specialized craftsmanship.\n\nHow to apply: all enquiries must be by email. Send your CV/resume and any other pertinent information to office@woodstockboats.com. We will get back to all applicants.\n\nApply before: 29 October 2026\nLearn more: woodstockboatbuilders.com",
+    "job_type": "full_time",
+    "location": null,
+    "status": "active",
+    "posted_by_admin": true,
+    "created_at": "2026-09-30T15:30:24.953557+00:00",
+    "expires_at": null,
+    "salary_visible": true,
+    "salary_min": null,
+    "salary_max": null,
+    "company": {
+      "id": "6dde0e9d-e04a-4d95-a9d3-50fa9ffcc961",
+      "website": "https://woodstockboatbuilders.com",
+      "location": "English Harbour, Antigua",
+      "company_name": "Woodstock BoatBuilders"
+    }
+  }
+]
