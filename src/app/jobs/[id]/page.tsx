@@ -153,7 +153,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
   // A job type override there corrects both the visible label and the
   // JobPosting markup, so the two always agree.
-  const employerApproval = getEmployerApproval(company?.id ?? job.company_id);
+  const employerApproval = getEmployerApproval(company?.id ?? job.company_id, job.id);
   const jobType: string =
     employerApproval?.jobTypeOverrides?.[job.id] ?? job.job_type;
 
@@ -265,8 +265,8 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   // Google for Jobs does not allow "job postings on behalf of an organization
   // without authorization". JobPosting markup is emitted only when the
-  // employer posted the job themselves, or the employer is on the approved
-  // list in lib/seo/employerApproved.ts. Listings the JobLink team created or
+  // employer posted the job themselves, or this vacancy/company has a verified
+  // approval in lib/seo/employerApproved.ts. Listings the JobLink team created or
   // imported from public posts (posted_by_admin, or the standard import footer
   // in the description) are otherwise skipped; the page itself stays
   // indexable. A dedicated column would be cleaner but needs a migration.
@@ -274,8 +274,24 @@ export default async function JobDetailPage({ params }: PageProps) {
   const isImportedListing =
     !!job.posted_by_admin ||
     /imported by JobLink from a public job post/i.test(job.description || "");
+
+  // Preserve a published date-only deadline when the admin-created record has
+  // no expires_at. Do not manufacture an employer cutoff time in the schema.
+  const approvalDeadline = employerApproval && "validThrough" in employerApproval
+    ? employerApproval.validThrough
+    : undefined;
+  const validThrough = job.expires_at
+    ? new Date(job.expires_at).toISOString()
+    : approvalDeadline;
+  // "Apply before" excludes the named date in the job's Antigua time zone.
+  // Retire only the markup; the board's manual-close behavior stays intact.
+  const pastApprovalDeadline = !job.expires_at && approvalDeadline
+    ? new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Antigua", year: "numeric", month: "2-digit", day: "2-digit",
+      }).format(new Date()) >= approvalDeadline
+    : false;
   const emitJobPosting =
-    !!company?.company_name && (!isImportedListing || !!employerApproval);
+    !!company?.company_name && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
@@ -309,7 +325,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       name: "Antigua and Barbuda",
     },
     jobLocationType: rawLocality.toLowerCase().includes("remote") ? "TELECOMMUTE" : undefined,
-    ...(job.expires_at ? { validThrough: new Date(job.expires_at).toISOString() } : {}),
+    ...(validThrough ? { validThrough } : {}),
     // Applying requires signing in and completing a profile/CV first, which
     // Google does not count as a direct apply experience.
     directApply: false,
