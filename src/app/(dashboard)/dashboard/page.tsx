@@ -378,7 +378,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
 }
 
 // ----- Employer Dashboard -----
-async function EmployerDashboard({ userId }: { userId: string }) {
+async function EmployerDashboard({ userId, claimedId }: { userId: string; claimedId?: string }) {
   const supabase = await createClient();
 
   const { data: company } = await supabase
@@ -515,6 +515,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
           <h1 className="font-display text-2xl text-text sm:text-3xl">
             Welcome back, {companyName}!
           </h1>
+          {claimedId === company.id && company.claimed_at && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-4 text-emerald-800">You now manage {companyName}. Your existing jobs and applications are ready.</p>}
           <p className="mt-1 text-text-light text-sm">Manage your listings, review applicants, and find talent.</p>
         </div>
         <div className="hidden sm:flex items-center gap-2">
@@ -929,7 +930,8 @@ async function AdminDashboard() {
 }
 
 // ----- Main Page -----
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ claimed?: string }> }) {
+  const { claimed } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -952,7 +954,7 @@ export default async function DashboardPage() {
   }
 
   if (role === "employer") {
-    return <EmployerDashboard userId={user.id} />;
+    return <EmployerDashboard userId={user.id} claimedId={claimed} />;
   }
 
   return <SeekerDashboard userId={user.id} />;

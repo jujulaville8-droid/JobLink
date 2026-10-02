@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
+import PrivacyAwareAnalytics from "@/components/PrivacyAwareAnalytics";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
@@ -94,7 +94,7 @@ export default function RootLayout({
           <Footer />
           <BottomNav />
         </AuthProvider>
-        <Analytics />
+        <PrivacyAwareAnalytics />
       </body>
     </html>
   );

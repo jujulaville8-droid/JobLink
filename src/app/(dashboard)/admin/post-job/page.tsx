@@ -243,6 +243,7 @@ export default function AdminPostJobPage() {
       animate="show"
       className="mx-auto max-w-2xl space-y-6"
     >
+      <a href="/admin/jobs" className="inline-block text-sm text-primary underline">Manage company claim links</a>
       {/* Header */}
       {enquiryId && <div className="rounded-xl border border-teal-200 bg-teal-50 p-5 text-sm">
         <p>The employer’s request is prefilled below. Check the company, remove private contact details from the description, and confirm the final wording, job type, pay and hours with them. After publishing, save the job URL in Employer Requests.</p>

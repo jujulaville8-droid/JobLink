@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+import { claimReturnTo, onboardingReturnTo, withReturnTo } from '@/lib/claim-links'
+
 type Role = 'seeker' | 'employer'
 type Step = 'role-selection' | 'signup-form'
 
@@ -48,11 +50,12 @@ export default function SignupPage() {
   const searchParams = useSearchParams()
   const requestedRole = searchParams.get('role')
   const preselectedRole = requestedRole === 'employer' || requestedRole === 'seeker' ? requestedRole : null
-  const fromMembers = searchParams.get('returnTo') === '/members'
-  return <SignupForm key={`${preselectedRole ?? 'choose'}-${fromMembers}`} preselectedRole={preselectedRole} fromMembers={fromMembers} />
+  const returnTo = onboardingReturnTo(searchParams.get('returnTo'))
+  return <SignupForm key={`${preselectedRole ?? 'choose'}-${returnTo}`} preselectedRole={preselectedRole} returnTo={returnTo} />
 }
 
-function SignupForm({ preselectedRole, fromMembers }: { preselectedRole: Role | null; fromMembers: boolean }) {
+function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | null; returnTo: string | null }) {
+  const fromMembers = returnTo === '/members'
   const [step, setStep] = useState<Step>(preselectedRole ? 'signup-form' : 'role-selection')
   const [role, setRole] = useState<Role | null>(preselectedRole)
   const [email, setEmail] = useState('')
@@ -66,8 +69,8 @@ function SignupForm({ preselectedRole, fromMembers }: { preselectedRole: Role | 
   const [resending, setResending] = useState(false)
   const [resendWait, setResendWait] = useState(0)
   const [resendMessage, setResendMessage] = useState('')
-  const returnQuery = fromMembers ? '&returnTo=%2Fmembers' : ''
-  const signInHref = fromMembers ? '/login?returnTo=%2Fmembers' : role === 'employer' ? '/employer/login' : '/login'
+  const returnQuery = returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ''
+  const signInHref = withReturnTo(!fromMembers && role === 'employer' ? '/employer/login' : '/login', returnTo)
 
   useEffect(() => {
     if (resendWait <= 0) return
@@ -154,7 +157,9 @@ function SignupForm({ preselectedRole, fromMembers }: { preselectedRole: Role | 
       email: email.trim(),
       password,
       options: {
-        data: { role },
+        // A routing hint only; the claim RPC always verifies the actual bearer link.
+        // Survives custom email templates that omit RedirectTo and cross-device verification.
+        data: { role, ...(claimReturnTo(returnTo) ? { claim_return_to: returnTo } : {}) },
         emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup${returnQuery}`,
       },
     })
@@ -196,7 +201,7 @@ function SignupForm({ preselectedRole, fromMembers }: { preselectedRole: Role | 
         <p className="text-text-light mb-6">
           Click the link in your email to verify your account — you&apos;ll be signed in automatically.
         </p>
-        {role === 'employer' && <p className="mb-5 text-sm text-text-light">{fromMembers ? 'After verification, continue straight to Browse Candidates.' : 'Next, add your company name and create your first job post.'}</p>}
+        {role === 'employer' && <p className="mb-5 text-sm text-text-light">{claimReturnTo(returnTo) ? 'After verification, return to claim your existing company. No new company will be created.' : fromMembers ? 'After verification, continue straight to Browse Candidates.' : 'Next, add your company name and create your first job post.'}</p>}
         {error && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
         {resendMessage && <p role="status" className="mb-3 text-sm text-primary">{resendMessage}</p>}
         <button type="button" onClick={resendVerification} disabled={resending || resendWait > 0} className="min-h-11 w-full rounded-xl border border-border px-4 py-2 text-sm font-medium text-primary disabled:opacity-60">
@@ -333,7 +338,7 @@ function SignupForm({ preselectedRole, fromMembers }: { preselectedRole: Role | 
             {role === 'employer' ? 'Create your employer account' : 'Create your account'}
           </h1>
           <p className="text-xs text-text-light mt-0.5">
-            {role === 'employer' ? fromMembers ? 'Create account → Verify email → Browse candidates' : 'Your account → Company details → First job' : 'Find your next opportunity'}
+            {role === 'employer' ? claimReturnTo(returnTo) ? 'Create account → Verify email → Claim company' : fromMembers ? 'Create account → Verify email → Browse candidates' : 'Your account → Company details → First job' : 'Find your next opportunity'}
           </p>
         </div>
       </div>
