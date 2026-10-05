@@ -19,6 +19,11 @@ type EmailType =
 
 interface EmailData {
   applicant_name?: string
+  applicant_email?: string
+  applicant_phone?: string
+  cover_letter_excerpt?: string
+  cv_attached?: boolean
+  review_path?: string
   job_title?: string
   company_name?: string
   status?: string
@@ -110,9 +115,13 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">You Have a New Applicant</h2>
           <p style="color: #374151; line-height: 1.6;">
-            <strong>${esc(d.applicant_name)}</strong> has applied for <strong>${esc(d.job_title)}</strong>. Their profile, CV, and cover letter are ready for you to review.
+            <strong>${esc(d.applicant_name)}</strong> has applied for <strong>${esc(d.job_title)}</strong>${d.company_name ? ` at <strong>${esc(d.company_name)}</strong>` : ''}.
           </p>
-          ${btn('Review Applicant', '/my-listings')}
+          ${d.applicant_email ? `<p>Email: ${esc(d.applicant_email)}</p>` : ''}
+          ${d.applicant_phone ? `<p>Phone: ${esc(d.applicant_phone)}</p>` : ''}
+          ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
+          <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
+          ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>
         `),
       }

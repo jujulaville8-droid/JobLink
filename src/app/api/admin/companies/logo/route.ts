@@ -1,150 +1,95 @@
+import { randomUUID } from 'node:crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { COMPANY_ID_PATTERN, MAX_LOGO_BYTES, isCompanyLogoStorageUrl, normalizeAdminCompanyLogo } from '@/lib/admin-company-logo'
 
-const MAX_BYTES = 5 * 1024 * 1024
-const ALLOWED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
-
-function isValidLogoUrl(value: string): boolean {
-  if (!value) return true
-  if (value.length > 1000) return false
-  try {
-    const url = new URL(value)
-    return url.protocol === 'https:' || url.protocol === 'http:'
-  } catch {
-    return false
-  }
-}
-
-async function assertCompanyExists(admin: ReturnType<typeof createAdminClient>, companyId: string) {
-  const { data, error } = await admin
-    .from('companies')
-    .select('id, company_name, logo_url')
-    .eq('id', companyId)
-    .maybeSingle()
-
-  if (error) {
-    return { error: NextResponse.json({ error: error.message }, { status: 500 }) }
-  }
-  if (!data) {
-    return { error: NextResponse.json({ error: 'Company not found' }, { status: 404 }) }
-  }
-  return { company: data }
-}
-
-/**
- * Admin: set or replace a company's logo_url.
- *
- * Accepts multipart form data with:
- *   - company_id (required)
- *   - file (image) OR logo_url (https URL / empty to clear)
- *
- * File uploads go to the public company-logos bucket under admin/{companyId}/…
- * using the service-role client so placeholder companies work too.
- */
+/** Admin uploads share the public logo bucket, with separate company-scoped paths. */
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin()
   if ('error' in auth) return auth.error
 
-  const admin = createAdminClient()
-  const contentType = req.headers.get('content-type') || ''
-
   let companyId = ''
   let logoUrl: string | null | undefined
   let file: File | null = null
-
-  if (contentType.includes('multipart/form-data')) {
-    const form = await req.formData()
-    companyId = String(form.get('company_id') || '').trim()
-    const rawFile = form.get('file')
-    if (rawFile instanceof File && rawFile.size > 0) {
-      file = rawFile
+  try {
+    if ((req.headers.get('content-type') || '').includes('multipart/form-data')) {
+      const form = await req.formData()
+      companyId = String(form.get('company_id') || '').trim()
+      const rawFile = form.get('file')
+      if (rawFile instanceof File) file = rawFile
+      if (form.has('logo_url')) logoUrl = String(form.get('logo_url') || '').trim()
+    } else {
+      const body = await req.json()
+      if (!body || typeof body !== 'object' || Array.isArray(body) || typeof body.company_id !== 'string') throw new Error()
+      companyId = body.company_id.trim()
+      if (Object.hasOwn(body, 'logo_url')) {
+        if (body.logo_url !== null && typeof body.logo_url !== 'string') throw new Error()
+        logoUrl = body.logo_url?.trim() || null
+      }
     }
-    if (form.has('logo_url')) {
-      logoUrl = String(form.get('logo_url') || '').trim()
-    }
-  } else {
-    const body = await req.json().catch(() => null)
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
-    companyId = String((body as { company_id?: string }).company_id || '').trim()
-    if ('logo_url' in (body as object)) {
-      const raw = (body as { logo_url?: string | null }).logo_url
-      logoUrl = raw == null ? '' : String(raw).trim()
-    }
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  if (!companyId) {
-    return NextResponse.json({ error: 'company_id is required' }, { status: 400 })
+  if (!COMPANY_ID_PATTERN.test(companyId)) {
+    return NextResponse.json({ error: 'A valid company_id is required' }, { status: 400 })
+  }
+  if (!file && logoUrl === undefined) {
+    return NextResponse.json({ error: 'Provide a file upload or a logo_url value.' }, { status: 400 })
+  }
+  if (file && logoUrl !== undefined) {
+    return NextResponse.json({ error: 'Provide a file upload or logo_url, not both.' }, { status: 400 })
   }
 
-  const existing = await assertCompanyExists(admin, companyId)
-  if ('error' in existing) return existing.error
+  const admin = createAdminClient()
+  const { data: company, error } = await admin.from('companies')
+    .select('id, user_id, company_name, logo_url').eq('id', companyId).maybeSingle()
+  if (error) return NextResponse.json({ error: 'Failed to load company.' }, { status: 503 })
+  if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
 
+  const storageBase = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const storage = admin.storage.from('company-logos')
+  // Fetch by the validated bucket key, never by a user-supplied external URL.
+  // Existing public objects need the same raster checks as uploaded files.
+  if (!file && logoUrl) {
+    if (!isCompanyLogoStorageUrl(logoUrl, companyId, company.user_id, storageBase)) {
+      return NextResponse.json({ error: 'Use a company-owned URL from company-logos storage, or upload an image.' }, { status: 400 })
+    }
+    const path = new URL(logoUrl).pathname.slice('/storage/v1/object/public/company-logos/'.length)
+    const { data: storedLogo, error: downloadError } = await storage.download(path)
+    if (downloadError || !storedLogo || storedLogo.size > MAX_LOGO_BYTES) {
+      return NextResponse.json({ error: 'Stored logo is unavailable or exceeds 5MB. Upload an image instead.' }, { status: 400 })
+    }
+    file = new File([storedLogo], path.split('/').pop() || 'logo', { type: storedLogo.type })
+  }
+  let uploadedPath: string | undefined
   if (file) {
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return NextResponse.json(
-        { error: 'Logo must be a PNG, JPEG, or WebP image.' },
-        { status: 400 }
-      )
+    let buffer: Buffer
+    try {
+      buffer = await normalizeAdminCompanyLogo(file)
+    } catch {
+      return NextResponse.json({ error: 'Logo must contain a valid, still PNG, JPEG, or WebP image under 5MB.' }, { status: 400 })
     }
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: 'Image must be under 5MB.' }, { status: 400 })
-    }
-
-    const ext = file.type === 'image/jpeg' ? 'jpg' : file.type === 'image/webp' ? 'webp' : 'png'
-    const path = `admin/${companyId}/${Date.now()}.${ext}`
-    const buffer = Buffer.from(await file.arrayBuffer())
-
-    const { error: uploadError } = await admin.storage
-      .from('company-logos')
-      .upload(path, buffer, {
-        upsert: true,
-        contentType: file.type,
-        cacheControl: '3600',
-      })
-
-    if (uploadError) {
-      return NextResponse.json(
-        { error: uploadError.message || 'Failed to upload logo' },
-        { status: 500 }
-      )
-    }
-
-    const {
-      data: { publicUrl },
-    } = admin.storage.from('company-logos').getPublicUrl(path)
-
-    logoUrl = publicUrl
-  } else if (logoUrl === undefined) {
-    return NextResponse.json(
-      { error: 'Provide a file upload or a logo_url value.' },
-      { status: 400 }
-    )
+    uploadedPath = `admin/${companyId}/${randomUUID()}.png`
+    const { error: uploadError } = await storage.upload(uploadedPath, buffer, {
+      upsert: false, contentType: 'image/png', cacheControl: '3600',
+    })
+    if (uploadError) return NextResponse.json({ error: 'Failed to upload logo.' }, { status: 503 })
+    logoUrl = storage.getPublicUrl(uploadedPath).data.publicUrl
   }
 
   const nextUrl = logoUrl || null
-  if (nextUrl && !isValidLogoUrl(nextUrl)) {
-    return NextResponse.json(
-      { error: 'logo_url must be an http(s) URL under 1000 characters.' },
-      { status: 400 }
-    )
+  if (nextUrl && !isCompanyLogoStorageUrl(nextUrl, companyId, company.user_id, storageBase)) {
+    if (uploadedPath) await storage.remove([uploadedPath])
+    return NextResponse.json({ error: 'Use a company-owned URL from company-logos storage, or upload an image.' }, { status: uploadedPath ? 503 : 400 })
   }
 
-  const { data: updated, error: updateError } = await admin
-    .from('companies')
-    .update({ logo_url: nextUrl })
-    .eq('id', companyId)
-    .select('id, company_name, logo_url')
-    .single()
-
+  const { data: updated, error: updateError } = await admin.from('companies')
+    .update({ logo_url: nextUrl }).eq('id', companyId).select('id, company_name, logo_url').single()
   if (updateError || !updated) {
-    return NextResponse.json(
-      { error: updateError?.message || 'Failed to update company logo' },
-      { status: 500 }
-    )
+    if (uploadedPath) await storage.remove([uploadedPath])
+    return NextResponse.json({ error: 'Failed to update company logo.' }, { status: 503 })
   }
-
   return NextResponse.json({ success: true, company: updated })
 }

@@ -23,7 +23,7 @@ import type { JobType } from "@/lib/types";
 export interface EmployerApproval {
   /** Human reference only; matching is by company id. */
   companyName: string;
-  /** Date the employer gave permission (YYYY-MM-DD). */
+  /** Approval date supplied by the employer or owner attestation (YYYY-MM-DD). */
   approvedOn: string;
   /** Temporary job type corrections, keyed by job id. */
   jobTypeOverrides?: Record<string, JobType>;
@@ -40,8 +40,8 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
   validThrough?: string;
 }
 
-// Owner confirmed both employers' permission on September 30. This attestation
-// authorizes only these vacancies; see docs/jobposting-approvals.md for provenance.
+// The original September 30 owner attestation covered only these vacancies;
+// see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
   "318d3b16-6aff-453c-b0d3-fc5f2d779783": {
     companyId: "1b11e815-e80b-4b35-affe-55c1d1fc16db",
@@ -59,7 +59,8 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
   },
 };
 
-// Existing company-wide authorization and Top Bun's type correction are retained.
+// Company-wide permission is recorded from the site owner's explicit attestation.
+// Existing vacancy metadata and Top Bun's type correction are retained.
 export const EMPLOYER_APPROVED_COMPANIES: Record<string, EmployerApproval> = {
   "362300b7-c0c5-4c2e-a9f6-6fe79f187e71": {
     companyName: "Top Bun Antigua",
@@ -69,7 +70,15 @@ export const EMPLOYER_APPROVED_COMPANIES: Record<string, EmployerApproval> = {
       "e03a2b8c-f69b-42bb-bc43-13a5d0917291": "part_time",
     },
   },
-  // Eleni Manousou (emanousou@nobuhotels.com) authorized listing on 2026-10-05.
+  "1b11e815-e80b-4b35-affe-55c1d1fc16db": {
+    companyName: "MOfit Gym and Fitness Centre",
+    approvedOn: "2026-09-30",
+  },
+  "6dde0e9d-e04a-4d95-a9d3-50fa9ffcc961": {
+    companyName: "Woodstock BoatBuilders",
+    approvedOn: "2026-09-30",
+  },
+  // Owner-attested company-wide approval on 2026-10-05; see the approval ledger.
   "9fde7fc7-70b3-4354-9d11-d520f4ec09f9": {
     companyName: "Nobu Barbuda",
     approvedOn: "2026-10-05",
