@@ -77,3 +77,13 @@ Run `npm test` and the CI-equivalent production build. Focused server-rendered
 schema tests are in `tests/jobposting-approvals.spec.tsx`. They use the public
 record snapshots and real scoped approvals, with synthetic modifications only
 for negative, ownership-transfer and expiry-boundary scenarios.
+
+## October 5, 2026 Nobu Barbuda
+
+Eleni Manousou (`emanousou@nobuhotels.com`) authorized JobLink to publish the
+Executive Chef (Japanese & Peruvian cuisine) listing on October 5, 2026. Nobu
+Barbuda is recorded in `EMPLOYER_APPROVED_COMPANIES` under company id
+`9fde7fc7-70b3-4354-9d11-d520f4ec09f9` with `approvedOn: "2026-10-05"`.
+MOfit and Woodstock remain job-scoped in `EMPLOYER_APPROVED_JOBS` and were not
+duplicated into the company-wide map.
+

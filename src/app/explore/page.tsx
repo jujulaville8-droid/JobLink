@@ -28,6 +28,7 @@ const employerLinks = [
 
 const adminLinks = [
   { href: "/admin/approvals", label: "Approvals", desc: "Review and approve pending job listings", Icon: ShieldCheck },
+  { href: "/admin/companies", label: "Company Logos", desc: "Upload or replace logos for any company", Icon: Building },
   { href: "/admin/users", label: "Users", desc: "Manage users, bans, and verification", Icon: Users },
   { href: "/admin/analytics", label: "Analytics", desc: "Platform stats and key metrics", Icon: BarChart3 },
   { href: "/admin/featured", label: "Featured Listings", desc: "Manage which jobs are featured", Icon: Star },

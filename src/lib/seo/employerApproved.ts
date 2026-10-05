@@ -69,6 +69,11 @@ export const EMPLOYER_APPROVED_COMPANIES: Record<string, EmployerApproval> = {
       "e03a2b8c-f69b-42bb-bc43-13a5d0917291": "part_time",
     },
   },
+  // Eleni Manousou (emanousou@nobuhotels.com) authorized listing on 2026-10-05.
+  "9fde7fc7-70b3-4354-9d11-d520f4ec09f9": {
+    companyName: "Nobu Barbuda",
+    approvedOn: "2026-10-05",
+  },
 };
 
 export function getEmployerApproval(
