@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
+import { jobMetaDescription } from "@/lib/seo/job-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, status, expires_at, company:companies(company_name, logo_url)")
+    .select("title, description, location, status, expires_at, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
   const title = `${job.title} at ${company?.company_name || "Company"} | JobLinks`;
-  const description = `Apply for ${job.title} at ${company?.company_name || "a company"} in Antigua and Barbuda. Browse jobs on JobLinks, Antigua's #1 job platform.`;
+  const description = jobMetaDescription({ ...job, companyName: company?.company_name });
   const url = `https://joblinkantigua.com/jobs/${id}`;
 
   return {
