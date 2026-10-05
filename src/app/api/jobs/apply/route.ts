@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, title, company_id, posted_by_admin, expires_at, companies(company_name, user_id)')
+      .select('id, status, title, company_id, posted_by_admin, expires_at, companies(company_name, user_id, contact_email)')
       .eq('id', job_id)
       .single()
 
@@ -206,9 +206,18 @@ export async function POST(request: NextRequest) {
         .eq('id', company.user_id)
         .single()
 
-      if (employerUser?.email) {
+      // Imported listings belong to businesses that never created a JobLink
+      // account: their company record is owned by a placeholder user, so the
+      // account email is an inbox the business never sees. Those companies
+      // carry the business's real contact in companies.contact_email (only
+      // imported companies have one set), so notify that address instead.
+      // Directly posted jobs have no contact_email and keep the exact
+      // current behavior: notify the account owner's email.
+      const notifyEmail = company.contact_email || employerUser?.email
+
+      if (notifyEmail) {
         await sendEmail({
-          to: employerUser.email,
+          to: notifyEmail,
           type: 'new_applicant',
           data: {
             applicant_name: seekerName,
