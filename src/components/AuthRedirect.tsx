@@ -1,5 +1,6 @@
 "use client";
 
+import { claimReturnTo } from "@/lib/claim-links";
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
@@ -32,7 +33,7 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
       const returnTo = new URLSearchParams(window.location.search).get('returnTo');
       const fromMembers = returnTo === '/members';
       const fromFeedback = returnTo && /^\/placement-feedback\/[0-9a-f-]{36}$/i.test(returnTo);
-      window.location.href = fromMembers ? '/members' : fromFeedback ? returnTo : '/dashboard';
+      window.location.href = claimReturnTo(returnTo) ?? (fromMembers ? '/members' : fromFeedback ? returnTo : '/dashboard');
     }
   }, [isAuthenticated, isEmailVerified, isLoading, isResetPassword]);
 

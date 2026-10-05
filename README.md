@@ -81,3 +81,10 @@ verified on Vercel on September 25, 2026. See `docs/deployment.md`.
   expressions.
 - `src/proxy.ts` — Next.js 16's renamed middleware. Refreshes the Supabase
   session, redirects unverified users, and blocks banned accounts.
+
+## Claim an admin-created company
+
+Admins can generate a private, single-use company claim link from
+**Company Claim Links** (`/admin/jobs`). Employers sign up or sign in, verify
+their email and claim the existing company and jobs without a duplicate profile.
+See [the admin workflow, migration prerequisites and tests](docs/company-claims.md).

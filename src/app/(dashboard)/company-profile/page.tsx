@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { CLAIM_REQUIRED_MESSAGE } from '@/lib/claim-links';
 import { INDUSTRIES } from '@/lib/types';
 
 interface CompanyForm {
@@ -262,7 +263,7 @@ export default function CompanyProfilePage() {
           .single();
 
         if (error) {
-          setMessage({ type: 'error', text: 'Your profile could not be saved. Your details are still here — please try again.' });
+          setMessage({ type: 'error', text: error.message === 'COMPANY_CLAIM_REQUIRED' ? CLAIM_REQUIRED_MESSAGE : 'Your profile could not be saved. Your details are still here — please try again.' });
           setSaving(false);
           return;
         }
@@ -275,7 +276,7 @@ export default function CompanyProfilePage() {
           .single();
 
         if (error) {
-          setMessage({ type: 'error', text: 'Your profile could not be saved. Your details are still here — please try again.' });
+          setMessage({ type: 'error', text: error.message === 'COMPANY_CLAIM_REQUIRED' ? CLAIM_REQUIRED_MESSAGE : 'Your profile could not be saved. Your details are still here — please try again.' });
           setSaving(false);
           return;
         }

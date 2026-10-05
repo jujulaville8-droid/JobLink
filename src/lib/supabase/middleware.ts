@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
   const publicPaths = [
     '/login', '/signup', '/employer/login', '/employer/signup',
     '/forgot-password', '/reset-password', '/verify-email',
-    '/auth/', '/about', '/privacy', '/terms', '/explore',
+    '/claim/', '/auth/', '/about', '/privacy', '/terms', '/explore',
     '/api/', '/companies', '/employers/upgrade', '/employers/hiring-help', '/jobs', '/success-stories',
   ]
   // Members performs its own account checks and preserves its signup destination.
