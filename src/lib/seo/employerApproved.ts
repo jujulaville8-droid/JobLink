@@ -74,6 +74,11 @@ export const EMPLOYER_APPROVED_COMPANIES: Record<string, EmployerApproval> = {
     companyName: "Nobu Barbuda",
     approvedOn: "2026-10-05",
   },
+  // Crystal Valentine (ceostartimesadventuretours@gmail.com) authorized listing on 2026-10-06.
+  "e9703c50-bfef-41fb-99f1-5ba9387418c2": {
+    companyName: "Star Times Adventure Tours",
+    approvedOn: "2026-10-06",
+  },
 };
 
 export function getEmployerApproval(

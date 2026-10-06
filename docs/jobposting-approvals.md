@@ -87,3 +87,12 @@ Barbuda is recorded in `EMPLOYER_APPROVED_COMPANIES` under company id
 MOfit and Woodstock remain job-scoped in `EMPLOYER_APPROVED_JOBS` and were not
 duplicated into the company-wide map.
 
+## October 6, 2026 Star Times Adventure Tours
+
+Crystal Valentine (`ceostartimesadventuretours@gmail.com`) authorized JobLink to
+publish the Driver Guide listing on October 6, 2026. Star Times Adventure Tours
+is recorded in `EMPLOYER_APPROVED_COMPANIES` under company id
+`e9703c50-bfef-41fb-99f1-5ba9387418c2` with `approvedOn: "2026-10-06"`, the
+same way Nobu Barbuda was added. Live job:
+`232f9e93-d28c-4e8b-bdb5-3c85093e61d6`. Its job type is stored as Full Time
+as a placeholder until the employer confirms full- or part-time.
