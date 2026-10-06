@@ -59,7 +59,7 @@ it('falls back to real owner email when contact is missing; exposes only that ow
   expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'owner@example.test', data: expect.objectContaining({ review_path: `/my-listings/${jobId}/applicants` }) }))
 })
 
-it.each(['bad address', 'one@example.test,two@example.test', 'x@example.test\r\nBcc: leak@example.test', 'admin-company-1@joblinkantigua.com'])('fails closed for invalid saved contact %s', async contact => {
+it.each(['bad address', 'one@example.test,two@example.test', 'x@example.test\r\nBcc: leak@example.test', 'admin-company-1@joblinkantigua.com', 'import+fixture-company@joblinkantigua.com'])('fails closed for invalid saved contact %s', async contact => {
   rows.companies!.contact_email = contact
   rows.owner!.email = 'owner@example.test'
   expect(await notifyNewApplicant('saved-app', uid)).toBe(false)
@@ -67,13 +67,27 @@ it.each(['bad address', 'one@example.test,two@example.test', 'x@example.test\r\n
   expect(mocks.send).not.toHaveBeenCalled()
 })
 
-it('never falls back to a placeholder or downloads for a mismatched application user', async () => {
+it.each(['admin-company-12@joblinkantigua.com', 'import+fixture-company@joblinkantigua.com', ' IMPORT+FIXTURE-COMPANY@JOBLINKANTIGUA.COM '])('never falls back to placeholder %s or downloads for a mismatched application user', async ownerEmail => {
   rows.companies!.contact_email = null
+  rows.owner!.email = ownerEmail
   expect(await notifyNewApplicant('saved-app', uid)).toBe(false)
   rows.companies!.contact_email = 'owner@example.test'
   expect(await notifyNewApplicant('saved-app', 'someone-else')).toBe(false)
   expect(mocks.download).not.toHaveBeenCalled()
   expect(mocks.send).not.toHaveBeenCalled()
+})
+
+it('uses a real explicit contact for a legacy imported owner without a placeholder dashboard', async () => {
+  rows.owner!.email = 'import+fixture-company@joblinkantigua.com'
+  expect(await notifyNewApplicant('saved-app', uid)).toBe(true)
+  expect(mocks.send.mock.calls[0][0]).toMatchObject({ to: 'emanousou@nobuhotels.com', data: { cv_attached: true, review_path: null } })
+})
+
+it('preserves legitimate plus-addressed owner mailboxes outside reserved placeholder formats', async () => {
+  rows.companies!.contact_email = null
+  rows.owner!.email = 'import+recruiting@example.test'
+  expect(await notifyNewApplicant('saved-app', uid)).toBe(true)
+  expect(mocks.send.mock.calls[0][0]).toMatchObject({ to: 'import+recruiting@example.test', data: { review_path: `/my-listings/${jobId}/applicants` } })
 })
 
 it('requires a verified owner account for email fallback; explicit admin contact remains usable', async () => {

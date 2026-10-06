@@ -76,6 +76,7 @@ describe('admin company notification email boundary', () => {
     'not-email', 'one@example.com,two@example.com', 'one@example.com;two@example.com',
     'Hiring Manager <hiring@example.com>', 'hiring@example.com\r\nBcc: other@example.com',
     'admin-company-example@joblinkantigua.com', 'ADMIN-COMPANY-123@JOBLINKANTIGUA.COM',
+    'import+fixture-company@joblinkantigua.com',
     '.hiring@example.com', 'hiring..team@example.com', 'hiring@example',
     'a'.repeat(65) + '@example.com', 42, { email: 'hiring@example.com' }, ['hiring@example.com'],
   ])('rejects unsafe or malformed recipient %j', async contactEmail => {

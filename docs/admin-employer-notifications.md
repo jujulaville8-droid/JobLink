@@ -22,7 +22,8 @@ After a verified seeker successfully submits an application, the server rechecks
 the saved application's seeker, job, and company before resolving the recipient.
 It uses a valid saved `companies.contact_email`, or a valid verified account-owner
 email when the contact is null/cleared. Invalid nonempty contacts fail closed.
-`admin-company-…@joblinkantigua.com` placeholders and banned owners/applicants
+`admin-company-…@joblinkantigua.com` and legacy `import+…@joblinkantigua.com`
+placeholders and banned owners/applicants
 do not receive notifications. Recipient addresses and CV paths supplied in the
 application request are ignored. The company contact is a business contact in the
 existing publicly readable company table, not a secret credential.

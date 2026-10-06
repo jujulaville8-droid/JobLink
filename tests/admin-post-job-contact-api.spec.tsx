@@ -111,7 +111,7 @@ describe('admin posting employer notification email', () => {
     expect(mocks.listingInsert).toHaveBeenCalledOnce()
   })
 
-  it.each(['not-email', 'one@example.com,two@example.com', 'admin-company-dead@joblinkantigua.com', 'owner@example.com\r\nBcc: other@example.com', 42])(
+  it.each(['not-email', 'one@example.com,two@example.com', 'admin-company-dead@joblinkantigua.com', 'import+fixture-company@joblinkantigua.com', 'owner@example.com\r\nBcc: other@example.com', 42])(
     'rejects an invalid existing-company contact %j before writes', async contactEmail => {
       expect((await send({ ...job, company_id: companyId, contact_email: contactEmail })).status).toBe(400)
       expect(mocks.companyLookup).not.toHaveBeenCalled()
@@ -123,7 +123,7 @@ describe('admin posting employer notification email', () => {
     },
   )
 
-  it.each(['not-email', 'one@example.com;two@example.com', 'admin-company-dead@joblinkantigua.com', { email: 'owner@example.com' }])(
+  it.each(['not-email', 'one@example.com;two@example.com', 'admin-company-dead@joblinkantigua.com', 'import+fixture-company@joblinkantigua.com', { email: 'owner@example.com' }])(
     'rejects an invalid new-company contact %j before placeholder creation or writes', async contactEmail => {
       expect((await send({ ...job, new_company: { company_name: 'Example Employer', contact_email: contactEmail } })).status).toBe(400)
       expect(mocks.companyLookup).not.toHaveBeenCalled()

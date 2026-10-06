@@ -2,9 +2,9 @@ export type CompanyContactEmailResult =
   | { valid: true; email: string | null }
   | { valid: false }
 
-/** Admin-created accounts have no employer inbox and must never receive CVs. */
+/** Generated admin/import accounts have no employer inbox and must never receive CVs. */
 export function isAdminCompanyPlaceholderEmail(email: string): boolean {
-  return /^admin-company-[^@]*@joblinkantigua\.com$/i.test(email.trim())
+  return /^(?:admin-company-|import\+)[^@]*@joblinkantigua\.com$/i.test(email.trim())
 }
 
 /** A single plain mailbox address; null or blank explicitly clears the contact. */
