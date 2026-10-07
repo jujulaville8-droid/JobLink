@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import JobDetailPage from '@/app/jobs/[id]/page';
 import observedJobs from './fixtures/approved-job-listings.json';
 import {
+  EMPLOYER_APPROVED_COMPANIES,
   EMPLOYER_APPROVED_JOBS,
   getEmployerApproval,
 } from '@/lib/seo/employerApproved';
@@ -17,6 +18,7 @@ const candidates = observedJobs.map((job) => ({
   job,
 }));
 const originalApprovals = { ...EMPLOYER_APPROVED_JOBS };
+const originalCompanyApprovals = { ...EMPLOYER_APPROVED_COMPANIES };
 
 function makeJob(candidate = candidates[0]) {
   return {
@@ -58,13 +60,15 @@ beforeEach(() => {
 });
 afterEach(() => {
   Object.assign(EMPLOYER_APPROVED_JOBS, originalApprovals);
+  Object.assign(EMPLOYER_APPROVED_COMPANIES, originalCompanyApprovals);
   vi.useRealTimers();
 });
 
-describe.each(candidates)('$companyName vacancy approval', (candidate) => {
-  it('removes JobPosting when its vacancy approval is revoked', async () => {
+describe.each(candidates)('$companyName owner-attested approval', (candidate) => {
+  it('removes JobPosting when both vacancy and company approval are revoked', async () => {
     db.job = makeJob(candidate);
     delete EMPLOYER_APPROVED_JOBS[candidate.id];
+    delete EMPLOYER_APPROVED_COMPANIES[candidate.companyId];
     expect(getEmployerApproval(candidate.companyId, candidate.id)).toBeNull();
     expect((await schemas()).map((schema) => schema['@type'])).toEqual(['BreadcrumbList']);
     expect(await pageHtml()).toContain('Sign In to Apply');
@@ -98,9 +102,30 @@ describe.each(candidates)('$companyName vacancy approval', (candidate) => {
     expect(data[0].datePosted).not.toBe(EMPLOYER_APPROVED_JOBS[candidate.id].attestedOn);
   });
 
-  it('does not authorize another or future vacancy at the same company', async () => {
+  it('authorizes another or future vacancy under the explicit company-wide approval', async () => {
     db.job = { ...makeJob(candidate), id: 'synthetic-other-vacancy' };
-    expect(getEmployerApproval(candidate.companyId)).toBeNull();
+    expect(getEmployerApproval(candidate.companyId)).toMatchObject({
+      companyName: candidate.companyName,
+      approvedOn: '2026-09-30',
+    });
+    expect((await schemas()).map((schema) => schema['@type'])).toEqual(['JobPosting', 'BreadcrumbList']);
+    expect((await schemas())[0]).not.toHaveProperty('validThrough');
+  });
+
+  it('falls back to company-wide approval when vacancy-specific permission is removed', async () => {
+    db.job = makeJob(candidate);
+    delete EMPLOYER_APPROVED_JOBS[candidate.id];
+    expect(getEmployerApproval(candidate.companyId, candidate.id)).toBe(EMPLOYER_APPROVED_COMPANIES[candidate.companyId]);
+    expect((await schemas())[0]['@type']).toBe('JobPosting');
+  });
+
+  it('keeps vacancy-only permission scoped if company-wide approval is revoked, including after an owner change', async () => {
+    db.job = makeJob(candidate);
+    delete EMPLOYER_APPROVED_COMPANIES[candidate.companyId];
+    expect((await schemas())[0]['@type']).toBe('JobPosting');
+    db.job.id = 'synthetic-other-vacancy';
+    db.job.company.user_id = 'synthetic-claiming-employer';
+    expect(getEmployerApproval(candidate.companyId, db.job.id)).toBeNull();
     expect((await schemas()).map((schema) => schema['@type'])).toEqual(['BreadcrumbList']);
   });
 
@@ -111,27 +136,31 @@ describe.each(candidates)('$companyName vacancy approval', (candidate) => {
     expect((await schemas()).map((schema) => schema['@type'])).toEqual(['BreadcrumbList']);
   });
 
-  it('retains vacancy permission after PR17 changes the company owner', async () => {
+  it('retains vacancy and company permission after the company owner changes', async () => {
     db.job = makeJob(candidate);
     db.job.company.user_id = 'synthetic-claiming-employer';
     expect((await schemas())[0]['@type']).toBe('JobPosting');
-    db.job.id = 'synthetic-unapproved-existing-vacancy';
-    expect((await schemas()).map((schema) => schema['@type'])).toEqual(['BreadcrumbList']);
+    db.job.id = 'synthetic-other-existing-vacancy';
+    expect((await schemas())[0]['@type']).toBe('JobPosting');
   });
 });
 
 it('keeps legitimate self-posted jobs eligible without an approval entry', async () => {
   db.job!.id = 'synthetic-self-posted-job';
+  db.job!.company_id = 'synthetic-self-posting-company';
+  db.job!.company.id = db.job!.company_id;
   db.job!.posted_by_admin = false;
   expect((await schemas())[0]['@type']).toBe('JobPosting');
 });
 
 it('blocks unapproved imports even when the admin flag is false', async () => {
   delete EMPLOYER_APPROVED_JOBS[db.job!.id];
+  delete EMPLOYER_APPROVED_COMPANIES[db.job!.company_id];
   db.job!.posted_by_admin = false;
   db.job!.description += '\nImported by JobLink from a public job post';
   expect((await schemas()).map((schema) => schema['@type'])).toEqual(['BreadcrumbList']);
   Object.assign(EMPLOYER_APPROVED_JOBS, originalApprovals);
+  Object.assign(EMPLOYER_APPROVED_COMPANIES, originalCompanyApprovals);
   expect((await schemas())[0]['@type']).toBe('JobPosting');
 });
 
@@ -177,8 +206,16 @@ it.each([null, undefined, '', 'constructor', '__proto__', 'toString'])('rejects 
   expect(getEmployerApproval(companyId, candidates[0].id)).toBeNull();
 });
 
-it.each([null, undefined, '', 'constructor', '__proto__', 'toString'])('rejects missing or inherited vacancy key %s', (jobId) => {
-  expect(getEmployerApproval(candidates[0].companyId, jobId)).toBeNull();
+it.each([null, undefined, '', 'constructor', '__proto__', 'toString'])('does not mistake missing or inherited vacancy key %s for vacancy permission', (jobId) => {
+  expect(getEmployerApproval(candidates[0].companyId, jobId)).toBe(EMPLOYER_APPROVED_COMPANIES[candidates[0].companyId]);
+  expect(getEmployerApproval('synthetic-unapproved-company', jobId)).toBeNull();
+});
+
+it('retains Nobu Barbuda company-wide approval as explicitly owner-attested', () => {
+  expect(getEmployerApproval('9fde7fc7-70b3-4354-9d11-d520f4ec09f9', 'synthetic-nobu-vacancy')).toEqual({
+    companyName: 'Nobu Barbuda',
+    approvedOn: '2026-10-05',
+  });
 });
 
 it.each([

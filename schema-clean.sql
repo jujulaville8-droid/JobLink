@@ -43,6 +43,7 @@ CREATE TABLE public.companies (
   industry TEXT,
   website TEXT,
   location TEXT,
+  contact_email TEXT,
   is_verified BOOLEAN NOT NULL DEFAULT FALSE,
   is_pro BOOLEAN NOT NULL DEFAULT FALSE,
   pro_expires_at TIMESTAMPTZ,

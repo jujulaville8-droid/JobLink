@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { INDUSTRIES, JOB_TYPE_LABELS, type JobType } from '@/lib/types';
+import { parseCompanyContactEmail } from '@/lib/company-contact-email';
 
 type SalaryType = 'hourly' | 'weekly' | 'biweekly' | 'monthly' | 'annually';
 
@@ -14,6 +15,7 @@ interface CompanyOption {
   company_name: string;
   industry: string | null;
   location: string | null;
+  contact_email: string | null;
 }
 
 interface JobFormData {
@@ -33,6 +35,7 @@ interface NewCompanyData {
   location: string;
   website: string;
   description: string;
+  contact_email: string;
 }
 
 const cardBase =
@@ -66,6 +69,7 @@ export default function AdminPostJobPage() {
   const [companyMode, setCompanyMode] = useState<'existing' | 'new'>('existing');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [companySearch, setCompanySearch] = useState('');
+  const [existingContactEmail, setExistingContactEmail] = useState('');
 
   const [newCompany, setNewCompany] = useState<NewCompanyData>({
     company_name: '',
@@ -73,6 +77,7 @@ export default function AdminPostJobPage() {
     location: '',
     website: '',
     description: '',
+    contact_email: '',
   });
 
   const [form, setForm] = useState<JobFormData>({
@@ -107,7 +112,7 @@ export default function AdminPostJobPage() {
           const request = await response.json();
           setForm(prev => ({ ...prev, title: request.job_title, description: request.details }));
           setCompanySearch(request.company_name);
-          setNewCompany(prev => ({ ...prev, company_name: request.company_name }));
+          setNewCompany(prev => ({ ...prev, company_name: request.company_name, contact_email: request.email || '' }));
         } else {
           setServerError('Could not load this employer request. Return to Employer Requests and try again.');
         }
@@ -135,6 +140,9 @@ export default function AdminPostJobPage() {
     }
     if (companyMode === 'new' && !newCompany.company_name.trim()) {
       errs.nc_company_name = 'Company name is required';
+    }
+    if (!parseCompanyContactEmail(companyMode === 'existing' ? existingContactEmail : newCompany.contact_email).valid) {
+      errs.contact_email = 'Enter one valid employer notification email, or leave it blank.';
     }
 
     if (!form.title.trim()) errs.title = 'Job title is required';
@@ -179,6 +187,7 @@ export default function AdminPostJobPage() {
 
       if (companyMode === 'existing') {
         payload.company_id = selectedCompanyId;
+        payload.contact_email = existingContactEmail;
       } else {
         payload.new_company = newCompany;
       }
@@ -305,7 +314,7 @@ export default function AdminPostJobPage() {
                       <button
                         key={c.id}
                         type="button"
-                        onClick={() => { setSelectedCompanyId(c.id); setErrors(e => { const n = { ...e }; delete n.company; return n; }); }}
+                        onClick={() => { setSelectedCompanyId(c.id); setExistingContactEmail(c.contact_email || ''); setErrors(e => { const n = { ...e }; delete n.company; delete n.contact_email; return n; }); }}
                         className={cn(
                           'w-full text-left px-4 py-3 text-sm transition-colors',
                           selectedCompanyId === c.id
@@ -376,6 +385,19 @@ export default function AdminPostJobPage() {
                 />
               </div>
             )}
+            <div>
+              <label htmlFor="employer-notification-email" className="mb-1 block text-sm font-medium text-text">Employer notification email</label>
+              <input id="employer-notification-email" type="email" maxLength={254}
+                value={companyMode === 'existing' ? existingContactEmail : newCompany.contact_email}
+                onChange={event => {
+                  if (companyMode === 'existing') setExistingContactEmail(event.target.value);
+                  else updateNewCompany('contact_email', event.target.value);
+                  setErrors(previous => { const next = { ...previous }; delete next.contact_email; return next; });
+                }}
+                placeholder="employer@example.com" className={cn(inputBase, errors.contact_email ? 'border-red-400' : 'border-border/40')} />
+              <p className="mt-1 text-xs text-text-muted">Saved for this company. Use an inbox the employer has authorized to receive applications. If blank, notifications use the verified employer account email when available.</p>
+              {errors.contact_email && <p className="mt-1 text-xs text-red-500">{errors.contact_email}</p>}
+            </div>
           </div>
         </motion.div>
 

@@ -10,7 +10,7 @@ export async function GET() {
 
   const { data: companies, error } = await admin
     .from('companies')
-    .select('id, company_name, industry, location, logo_url')
+    .select('id, company_name, industry, location, logo_url, contact_email')
     .order('company_name', { ascending: true })
 
   if (error) {

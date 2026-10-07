@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
+import { notifyNewApplicant } from '@/lib/applicant-notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
       if (insertError.code === '23505') {
         return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
       }
-      console.error('[apply] insert application error:', insertError)
+      console.error('[apply] Failed to save application')
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
     }
 
@@ -97,10 +98,6 @@ export async function POST(request: NextRequest) {
       .select('first_name, last_name, cv_url')
       .eq('id', seekerProfile.id)
       .single()
-
-    const seekerName = seekerInfo
-      ? `${seekerInfo.first_name || ''} ${seekerInfo.last_name || ''}`.trim() || 'A candidate'
-      : 'A candidate'
 
     // ── Auto-create messaging thread ──
     // Use admin client to bypass RLS since we've already verified authorization.
@@ -151,7 +148,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (convError) {
-          console.error('[apply] create conversation error:', convError)
+          console.error('[apply] Failed to create application conversation')
         }
 
         if (conversation) {
@@ -166,7 +163,7 @@ export async function POST(request: NextRequest) {
             ])
 
           if (partError) {
-            console.error('[apply] insert participants error:', partError)
+            console.error('[apply] Failed to add application conversation participants')
           }
 
           // Insert the first message with CV as attachment
@@ -180,11 +177,11 @@ export async function POST(request: NextRequest) {
             })
 
           if (msgError) {
-            console.error('[apply] insert message error:', msgError)
+            console.error('[apply] Failed to save application message')
           }
         }
-      } catch (adminErr) {
-        console.error('[apply] admin client unavailable; application thread was not created:', adminErr)
+      } catch {
+        console.error('[apply] Application conversation unavailable')
       }
     }
 
@@ -199,42 +196,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (company?.user_id) {
-      const { data: employerUser } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', company.user_id)
-        .single()
-
-      // Imported listings belong to businesses that never created a JobLink
-      // account: their company record is owned by a placeholder user, so the
-      // account email is an inbox the business never sees. Those companies
-      // carry the business's real contact in companies.contact_email (only
-      // imported companies have one set), so notify that address instead.
-      // Directly posted jobs have no contact_email and keep the exact
-      // current behavior: notify the account owner's email.
-      const notifyEmail = company.contact_email || employerUser?.email
-
-      if (notifyEmail) {
-        await sendEmail({
-          to: notifyEmail,
-          type: 'new_applicant',
-          data: {
-            applicant_name: seekerName,
-            job_title: job.title,
-            application_url: `${BASE_URL}/my-listings`,
-          },
-        })
-      }
-    }
+    await notifyNewApplicant(application.id, user.id)
 
     return NextResponse.json({
       success: true,
       application,
       conversation_id: conversationId,
     }, { status: 201 })
-  } catch (err) {
-    console.error('[apply] unexpected error:', err)
+  } catch {
+    // Database/provider errors may include cover letters, contact data or CV paths.
+    console.error('[apply] Application request failed')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

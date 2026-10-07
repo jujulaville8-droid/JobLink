@@ -9,6 +9,9 @@ interface SendEmailParams {
   type: string
   data?: Record<string, unknown>
   idempotencyKey?: string
+  replyTo?: string
+  /** Private file bytes only; never ask the provider to fetch a storage URL. */
+  attachments?: { filename: string; content: Buffer; contentType: string }[]
 }
 
 /**
@@ -16,11 +19,11 @@ interface SendEmailParams {
  * Calls Resend directly (server-side only).
  * Never throws — logs errors instead so email failures don't break user flows.
  */
-export async function sendEmail({ to, type, data, idempotencyKey }: SendEmailParams): Promise<{ success: true; id: string } | { success: false }> {
+export async function sendEmail({ to, type, data, idempotencyKey, replyTo, attachments }: SendEmailParams): Promise<{ success: true; id: string } | { success: false }> {
   try {
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey) {
-      console.warn(`[sendEmail] RESEND_API_KEY not set — skipping "${type}" email to ${to}`)
+      console.warn(`[sendEmail] RESEND_API_KEY not set — skipping "${type}" email`)
       return { success: false }
     }
 
@@ -35,14 +38,17 @@ export async function sendEmail({ to, type, data, idempotencyKey }: SendEmailPar
       to,
       subject,
       html,
+      ...(replyTo ? { replyTo } : {}),
+      ...(attachments?.length ? { attachments } : {}),
     }, idempotencyKey ? { idempotencyKey } : undefined)
 
     if (error) {
-      console.error(`[sendEmail] Failed "${type}" to ${to}:`, error.message)
+      console.error(`[sendEmail] Provider rejected "${type}" email`)
     }
     return !error && sent?.id ? { success: true, id: sent.id } : { success: false }
-  } catch (err) {
-    console.error(`[sendEmail] ${type} to ${to} error:`, err)
+  } catch {
+    // Provider errors can contain recipient addresses or private attachment data.
+    console.error(`[sendEmail] Failed "${type}" email`)
     return { success: false }
   }
 }

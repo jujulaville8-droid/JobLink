@@ -1,16 +1,20 @@
-# Vacancy approvals for Google JobPosting
+# Employer approvals for Google JobPosting
 
 Imported/admin-posted jobs require employer authorization before the job detail
 page emits `JobPosting`. A single-vacancy yes must be recorded in
 `EMPLOYER_APPROVED_JOBS`, keyed by job ID and bound to that job's company ID.
-Other jobs at the company remain excluded unless independently authorized.
+Other jobs at the company remain excluded unless independently authorized or the
+owner explicitly attests company-wide permission covering current and future
+jobs. Record that scope in `EMPLOYER_APPROVED_COMPANIES`, keyed by company ID.
 Existing legitimate self-posted listings and Top Bun's existing company-wide
-approval/type correction retain their behavior.
+approval/type correction retain their behavior. Approval never changes a job's
+status, expiry, posted date, pay, or description.
 
 ## September 30, 2026 owner attestation
 
-Both exact vacancies are enabled in this patch. The site owner directly confirmed
-that both employers approved publication on September 30, 2026 at 20:02 UTC in
+The original scoped approvals enabled these exact vacancies. The site owner
+directly confirmed that both employers approved publication on September 30,
+2026 at 20:02 UTC in
 message `Sentinel_cace3b51c42c81919512b87c905bc49a`. Each entry records that date
 as `attestedOn` and identifies the owner attestation in `evidenceReference`.
 This does not assert that historical employer email replies were independently
@@ -70,20 +74,35 @@ Reviewed `codex/company-claim-flow` at
 `0e09b94ee6ba662ce41b47c5a4b48d8ab49f3a4b`. Its claim migration changes
 `companies.user_id` and preserves company ID, job ID and `posted_by_admin`.
 Approvals use those stable IDs, not the owner or company name. Claiming a company
-therefore neither loses an existing vacancy approval nor authorizes its other
-admin-posted jobs. The regression suite exercises both outcomes.
+therefore retains an existing approval and does not itself expand its scope.
+Other admin-posted jobs are authorized only when an explicit company-wide
+approval exists. The regression suite exercises approval retention and removal,
+including after an owner change.
 
 Run `npm test` and the CI-equivalent production build. Focused server-rendered
 schema tests are in `tests/jobposting-approvals.spec.tsx`. They use the public
-record snapshots and real scoped approvals, with synthetic modifications only
+record snapshots and explicit approvals, with synthetic modifications only
 for negative, ownership-transfer and expiry-boundary scenarios.
 
-## October 5, 2026 Nobu Barbuda
+## October 5, 2026 company-wide owner attestation
 
-Eleni Manousou (`emanousou@nobuhotels.com`) authorized JobLink to publish the
-Executive Chef (Japanese & Peruvian cuisine) listing on October 5, 2026. Nobu
-Barbuda is recorded in `EMPLOYER_APPROVED_COMPANIES` under company id
-`9fde7fc7-70b3-4354-9d11-d520f4ec09f9` with `approvedOn: "2026-10-05"`.
-MOfit and Woodstock remain job-scoped in `EMPLOYER_APPROVED_JOBS` and were not
-duplicated into the company-wide map.
+The owner explicitly requested company-level Google Jobs approvals for Nobu
+Barbuda, MOfit, and Woodstock in the October 5 task, delegated from thread
+`01a0f0a4-b7e2-7538-9351-8cf94b845037`. This is the provenance for the
+company-wide entries; no direct employer email or independent employer evidence
+is claimed. The owner supplied the approval dates below, including September 30
+for MOfit and Woodstock.
 
+| Company | Company ID | Approved on | Scope |
+| --- | --- | --- | --- |
+| Nobu Barbuda | `9fde7fc7-70b3-4354-9d11-d520f4ec09f9` | 2026-10-05 | Current and future jobs |
+| MOfit Gym and Fitness Centre | `1b11e815-e80b-4b35-affe-55c1d1fc16db` | 2026-09-30 | Current and future jobs |
+| Woodstock BoatBuilders | `6dde0e9d-e04a-4d95-a9d3-50fa9ffcc961` | 2026-09-30 | Current and future jobs |
+
+Nobu's existing company-wide entry is retained. MOfit and Woodstock now also
+appear in `EMPLOYER_APPROVED_COMPANIES`. Their original vacancy entries remain
+in `EMPLOYER_APPROVED_JOBS` so job-specific metadata takes precedence, including
+Woodstock's October 29 deadline. That deadline applies only to the original
+vacancy; no deadline is inferred for another or future job. Unapproved companies
+remain excluded from imported/admin-posted JobPosting markup. No job content,
+expiration policy, database records, or live settings were changed.

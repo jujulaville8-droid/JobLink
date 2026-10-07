@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { parseCompanyContactEmail } from '@/lib/company-contact-email';
 
 interface CompanyRow {
   id: string;
@@ -9,6 +10,7 @@ interface CompanyRow {
   industry: string | null;
   location: string | null;
   logo_url: string | null;
+  contact_email: string | null;
 }
 
 function resizeImage(file: File, maxSize: number): Promise<Blob> {
@@ -57,6 +59,8 @@ export default function AdminCompaniesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pasteUrl, setPasteUrl] = useState('');
   const [pasteEdited, setPasteEdited] = useState(false);
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactEdited, setContactEdited] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -65,6 +69,8 @@ export default function AdminCompaniesPage() {
     setSelectedId(company?.id ?? null);
     setPasteUrl(company?.logo_url || '');
     setPasteEdited(false);
+    setContactEmail(company?.contact_email || '');
+    setContactEdited(false);
     setMessage(null);
   }, []);
 
@@ -111,6 +117,35 @@ export default function AdminCompaniesPage() {
 
   const selected = companies.find((c) => c.id === selectedId) || null;
 
+  async function saveContactEmail(value: string) {
+    if (!selected) return;
+    const parsed = parseCompanyContactEmail(value);
+    if (!parsed.valid) {
+      setMessage({ type: 'error', text: 'Enter one valid employer notification email, or leave it blank to clear.' });
+      return;
+    }
+    setSaving(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/admin/companies', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: selected.id, contact_email: parsed.email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to save notification email');
+      const updated = data.company as CompanyRow;
+      setCompanies((prev) => prev.map((company) => company.id === updated.id ? { ...company, ...updated } : company));
+      setContactEmail(updated.contact_email || '');
+      setContactEdited(false);
+      setMessage({ type: 'success', text: parsed.email ? 'Employer notification email saved.' : 'Employer notification email cleared.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to save notification email' });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function saveLogoUrl(nextUrl: string) {
     if (!selected) return;
     setSaving(true);
@@ -147,7 +182,7 @@ export default function AdminCompaniesPage() {
     const file = e.target.files?.[0];
     if (!file || !selected) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
       setMessage({ type: 'error', text: 'Please upload an image file.' });
       return;
     }
@@ -191,16 +226,13 @@ export default function AdminCompaniesPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold font-display text-primary">Company logos</h1>
+        <h1 className="text-2xl font-bold font-display text-primary">Companies</h1>
         <Link href="/admin/post-job" className="text-sm text-primary underline">
           Post a job
         </Link>
       </div>
       <p className="mb-8 text-sm text-text-light">
-        Set or replace logos for any company, including admin-posted placeholders
-        like Nobu Barbuda, MOfit, and Woodstock. Uploads use the same{' '}
-        <code className="rounded bg-bg-alt px-1">company-logos</code> storage bucket
-        as employer profiles.
+        Manage company logos and the employer inbox that receives applicant notifications.
       </p>
 
       {message && (
@@ -255,6 +287,7 @@ export default function AdminCompaniesPage() {
                   <li key={company.id}>
                     <button
                       type="button"
+                      disabled={saving || uploading}
                       onClick={() => selectCompany(company)}
                       className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
                         active
@@ -300,11 +333,29 @@ export default function AdminCompaniesPage() {
 
           <div className="rounded-2xl border border-border bg-white p-5 sm:p-6">
             {!selected ? (
-              <p className="text-sm text-text-light">Select a company to manage its logo.</p>
+              <p className="text-sm text-text-light">Select a company to manage its logo and notification email.</p>
             ) : (
               <>
                 <h2 className="text-lg font-semibold text-text">{selected.company_name}</h2>
                 <p className="mt-1 break-all text-xs text-text-light">{selected.id}</p>
+
+                <div className="mt-6">
+                  <label htmlFor="company-contact-email" className="block text-sm font-medium text-text">Employer notification email</label>
+                  <input id="company-contact-email" type="email" maxLength={254} disabled={saving || uploading}
+                    value={contactEdited ? contactEmail : selected.contact_email || ''}
+                    onChange={(event) => { setContactEdited(true); setContactEmail(event.target.value); }}
+                    placeholder="employer@example.com"
+                    className="mt-2 block w-full rounded-lg border border-border px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary" />
+                  <p className="mt-2 text-xs text-text-light">Use an inbox the employer has authorized to receive applications. If blank, notifications use the verified employer account email when available.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" disabled={saving || uploading}
+                      onClick={() => saveContactEmail(contactEdited ? contactEmail : selected.contact_email || '')}
+                      className="min-h-11 rounded-lg border border-border px-4 py-2 text-sm font-medium hover:bg-bg-alt disabled:opacity-50">Save notification email</button>
+                    <button type="button" disabled={saving || uploading || !selected.contact_email}
+                      onClick={() => saveContactEmail('')}
+                      className="min-h-11 rounded-lg border border-border px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">Clear notification email</button>
+                  </div>
+                </div>
 
                 <div className="mt-6 flex items-center gap-4">
                   {selected.logo_url ? (
@@ -331,7 +382,7 @@ export default function AdminCompaniesPage() {
                       {uploading ? 'Uploading…' : 'Upload logo'}
                     </button>
                     <p className="mt-2 text-xs text-text-light">
-                      PNG or JPG, up to 5 MB. Resized to a square like employer uploads.
+                      PNG, JPG, or WebP, up to 5 MB. Your full logo stays visible.
                     </p>
                     <input
                       ref={fileInputRef}
@@ -351,11 +402,13 @@ export default function AdminCompaniesPage() {
                   <input
                     id="logo-url"
                     type="url"
+                    disabled={saving || uploading}
                     value={pasteEdited ? pasteUrl : selected?.logo_url || ''}
                     onChange={(e) => { setPasteEdited(true); setPasteUrl(e.target.value); }}
                     placeholder="https://…"
                     className="mt-2 block w-full rounded-lg border border-border px-4 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                   />
+                  <p className="mt-2 text-xs text-text-light">Use an existing company-owned logo storage URL. Upload a file to add a new logo.</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"

@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Resend } from 'resend'
 import { BASE_URL } from '@/lib/email'
 import { buildEmailHtml } from '@/lib/email-templates'
+import { parseCompanyContactEmail } from '@/lib/company-contact-email'
 
 const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
 
@@ -114,7 +115,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
   }
 
-  const body = await req.json()
+  const body = await req.json().catch(() => null)
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
   const {
     // Company
     company_id,
@@ -130,15 +134,29 @@ export async function POST(req: NextRequest) {
   } = body
 
   // Validate required job fields
-  if (!title?.trim() || !description?.trim() || !category || !job_type) {
+  if (typeof title !== 'string' || !title.trim() || typeof description !== 'string' || !description.trim() || !category || !job_type) {
     return NextResponse.json({ error: 'Missing required job fields' }, { status: 400 })
   }
 
   let resolvedCompanyId: string = company_id
+  if (company_id && (typeof company_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(company_id))) {
+    return NextResponse.json({ error: 'Invalid company_id' }, { status: 400 })
+  }
+  if (new_company && (typeof new_company !== 'object' || Array.isArray(new_company))) {
+    return NextResponse.json({ error: 'Invalid company details' }, { status: 400 })
+  }
+  // Older callers that omit this field keep the saved contact unchanged.
+  const contactProvided = company_id ? Object.hasOwn(body, 'contact_email') : new_company && Object.hasOwn(new_company, 'contact_email')
+  const contact = contactProvided
+    ? parseCompanyContactEmail(company_id ? body.contact_email : new_company.contact_email)
+    : { valid: true as const, email: null }
+  if (!contact.valid) {
+    return NextResponse.json({ error: 'Enter one valid employer notification email, or leave it blank to clear.' }, { status: 400 })
+  }
 
   // Create new company if needed
   if (!company_id && new_company) {
-    if (!new_company.company_name?.trim()) {
+    if (typeof new_company.company_name !== 'string' || !new_company.company_name.trim()) {
       return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
     }
 
@@ -180,6 +198,7 @@ export async function POST(req: NextRequest) {
           location: new_company.location || null,
           website: new_company.website || null,
           description: new_company.description || null,
+          contact_email: contact.email,
           is_verified: false,
           is_pro: false,
         })
@@ -196,6 +215,15 @@ export async function POST(req: NextRequest) {
 
   if (!resolvedCompanyId) {
     return NextResponse.json({ error: 'Company is required' }, { status: 400 })
+  }
+
+  if (contactProvided) {
+    const { data: company, error: contactError } = await admin.from('companies')
+      .update({ contact_email: contact.email }).eq('id', resolvedCompanyId).select('id').maybeSingle()
+    if (contactError) {
+      return NextResponse.json({ error: 'Failed to save employer notification email.' }, { status: 503 })
+    }
+    if (!company) return NextResponse.json({ error: 'Company not found' }, { status: 404 })
   }
 
   const { data: listing, error: listingError } = await admin
