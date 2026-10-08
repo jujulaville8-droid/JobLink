@@ -4,10 +4,11 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getSafeReturnTo } from '@/lib/return-to'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
-  const returnTo = searchParams.get('returnTo')
+  const returnTo = getSafeReturnTo(searchParams.get('returnTo'))
   const verified = searchParams.get('verified') === 'true'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -106,7 +107,7 @@ export default function LoginPage() {
 
     // Redirect based on role — full page nav to avoid AuthRedirect race
     let dest = '/jobs'
-    if (returnTo && returnTo.startsWith('/')) {
+    if (returnTo) {
       dest = returnTo
     } else if (userRole === 'admin') {
       dest = '/dashboard'

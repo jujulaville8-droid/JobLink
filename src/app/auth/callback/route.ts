@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getSafeReturnTo } from '@/lib/return-to'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -120,9 +121,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const returnTo = searchParams.get('returnTo')
+    const returnTo = getSafeReturnTo(searchParams.get('returnTo'))
     let dest: string
-    if (returnTo && returnTo.startsWith('/')) {
+    if (returnTo) {
       dest = returnTo
     } else if (!hasProfile && userRole !== 'admin') {
       // New users go to profile creation first

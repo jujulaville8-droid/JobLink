@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { getResumePreviewUrl } from "@/lib/resume-url";
+import { getApplicationReturnTo } from "@/lib/return-to";
 import type { VisibilityMode } from "@/lib/types";
 
 interface ProfileData {
@@ -35,8 +37,17 @@ const INITIAL_PROFILE: ProfileData = {
   visibility: "actively_looking",
 };
 
-function getCompletion(p: ProfileData) {
-  return calculateProfileCompletion(p);
+function getCompletion(p: ProfileData, hasBuiltResume = false) {
+  return calculateProfileCompletion({ ...p, has_cv_profile: hasBuiltResume });
+}
+
+function getApplicationMissingFields(profile: ProfileData, hasBuiltResume: boolean) {
+  const missing: string[] = [];
+  if (!profile.first_name.trim()) missing.push("First name");
+  if (!profile.last_name.trim()) missing.push("Last name");
+  if (!profile.phone.trim()) missing.push("Phone number");
+  if (!profile.cv_url && !hasBuiltResume) missing.push("Resume (uploaded or built)");
+  return missing;
 }
 
 const VISIBILITY_OPTIONS: {
@@ -227,6 +238,7 @@ function ProfileView({
   onAvatarChange,
   onVisibilityChange,
   hasBuiltResume,
+  applicationReturnTo,
 }: {
   profile: ProfileData;
   profileId: string;
@@ -237,8 +249,9 @@ function ProfileView({
   onVisibilityChange: (value: VisibilityMode) => void;
   hasBuiltResume: boolean;
   builtResumeCompletion: number;
+  applicationReturnTo: string | null;
 }) {
-  const { percentage, missing } = getCompletion(profile);
+  const { percentage, missing } = getCompletion(profile, hasBuiltResume);
   const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "Your Name";
   const initials = [profile.first_name?.[0], profile.last_name?.[0]].filter(Boolean).join("").toUpperCase() || "?";
   const banner = VISIBILITY_BANNER[profile.visibility];
@@ -536,7 +549,7 @@ function ProfileView({
           </button>
         </div>
         <div className="rounded-lg border border-border bg-white divide-y divide-border/40">
-          <a href="/profile/cv" className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
+          <a href={applicationReturnTo ? `/profile/cv?returnTo=${encodeURIComponent(applicationReturnTo)}` : "/profile/cv"} className="flex w-full items-center gap-4 p-4 hover:bg-bg-alt transition-colors text-left">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-50"><IconFile className="h-6 w-6 text-primary" /></div>
             <div className="min-w-0 flex-1"><p className="text-sm font-medium text-text">{hasBuiltResume ? 'Edit your resume' : 'Build your resume'}</p><p className="text-xs text-text-light mt-0.5">A focused editor, live preview, and a polished PDF</p></div>
             <IconChevron className="h-4 w-4 text-text-muted flex-shrink-0" />
@@ -730,6 +743,8 @@ function ProfileEditForm({
   initialStep = 1,
   onSaved,
   onCancel,
+  hasBuiltResume,
+  applicationReturnTo,
 }: {
   initialProfile: ProfileData;
   initialProfileId: string | null;
@@ -738,6 +753,8 @@ function ProfileEditForm({
   initialStep?: number;
   onSaved: (profile: ProfileData, profileId: string) => void;
   onCancel: () => void;
+  hasBuiltResume: boolean;
+  applicationReturnTo: string | null;
 }) {
   const [step, setStep] = useState(initialStep);
   const [profile, setProfile] = useState<ProfileData>(initialProfile);
@@ -771,14 +788,15 @@ function ProfileEditForm({
     }
   };
 
-  const { percentage: completePct, missing } = getCompletion(profile);
+  const { percentage: completePct, missing } = getCompletion(profile, hasBuiltResume);
+  const applicationMissing = getApplicationMissingFields(profile, hasBuiltResume);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(async (next?: "build-resume") => {
     if (!userId) return;
     setSaving(true);
     setMessage(null);
 
-    const { percentage: pct } = getCompletion(profile);
+    const { percentage: pct } = getCompletion(profile, hasBuiltResume);
 
     try {
       const res = await fetch("/api/profile", {
@@ -807,20 +825,37 @@ function ProfileEditForm({
         setMessage({ type: "error", text: data.error || "Failed to save profile." });
       } else {
         const savedId = data.profile_id || profileId;
+        if (!savedId) {
+          setMessage({ type: "error", text: "Could not confirm your saved profile. Please try again." });
+          setSaving(false);
+          return;
+        }
         if (data.profile_id && !profileId) {
           setProfileId(data.profile_id);
         }
-        setMessage({ type: "success", text: "Profile saved successfully!" });
-        setTimeout(() => {
+        const missingForApplication = getApplicationMissingFields(profile, hasBuiltResume);
+        setMessage({
+          type: "success",
+          text: applicationReturnTo && missingForApplication.length > 0
+            ? `Profile saved. Still needed to apply: ${missingForApplication.join(", ")}.`
+            : "Profile saved successfully!",
+        });
+        if (next === "build-resume") {
+          window.location.href = applicationReturnTo
+            ? `/profile/cv?returnTo=${encodeURIComponent(applicationReturnTo)}`
+            : "/profile/cv";
+        } else if (applicationReturnTo) {
           onSaved(profile, savedId);
-        }, 800);
+        } else {
+          setTimeout(() => onSaved(profile, savedId), 800);
+        }
       }
     } catch {
       setMessage({ type: "error", text: "Network error. Please check your connection." });
     }
 
     setSaving(false);
-  }, [userId, profile, profileId, onSaved]);
+  }, [userId, profile, profileId, onSaved, hasBuiltResume, applicationReturnTo]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -949,6 +984,7 @@ function ProfileEditForm({
       {/* Message */}
       {message && (
         <div
+          role={message.type === "error" ? "alert" : "status"}
           className={`mt-4 rounded-lg p-3 text-sm ${
             message.type === "success"
               ? "bg-green-50 text-green-700 border border-green-200"
@@ -1137,6 +1173,11 @@ function ProfileEditForm({
           <div className="space-y-5">
             <h2 className="text-base font-semibold font-display text-text">Resume / CV</h2>
             <p className="text-sm text-text-light">Upload your CV as a PDF (max 5MB).</p>
+            {hasBuiltResume && (
+              <p className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                Your built resume meets the resume requirement. Uploading another CV is optional.
+              </p>
+            )}
 
             {profile.cv_url && (
               <div className="flex items-center gap-3 rounded-lg border border-border p-4">
@@ -1185,6 +1226,14 @@ function ProfileEditForm({
                 disabled={uploading}
               />
             </label>
+            <button
+              type="button"
+              onClick={() => void handleSave("build-resume")}
+              disabled={saving || uploading}
+              className="text-sm font-medium text-primary hover:underline disabled:opacity-60"
+            >
+              {hasBuiltResume ? "Save profile and edit built resume" : "Save profile and build a resume instead"}
+            </button>
           </div>
         )}
 
@@ -1223,7 +1272,7 @@ function ProfileEditForm({
         )}
 
         {/* Navigation & Save */}
-        <div className="mt-6 flex items-center justify-between border-t border-border pt-5">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
           <button
             type="button"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
@@ -1233,14 +1282,14 @@ function ProfileEditForm({
             Previous
           </button>
 
-          <div className="flex gap-2.5">
+          <div className="flex flex-wrap gap-2.5">
             <button
               type="button"
-              onClick={handleSave}
-              disabled={saving}
+              onClick={() => void handleSave()}
+              disabled={saving || uploading}
               className="rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? "Saving..." : applicationReturnTo && applicationMissing.length === 0 ? "Save and return to application" : "Save"}
             </button>
 
             {step < 4 && (
@@ -1262,6 +1311,8 @@ function ProfileEditForm({
 // ─── Main Page Component ────────────────────────────────────────
 export default function ProfilePage() {
   const { user: authUser, isLoading: authLoading, setAvatarUrl: setGlobalAvatarUrl } = useAuth();
+  const searchParams = useSearchParams();
+  const applicationReturnTo = getApplicationReturnTo(searchParams.get("returnTo"));
   const [profile, setProfile] = useState<ProfileData>(INITIAL_PROFILE);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1314,22 +1365,20 @@ export default function ProfilePage() {
           visibility: existing.visibility ?? "actively_looking",
         });
         setMode("view");
-
-        // Check for built resume
-        const { data: cvProfile } = await supabase
-          .from("cv_profiles")
-          .select("id, completion_percentage")
-          .eq("user_id", authUser!.id)
-          .maybeSingle();
-
-        if (cvProfile) {
-          setHasBuiltResume(true);
-          setBuiltResumeCompletion(cvProfile.completion_percentage ?? 0);
-        }
       } else {
         setMode("edit");
       }
 
+      // A resume can be built before the seeker creates their profile.
+      const { data: cvProfile } = await supabase
+        .from("cv_profiles")
+        .select("id, completion_percentage")
+        .eq("user_id", authUser!.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+      setHasBuiltResume(!!cvProfile);
+      setBuiltResumeCompletion(cvProfile?.completion_percentage ?? 0);
       setLoading(false);
     }
 
@@ -1373,41 +1422,72 @@ export default function ProfilePage() {
   }
 
   const isNewProfile = !profileId;
+  const applicationMissing = getApplicationMissingFields(profile, hasBuiltResume);
+  const applicationContext = applicationReturnTo ? (
+    <div className="mx-auto mb-5 max-w-2xl rounded-lg border border-primary/20 bg-primary/5 p-4">
+      <p className="text-sm font-semibold text-text">Continue your application</p>
+      <p className="mt-1 text-sm text-text-light">
+        {applicationMissing.length > 0
+          ? "Add your name, phone number, and an uploaded or built resume. Save when these are ready to return to your application."
+          : "Your saved profile is ready. Return to your application to review and submit it."}
+      </p>
+      {mode === "view" && (
+        <a href={applicationReturnTo} className="mt-2 inline-flex text-sm font-medium text-primary hover:underline">
+          Return to application
+        </a>
+      )}
+    </div>
+  ) : null;
 
   if (mode === "view" && !isNewProfile) {
     return (
-      <ProfileView
-        profile={profile}
-        profileId={profileId!}
-        email={authUser.email ?? ""}
-        userId={authUser.id}
-        onEdit={(step) => { setEditStep(step ?? 1); setMode("edit"); }}
-        onAvatarChange={(url) => {
-          setProfile((p) => ({ ...p, avatar_url: url }));
-          setGlobalAvatarUrl(url);
-        }}
-        onVisibilityChange={(v) => setProfile((p) => ({ ...p, visibility: v }))}
-        hasBuiltResume={hasBuiltResume}
-        builtResumeCompletion={builtResumeCompletion}
-      />
+      <>
+        {applicationContext}
+        <ProfileView
+          profile={profile}
+          profileId={profileId!}
+          email={authUser.email ?? ""}
+          userId={authUser.id}
+          onEdit={(step) => { setEditStep(step ?? 1); setMode("edit"); }}
+          onAvatarChange={(url) => {
+            setProfile((p) => ({ ...p, avatar_url: url }));
+            setGlobalAvatarUrl(url);
+          }}
+          onVisibilityChange={(v) => setProfile((p) => ({ ...p, visibility: v }))}
+          hasBuiltResume={hasBuiltResume}
+          builtResumeCompletion={builtResumeCompletion}
+          applicationReturnTo={applicationReturnTo}
+        />
+      </>
     );
   }
 
   return (
-    <ProfileEditForm
-      key={editStep}
-      initialProfile={profile}
-      initialProfileId={profileId}
-      userId={authUser.id}
-      isNewProfile={isNewProfile}
-      initialStep={editStep}
-      onSaved={(savedProfile, savedId) => {
-        setProfile(savedProfile);
-        setProfileId(savedId);
-        setGlobalAvatarUrl(savedProfile.avatar_url || null);
-        setMode("view");
-      }}
-      onCancel={() => setMode("view")}
-    />
+    <>
+      {applicationContext}
+      <ProfileEditForm
+        key={editStep}
+        initialProfile={profile}
+        initialProfileId={profileId}
+        userId={authUser.id}
+        isNewProfile={isNewProfile}
+        initialStep={editStep}
+        hasBuiltResume={hasBuiltResume}
+        applicationReturnTo={applicationReturnTo}
+        onSaved={(savedProfile, savedId) => {
+          setProfile(savedProfile);
+          setProfileId(savedId);
+          setGlobalAvatarUrl(savedProfile.avatar_url || null);
+          if (applicationReturnTo) {
+            if (getApplicationMissingFields(savedProfile, hasBuiltResume).length === 0) {
+              window.location.href = applicationReturnTo;
+            }
+          } else {
+            setMode("view");
+          }
+        }}
+        onCancel={() => setMode("view")}
+      />
+    </>
   );
 }
