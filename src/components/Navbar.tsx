@@ -4,7 +4,7 @@ import HomeHeader from "@/components/home/HomeHeader";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSelectedLayoutSegment } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
@@ -14,6 +14,7 @@ import UnreadBadge from "@/components/messaging/UnreadBadge";
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
+  const segment = useSelectedLayoutSegment();
   const isHiringPilot = pathname === '/employers/hiring-help';
   const { isAuthenticated, user, userRole, isAdminUser, avatarUrl, logout, setUserRole, isLoading } = useAuth();
   const [switching, setSwitching] = useState(false);
@@ -188,7 +189,9 @@ export default function Navbar() {
       ];
 
   if (pathname === "/profile/cv") return null;
-  if (pathname === "/" || pathname === "/design-preview") return <HomeHeader />;
+  // The host can render the root page as /index while the browser uses /.
+  // Select its layout from the matched route so server and client agree.
+  if (segment === null || segment === "design-preview") return <HomeHeader />;
 
   return (
     <>
