@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigationFeedback } from "@/components/useNavigationFeedback";
 import { getActiveHref } from "@/lib/navigation-state";
@@ -12,6 +12,7 @@ const HIDDEN_PREFIXES = ["/post-job", "/profile/cv"];
 export default function BottomNav() {
   const { isAuthenticated, userRole } = useAuth();
   const pathname = usePathname();
+  const segment = useSelectedLayoutSegment();
   const isHidden = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
   const {
     activePathname,
@@ -29,7 +30,7 @@ export default function BottomNav() {
   const activeHref = getActiveHref(activePathname, visiblePaths);
   const isActive = (path: string) => activeHref === path;
 
-  if (pathname === "/" || pathname === "/design-preview") return null;
+  if (segment === null || segment === "design-preview") return null;
 
   if (isHidden) return null;
 

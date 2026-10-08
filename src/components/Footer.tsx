@@ -3,7 +3,7 @@ import HomeFooter from "@/components/home/HomeFooter";
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 
 const DASHBOARD_PREFIXES = [
   "/dashboard", "/admin", "/messages", "/profile", "/settings",
@@ -13,9 +13,10 @@ const DASHBOARD_PREFIXES = [
 
 export default function Footer() {
   const pathname = usePathname();
+  const segment = useSelectedLayoutSegment();
   const isDashboard = DASHBOARD_PREFIXES.some((p) => pathname.startsWith(p));
 
-  if (pathname === "/" || pathname === "/design-preview") return <HomeFooter />;
+  if (segment === null || segment === "design-preview") return <HomeFooter />;
 
   if (isDashboard) return null;
 
