@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowDownToLine, Undo2, Redo2, Check, FileText, UserRound, BriefcaseBusiness, GraduationCap, Sparkles, Plus, Trash2, Eye, PencilLine, LoaderCircle, ChevronRight } from 'lucide-react';
 import { profileFields, resumeSectionDefinitions, type EditorSection } from '@/lib/resume-sections';
+import { getApplicationReturnTo } from '@/lib/return-to';
 import { useResumeEditor } from './useResumeEditor';
 import ResumePreview from './ResumePreview';
 import styles from './studio.module.css';
 
-export default function ResumeStudio() {
+export default function ResumeStudio({ applicationReturnTo }: { applicationReturnTo?: string | null }) {
+  const returnTo = getApplicationReturnTo(applicationReturnTo);
+  const profileHref = returnTo ? `/profile?returnTo=${encodeURIComponent(returnTo)}` : '/profile';
   const editor = useResumeEditor();
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit');
   const [contactOpen, setContactOpen] = useState(false);
@@ -43,7 +46,7 @@ export default function ResumeStudio() {
   const iconFor = (key: string) => key === 'experiences' ? BriefcaseBusiness : key === 'education' ? GraduationCap : key === 'skills' ? Sparkles : FileText;
 
   if (editor.loading) return <div className={styles.loading} role="status"><LoaderCircle className={styles.spinner} /><h1>Opening your workspace</h1><p>Getting your resume ready to edit.</p></div>;
-  if (!cv || !preview) return <div className={styles.loading}><FileText /><h1>Your resume workspace</h1><p role="alert">{editor.error}</p><button className={styles.primary} onClick={() => void editor.load()}>Try again</button><a href="/profile">Back to profile</a></div>;
+  if (!cv || !preview) return <div className={styles.loading}><FileText /><h1>Your resume workspace</h1><p role="alert">{editor.error}</p><button className={styles.primary} onClick={() => void editor.load()}>Try again</button><a href={profileHref}>Back to profile</a></div>;
 
   const records = selection.section === 'profile' ? [] : preview[selection.section];
   const hasEditor = selection.section === 'profile' || !!selection.id;
@@ -62,7 +65,7 @@ export default function ResumeStudio() {
       </div>
     </header>
     <div className={styles.subbar}>
-      <a href="/dashboard"><ArrowLeft size={15} />Back to dashboard</a>
+      <a href={returnTo ? profileHref : '/dashboard'}><ArrowLeft size={15} />{returnTo ? 'Back to profile' : 'Back to dashboard'}</a>
       <span className={styles.workspaceLabel}>Your resume, thoughtfully put together.</span>
       <div className={styles.mobileSwitch} aria-label="Workspace view">
         <button aria-pressed={mobileView === 'edit'} onClick={() => setMobileView('edit')}><PencilLine size={15} />Edit</button>
@@ -88,7 +91,7 @@ export default function ResumeStudio() {
         {contactOpen ? <>
           <h1>Personal details</h1><p className={styles.intro}>These details come from your JobLinks profile, so you only need to keep them up to date in one place.</p>
           <dl className={styles.contactList}>{[['Name', [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join(' ')], ['Email', cv.contact.email], ['Phone', cv.contact.phone], ['Location', cv.contact.location]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not added yet'}</dd></div>)}</dl>
-          <a className={styles.secondary} href="/profile">Edit personal details<ChevronRight size={16} /></a>
+          <a className={styles.secondary} href={profileHref}>Edit personal details<ChevronRight size={16} /></a>
         </> : <>
           <div className={styles.editorHeading}><span className={styles.editorEyebrow}>Make your next move</span><h1>{selection.section === 'profile' ? 'Your professional story' : definition!.title}</h1><p className={styles.intro}>{selection.section === 'profile' ? 'Introduce yourself with a clear title and a short, confident summary.' : definition!.hint}</p></div>
           {selection.section !== 'profile' && <div className={styles.recordTabs} aria-label={`${definition!.title} entries`}>

@@ -22,6 +22,18 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('premium resume workspace', () => {
+  it('keeps the application destination on explicit profile links from the resume builder', async () => {
+    const applicationPath = '/jobs/123e4567-e89b-42d3-a456-426614174000/apply';
+    const profileHref = `/profile?returnTo=${encodeURIComponent(applicationPath)}`;
+    render(<ResumeStudio applicationReturnTo={applicationPath} />);
+    expect((await screen.findByRole('link', { name: 'Back to profile' })).getAttribute('href')).toBe(profileHref);
+    fireEvent.click(screen.getByRole('button', { name: /Personal details/ }));
+    expect(screen.getByRole('link', { name: 'Edit personal details' }).getAttribute('href')).toBe(profileHref);
+  });
+  it('keeps the usual dashboard link for an invalid application return destination', async () => {
+    render(<ResumeStudio applicationReturnTo="//evil.example" />);
+    expect((await screen.findByRole('link', { name: 'Back to dashboard' })).getAttribute('href')).toBe('/dashboard');
+  });
   it('recovers unsaved edits after leaving and reopening the workspace in the same tab', async () => {
     const first = render(<ResumeStudio />);
     fireEvent.change(await screen.findByLabelText('Professional summary'), { target: { value: 'Recover this unsaved summary' } });

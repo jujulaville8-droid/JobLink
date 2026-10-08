@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { getSafeReturnTo } from "@/lib/return-to";
 
 /**
  * Wraps auth pages (login, signup, forgot-password, etc.).
@@ -29,10 +30,8 @@ export default function AuthRedirect({ children }: { children: React.ReactNode }
 
     // Only redirect if fully verified — don't interfere with login/signup handlers
     if (isAuthenticated && isEmailVerified) {
-      const returnTo = new URLSearchParams(window.location.search).get('returnTo');
-      const fromMembers = returnTo === '/members';
-      const fromFeedback = returnTo && /^\/placement-feedback\/[0-9a-f-]{36}$/i.test(returnTo);
-      window.location.href = fromMembers ? '/members' : fromFeedback ? returnTo : '/dashboard';
+      const returnTo = getSafeReturnTo(new URLSearchParams(window.location.search).get('returnTo'));
+      window.location.href = returnTo ?? '/dashboard';
     }
   }, [isAuthenticated, isEmailVerified, isLoading, isResetPassword]);
 

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import type { AuthStatus } from "@/lib/auth-verify";
 import { getAuthStatus } from "@/lib/auth-verify";
+import { cleanApplicationDrafts } from "@/lib/application-drafts";
 
 interface AuthState {
   user: User | null;
@@ -71,6 +72,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const authStatus = getAuthStatus(user, isLoading, isEmailVerified);
 
   const logout = useCallback(async () => {
+    cleanApplicationDrafts(null);
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
@@ -156,6 +158,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     function handleSession(session: { user: User } | null) {
       if (!mounted || initialized) return;
       initialized = true;
+      cleanApplicationDrafts(session?.user.id ?? null);
 
       if (session?.user) {
         setUser(session.user);
@@ -172,10 +175,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         if (event === "INITIAL_SESSION") {
           handleSession(session);
         } else if (event === "SIGNED_IN" && session?.user) {
+          cleanApplicationDrafts(session.user.id);
           setUser(session.user);
           setIsLoading(false);
           fetchUserDataInBackground(session.user);
         } else if (event === "SIGNED_OUT") {
+          cleanApplicationDrafts(null);
           setUser(null);
           setUserRole(null);
           setIsAdminUser(false);
