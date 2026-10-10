@@ -81,6 +81,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
 export default async function JobsPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const category = knownJobCategory(params.category);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -89,10 +90,12 @@ export default async function JobsPage({ searchParams }: PageProps) {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <h1 className="font-display text-2xl sm:text-3xl text-text">
-              Browse Jobs
+              {category ? `${category} Jobs` : "Browse Jobs"}
             </h1>
             <p className="mt-1 text-sm text-text-light">
-              Discover opportunities across Antigua and Barbuda
+              {category
+                ? `Browse ${category} job listings in Antigua and Barbuda.`
+                : "Discover opportunities across Antigua and Barbuda"}
             </p>
           </div>
         </div>
