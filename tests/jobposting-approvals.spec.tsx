@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import JobDetailPage, { generateMetadata } from '@/app/jobs/[id]/page';
 import observedJobs from './fixtures/approved-job-listings.json';
+import { publicVacancyDescription } from '@/lib/public-vacancy-description';
 import {
   EMPLOYER_APPROVED_COMPANIES,
   EMPLOYER_APPROVED_JOBS,
@@ -91,7 +92,7 @@ describe.each(candidates)('$companyName owner-attested approval', (candidate) =>
     });
     const description = document.createElement('div');
     description.innerHTML = data[0].description;
-    const expectedDescription = candidate.job.description.replace('Apply before: 29 October 2026', '');
+    const expectedDescription = publicVacancyDescription(candidate.job);
     expect(description.textContent!.replace(/\s/g, '')).toBe(expectedDescription.replace(/\s/g, ''));
     expect(data[0].description).toContain('<p>');
     expect(data[0]).not.toHaveProperty('baseSalary');

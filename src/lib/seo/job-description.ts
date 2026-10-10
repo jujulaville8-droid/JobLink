@@ -1,6 +1,8 @@
-import { publicJobDescription } from '@/lib/public-job-description';
+import { publicVacancyDescription } from '@/lib/public-vacancy-description';
 
 interface JobDescriptionInput {
+  id?: string | null;
+  company_id?: string | null;
   title: string;
   companyName?: string | null;
   location?: string | null;
@@ -12,7 +14,7 @@ const normalize = (value?: string | null) => (value ?? '').replace(/\s+/g, ' ').
 /** Public vacancy text only; Google may choose a different snippet from the page. */
 export function jobMetaDescription(job: JobDescriptionInput): string {
   const context = `Apply for ${normalize(job.title)} at ${normalize(job.companyName) || 'a company'} in ${normalize(job.location) || 'Antigua and Barbuda'}.`;
-  const description = normalize(publicJobDescription(job.description));
+  const description = normalize(publicVacancyDescription(job));
   if (!description) return `${context} View the vacancy and apply on JobLinks.`;
 
   // An editorial excerpt, not a Google character limit. Keep the full role and
