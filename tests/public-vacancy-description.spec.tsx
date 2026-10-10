@@ -33,7 +33,7 @@ Requirements
 Commission
 Earn commission when you meet or exceed sales targets.
 
-How to apply: email fbsjobsanu@gmail.com.`,
+How to apply: use the Apply button on this page to submit your application through JobLinks.`,
     employmentTypeUnconfirmed: false,
   },
   {
@@ -59,7 +59,7 @@ Requirements
 - Enthusiastic about a fun, high-energy environment
 - Legally able to work in Antigua and located in Antigua
 
-How to apply: email your CV and a short explanation of why you are a good fit to ssrageroom268@gmail.com. No DMs.`,
+How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks. Add a short explanation of why you are a good fit in the cover letter field. No DMs.`,
     employmentTypeUnconfirmed: true,
   },
 ];

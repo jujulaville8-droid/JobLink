@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import UnsaveButton from "./UnsaveButton";
 import Pagination from "@/components/Pagination";
-import { publicJobDescription } from "@/lib/public-job-description";
+import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -39,7 +39,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
   const { data: savedJobs, count } = await supabase
     .from("saved_jobs")
     .select(
-      "id, saved_at, job_id, job_listings(id, title, description, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name, logo_url))",
+      "id, saved_at, job_id, job_listings(id, company_id, title, description, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name, logo_url))",
       { count: "exact" }
     )
     .eq("seeker_id", profile.id)
@@ -68,7 +68,12 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
               const salaryMin = job.salary_min as number | null;
               const salaryMax = job.salary_max as number | null;
               const salaryVisible = job.salary_visible as boolean;
-              const description = publicJobDescription(job.description as string | null);
+              const description = publicVacancyDescription({
+                id: job.id as string,
+                company_id: job.company_id as string | null,
+                title: job.title as string,
+                description: job.description as string | null,
+              });
 
               return (
                 <div

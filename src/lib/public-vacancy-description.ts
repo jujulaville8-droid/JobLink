@@ -14,11 +14,14 @@ interface VerifiedDescription {
   description: string;
 }
 
-// Presentation-only fallbacks for these thin imported records. Facts were
+// Presentation-only fallbacks for these JobLink-managed imported records. Facts were
 // checked against employer-branded posts on October 10, 2026 (sources below).
 // This is not employer approval and must never enable JobPosting by itself.
 // Match the original text exactly, including its retained deadline: any later
 // description/title edit wins rather than being overwritten by this fallback.
+// Application channels are JobLink editorial guidance: use the on-site Apply
+// flow, while retaining source facts and requested application materials.
+// Never use these public strings to change private employer delivery contacts.
 const VERIFIED_DESCRIPTIONS: Record<string, VerifiedDescription> = {
   // Primary employer advert, posted by Star Times Adventure Tours:
   // https://www.facebook.com/groups/1580953365473898/permalink/4512493772319828/
@@ -47,7 +50,7 @@ Requirements
 Advantages and training
 Knowledge of Antigua and its attractions and bilingual ability are advantages. Guiding or hospitality experience is an advantage; otherwise, training is provided.
 
-How to apply: email your CV to Ceostartimesadventuretours@gmail.com.`,
+How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks.`,
   },
   // Original branded September 24 employer flyer:
   // https://www.facebook.com/photo/?fbid=10168041289173327&set=gm.28750704501225130&idorvanity=419253941463565
@@ -76,7 +79,7 @@ Requirements
 - Basic knowledge of fitness equipment and terminology
 - Team player
 
-How to apply: send your CV and a short note to mofit268@outlook.com.`,
+How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks. Add a short note in the cover letter field.`,
   },
   // Original branded September 30 employer advert:
   // https://www.facebook.com/photo/?fbid=10163206382918730&set=gm.28968115112806771&idorvanity=144927202218946
@@ -94,7 +97,7 @@ Requirements and responsibilities
 - Ability to train
 - Perform cost control and profit-and-loss responsibilities
 
-How to apply: email EMANOUSOU@NOBUHOTELS.COM.`,
+How to apply: use the Apply button on this page to submit your application through JobLinks.`,
   },
   // Employer flyer:
   // https://www.facebook.com/groups/144927202218946/permalink/28904328982518718/
@@ -115,7 +118,7 @@ Requirements
 Commission
 Earn commission when you meet or exceed sales targets.
 
-How to apply: email fbsjobsanu@gmail.com.`,
+How to apply: use the Apply button on this page to submit your application through JobLinks.`,
   },
   // Employer-owned post and flyer:
   // https://www.instagram.com/p/DeKanfUBwRQ/
@@ -142,7 +145,16 @@ Requirements
 - Enthusiastic about a fun, high-energy environment
 - Legally able to work in Antigua and located in Antigua
 
-How to apply: email your CV and a short explanation of why you are a good fit to ssrageroom268@gmail.com. No DMs.`,
+How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks. Add a short explanation of why you are a good fit in the cover letter field. No DMs.`,
+  },
+  // Admin-imported Woodstock record, captured in approved-job-listings.json.
+  // Only the application paragraph is edited; all role facts, the source website
+  // and the retained cutoff remain byte-for-byte as stored. Later edits win.
+  'bb1b011d-4e5c-4005-81b6-bc70c48acf4f': {
+    companyId: '6dde0e9d-e04a-4d95-a9d3-50fa9ffcc961',
+    title: 'Carpenter / Boatbuilder',
+    sourceDescription: "JOIN THE CREW AT WOODSTOCK BOATBUILDERS\n\nWoodstock BoatBuilders in English Harbour (Dockyard Drive) is hiring a full-time Carpenter / Boatbuilder.\n\nWe are looking for a competent, reliable, and punctual Carpenter to join our team in a fast-paced, dynamic, and highly rewarding work environment. Whether you are a seasoned marine carpenter or a skilled woodworker eager to transition into the yachting industry, we want to hear from you.\n\nWhat we are looking for\n- Experience: previous experience working on boats is preferable but not a necessity. Anyone with a passion to learn is welcome.\n- Work ethic: must be reliable, punctual, and committed to producing work of the highest quality in a dynamic setting.\n\nWhat we offer\n- Top compensation: some of the best pay rates on the island.\n- Exceptional projects: the opportunity to ply your trade on world-class vessels and develop highly specialized craftsmanship.\n\nHow to apply: all enquiries must be by email. Send your CV/resume and any other pertinent information to office@woodstockboats.com. We will get back to all applicants.\n\nApply before: 29 October 2026\nLearn more: woodstockboatbuilders.com",
+    description: "JOIN THE CREW AT WOODSTOCK BOATBUILDERS\n\nWoodstock BoatBuilders in English Harbour (Dockyard Drive) is hiring a full-time Carpenter / Boatbuilder.\n\nWe are looking for a competent, reliable, and punctual Carpenter to join our team in a fast-paced, dynamic, and highly rewarding work environment. Whether you are a seasoned marine carpenter or a skilled woodworker eager to transition into the yachting industry, we want to hear from you.\n\nWhat we are looking for\n- Experience: previous experience working on boats is preferable but not a necessity. Anyone with a passion to learn is welcome.\n- Work ethic: must be reliable, punctual, and committed to producing work of the highest quality in a dynamic setting.\n\nWhat we offer\n- Top compensation: some of the best pay rates on the island.\n- Exceptional projects: the opportunity to ply your trade on world-class vessels and develop highly specialized craftsmanship.\n\nHow to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks. Include any other pertinent information in the cover letter field. We will get back to all applicants.\n\nApply before: 29 October 2026\nLearn more: woodstockboatbuilders.com",
   },
 };
 

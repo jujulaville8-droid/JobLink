@@ -92,3 +92,24 @@ it('removes only the obsolete job-expiry email option, keeping other templates',
   expect(html).toContain('Listing Approved');
   expect(html).toContain('Signup Reminder (Final)');
 });
+
+
+it('uses the same exact-record description for saved Nobu, preserving later employer edits', async () => {
+  const job = db.tables.saved_jobs[0].job_listings as Row;
+  Object.assign(job, {
+    id: '0d1245af-a425-4a7f-b670-15dc8c275993',
+    company_id: '9fde7fc7-70b3-4354-9d11-d520f4ec09f9',
+    title: 'Executive Chef (Japanese & Peruvian cuisine)',
+    description: 'Executive Chef (Japanese & Peruvian cuisine)\nNobu Barbuda, Barbuda\nHow to apply: email EMANOUSOU@NOBUHOTELS.COM',
+  });
+  const before = structuredClone(db.tables);
+  const html = renderToStaticMarkup(await SavedJobsPage({ searchParams: Promise.resolve({}) }));
+  expect(html).toContain('Nobu Barbuda in Barbuda is hiring an Executive Chef');
+  expect(html).not.toContain('EMANOUSOU@');
+  expect(html).toContain(`/jobs/${job.id}`);
+  expect(db.tables).toEqual(before);
+
+  job.description = 'Updated employer text: email new@example.test to apply.';
+  const updated = renderToStaticMarkup(await SavedJobsPage({ searchParams: Promise.resolve({}) }));
+  expect(updated).toContain(job.description);
+});
