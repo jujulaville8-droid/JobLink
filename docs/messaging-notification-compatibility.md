@@ -1,26 +1,46 @@
-# Messaging email compatibility after caller-bound RPC hardening
+# Messaging email compatibility
 
-## Scope
+## Functional scope
 
-This is a web-main-compatible local correction, independent of mobile schemas and user-wide blocking. The four messaging RPCs were separately hardened in production on 2026-10-10. The message POST handler still requested `get_conversation_meta` with the recipient ID using the sender's authenticated client. That request is now correctly rejected. Source inspection establishes that the handler consequently skips the generic email notification while its saved message still returns success. No production message, account read, send, or write was used to demonstrate this regression.
+This correction supports generic message email for application-bound conversations after caller-bound messaging reads were tightened. It preserves the authenticated caller boundary and does not restore cross-user RPC access. A successfully saved message still returns success if notification is unavailable.
 
-The correction never restores cross-user RPC access. The three caller routes supply a confirmed saved message ID, conversation ID and server-authenticated sender ID. Notification context is reconstructed from sender-authorized persisted records; callers cannot choose recipient addresses, preview text or identity labels. Only after message/participant/application binding succeeds does a private service client read recipient email/settings and notification cooldown. Private context is not returned to clients.
+The caller routes supply a confirmed saved message ID, conversation ID and server-authenticated sender ID. The notification helper re-reads the saved message and conversation through the sender's client, confirms the sender's own membership, and independently binds the sender and recipient to the applicant and job owner in the persisted application. It also checks the sender's account and uses only a sender-owned display name.
 
-Only a successful absent settings row receives the existing default-on preference. Database errors fail closed, explicit opt-out is respected, and generic delivery uses the persisted body and sender-owned display name. Per-thread directional blocking is preserved: a blocked sender is suppressed, while a blocker may still send. Provider acceptance is logged as sent only when the provider helper reports success. A per-message/recipient provider idempotency key reduces same-message retries within the provider's window; cooldown remains non-atomic across different messages. Exceptions never turn a successfully saved message into an HTTP failure.
+Caller-scoped membership reads need not expose the peer. Only after the independent application ownership binding succeeds does a private server client read the bounded roster for that one conversation. The roster must contain exactly the two distinct application participants. A third-row sentinel rejects oversized rosters, and the sender's per-thread block flag is checked again. Recipient settings, email and cooldown are not read until the roster is validated. No private notification context is returned to callers.
 
-The invite handler now requires a successful inserted message with a returned ID before invoking notification. Its separate existing `job_invite` email path is deliberately outside this urgent compatibility correction and still needs consent/block parity review. Application-start and status-update side effects are also outside this patch.
+Generic email can proceed in both application-conversation directions only when every visibility, account, roster, preference, block and cooldown check succeeds. The saved message supplies the preview; callers cannot override recipient addresses, preview text or identity labels.
 
-## Main compatibility and verification
+## Delivery behavior
 
-All changed existing source files, plus their email/admin/company-email-validation dependencies, were checked against main `8287f23b05b0067fbe1991319262e4be886829c1`. They were unchanged in frozen backend foundation `e2d63fedd394aba021ce2ad3a611a790c9508f60` before this correction. No new dependency, migration, environment value, credential or mobile import is required.
+- A successful absent settings row retains the existing default-on preference; a settings read error fails closed
+- Explicit opt-out is respected
+- Per-thread blocking remains directional: a blocked sender is suppressed, while a blocker can still send
+- Provider acceptance is recorded as sent only when the email helper reports success; this does not prove inbox delivery
+- A per-message/recipient provider idempotency key reduces retries within the provider's window; cooldown across different messages remains non-atomic
+- Database, provider and logging failures do not turn a successfully saved message into an HTTP failure
 
-Run `npx vitest run tests/messaging-notification*.spec.tsx --maxWorkers=2`, TypeScript, ESLint and the exact integrated build. Tests use fake email providers and synthetic records only. Exact commit/build/review evidence accompanies the release handoff. A local passing test does not establish real inbox delivery; any controlled runtime check needs separately approved recipients and send scope.
+The invite handler requires a successfully inserted message with a returned ID before invoking the generic notification helper. Its separate legacy `job_invite` email path is unchanged by this correction.
 
-## Remaining gates
+## Deliberate limitations
 
-- The source change is local until independently reviewed and separately published/deployed through the authorized workflow
-- The live RPC restriction remains in place; no SQL change is part of this patch
-- Broader messaging write authorization, direct database enforcement, status/invite bypass paths and user-wide blocking remain separate work
-- Existing deletion suppression is incomplete and is not made complete by this compatibility correction
-- Notifications intentionally fail closed when sender-scoped application/job context is missing or unreadable, including closed/inaccessible listings; no privileged fallback broadens access
-- Direct conversations have no persisted listing context, so their generic email title is `a position`
+- Generic direct-thread email remains suppressed pending independently trustworthy persisted invitation provenance. Participant membership alone is insufficient authorization
+- Closed or inaccessible application/listing context fails closed. There is no privileged application fallback to broaden the sender's access
+- The legacy `job_invite` path still needs separate consent and block-parity review. Restoring generic direct-thread email later also requires coordinating that path to avoid duplicate notifications
+- Application-start and status-update side effects, broader messaging write authorization, direct database enforcement, user-wide blocking and complete account-deletion suppression remain separate work
+- This is scoped application-email restoration, not a claim that all messaging email is restored
+
+## Generalized verification
+
+The repository tests use synthetic records and fake email providers. They cover persisted message and identity binding, caller-only membership visibility, both application directions, the bounded server roster, malformed or mismatched participants, directional blocking, opt-out, settings failures, cooldown, provider outcomes and direct-thread suppression. They do not reproduce a full hosted database, authenticated runtime or real inbox delivery.
+
+Run these checks on the exact release tree:
+
+- `npm run test:unit -- --maxWorkers=2`
+- `npm run test:node`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+
+When the `tsx` CLI cannot create its local IPC socket, the same Node test files can be run with `node --import tsx --test` followed by the files listed in the package's `test:node` script. This changes the runner invocation, not the test set.
+
+No new dependency, database migration, environment value, credential or mobile import is required. Build checks may use non-secret placeholder values and do not demonstrate live service access. Publication and deployment require their authorized workflow; controlled runtime notification checks require separately approved recipients and send scope.

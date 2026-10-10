@@ -82,7 +82,7 @@ beforeEach(() => {
   senderRows = {
     messages: [{ id: messageId, sender_id: senderId, conversation_id: conversationId, body: 'Saved body, never the request override. ' + 'x'.repeat(150) }],
     conversations: [{ id: conversationId, application_id: applicationId }],
-    conversation_participants: [senderId, recipientId].map(user_id => ({ user_id, conversation_id: conversationId, is_blocked: false })),
+    conversation_participants: [{ user_id: senderId, conversation_id: conversationId, is_blocked: false }],
     applications: [{ id: applicationId, seeker_id: seekerId, job_id: jobId,
       seeker_profiles: { id: seekerId, user_id: senderId },
       job_listings: { id: jobId, title: 'Saved job title', company_id: companyId, companies: { id: companyId, user_id: recipientId } },
@@ -92,6 +92,7 @@ beforeEach(() => {
     seeker_profiles: [{ user_id: senderId, first_name: 'Sender', last_name: 'Name' }],
   }
   adminRows = {
+    conversation_participants: [senderId, recipientId].map(user_id => ({ user_id, conversation_id: conversationId, is_blocked: false })),
     users: [{ id: recipientId, email: 'recipient@example.test', is_banned: false }],
     user_messaging_settings: [{ user_id: recipientId, email_notifications: true, notification_cooldown_minutes: 5 }],
     notification_log: [],
@@ -117,7 +118,7 @@ it('notifies only the persisted peer using saved message/context and exposes no 
   expect(queries.find(q => q.table === 'messages')?.filters).toEqual([
     ['eq', 'id', messageId], ['eq', 'conversation_id', conversationId], ['eq', 'sender_id', senderId],
   ])
-  expect(queries.filter(q => q.client === 'admin').map(q => q.table)).toEqual(['user_messaging_settings', 'notification_log', 'users', 'notification_log'])
+  expect(queries.filter(q => q.client === 'admin').map(q => q.table)).toEqual(['conversation_participants', 'user_messaging_settings', 'notification_log', 'users', 'notification_log'])
   expect(queries.find(q => q.client === 'admin' && q.table === 'users')).toMatchObject({ select: 'id, email, is_banned', filters: [['eq', 'id', recipientId]] })
   expect(queries.find(q => q.client === 'sender' && q.table === 'seeker_profiles')?.filters).toEqual([['eq', 'user_id', senderId]])
   expect(logs).toEqual([{ user_id: recipientId, conversation_id: conversationId, channel: 'email', status: 'sent' }])
@@ -132,10 +133,11 @@ it('keeps company-first sender naming and works in the employer-to-seeker direct
   expect(queries.some(q => q.table === 'seeker_profiles')).toBe(false)
 })
 
-it('allows a two-person direct thread without inventing a listing context', async () => {
+it('fails closed for direct threads without independent invitation provenance', async () => {
   senderRows.conversations[0].application_id = null
   await notify({ jobTitle: 'Arbitrary client listing' })
-  expect(mocks.send).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ job_title: 'a position' }) }))
+  expect(mocks.send).not.toHaveBeenCalled()
+  expect(mocks.createAdmin).not.toHaveBeenCalled()
   expect(queries.some(q => q.table === 'applications')).toBe(false)
 })
 
@@ -166,15 +168,9 @@ const invalidContexts: [string, () => void][] = [
   ['empty message body', () => { senderRows.messages[0].body = ' ' }],
   ['missing conversation', () => { senderRows.conversations = [] }],
   ['missing sender participant', () => { senderRows.conversation_participants[0].user_id = outsiderId }],
-  ['missing peer participant', () => { senderRows.conversation_participants.pop() }],
-  ['duplicate sender participants', () => { senderRows.conversation_participants[1].user_id = senderId }],
-  ['extra participant', () => { senderRows.conversation_participants.push({ conversation_id: conversationId, user_id: outsiderId, is_blocked: false }) }],
   ['sender blocked in this thread', () => { senderRows.conversation_participants[0].is_blocked = true }],
-  ['malformed peer block flag', () => { senderRows.conversation_participants[1].is_blocked = null }],
-  ['wrong participant conversation', () => { senderRows.conversation_participants[1].conversation_id = outsiderId; ignoreFilters = 'sender:conversation_participants' }],
   ['missing application', () => { senderRows.applications = [] }],
   ['mismatched application seeker', () => { seeker().user_id = outsiderId }],
-  ['mismatched application employer', () => { company().user_id = outsiderId }],
   ['mismatched seeker record', () => { seeker().id = outsiderId }],
   ['mismatched job record', () => { job().id = outsiderId }],
   ['mismatched company record', () => { company().id = outsiderId }],
@@ -194,8 +190,40 @@ it.each(invalidContexts)('fails closed before private reads for %s', async (_des
   expect(logs).toEqual([])
 })
 
+it('binds own membership before the bounded service roster and derives the same application peer', async () => {
+  await notify()
+  expect(queries.find(q => q.client === 'sender' && q.table === 'conversation_participants')).toMatchObject({
+    select: 'conversation_id, user_id, is_blocked',
+    filters: [['eq', 'conversation_id', conversationId], ['eq', 'user_id', senderId]],
+  })
+  expect(queries.find(q => q.client === 'admin' && q.table === 'conversation_participants')).toMatchObject({
+    select: 'conversation_id, user_id, is_blocked', filters: [['eq', 'conversation_id', conversationId]], limit: 3,
+  })
+  const firstAdmin = queries.findIndex(q => q.client === 'admin')
+  expect(queries.slice(0, firstAdmin).map(q => q.table)).toContain('applications')
+})
+
+it.each([
+  ['missing sender', () => { adminRows.conversation_participants.shift() }],
+  ['missing peer', () => { adminRows.conversation_participants.pop() }],
+  ['duplicate sender', () => { adminRows.conversation_participants[1].user_id = senderId }],
+  ['extra peer', () => { adminRows.conversation_participants.push({ conversation_id: conversationId, user_id: outsiderId, is_blocked: false }) }],
+  ['blocked sender', () => { adminRows.conversation_participants[0].is_blocked = true }],
+  ['malformed peer flag', () => { adminRows.conversation_participants[1].is_blocked = null }],
+  ['wrong conversation', () => { adminRows.conversation_participants[1].conversation_id = outsiderId; ignoreFilters = 'admin:conversation_participants' }],
+  ['wrong application peer', () => { company().user_id = outsiderId }],
+  ['mismatched participant peer', () => { adminRows.conversation_participants[1].user_id = outsiderId }],
+  ['roster query error', () => { errors['admin:conversation_participants'] = { code: '42501' } }],
+] satisfies [string, () => void][])('rejects %s without recipient delivery reads', async (_description, change) => {
+  change()
+  await expect(notify()).resolves.toBeUndefined()
+  expect(queries.filter(q => q.client === 'admin').map(q => q.table)).toEqual(['conversation_participants'])
+  expect(mocks.send).not.toHaveBeenCalled()
+  expect(logs).toEqual([])
+})
+
 it('preserves directional blocking: the blocker can still send to their blocked peer', async () => {
-  senderRows.conversation_participants[1].is_blocked = true
+  adminRows.conversation_participants[1].is_blocked = true
   await notify()
   expect(mocks.send).toHaveBeenCalledOnce()
 })
@@ -228,7 +256,7 @@ describe('recipient preferences and cooldown', () => {
     errors['admin:user_messaging_settings'] = { code }
     await notify()
     expect(mocks.send).not.toHaveBeenCalled()
-    expect(queries.filter(q => q.client === 'admin').map(q => q.table)).toEqual(['user_messaging_settings'])
+    expect(queries.filter(q => q.client === 'admin').map(q => q.table)).toEqual(['conversation_participants', 'user_messaging_settings'])
     expect(logs).toEqual([])
   })
 
