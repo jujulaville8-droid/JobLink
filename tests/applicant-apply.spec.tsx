@@ -191,9 +191,12 @@ it('does not save or notify for the seeker’s own company listing', async () =>
   expect(state.notify).not.toHaveBeenCalled()
 })
 
-it.each(['closed', 'pending_approval'])('does not notify for a %s listing', async status => {
+it.each(['closed', 'pending_approval', 'expired'])('does not notify for a %s listing', async status => {
   state.job.status = status
+  state.job.expires_at = '2020-01-01T00:00:00Z'
+  const originalJob = structuredClone(state.job)
   expect((await apply()).status).toBe(400)
+  expect(state.job).toEqual(originalJob)
   expect(state.inserts).toHaveLength(0)
   expect(state.notify).not.toHaveBeenCalled()
 })
@@ -256,4 +259,14 @@ it('does not log private details from an unexpected provider exception', async (
   expect((await apply()).status).toBe(500)
   expect(console.error).toHaveBeenCalled()
   expect(errorLogText()).not.toContain('private-cv-folder')
+})
+
+// A legacy date must not override the owner's explicit active status.
+it('accepts an application for an active job with a past stored deadline without changing the job', async () => {
+  state.job.expires_at = '2020-01-01T00:00:00Z'
+  const originalJob = structuredClone(state.job)
+  expect((await apply()).status).toBe(201)
+  expect(state.inserts).toHaveLength(1)
+  expect(state.inserts[0].job_id).toBe(JOB_ID)
+  expect(state.job).toEqual(originalJob)
 })

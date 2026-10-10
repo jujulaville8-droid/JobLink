@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import JobDetailPage from '@/app/jobs/[id]/page';
+import JobDetailPage, { generateMetadata } from '@/app/jobs/[id]/page';
 import observedJobs from './fixtures/approved-job-listings.json';
 import {
   EMPLOYER_APPROVED_COMPANIES,
@@ -181,9 +181,15 @@ it.each(['closed', 'pending_approval', 'expired'])('returns notFound for a %s jo
   await expect(pageHtml()).rejects.toThrow('Not found');
 });
 
-it.each(['2026-09-30T20:09:59Z', '2026-09-30T20:10:00Z'])('returns notFound when expiry %s is reached', async (expiresAt) => {
+it.each(['2026-09-30T20:09:59Z', '2026-09-30T20:10:00Z'])('keeps the page and Apply when stored deadline %s is reached, but omits JobPosting', async (expiresAt) => {
   db.job!.expires_at = expiresAt;
-  await expect(pageHtml()).rejects.toThrow('Not found');
+  const before = structuredClone(db.job);
+  const html = await pageHtml();
+  expect(html).toContain('Sign In to Apply');
+  expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  const metadata = await generateMetadata({ params: Promise.resolve({ id: db.job!.id }) });
+  expect(metadata.title).not.toEqual({ absolute: 'Job Not Found | JobLinks' });
+  expect(db.job).toEqual(before);
 });
 
 it('retains an actual stored future deadline without inventing one', async () => {
@@ -235,4 +241,91 @@ it('does not impose Woodstock\'s deadline on MOfit', async () => {
   vi.setSystemTime(new Date('2026-10-30T12:00:00Z'));
   expect((await schemas())[0]['@type']).toBe('JobPosting');
   expect((await schemas())[0]).not.toHaveProperty('validThrough');
+});
+
+
+it.each([
+  ['2026-10-03T03:59:59.999Z', true],
+  ['2026-10-04T03:59:59.999Z', true],
+  ['2026-10-04T04:00:00.000Z', false],
+  ['2026-10-10T04:00:00.000Z', false],
+] as const)('limits Top Bun Google markup to its public deadline, keeping page and Apply: %s', async (now, eligible) => {
+  vi.setSystemTime(new Date(now));
+  db.job!.id = 'e03a2b8c-f69b-42bb-bc43-13a5d0917291';
+  db.job!.company_id = '362300b7-c0c5-4c2e-a9f6-6fe79f187e71';
+  db.job!.company.id = db.job!.company_id;
+  db.job!.company.company_name = 'Top Bun Antigua';
+  db.job!.title = 'Cook (Part time, Saturday only)';
+  db.job!.description = 'Application deadline: October 3, 2026.';
+  const before = structuredClone(db.job);
+  const data = await schemas();
+  expect(data.some(schema => schema['@type'] === 'JobPosting')).toBe(eligible);
+  expect(data.some(schema => schema['@type'] === 'BreadcrumbList')).toBe(true);
+  if (eligible) expect(data[0]).toMatchObject({ validThrough: '2026-10-03', employmentType: 'PART_TIME' });
+  const html = await pageHtml();
+  expect(html).toContain('Application deadline: October 3, 2026.');
+  expect(html).toContain('Sign In to Apply');
+  expect(html).toContain('Part Time');
+  expect(db.job).toEqual(before);
+});
+
+it('does not impose the Top Bun deadline on another company or vacancy', async () => {
+  vi.setSystemTime(new Date('2026-10-10T04:00:00Z'));
+  db.job!.company_id = '362300b7-c0c5-4c2e-a9f6-6fe79f187e71';
+  db.job!.company.id = db.job!.company_id;
+  db.job!.id = 'synthetic-another-top-bun-vacancy';
+  expect((await schemas())[0]['@type']).toBe('JobPosting');
+  expect((await schemas())[0]).not.toHaveProperty('validThrough');
+  db.job!.id = 'e03a2b8c-f69b-42bb-bc43-13a5d0917291';
+  db.job!.company_id = candidates[0].companyId;
+  db.job!.company.id = db.job!.company_id;
+  expect((await schemas())[0]['@type']).toBe('JobPosting');
+  expect((await schemas())[0]).not.toHaveProperty('validThrough');
+});
+
+it('keeps the unapproved Shhatterr Shack import excluded despite a public deadline', async () => {
+  db.job!.id = 'ade78a5c-e0f6-4f5f-8008-117d7a4b96ee';
+  db.job!.company_id = 'synthetic-unapproved-shhatterr-company';
+  db.job!.company.id = db.job!.company_id;
+  db.job!.description = 'Rage Room Attendant. Application deadline: October 30, 2026.';
+  expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  expect(await pageHtml()).toContain('Sign In to Apply');
+});
+
+describe('Star Times Driver Guide vacancy-scoped approval', () => {
+  const companyId = 'e9703c50-bfef-41fb-99f1-5ba9387418c2';
+  const jobId = '232f9e93-d28c-4e8b-bdb5-3c85093e61d6';
+  beforeEach(() => {
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = 'Star Times Adventure Tours';
+    db.job!.title = 'Driver Guide';
+  });
+  it('authorizes only the recorded vacancy without asserting the placeholder employment type', async () => {
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-06', employmentTypeUnconfirmed: true,
+      evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/25',
+    });
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+  });
+  it('excludes other current and future Star Times imports', async () => {
+    db.job!.id = 'synthetic-other-star-times-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('restores confirmed employmentType only when the uncertainty flag is removed', async () => {
+    EMPLOYER_APPROVED_JOBS[jobId] = { ...EMPLOYER_APPROVED_JOBS[jobId], employmentTypeUnconfirmed: false };
+    expect((await schemas())[0].employmentType).toBe('FULL_TIME');
+  });
 });

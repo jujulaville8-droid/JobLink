@@ -62,7 +62,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     .from("job_listings")
     .select("id", { count: "exact", head: true })
     .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .eq("category", category);
 
   const url = categoryUrl(category);

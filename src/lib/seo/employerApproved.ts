@@ -38,11 +38,21 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
   evidenceReference: string;
   /** Date-only deadline stated in the visible listing, if expires_at is absent. */
   validThrough?: string;
+  /** Omit optional employmentType markup until the employer confirms it. */
+  employmentTypeUnconfirmed?: boolean;
 }
 
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  "232f9e93-d28c-4e8b-bdb5-3c85093e61d6": {
+    companyId: "e9703c50-bfef-41fb-99f1-5ba9387418c2",
+    companyName: "Star Times Adventure Tours",
+    attestedOn: "2026-10-06",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/25",
+    // The approval record documents full_time as an unconfirmed placeholder.
+    employmentTypeUnconfirmed: true,
+  },
   "318d3b16-6aff-453c-b0d3-fc5f2d779783": {
     companyId: "1b11e815-e80b-4b35-affe-55c1d1fc16db",
     companyName: "MOfit Gym and Fitness Centre",

@@ -106,3 +106,29 @@ Woodstock's October 29 deadline. That deadline applies only to the original
 vacancy; no deadline is inferred for another or future job. Unapproved companies
 remain excluded from imported/admin-posted JobPosting markup. No job content,
 expiration policy, database records, or live settings were changed.
+
+## October 2026 scoped SEO release
+
+[PR #25](https://github.com/jujulaville8-droid/JobLink/pull/25) records employer
+permission on October 6 for the **Driver Guide** listing,
+job `232f9e93-d28c-4e8b-bdb5-3c85093e61d6`, at company
+`e9703c50-bfef-41fb-99f1-5ba9387418c2`. That permission is vacancy-specific and
+belongs only in `EMPLOYER_APPROVED_JOBS`, bound to both IDs. No new employer
+email verification or company-wide permission is claimed. The same record
+identifies `full_time` as an unconfirmed placeholder: optional `employmentType`
+markup is omitted until confirmation. Stored listing content stays unchanged.
+
+Top Bun's [Cook listing](https://joblinkantigua.com/jobs/e03a2b8c-f69b-42bb-bc43-13a5d0917291)
+visibly states **Application deadline: October 3, 2026.** Its separate public
+metadata record binds that date to the exact job and company. The date stays
+date-only in `validThrough`; after October 3 has passed in Antigua, only
+`JobPosting` is suppressed. No new employer permission or deadline is invented.
+The page, breadcrumbs, description and Apply remain available until manual
+status change. Other Top Bun jobs do not inherit this vacancy's deadline.
+Shhatterr Shack remains excluded from imported-job markup without authorization.
+
+Legacy `expires_at` values no longer hide active pages, browse/category/company
+results, sitemap entries, invitations or applications. Manual inactive statuses
+still block those routes. Stored deadlines may suppress Google Jobs markup;
+they do not alter listing status or the application route. This release makes
+no database writes or migrations and does not change security or Pro expiry.

@@ -32,10 +32,20 @@ it('does not log rejected sends and allows a later retry', async () => {
   s.reject = false; await processJobAlerts('job');
   expect(s.tables.job_alert_log).toHaveLength(2);
 });
-it('never emails for closed or expired jobs', async () => {
-  s.tables.job_listings[0].status = 'closed'; await processJobAlerts('job');
-  s.tables.job_listings[0].status = 'active'; s.tables.job_listings[0].expires_at = '2020-01-01'; await processJobAlerts('job');
+it.each(['closed', 'pending_approval', 'expired'])('never emails for a job whose status is %s', async (status) => {
+  s.tables.job_listings[0].status = status;
+  s.tables.job_listings[0].expires_at = '2020-01-01';
+  const originalJob = structuredClone(s.tables.job_listings[0]);
+  await processJobAlerts('job');
   expect(s.sent).toHaveLength(0);
+  expect(s.tables.job_listings[0]).toEqual(originalJob);
+});
+it('matches an active job despite a past stored deadline without changing it', async () => {
+  s.tables.job_listings[0].expires_at = '2020-01-01';
+  const originalJob = structuredClone(s.tables.job_listings[0]);
+  await processJobAlerts('job');
+  expect(s.sent).toEqual(['allowed@example.com']);
+  expect(s.tables.job_listings[0]).toEqual(originalJob);
 });
 it('does not email banned or unverified accounts', async () => {
   s.tables.users[0].is_banned = true; await processJobAlerts('job');

@@ -52,13 +52,13 @@ export async function POST(request: NextRequest) {
     // Invitations must point at one of this employer's open listings.
     const { data: listing } = await supabase
       .from('job_listings')
-      .select('title, expires_at')
+      .select('title')
       .eq('id', listing_id)
       .eq('company_id', company.id)
       .eq('status', 'active')
       .single()
 
-    if (!listing || (listing.expires_at && new Date(listing.expires_at) <= new Date())) {
+    if (!listing) {
       return NextResponse.json({ error: 'Choose one of your active listings' }, { status: 400 })
     }
 
