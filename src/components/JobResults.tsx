@@ -1,96 +1,29 @@
 import { jobCategoryFilter, knownJobCategory } from "@/lib/job-category";
-import { createClient } from "@/lib/supabase/server";
 import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
 import AlertToggle from "@/components/AlertToggle";
 import Link from "next/link";
-import { ilikePattern } from "@/lib/safe-sql";
-
-const JOBS_PER_PAGE = 12;
+import { getJobResults, JOBS_PER_PAGE, type JobResultsData, type JobSearchParams } from "@/lib/job-results";
 
 interface JobResultsProps {
-  searchParams: {
-    q?: string;
-    location?: string;
-    category?: string;
-    job_type?: string | string[];
-    page?: string;
-  };
+  searchParams: JobSearchParams;
+  prefetchedResults?: JobResultsData;
   gridClassName?: string;
 }
 
 export default async function JobResults({
   searchParams,
+  prefetchedResults,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4",
 }: JobResultsProps) {
   searchParams = { ...searchParams, category: jobCategoryFilter(searchParams.category) };
   const category = knownJobCategory(searchParams.category);
-  const supabase = await createClient();
-
-  const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1);
-  const from = (currentPage - 1) * JOBS_PER_PAGE;
-  const to = from + JOBS_PER_PAGE - 1;
-
-  let query = supabase
-    .from("job_listings")
-    .select(
-      `
-      id,
-      title,
-      description,
-      category,
-      job_type,
-      salary_min,
-      salary_max,
-      salary_visible,
-      location,
-      requires_work_permit,
-      status,
-      is_featured,
-      expires_at,
-      created_at,
-      company_search:companies(),
-      company:companies (
-        id,
-        company_name,
-        logo_url,
-        is_pro
-      )
-    `,
-      { count: "exact" }
-    )
-    .eq("status", "active")
-    .order("is_featured", { ascending: false })
-    .order("created_at", { ascending: false })
-    .range(from, to);
-
-  if (searchParams.q) {
-    // Quoted + wildcard-escaped: a raw value here breaks the or() expression
-    // apart, so any search containing a comma used to 400.
-    const keyword = ilikePattern(searchParams.q);
-    query = query
-      .ilike("company_search.company_name", `%${searchParams.q.trim().replace(/[\\%_]/g, (char) => `\\${char}`)}%`)
-      .or(`title.ilike.${keyword},description.ilike.${keyword},company_search.not.is.null`);
-  }
-
-  if (searchParams.location) {
-    query = query.ilike("location", `%${searchParams.location.replace(/[\\%_]/g, "")}%`);
-  }
-
-  if (searchParams.category) {
-    query = query.eq("category", searchParams.category);
-  }
-
-  if (searchParams.job_type) {
-    const types = Array.isArray(searchParams.job_type)
-      ? searchParams.job_type
-      : [searchParams.job_type];
-    if (types.length > 0) {
-      query = query.in("job_type", types);
-    }
-  }
-
-  const { data: jobs, error, count } = await query;
+  // /jobs validates pagination before its streaming shell. Keep the protected
+  // /browse-jobs consumer's existing page parsing and loading behavior.
+  const pageValue = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
+  const requestedPage = Math.max(1, parseInt(pageValue || "1", 10) || 1);
+  const { supabase, jobs, error, count, currentPage } = prefetchedResults
+    ?? await getJobResults(searchParams, requestedPage);
 
   // Fetch saved job IDs for the current user (if logged in)
   let savedJobIds: Set<string> = new Set();
