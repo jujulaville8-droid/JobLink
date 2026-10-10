@@ -3,18 +3,14 @@ import JobFilters from "@/components/JobFilters";
 import JobSearchBar from "@/components/JobSearchBar";
 import JobIndustryShortcuts from "@/components/JobIndustryShortcuts";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { knownJobCategory } from "@/lib/job-category";
+import { getJobResults, isJobPageOutOfRange, parseJobPage, type JobSearchParams } from "@/lib/job-results";
 
 interface PageProps {
-  searchParams: Promise<{
-    q?: string;
-    location?: string;
-    category?: string;
-    job_type?: string | string[];
-    page?: string;
-  }>;
+  searchParams: Promise<JobSearchParams>;
 }
 
 const JOBS_URL = "https://joblinkantigua.com/jobs";
@@ -34,37 +30,66 @@ const baseMetadata: Metadata = {
   },
 };
 
-/** One canonical URL format for a category page: /jobs?category=Food%20%26%20Beverage */
-function categoryUrl(category: string): string {
-  return `${JOBS_URL}?category=${encodeURIComponent(category)}`;
+/** Keep category spelling/encoding stable, and give each real page its own URL. */
+function jobsUrl(category: string | undefined, page: number): string {
+  const query = [
+    ...(category ? [`category=${encodeURIComponent(category)}`] : []),
+    ...(page > 1 ? [`page=${page}`] : []),
+  ];
+  return `${JOBS_URL}${query.length ? `?${query.join("&")}` : ""}`;
 }
 
-// Filtered /jobs URLs were being reported as soft 404s (empty categories),
-// duplicates, or "crawled, not indexed". Rules:
-// - A known category on its own gets a self canonical in one encoding, and is
-//   indexable only while it has live jobs. Empty ones are noindex,follow so
-//   they stay crawlable without being reported as soft 404s.
-// - Search / job type / location / unknown-category combinations are
-//   noindex,follow and canonical to /jobs.
+const noindex = { index: false, follow: true };
+
+// Clear the inherited root canonical as well as /jobs for invalid or failed
+// pagination. An error response must not present itself as a copy of page one.
+const unavailablePageMetadata: Metadata = {
+  ...baseMetadata,
+  alternates: { canonical: null },
+  robots: noindex,
+  openGraph: { ...baseMetadata.openGraph, url: undefined },
+};
+
+// Known categories and unfiltered browsing have one canonical per real page.
+// Search / job type / location / unknown-category combinations remain noindex,
+// follow and canonical to /jobs. A genuine empty first category page also stays
+// noindex,follow; missing later pages are handled before the page starts streaming.
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const params = await searchParams;
-  const hasOtherFilters = !!(params.q || params.location || params.job_type);
-  if (!params.category && !hasOtherFilters) return baseMetadata;
+  const page = parseJobPage(params.page);
+  if (page === null) return unavailablePageMetadata;
 
-  const noindex = { index: false, follow: true };
+  const results = page > 1 ? await getJobResults(params, page) : undefined;
+  if (results && (results.error || isJobPageOutOfRange(results))) return unavailablePageMetadata;
+
+  const hasOtherFilters = !!(params.q || params.location || params.job_type);
   const category = knownJobCategory(params.category);
-  if (!category || hasOtherFilters) {
+  if ((!category && params.category) || hasOtherFilters) {
     return { ...baseMetadata, robots: noindex };
   }
 
-  const supabase = await createClient();
-  const { count } = await supabase
-    .from("job_listings")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "active")
-    .eq("category", category);
+  const url = jobsUrl(category, page);
+  if (!category) {
+    return {
+      ...baseMetadata,
+      alternates: { canonical: url },
+      openGraph: { ...baseMetadata.openGraph, url },
+    };
+  }
 
-  const url = categoryUrl(category);
+  // First-page metadata keeps its inexpensive count query. Later pages reuse
+  // the exact result already used for existence validation and rendering.
+  let count = results?.count;
+  if (!results) {
+    const supabase = await createClient();
+    const response = await supabase
+      .from("job_listings")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("category", category);
+    count = response.count;
+  }
+
   const title = `${category} Jobs in Antigua and Barbuda`;
   const description = count
     ? `${count} open ${category} ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. Apply in minutes on JobLinks.`
@@ -82,6 +107,14 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 export default async function JobsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const category = knownJobCategory(params.category);
+  const page = parseJobPage(params.page);
+  if (page === null) notFound();
+
+  // Await before returning any Suspense shell: a late notFound() can only send
+  // a streamed 200 + noindex, not the actual 404 required for missing pages.
+  const prefetchedResults = page > 1 ? await getJobResults(params, page) : undefined;
+  if (prefetchedResults && isJobPageOutOfRange(prefetchedResults)) notFound();
+  if (prefetchedResults?.error) throw new Error("Unable to load the requested jobs page");
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -155,6 +188,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
           >
             <JobResults
               searchParams={params}
+              prefetchedResults={prefetchedResults}
               gridClassName="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
             />
           </Suspense>
