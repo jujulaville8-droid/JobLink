@@ -1,4 +1,4 @@
-import { jobCategoryFilter } from "@/lib/job-category";
+import { jobCategoryFilter, knownJobCategory } from "@/lib/job-category";
 import { createClient } from "@/lib/supabase/server";
 import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
@@ -24,6 +24,7 @@ export default async function JobResults({
   gridClassName = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4",
 }: JobResultsProps) {
   searchParams = { ...searchParams, category: jobCategoryFilter(searchParams.category) };
+  const category = knownJobCategory(searchParams.category);
   const supabase = await createClient();
 
   const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1);
@@ -209,6 +210,7 @@ export default async function JobResults({
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm text-text-light">
           <span className="font-semibold text-text">{totalCount}</span>{" "}
+          {category ? `${category} ` : ""}
           {totalCount === 1 ? "job" : "jobs"} found
         </p>
         <AlertToggle
