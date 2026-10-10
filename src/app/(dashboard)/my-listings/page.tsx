@@ -209,9 +209,6 @@ export default async function MyListingsPage({
                       {JOB_TYPE_LABELS[listing.job_type as JobType] ?? listing.job_type}
                     </span>
                     <span>Posted {formatDate(listing.created_at)}</span>
-                    {listing.expires_at && (
-                      <span className="text-text-muted">Expires {formatDate(listing.expires_at)}</span>
-                    )}
                   </div>
                 </div>
 

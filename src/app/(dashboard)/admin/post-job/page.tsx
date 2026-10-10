@@ -455,6 +455,7 @@ export default function AdminPostJobPage() {
                 className={cn(inputBase, 'resize-y min-h-[200px]', errors.description ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : 'border-border/40')}
               />
               <p className="mt-1 text-xs text-text-muted">{form.description.length.toLocaleString()} characters</p>
+              <p className="mt-1 text-xs text-text-muted">Leave application cutoffs out of the public description. Listings stay up until manually closed.</p>
               {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
             </div>
           </div>

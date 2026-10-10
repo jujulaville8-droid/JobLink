@@ -91,7 +91,8 @@ describe.each(candidates)('$companyName owner-attested approval', (candidate) =>
     });
     const description = document.createElement('div');
     description.innerHTML = data[0].description;
-    expect(description.textContent!.replace(/\s/g, '')).toBe(candidate.job.description.replace(/\s/g, ''));
+    const expectedDescription = candidate.job.description.replace('Apply before: 29 October 2026', '');
+    expect(description.textContent!.replace(/\s/g, '')).toBe(expectedDescription.replace(/\s/g, ''));
     expect(data[0].description).toContain('<p>');
     expect(data[0]).not.toHaveProperty('baseSalary');
     expect(data[0].validThrough).toBe(EMPLOYER_APPROVED_JOBS[candidate.id].validThrough);
@@ -186,6 +187,7 @@ it.each(['2026-09-30T20:09:59Z', '2026-09-30T20:10:00Z'])('keeps the page and Ap
   const before = structuredClone(db.job);
   const html = await pageHtml();
   expect(html).toContain('Sign In to Apply');
+  expect(html).not.toContain('Expires');
   expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   const metadata = await generateMetadata({ params: Promise.resolve({ id: db.job!.id }) });
   expect(metadata.title).not.toEqual({ absolute: 'Job Not Found | JobLinks' });
@@ -195,12 +197,26 @@ it.each(['2026-09-30T20:09:59Z', '2026-09-30T20:10:00Z'])('keeps the page and Ap
 it('retains an actual stored future deadline without inventing one', async () => {
   db.job = makeJob(candidates[1]);
   db.job.expires_at = '2026-10-20T12:00:00Z';
+  const before = structuredClone(db.job);
   expect((await schemas())[0].validThrough).toBe('2026-10-20T12:00:00.000Z');
+  expect(await pageHtml()).not.toContain('Expires');
+  expect(db.job).toEqual(before);
 });
 
 it('does not emit JobPosting without a hiring organization name', async () => {
   db.job!.company.company_name = '';
   expect((await schemas()).map((schema) => schema['@type'])).toEqual(['BreadcrumbList']);
+});
+
+it.each(['Application deadline: October 30, 2026.', '', ' \n '])('keeps the page and Apply but omits JobPosting when the public description is empty: %j', async description => {
+  db.job!.description = description;
+  const before = structuredClone(db.job);
+  const html = await pageHtml();
+  expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  expect(html).toContain(db.job!.title);
+  expect(html).toContain('Sign In to Apply');
+  expect(html).not.toContain('Application deadline');
+  expect(db.job).toEqual(before);
 });
 
 it('returns notFound for a missing listing', async () => {
@@ -234,7 +250,9 @@ it.each([
   const data = await schemas();
   expect(data.some((schema) => schema['@type'] === 'JobPosting')).toBe(eligible);
   expect(data.some((schema) => schema['@type'] === 'BreadcrumbList')).toBe(true);
-  expect(await pageHtml()).toContain('Apply before: 29 October 2026');
+  expect(await pageHtml()).not.toContain('Apply before: 29 October 2026');
+  expect(await pageHtml()).toContain('Sign In to Apply');
+  expect(db.job.description).toContain('Apply before: 29 October 2026');
 });
 
 it('does not impose Woodstock\'s deadline on MOfit', async () => {
@@ -256,16 +274,39 @@ it.each([
   db.job!.company.id = db.job!.company_id;
   db.job!.company.company_name = 'Top Bun Antigua';
   db.job!.title = 'Cook (Part time, Saturday only)';
-  db.job!.description = 'Application deadline: October 3, 2026.';
+  db.job!.description = 'Cook on Saturdays only. Application deadline: October 3, 2026.';
   const before = structuredClone(db.job);
   const data = await schemas();
   expect(data.some(schema => schema['@type'] === 'JobPosting')).toBe(eligible);
   expect(data.some(schema => schema['@type'] === 'BreadcrumbList')).toBe(true);
   if (eligible) expect(data[0]).toMatchObject({ validThrough: '2026-10-03', employmentType: 'PART_TIME' });
   const html = await pageHtml();
-  expect(html).toContain('Application deadline: October 3, 2026.');
+  expect(html).not.toContain('Application deadline: October 3, 2026.');
+  expect(html).toContain('Cook on Saturdays only.');
   expect(html).toContain('Sign In to Apply');
   expect(html).toContain('Part Time');
+  expect(db.job).toEqual(before);
+});
+
+it.each([
+  'Application deadline: October 3, 2026.',
+  'Apply before: 29 October 2026',
+  'Application deadline: 30 October 2026.',
+  'Applications close October 30, 2026.',
+])('keeps visible text, metadata and schema descriptions consistent while retaining source facts: %s', async deadline => {
+  db.job!.description = `Work Saturdays, 8am–4pm.\n\n${deadline}\n\nEmail office@example.com to apply.`;
+  const before = structuredClone(db.job);
+  const expected = 'Work Saturdays, 8am–4pm.\n\nEmail office@example.com to apply.';
+  const html = await pageHtml();
+  const page = document.createElement('div');
+  page.innerHTML = html;
+  expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(expected);
+  expect(html).not.toContain(deadline);
+  const schema = (await schemas()).find(schema => schema['@type'] === 'JobPosting');
+  expect(schema.description).toBe('<p>Work Saturdays, 8am–4pm.</p><p>Email office@example.com to apply.</p>');
+  const metadata = await generateMetadata({ params: Promise.resolve({ id: db.job!.id }) });
+  expect(metadata.description).toContain(expected.replace(/\s+/g, ' '));
+  expect(metadata.description).not.toContain(deadline);
   expect(db.job).toEqual(before);
 });
 
@@ -283,13 +324,20 @@ it('does not impose the Top Bun deadline on another company or vacancy', async (
   expect((await schemas())[0]).not.toHaveProperty('validThrough');
 });
 
-it('keeps the unapproved Shhatterr Shack import excluded despite a public deadline', async () => {
-  db.job!.id = 'ade78a5c-e0f6-4f5f-8008-117d7a4b96ee';
-  db.job!.company_id = 'synthetic-unapproved-shhatterr-company';
+it.each([
+  ['ade78a5c-e0f6-4f5f-8008-117d7a4b96ee', '1b68107a-228a-4e97-b047-d4c14bd730ef', 'Application deadline: 30 October 2026.'],
+  ['d4fdb396-a0b0-427d-aae0-ed756274375e', '42e58a5e-3f56-4f2b-b829-b9b335d45b81', 'Applications close October 30, 2026.'],
+])('keeps an unapproved import excluded after hiding its preserved deadline: %s', async (jobId, companyId, deadline) => {
+  db.job!.id = jobId;
+  db.job!.company_id = companyId;
   db.job!.company.id = db.job!.company_id;
-  db.job!.description = 'Rage Room Attendant. Application deadline: October 30, 2026.';
+  db.job!.description = `Assist customers. ${deadline}`;
+  const before = structuredClone(db.job);
+  expect(getEmployerApproval(companyId, jobId)).toBeNull();
   expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   expect(await pageHtml()).toContain('Sign In to Apply');
+  expect(await pageHtml()).not.toContain(deadline);
+  expect(db.job).toEqual(before);
 });
 
 describe('Star Times Driver Guide vacancy-scoped approval', () => {

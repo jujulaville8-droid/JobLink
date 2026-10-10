@@ -36,7 +36,7 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
   attestedOn: string;
   /** Reference to the employer confirmation or owner attestation. */
   evidenceReference: string;
-  /** Date-only deadline stated in the visible listing, if expires_at is absent. */
+  /** Original employer date-only deadline, retained if expires_at is absent. */
   validThrough?: string;
   /** Omit optional employmentType markup until the employer confirms it. */
   employmentTypeUnconfirmed?: boolean;
@@ -64,7 +64,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyName: "Woodstock BoatBuilders",
     attestedOn: "2026-09-30",
     evidenceReference: "owner-attestation:2026-09-30:Sentinel_cace3b51c42c81919512b87c905bc49a",
-    // Public description: "Apply before: 29 October 2026". No time was supplied.
+    // Original description: "Apply before: 29 October 2026". No time was supplied.
     validThrough: "2026-10-29",
   },
 };
