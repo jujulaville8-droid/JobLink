@@ -433,7 +433,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
   // Active listings with applicant counts
   const { data: activeJobsWithCounts } = await supabase
     .from("job_listings")
-    .select("id, title, status, created_at, expires_at, applications(count)")
+    .select("id, title, status, created_at, applications(count)")
     .eq("company_id", company.id)
     .eq("status", "active")
     .order("created_at", { ascending: false })
@@ -485,26 +485,11 @@ async function EmployerDashboard({ userId }: { userId: string }) {
     recentApplicants = (recent as Record<string, unknown>[] | null) ?? [];
   }
 
-  // Check for expiring listings (within 7 days)
-  const now = new Date();
-  const soonExpiry = new Date(now);
-  soonExpiry.setDate(soonExpiry.getDate() + 7);
-  const expiringJobs = (activeJobsWithCounts ?? []).filter((job: Record<string, unknown>) => {
-    if (!job.expires_at) return false;
-    const exp = new Date(job.expires_at as string);
-    return exp <= soonExpiry && exp >= now;
-  });
-
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
-  }
-
-  function daysUntil(dateStr: string): number {
-    const diff = new Date(dateStr).getTime() - now.getTime();
-    return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
   return (
@@ -601,7 +586,7 @@ async function EmployerDashboard({ userId }: { userId: string }) {
       )}
 
       {/* Alerts Row */}
-      {((pendingListings ?? 0) > 0 || expiringJobs.length > 0) && (
+      {(pendingListings ?? 0) > 0 && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {(pendingListings ?? 0) > 0 && (
             <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 p-4">
@@ -620,27 +605,6 @@ async function EmployerDashboard({ userId }: { userId: string }) {
                       ))}
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
-          )}
-          {expiringJobs.length > 0 && (
-            <div className="rounded-2xl border border-red-200/60 bg-red-50/50 p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-                  <svg className="h-4 w-4 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-red-800">{expiringJobs.length} listing{expiringJobs.length !== 1 ? 's' : ''} expiring soon</p>
-                  <div className="mt-1.5 space-y-0.5">
-                    {expiringJobs.map((job: Record<string, unknown>) => (
-                      <p key={job.id as string} className="text-xs text-red-700 truncate">
-                        {job.title as string} — {daysUntil(job.expires_at as string)}d left
-                      </p>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
@@ -708,7 +672,6 @@ async function EmployerDashboard({ userId }: { userId: string }) {
                       <p className="text-sm font-medium text-text truncate">{job.title as string}</p>
                       <p className="text-xs text-text-muted">
                         Posted {formatDate(job.created_at as string)}
-                        {(job.expires_at as string | null) && ` · Expires ${formatDate(job.expires_at as string)}`}
                       </p>
                     </div>
                     <span className="shrink-0 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary">

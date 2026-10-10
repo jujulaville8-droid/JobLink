@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import UnsaveButton from "./UnsaveButton";
 import Pagination from "@/components/Pagination";
+import { publicJobDescription } from "@/lib/public-job-description";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -67,6 +68,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
               const salaryMin = job.salary_min as number | null;
               const salaryMax = job.salary_max as number | null;
               const salaryVisible = job.salary_visible as boolean;
+              const description = publicJobDescription(job.description as string | null);
 
               return (
                 <div
@@ -85,10 +87,10 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
                       {(company?.company_name as string) ?? "Unknown Company"}
                     </p>
 
-                    {(job.description as string) ? (
+                    {description ? (
                       <p className="mt-2 text-sm text-text-light line-clamp-2">
-                        {(job.description as string).substring(0, 120)}
-                        {(job.description as string).length > 120 ? "..." : ""}
+                        {description.substring(0, 120)}
+                        {description.length > 120 ? "..." : ""}
                       </p>
                     ) : null}
 

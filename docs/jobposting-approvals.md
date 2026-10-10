@@ -132,3 +132,32 @@ results, sitemap entries, invitations or applications. Manual inactive statuses
 still block those routes. Stored deadlines may suppress Google Jobs markup;
 they do not alter listing status or the application route. This release makes
 no database writes or migrations and does not change security or Pro expiry.
+
+### Public deadline presentation (October 10, 2026)
+
+Application-closing sentences with recognizable calendar dates are omitted
+from the public description, saved-job excerpt, search/share description and
+JobPosting description by the same presentation helper. Legacy job-expiry
+badges/countdowns and the obsolete admin expiry-warning selector are removed.
+Posting forms request descriptions without application cutoffs; they do not
+add a date input or rewrite the original employer text.
+
+Original descriptions and stored dates remain unchanged. The private editing
+and approval views retain source text. Google Jobs eligibility and truthful
+date-only `validThrough` facts remain separate from public presentation:
+Top Bun stays ineligible after October 3, and Woodstock retains its exclusive
+October 29 "Apply before" boundary. No renewal or additional consent is implied.
+
+The October 10 production audit also verified these original October 30
+deadlines, retained in `public-job-deadlines.ts` with exact vacancy/company
+bindings. Neither record grants employer approval or enables JobPosting:
+
+- Food Brokerage, `d4fdb396-a0b0-427d-aae0-ed756274375e`, company
+  `42e58a5e-3f56-4f2b-b829-b9b335d45b81`: "Applications close October 30, 2026."
+- Shhatterr, `ade78a5c-e0f6-4f5f-8008-117d7a4b96ee`, company
+  `1b68107a-228a-4e97-b047-d4c14bd730ef`: "Application deadline: 30 October 2026."
+
+The helper deliberately leaves ambiguous prose, work schedules, duty deadlines
+and contact/application instructions intact. It is not a general natural-language
+deadline detector. Mail APIs/templates, database records, application behavior,
+and unrelated security, certification, Pro and billing expiry remain unchanged.

@@ -512,6 +512,7 @@ export default function PostJobPage() {
                       : 'border-border/60'
                   )}
                 />
+                <p className="mt-1.5 text-xs text-text-muted">Leave application cutoffs out of the public description. Listings stay up until manually closed.</p>
                 {errors.description && (
                   <p className="mt-1.5 text-xs text-red-600">
                     {errors.description}

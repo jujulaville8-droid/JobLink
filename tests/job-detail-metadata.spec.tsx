@@ -39,6 +39,17 @@ it('keeps descriptions vacancy-specific for roles at the same employer', () => {
     .not.toBe(jobMetaDescription({ ...context, description: 'Prepare food in the kitchen.' }));
 });
 
+it('omits application cutoffs consistently from search and social snippets, preserving the raw record', async () => {
+  db.job!.description = 'Application deadline: October 30, 2026. Repair wooden boats. Apply by email to office@example.com.';
+  const before = structuredClone(db.job);
+  const metadata = await generateMetadata({ params: Promise.resolve({ id: 'test-job' }) });
+  const expected = 'Apply for Carpenter / Boatbuilder at Woodstock BoatBuilders in English Harbour, Antigua. Repair wooden boats. Apply by email to office@example.com.';
+  expect(metadata.description).toBe(expected);
+  expect(metadata.openGraph?.description).toBe(expected);
+  expect(metadata.twitter?.description).toBe(expected);
+  expect(db.job).toEqual(before);
+});
+
 it('uses honest fallbacks when optional public fields are empty', () => {
   expect(jobMetaDescription({ title: 'Cook', companyName: '  ', location: '\n', description: ' ' }))
     .toBe('Apply for Cook at a company in Antigua and Barbuda. View the vacancy and apply on JobLinks.');

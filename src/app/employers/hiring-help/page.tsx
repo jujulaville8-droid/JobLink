@@ -7,7 +7,7 @@ import { PILOT_URL } from '@/lib/employer-pilot'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
-  title: 'Send us your vacancy | Hiring help in Antigua | JobLinks',
+  title: { absolute: 'Send us your vacancy | Hiring help in Antigua | JobLinks' },
   description: 'Need staff in Antigua and Barbuda? Send JobLinks your vacancy. Our free first-vacancy pilot helps with the advert, reaching job seekers and reviewing applications.',
   alternates: { canonical: PILOT_URL },
 }

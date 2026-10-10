@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
 import { jobMetaDescription } from "@/lib/seo/job-description";
+import { publicJobDescription } from "@/lib/public-job-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
@@ -152,6 +153,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const salary =
     job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : null;
+  const description = publicJobDescription(job.description);
 
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
   // A job type override there corrects both the visible label and the
@@ -278,8 +280,8 @@ export default async function JobDetailPage({ params }: PageProps) {
     !!job.posted_by_admin ||
     /imported by JobLink from a public job post/i.test(job.description || "");
 
-  // Preserve a published date-only deadline when the admin-created record has
-  // no expires_at. Do not manufacture an employer cutoff time in the schema.
+  // Preserve the employer's original date-only deadline even when it is no
+  // longer displayed. Never infer renewed permission or a new cutoff time.
   const publicDeadline = getPublicJobDeadline(job.id, company?.id ?? job.company_id);
   const approvalDeadline = publicDeadline ?? (employerApproval && "validThrough" in employerApproval
     ? employerApproval.validThrough
@@ -287,8 +289,8 @@ export default async function JobDetailPage({ params }: PageProps) {
   const validThrough = job.expires_at
     ? new Date(job.expires_at).toISOString()
     : approvalDeadline;
-  // Woodstock's "Apply before" excludes the named date. Top Bun's published
-  // application deadline includes that date. Compare calendar dates in Antigua
+  // Woodstock's "Apply before" excludes the named date. The other recorded
+  // application deadlines include that date. Compare calendar dates in Antigua
   // without inventing a time in validThrough. This affects only Google markup.
   const todayInAntigua = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Antigua", year: "numeric", month: "2-digit", day: "2-digit",
@@ -298,8 +300,10 @@ export default async function JobDetailPage({ params }: PageProps) {
     : false;
   // A stored deadline can retire Google Jobs markup, but never the page or Apply.
   const pastStoredDeadline = !!job.expires_at && new Date(job.expires_at) <= new Date();
+  // Google requires a description. Do not invent one if only a cutoff remains
+  // in the original text; the public page and Apply still stay available.
   const emitJobPosting =
-    !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
+    !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
 
   const employmentTypeConfirmed = !(employerApproval &&
     "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
@@ -313,7 +317,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       value: job.id,
     },
     title: job.title,
-    description: textToHtml(job.description || ""),
+    description: textToHtml(description),
     datePosted: job.created_at,
     ...(employmentTypeConfirmed && employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
     ...(job.category ? { industry: job.category } : {}),
@@ -497,7 +501,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* Posted / expires */}
+              {/* Posted date */}
               <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-text-muted">
                 <span className="inline-flex items-center gap-1">
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -506,22 +510,6 @@ export default async function JobDetailPage({ params }: PageProps) {
                   </svg>
                   Posted {timeAgo(job.created_at)}
                 </span>
-                {job.expires_at && (
-                  <span className="inline-flex items-center gap-1">
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    Expires{" "}
-                    {new Date(job.expires_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -544,7 +532,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 Job Description
               </h2>
               <div className="text-text-light whitespace-pre-wrap leading-[1.8] text-[0.9375rem] min-h-[120px]">
-                {job.description}
+                {description}
               </div>
             </div>
 
