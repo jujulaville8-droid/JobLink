@@ -38,7 +38,7 @@ Requirements
 Advantages and training
 Knowledge of Antigua and its attractions and bilingual ability are advantages. Guiding or hospitality experience is an advantage; otherwise, training is provided.
 
-How to apply: email your CV to Ceostartimesadventuretours@gmail.com.`,
+How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks.`,
   },
   {
     id: '318d3b16-6aff-453c-b0d3-fc5f2d779783',
@@ -65,7 +65,7 @@ Requirements
 - Basic knowledge of fitness equipment and terminology
 - Team player
 
-How to apply: send your CV and a short note to mofit268@outlook.com.`,
+How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks. Add a short note in the cover letter field.`,
   },
   {
     id: '0d1245af-a425-4a7f-b670-15dc8c275993',
@@ -83,7 +83,7 @@ Requirements and responsibilities
 - Ability to train
 - Perform cost control and profit-and-loss responsibilities
 
-How to apply: email EMANOUSOU@NOBUHOTELS.COM.`,
+How to apply: use the Apply button on this page to submit your application through JobLinks.`,
   },
 ];
 
