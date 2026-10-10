@@ -15,27 +15,31 @@ export async function GET(request: NextRequest) {
   const { createAdminClient } = await import('@/lib/supabase/admin')
   const adminClient = createAdminClient()
 
-  const { data: caller } = await adminClient
+  const { data: caller, error: callerError } = await adminClient
     .from('users')
     .select('role, is_admin')
     .eq('id', user.id)
     .single()
 
-  if (!caller) {
+  if (callerError || !caller) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: profile } = await adminClient
+  // Only the server-managed flag grants admin access, never the account role.
+  const isAdmin = caller.is_admin === true
+  if (!isAdmin && caller.role !== 'seeker' && caller.role !== 'employer') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { data: profile, error: profileError } = await adminClient
     .from('seeker_profiles')
     .select('id, user_id, cv_url')
     .eq('id', profileId)
     .single()
 
-  if (!profile?.cv_url) {
+  if (profileError || !profile?.cv_url) {
     return NextResponse.json({ error: 'CV not found' }, { status: 404 })
   }
-
-  const isAdmin = caller.is_admin === true || caller.role === 'admin'
 
   if (!isAdmin) {
     if (caller.role === 'seeker') {
@@ -43,13 +47,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     } else if (caller.role === 'employer') {
-      const { data: company } = await adminClient
+      const { data: company, error: companyError } = await adminClient
         .from('companies')
         .select('id, is_pro, pro_expires_at')
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (!company) {
+      if (companyError || !company) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
 
@@ -60,7 +64,7 @@ export async function GET(request: NextRequest) {
         (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date())
 
       if (!isProActive) {
-        const { data: hasRelationship } = await adminClient
+        const { data: hasRelationship, error: relationshipError } = await adminClient
           .from('applications')
           .select('id, job_listings!inner(company_id)')
           .eq('seeker_id', profile.id)
@@ -68,7 +72,7 @@ export async function GET(request: NextRequest) {
           .limit(1)
           .maybeSingle()
 
-        if (!hasRelationship) {
+        if (relationshipError || !hasRelationship) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
       }
