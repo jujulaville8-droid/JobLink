@@ -29,7 +29,6 @@ export default async function JobResults({
   const currentPage = Math.max(1, parseInt(searchParams.page || "1", 10) || 1);
   const from = (currentPage - 1) * JOBS_PER_PAGE;
   const to = from + JOBS_PER_PAGE - 1;
-  const now = new Date().toISOString();
 
   let query = supabase
     .from("job_listings")
@@ -60,7 +59,6 @@ export default async function JobResults({
       { count: "exact" }
     )
     .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);

@@ -29,8 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from("job_listings")
     .select("id", { count: "exact", head: true })
     .eq("company_id", id)
-    .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+    .eq("status", "active");
 
   const url = `https://joblinkantigua.com/companies/${id}`;
   return {
@@ -67,13 +66,11 @@ export default async function CompanyPage({ params }: PageProps) {
   }
 
   // Fetch active jobs from this company
-  const now = new Date().toISOString();
   const { data: jobs } = await supabase
     .from("job_listings")
     .select("*")
     .eq("company_id", id)
     .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 

@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
+import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
+import { jobMetaDescription } from "@/lib/seo/job-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
@@ -19,17 +21,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, status, expires_at, company:companies(company_name, logo_url)")
+    .select("title, description, location, status, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
-  if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
+  if (!job || job.status !== "active") {
     return { title: { absolute: "Job Not Found | JobLinks" } };
   }
 
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
   const title = `${job.title} at ${company?.company_name || "Company"} | JobLinks`;
-  const description = `Apply for ${job.title} at ${company?.company_name || "a company"} in Antigua and Barbuda. Browse jobs on JobLinks, Antigua's #1 job platform.`;
+  const description = jobMetaDescription({ ...job, companyName: company?.company_name });
   const url = `https://joblinkantigua.com/jobs/${id}`;
 
   return {
@@ -125,10 +127,11 @@ export default async function JobDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single();
 
-  // A closed, expired or missing listing must return a real 404. Rendering a
+  // Only manual status controls availability. A non-active or missing listing
+  // must return a real 404. Rendering a
   // "not found" body with a 200 makes it a soft 404: Google keeps the URL in
   // the index and reports it as an error in Search Console.
-  if (error || !job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
+  if (error || !job || job.status !== "active") {
     notFound();
   }
 
@@ -270,28 +273,36 @@ export default async function JobDetailPage({ params }: PageProps) {
   // imported from public posts (posted_by_admin, or the standard import footer
   // in the description) are otherwise skipped; the page itself stays
   // indexable. A dedicated column would be cleaner but needs a migration.
-  // Closed/expired jobs never reach this point (they 404 above).
+  // Non-active jobs never reach this point (they 404 above).
   const isImportedListing =
     !!job.posted_by_admin ||
     /imported by JobLink from a public job post/i.test(job.description || "");
 
   // Preserve a published date-only deadline when the admin-created record has
   // no expires_at. Do not manufacture an employer cutoff time in the schema.
-  const approvalDeadline = employerApproval && "validThrough" in employerApproval
+  const publicDeadline = getPublicJobDeadline(job.id, company?.id ?? job.company_id);
+  const approvalDeadline = publicDeadline ?? (employerApproval && "validThrough" in employerApproval
     ? employerApproval.validThrough
-    : undefined;
+    : undefined);
   const validThrough = job.expires_at
     ? new Date(job.expires_at).toISOString()
     : approvalDeadline;
-  // "Apply before" excludes the named date in the job's Antigua time zone.
-  // Retire only the markup; the board's manual-close behavior stays intact.
+  // Woodstock's "Apply before" excludes the named date. Top Bun's published
+  // application deadline includes that date. Compare calendar dates in Antigua
+  // without inventing a time in validThrough. This affects only Google markup.
+  const todayInAntigua = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Antigua", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
   const pastApprovalDeadline = !job.expires_at && approvalDeadline
-    ? new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Antigua", year: "numeric", month: "2-digit", day: "2-digit",
-      }).format(new Date()) >= approvalDeadline
+    ? (publicDeadline ? todayInAntigua > approvalDeadline : todayInAntigua >= approvalDeadline)
     : false;
+  // A stored deadline can retire Google Jobs markup, but never the page or Apply.
+  const pastStoredDeadline = !!job.expires_at && new Date(job.expires_at) <= new Date();
   const emitJobPosting =
-    !!company?.company_name && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
+    !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
+
+  const employmentTypeConfirmed = !(employerApproval &&
+    "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
@@ -304,7 +315,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     title: job.title,
     description: textToHtml(job.description || ""),
     datePosted: job.created_at,
-    ...(employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
+    ...(employmentTypeConfirmed && employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
     ...(job.category ? { industry: job.category } : {}),
     hiringOrganization: {
       "@type": "Organization",

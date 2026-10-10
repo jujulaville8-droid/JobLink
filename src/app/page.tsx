@@ -18,10 +18,9 @@ async function getFeaturedJobs(): Promise<Job[]> {
     // The admin client, like getHomepageStats below: the cookie-bound client
     // reads cookies, which opts the whole route out of static rendering and
     // makes the revalidate window above do nothing. The query is restricted to
-    // active, unexpired listings, which is what the public RLS policy allows
-    // anyway.
+    // active listings, which is what the public RLS policy allows. Listings
+    // stay available until the employer or an admin closes them.
     const supabase = createAdminClient();
-    const now = new Date().toISOString();
 
     const { data: jobs, error } = await supabase
       .from("job_listings")
@@ -33,7 +32,6 @@ async function getFeaturedJobs(): Promise<Job[]> {
       `
       )
       .eq("status", "active")
-      .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(3);
@@ -76,22 +74,17 @@ async function getFeaturedJobs(): Promise<Job[]> {
 async function getHomepageStats(): Promise<HomepageStats> {
   try {
     const supabase = createAdminClient();
-    const now = new Date().toISOString();
 
     const [jobsResult, hiringResult, membersResult, applicationsResult] =
       await Promise.all([
         supabase
           .from("job_listings")
           .select("id", { count: "exact", head: true })
-          .eq("status", "active")
-          .or(`expires_at.is.null,expires_at.gt.${now}`),
+          .eq("status", "active"),
         supabase
           .from("companies")
           .select("id, job_listings!inner(id)", { count: "exact", head: true })
-          .eq("job_listings.status", "active")
-          .or(`expires_at.is.null,expires_at.gt.${now}`, {
-            referencedTable: "job_listings",
-          }),
+          .eq("job_listings.status", "active"),
         supabase
           .from("users")
           .select("id", { count: "exact", head: true }),

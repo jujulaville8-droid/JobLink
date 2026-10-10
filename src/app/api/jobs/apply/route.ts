@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, title, company_id, posted_by_admin, expires_at, companies(company_name, user_id, contact_email)')
+      .select('id, status, title, company_id, posted_by_admin, companies(company_name, user_id, contact_email)')
       .eq('id', job_id)
       .single()
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job listing not found' }, { status: 404 })
     }
 
-    if (job.status !== 'active' || (job.expires_at && new Date(job.expires_at) <= new Date())) {
+    if (job.status !== 'active') {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
     }
 

@@ -6,11 +6,10 @@ import { BentoGrid } from '@/components/magicui/bento-grid'
 export default async function JobIndustryShortcuts() {
   const supabase = await createClient()
   const counts = new Map<string, number>()
-  const now = new Date().toISOString()
   // Read only categories, paging beyond PostgREST's default row limit.
   for (let start = 0; ; start += 1000) {
     const { data, error } = await supabase.from('job_listings').select('category')
-      .eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${now}`)
+      .eq('status', 'active')
       .order('id').range(start, start + 999)
     if (error) return null
     for (const job of data ?? []) {

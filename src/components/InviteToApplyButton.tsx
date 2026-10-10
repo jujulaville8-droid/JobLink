@@ -39,7 +39,6 @@ export default function InviteToApplyButton({
 
     async function fetchListings() {
       const supabase = createClient();
-      const now = new Date().toISOString();
       const { data: company } = await supabase
         .from("companies")
         .select("id")
@@ -53,7 +52,6 @@ export default function InviteToApplyButton({
         .select("id, title")
         .eq("company_id", company.id)
         .eq("status", "active")
-        .or(`expires_at.is.null,expires_at.gt.${now}`)
         .order("created_at", { ascending: false });
 
       if (data) {

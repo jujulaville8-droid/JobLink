@@ -1,58 +1,89 @@
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { INDUSTRIES } from "@/lib/types";
 
 const BASE_URL = "https://joblinkantigua.com";
+const JOB_PAGE_SIZE = 1000;
+const COMPANY_BATCH_SIZE = 100;
+
+type SitemapJob = {
+  id: string;
+  company_id: string;
+  category: string | null;
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient();
 
-  // Static pages
+  // No lastModified until an authoritative content-modification date exists.
+  // A request timestamp or a record's creation date is not that date.
   const staticPages: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
-    { url: `${BASE_URL}/jobs`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-    { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
-    { url: `${BASE_URL}/employers/hiring-help`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
-    { url: `${BASE_URL}/employers/upgrade`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.4 },
-    { url: `${BASE_URL}/privacy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
-    { url: `${BASE_URL}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
+    { url: BASE_URL, changeFrequency: "daily", priority: 1.0 },
+    { url: `${BASE_URL}/jobs`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/about`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${BASE_URL}/employers/hiring-help`, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${BASE_URL}/employers/upgrade`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${BASE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
+    { url: `${BASE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  // Only live listings. /jobs/[id] returns 404 for anything closed or expired,
-  // so listing those here would submit known-404 URLs to Search Console.
-  const now = new Date().toISOString();
+  // Listings remain available until their status is changed manually; neither
+  // their age nor a legacy expires_at date removes them from the sitemap.
+  // Page in stable ID order so the Data API row limit cannot hide an industry.
+  const jobs = new Map<string, SitemapJob>();
+  for (let start = 0; ; start += JOB_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("job_listings")
+      .select("id, company_id, category")
+      .eq("status", "active")
+      .order("id", { ascending: true })
+      .range(start, start + JOB_PAGE_SIZE - 1);
 
-  const { data: jobs } = await supabase
-    .from("job_listings")
-    .select("id, company_id, created_at")
-    .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("created_at", { ascending: false });
+    // A database outage must not publish a successful but incomplete sitemap.
+    if (error) throw new Error("Unable to load live jobs for sitemap", { cause: error });
+    for (const job of data ?? []) jobs.set(job.id, job);
+    if (!data || data.length < JOB_PAGE_SIZE) break;
+  }
+  const liveJobs = [...jobs.values()];
 
-  const jobPages: MetadataRoute.Sitemap = (jobs || []).map((job) => ({
+  const jobPages: MetadataRoute.Sitemap = liveJobs.map((job) => ({
     url: `${BASE_URL}/jobs/${job.id}`,
-    lastModified: new Date(job.created_at),
     changeFrequency: "daily" as const,
     priority: 0.8,
   }));
 
-  // Company pages: only those with a live job. Profiles without one are
-  // noindex (thin pages Google reported as soft 404s), so listing them here
-  // would submit URLs we ask Google not to index.
-  const hiringCompanyIds = Array.from(new Set((jobs || []).map((job) => job.company_id)));
-  const { data: companies } = hiringCompanyIds.length
-    ? await supabase
-        .from("companies")
-        .select("id, created_at")
-        .in("id", hiringCompanyIds)
-        .order("created_at", { ascending: false })
-    : { data: [] as { id: string; created_at: string }[] };
+  // Category queries use exact taxonomy spelling. Do not normalize a stored
+  // noncanonical value into a category whose canonical page would be empty.
+  // Unlike the homepage shortcuts, include every populated industry, not six.
+  const populatedCategories = new Set(liveJobs.map((job) => job.category));
+  const categoryPages: MetadataRoute.Sitemap = INDUSTRIES
+    .filter((category) => populatedCategories.has(category))
+    .map((category) => ({
+      url: `${BASE_URL}/jobs?category=${encodeURIComponent(category)}`,
+      changeFrequency: "daily" as const,
+      priority: 0.7,
+    }));
 
-  const companyPages: MetadataRoute.Sitemap = (companies || []).map((company) => ({
-    url: `${BASE_URL}/companies/${company.id}`,
-    lastModified: new Date(company.created_at),
+  // Only public company profiles with an active job are indexable. Keep the
+  // existing company lookup, with bounded ID batches below the API row limit.
+  const hiringCompanyIds = [...new Set(liveJobs.map((job) => job.company_id))];
+  const companyIds = new Set<string>();
+  for (let start = 0; start < hiringCompanyIds.length; start += COMPANY_BATCH_SIZE) {
+    const { data, error } = await supabase
+      .from("companies")
+      .select("id")
+      .in("id", hiringCompanyIds.slice(start, start + COMPANY_BATCH_SIZE))
+      .order("id", { ascending: true });
+
+    if (error) throw new Error("Unable to load hiring companies for sitemap", { cause: error });
+    for (const company of data ?? []) companyIds.add(company.id);
+  }
+
+  const companyPages: MetadataRoute.Sitemap = [...companyIds].map((id) => ({
+    url: `${BASE_URL}/companies/${id}`,
     changeFrequency: "weekly" as const,
     priority: 0.5,
   }));
 
-  return [...staticPages, ...jobPages, ...companyPages];
+  return [...staticPages, ...jobPages, ...categoryPages, ...companyPages];
 }
