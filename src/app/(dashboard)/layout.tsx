@@ -31,6 +31,7 @@ const employerLinks = [
 const adminLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
   { href: "/admin/inbox", label: "Applicant Inbox", icon: "mail" },
+  { href: "/admin/applications", label: "Applications", icon: "file-text" },
   { href: "/admin/post-job", label: "Post a Job", icon: "plus-circle" },
   { href: "/admin/companies", label: "Company Logos", icon: "building" },
   { href: "/admin/users", label: "Users", icon: "users" },
@@ -65,7 +66,7 @@ export default async function DashboardLayout({
   // Get user role and verification status from users table
   const { data: userData } = await supabase
     .from("users")
-    .select("role, email_verified")
+    .select("role, email_verified, is_admin")
     .eq("id", user.id)
     .single();
 
@@ -83,18 +84,20 @@ export default async function DashboardLayout({
         : seekerLinks;
 
   // Inject badges into sidebar links
-  const navLinks = baseLinks.map((link) => {
+  const decorateLink = (link: typeof adminLinks[number]) => {
     if (link.href === "/messages") return { ...link, badge: <UnreadBadge /> };
     if (link.href === "/admin/approvals") return { ...link, badge: <PendingApprovalsBadge /> };
     return link;
-  });
+  };
+  const navLinks = baseLinks.map(decorateLink);
+  const applicationLinks = userData.is_admin === true ? adminLinks.map(decorateLink) : undefined;
 
   return (
     <>
     <DashboardCanvas sidebar={
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:top-16 md:bottom-0 border-r border-border bg-[--color-surface] z-30">
         <div className="flex flex-col flex-1 overflow-y-auto px-3 py-6">
-          <SidebarNav links={navLinks} />
+          <SidebarNav links={navLinks} applicationLinks={applicationLinks} />
 
           {/* Sign out at bottom */}
           <div className="mt-auto pt-4 border-t border-border">

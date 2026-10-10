@@ -10,6 +10,7 @@ import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { FloatingNav } from "@/components/ui/floating-navbar";
 import { LayoutGrid, User, Users, Settings, LogOut, Search, Info, Building, Compass, Shield, ArrowRightLeft } from "lucide-react";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
+import { isRouteActive } from "@/lib/navigation-state";
 
 export default function Navbar() {
   const router = useRouter();
@@ -218,7 +219,7 @@ export default function Navbar() {
               <span className="font-display text-xl font-bold tracking-tight text-primary">
                 JobLinks
               </span>
-              <span className="hidden sm:inline text-[11px] font-medium text-text-muted/70 border-l border-border pl-2.5 leading-tight">
+              <span className={`hidden sm:inline text-[11px] font-medium ${isRouteActive(pathname, '/admin/applications') ? 'text-[#526565]' : 'text-text-muted/70'} border-l border-border pl-2.5 leading-tight`}>
                 Antigua&apos;s Career Network
               </span>
             </Link>

@@ -1,0 +1,38 @@
+.applicationsShell > aside {
+  background: #095355;
+  border-color: #095355;
+  color: #fff;
+}
+
+.applicationsShell > aside :global(.dashboard-nav-link) {
+  color: #fff;
+  border-left-color: transparent;
+}
+
+.applicationsShell > aside :global(.dashboard-nav-link:hover) {
+  background: rgb(255 255 255 / 8%);
+}
+
+.applicationsShell > aside :global(.dashboard-nav-link[aria-current="page"]) {
+  background: #0d7377;
+  border-left-color: #e8973e;
+  color: #fff;
+}
+
+.applicationsShell > aside :global(.dashboard-nav-link:focus-visible),
+.applicationsShell > aside button:focus-visible {
+  outline: 2px solid #e8973e;
+  outline-offset: 2px;
+}
+
+.applicationsShell > aside :global(.mt-auto) {
+  border-color: rgb(255 255 255 / 20%);
+}
+
+.applicationsShell > aside form button {
+  color: #fff;
+}
+
+.applicationsShell > aside form button:hover {
+  background: rgb(255 255 255 / 8%);
+}

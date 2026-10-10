@@ -1,0 +1,5 @@
+@font-face { font-family: 'DM Serif Display'; font-style: normal; font-weight: 400; font-display: swap; src: url('/__admin_fixture_fonts/heading.woff2') format('woff2'); }
+@font-face { font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/__admin_fixture_fonts/body.woff2') format('woff2'); }
+:root { --font-heading: 'DM Serif Display', Georgia, serif; --font-body: 'Plus Jakarta Sans', Arial, sans-serif; }
+body { font-family: var(--font-body); }
+.admin-fixture-label { margin: 0; padding: 4px 12px; color: #313b49; background: #f3f5f7; font: 11px/1.5 var(--font-body); text-align: center; }
