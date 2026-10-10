@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { getActiveHref } from "@/lib/navigation-state";
+import { usePathname } from "next/navigation";
+import { getActiveHref, isRouteActive } from "@/lib/navigation-state";
 import { useNavigationFeedback } from "@/components/useNavigationFeedback";
 
 interface NavLink {
@@ -105,7 +106,9 @@ function SidebarIcon({ icon }: { icon: string }) {
   return <>{icons[icon] || null}</>;
 }
 
-export default function SidebarNav({ links }: { links: NavLink[] }) {
+export default function SidebarNav({ links, applicationLinks }: { links: NavLink[]; applicationLinks?: NavLink[] }) {
+  const pathname = usePathname();
+  const visibleLinks = applicationLinks && isRouteActive(pathname, "/admin/applications") ? applicationLinks : links;
   const {
     activePathname,
     beginNavigation,
@@ -114,12 +117,12 @@ export default function SidebarNav({ links }: { links: NavLink[] }) {
   } = useNavigationFeedback();
   const activeHref = getActiveHref(
     activePathname,
-    links.map((link) => link.href),
+    visibleLinks.map((link) => link.href),
   );
 
   return (
     <nav className="flex flex-col gap-1">
-      {links.map((link) => {
+      {visibleLinks.map((link) => {
         const isActive = activeHref === link.href;
         const pending = isPending(link.href);
 

@@ -1,0 +1,74 @@
+.drawer {
+  position: fixed;
+  inset: 16px 16px 16px auto;
+  box-sizing: border-box;
+  width: min(340px, 90vw);
+  height: calc(100dvh - 32px);
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e8e3db;
+  border-radius: 16px;
+  background: #faf8f5;
+  color: #253b3c;
+  font-family: var(--font-body), sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  box-shadow: 0 16px 64px rgb(9 53 55 / 20%);
+}
+
+.drawer[open] { display: flex; flex-direction: column; animation: enter 200ms ease-out; }
+.drawer::backdrop { background: rgb(18 39 40 / 28%); }
+.topbar { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; min-height: 66px; padding: 8px 16px 8px 24px; border-bottom: 1px solid #e8e3db; }
+.eyebrow { margin: 0; color: #526565; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.close { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; padding: 8px; border: 0; border-radius: 10px; background: transparent; color: #095355; cursor: pointer; }
+.close:hover { background: #eeeee7; }
+.mobileBack { display: none; }
+.body { min-height: 0; padding: 24px; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.job { padding-bottom: 24px; }
+.jobTitle { margin: 7px 0 3px; color: #095355; font-size: 27px; font-weight: 400; line-height: 1.25; overflow-wrap: anywhere; }
+.muted { margin: 0; color: #526565; }
+.identity { display: flex; align-items: center; gap: 13px; }
+.avatar { display: grid; place-items: center; flex: none; width: 48px; height: 48px; border: 1px solid #d1e0dc; border-radius: 50%; background: #e5eeea; color: #095355; font-size: 16px; font-weight: 700; }
+.identityText { min-width: 0; }
+.name { margin: 0 0 6px; font-size: 17px; font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.status { display: inline-block; padding: 3px 9px; border: 1px solid #cbdcd6; border-radius: 20px; background: #e8f0ec; color: #095355; font-size: 11px; font-weight: 700; }
+.date { margin: 20px 0 24px; }
+.date p { margin: 3px 0 0; }
+.label { margin: 0; font-weight: 700; }
+.small { margin: 10px 0 0; color: #526565; font-size: 11px; line-height: 1.65; }
+.section { padding: 22px 0; border-top: 1px solid #e8e3db; }
+.sectionTitle { margin: 0 0 12px; color: #253b3c; font-size: 13px; font-weight: 700; }
+.primaryButton { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; width: 100%; padding: 10px 8px; border: 1px solid #0d7377; border-radius: 10px; background: #0d7377; color: #fff; font-size: 12px; font-weight: 700; text-align: center; text-decoration: none; }
+.primaryButton:hover { border-color: #095355; background: #095355; }
+.textLink { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; color: #095355; font-weight: 700; text-underline-offset: 3px; }
+.coverLetter { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.textButton { min-height: 44px; margin-top: 4px; padding: 4px 0; border: 0; background: transparent; color: #095355; font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.contacts { display: grid; gap: 15px; margin: 0; }
+.contacts dt { margin-bottom: 3px; color: #526565; font-size: 11px; }
+.contacts dd { margin: 0; overflow-wrap: anywhere; }
+.contacts a { color: #095355; text-decoration: underline; text-underline-offset: 3px; }
+.notification { margin-top: 2px; padding: 18px; border: 1px solid #e8e3db; border-radius: 12px; background: #f1efea; }
+.notification .sectionTitle { margin-bottom: 7px; }
+.notification .small { margin-top: 5px; }
+.state { margin: 8px 0; color: #526565; }
+.secondaryButton { min-height: 44px; margin-top: 16px; padding: 8px 16px; border: 1px solid #0d7377; border-radius: 9px; background: transparent; color: #095355; font: inherit; font-weight: 700; cursor: pointer; }
+.drawer :is(button, a):focus-visible { outline: 3px solid #0d7377; outline-offset: 3px; }
+
+@keyframes enter { from { transform: translateX(6px); } to { transform: translateX(0); } }
+
+@media (max-width: 767px) {
+  .drawer { inset: 0; width: 100%; height: 100dvh; border: 0; border-radius: 0; }
+  .topbar { flex-direction: row-reverse; justify-content: flex-end; padding: max(8px, env(safe-area-inset-top)) 16px 8px; }
+  .close { padding-inline: 0 14px; }
+  .desktopClose { display: none; }
+  .mobileBack { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+  .body { padding: 24px 24px max(28px, env(safe-area-inset-bottom)); }
+  .jobTitle { font-size: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer[open] { animation: none; }
+}

@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import ShareToFacebook from "@/components/ShareToFacebook";
+import AdminApplicationsPreview from "@/components/admin-applications/AdminApplicationsPreview";
 
 interface AdminStats {
   totalUsers: number;
@@ -123,14 +124,17 @@ export default function AdminBentoDashboard({
           bgColor="bg-amber-50"
           borderColor="border-l-amber-500"
         />
-        <AnimatedStat
-          label="Applications"
-          value={stats.totalApplications}
-          icon={File01Icon}
-          color="text-emerald-600"
-          bgColor="bg-emerald-50"
-          borderColor="border-l-emerald-500"
-        />
+        <Link href="/admin/applications" className="block rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
+          <AnimatedStat
+            label="Applications"
+            caption="All time"
+            value={stats.totalApplications}
+            icon={File01Icon}
+            color="text-emerald-600"
+            bgColor="bg-emerald-50"
+            borderColor="border-l-emerald-500"
+          />
+        </Link>
         <AnimatedStat
           label="Pro Subscribers"
           value={stats.proSubscribers}
@@ -140,6 +144,8 @@ export default function AdminBentoDashboard({
           borderColor="border-l-purple-500"
         />
       </div>
+
+      <AdminApplicationsPreview />
 
       {/* Reports + This Week */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -394,6 +400,7 @@ function AnimatedStat({
   color,
   bgColor,
   borderColor,
+  caption,
 }: {
   label: string;
   value: number;
@@ -401,13 +408,14 @@ function AnimatedStat({
   color: string;
   bgColor: string;
   borderColor: string;
+  caption?: string;
 }) {
   return (
     <motion.div
       variants={item}
       className={cn(
         cardBase,
-        "p-5 border-l-4 flex items-center justify-between group",
+        "h-full p-5 border-l-4 flex items-center justify-between group",
         borderColor,
       )}
     >
@@ -421,6 +429,7 @@ function AnimatedStat({
         >
           {value.toLocaleString()}
         </motion.p>
+        {caption && <p className="mt-1 text-xs text-text-light">{caption}</p>}
       </div>
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6", bgColor)}>
         <HugeiconsIcon icon={icon} size={20} className={color} />
