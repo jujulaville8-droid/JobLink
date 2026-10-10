@@ -2,11 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
 import { jobMetaDescription } from "@/lib/seo/job-description";
-import { publicJobDescription } from "@/lib/public-job-description";
+import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import { getEmployerApproval } from "@/lib/seo/employerApproved";
+import { hasUnconfirmedEmploymentType } from "@/lib/seo/unconfirmed-employment-types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, description, location, status, company:companies(company_name, logo_url)")
+    .select("id, company_id, title, description, location, status, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
@@ -153,7 +154,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const salary =
     job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : null;
-  const description = publicJobDescription(job.description);
+  const description = publicVacancyDescription(job);
 
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
   // A job type override there corrects both the visible label and the
@@ -257,6 +258,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")
     .trim();
+  const isRemoteJob = rawLocality.toLowerCase().includes("remote");
 
   // salary_min/max are only meaningful with a pay period. The forms collect a
   // salary_type but it is not stored yet, so only send unitText once it is.
@@ -305,8 +307,8 @@ export default async function JobDetailPage({ params }: PageProps) {
   const emitJobPosting =
     !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
 
-  const employmentTypeConfirmed = !(employerApproval &&
-    "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
+  const employmentTypeConfirmed = !hasUnconfirmedEmploymentType(job.id, job.company_id) &&
+    !(employerApproval && "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
@@ -335,11 +337,13 @@ export default async function JobDetailPage({ params }: PageProps) {
         addressCountry: "AG",
       },
     },
-    applicantLocationRequirements: {
+    // Google uses applicantLocationRequirements for remote-job geography.
+    // On-site location stays in jobLocation; visible eligibility text is intact.
+    ...(isRemoteJob ? { applicantLocationRequirements: {
       "@type": "Country",
       name: "Antigua and Barbuda",
-    },
-    jobLocationType: rawLocality.toLowerCase().includes("remote") ? "TELECOMMUTE" : undefined,
+    } } : {}),
+    jobLocationType: isRemoteJob ? "TELECOMMUTE" : undefined,
     ...(validThrough ? { validThrough } : {}),
     // Applying requires signing in and completing a profile/CV first, which
     // Google does not count as a direct apply experience.

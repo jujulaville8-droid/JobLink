@@ -28,7 +28,7 @@ it('uses the public vacancy summary and actual location across search and share 
   expect(metadata.openGraph?.description).toBe(expected);
   expect(metadata.twitter?.description).toBe(expected);
   expect(metadata.description).not.toContain('#1');
-  expect(db.select).toHaveBeenCalledWith('title, description, location, status, company:companies(company_name, logo_url)');
+  expect(db.select).toHaveBeenCalledWith('id, company_id, title, description, location, status, company:companies(company_name, logo_url)');
   expect(metadata.title).toEqual({ absolute: 'Carpenter / Boatbuilder at Woodstock BoatBuilders | JobLinks' });
   expect(metadata.alternates?.canonical).toBe('https://joblinkantigua.com/jobs/test-job');
 });
