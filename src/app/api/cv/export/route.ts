@@ -20,26 +20,31 @@ export async function GET(request: NextRequest) {
       const { createAdminClient } = await import('@/lib/supabase/admin')
       const admin = createAdminClient()
 
-      const { data: caller } = await admin
+      const { data: caller, error: callerError } = await admin
         .from('users')
         .select('role, is_admin')
         .eq('id', user.id)
         .single()
 
-      const isAdmin = caller?.is_admin === true || caller?.role === 'admin'
+      if (callerError || !caller) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+
+      // Only the server-managed flag grants admin access, never the account role.
+      const isAdmin = caller.is_admin === true
 
       if (!isAdmin) {
-        if (!caller || caller.role !== 'employer') {
+        if (caller.role !== 'employer') {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
-        const { data: company } = await admin
+        const { data: company, error: companyError } = await admin
           .from('companies')
           .select('id, is_pro, pro_expires_at')
           .eq('user_id', user.id)
           .maybeSingle()
 
-        if (!company) {
+        if (companyError || !company) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
@@ -51,7 +56,7 @@ export async function GET(request: NextRequest) {
           (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date())
 
         if (!isProActive) {
-          const { data: hasRelationship } = await admin
+          const { data: hasRelationship, error: relationshipError } = await admin
             .from('applications')
             .select('id, seeker_profiles!inner(user_id), job_listings!inner(company_id)')
             .eq('seeker_profiles.user_id', targetUserId)
@@ -59,7 +64,7 @@ export async function GET(request: NextRequest) {
             .limit(1)
             .maybeSingle()
 
-          if (!hasRelationship) {
+          if (relationshipError || !hasRelationship) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
           }
         }
