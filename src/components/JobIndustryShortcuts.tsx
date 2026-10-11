@@ -17,7 +17,8 @@ export default async function JobIndustryShortcuts() {
     }
     if (!data || data.length < 1000) break
   }
-  const categories = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 6)
+  // Every populated industry needs a crawlable link from the jobs directory.
+  const categories = [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
   if (!categories.length) return null
   return <section aria-labelledby="industry-shortcuts" className="mb-6">
     <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
