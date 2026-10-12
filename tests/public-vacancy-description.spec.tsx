@@ -150,7 +150,7 @@ describe.each(vacancies)('$companyName verified description fallback', vacancy =
     },
   );
 
-  it('renders the same enriched text in body and metadata while approvals stay unchanged and no JobPosting is emitted', async () => {
+  it('renders the same enriched text in body and metadata under its recorded vacancy-scoped approval', async () => {
     db.job = makeJob(vacancy);
     const before = structuredClone(db.job);
     const { page, schemas, description } = await renderPage();
@@ -167,8 +167,9 @@ describe.each(vacancies)('$companyName verified description fallback', vacancy =
     expect(page.textContent).toContain('Sign In to Apply');
     expect(db.job.company.description).toBe('Existing employer profile.');
     expect(page.textContent).not.toContain('October');
-    expect(schemas.map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
-    expect(getEmployerApproval(vacancy.company_id, vacancy.id)).toBeNull();
+    expect(schemas.map(schema => schema['@type'])).toEqual(['JobPosting', 'BreadcrumbList']);
+    expect(getEmployerApproval(vacancy.company_id, vacancy.id)).toMatchObject({ companyId: vacancy.company_id });
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(vacancy.company_id);
     expect(EMPLOYER_APPROVED_JOBS).toEqual(originalApprovals);
     expect(EMPLOYER_APPROVED_COMPANIES).toEqual(originalCompanyApprovals);
     expect(db.job).toEqual(before);
@@ -211,7 +212,8 @@ describe.each(vacancies)('$companyName verified description fallback', vacancy =
     const metadata = await generateMetadata({ params: Promise.resolve({ id: vacancy.id }) });
     expect(description).toBe(db.job.description);
     expect(metadata.description).toContain(db.job.description);
-    expect(schemas.map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+    const schema = schemas.find(item => item['@type'] === 'JobPosting');
+    expect(schema.description).toBe(`<p>${db.job.description}</p>`);
     expect(db.job).toEqual(before);
   });
 });

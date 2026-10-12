@@ -325,20 +325,47 @@ it('does not impose the Top Bun deadline on another company or vacancy', async (
   expect((await schemas())[0]).not.toHaveProperty('validThrough');
 });
 
-it.each([
-  ['ade78a5c-e0f6-4f5f-8008-117d7a4b96ee', '1b68107a-228a-4e97-b047-d4c14bd730ef', 'Application deadline: 30 October 2026.'],
-  ['d4fdb396-a0b0-427d-aae0-ed756274375e', '42e58a5e-3f56-4f2b-b829-b9b335d45b81', 'Applications close October 30, 2026.'],
-])('keeps an unapproved import excluded after hiding its preserved deadline: %s', async (jobId, companyId, deadline) => {
-  db.job!.id = jobId;
-  db.job!.company_id = companyId;
-  db.job!.company.id = db.job!.company_id;
-  db.job!.description = `Assist customers. ${deadline}`;
-  const before = structuredClone(db.job);
-  expect(getEmployerApproval(companyId, jobId)).toBeNull();
-  expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
-  expect(await pageHtml()).toContain('Sign In to Apply');
-  expect(await pageHtml()).not.toContain(deadline);
-  expect(db.job).toEqual(before);
+describe.each([
+  ['ade78a5c-e0f6-4f5f-8008-117d7a4b96ee', '1b68107a-228a-4e97-b047-d4c14bd730ef', 'Shhatterr Shack Rage Room', 'Application deadline: 30 October 2026.', '2026-10-08', true],
+  ['d4fdb396-a0b0-427d-aae0-ed756274375e', '42e58a5e-3f56-4f2b-b829-b9b335d45b81', 'Food Brokerage Services Ltd.', 'Applications close October 30, 2026.', '2026-10-09', false],
+])('%s vacancy-scoped approval with a preserved deadline', (jobId, companyId, companyName, deadline, attestedOn, unconfirmed) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-12T12:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.job_type = 'full_time';
+    db.job!.description = `Assist customers. ${deadline}`;
+  });
+  it('emits JobPosting for only the recorded vacancy with its date-only deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({ companyId, attestedOn });
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, validThrough: '2026-10-30', directApply: false });
+    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
+    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema.description).not.toContain(deadline);
+    const html = await pageHtml();
+    expect(html).toContain('Sign In to Apply');
+    expect(html).not.toContain(deadline);
+    expect(db.job).toEqual(before);
+  });
+  it('retires the markup after the Antigua deadline date', async () => {
+    vi.setSystemTime(new Date('2026-10-31T05:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
 });
 
 describe('Star Times Driver Guide vacancy-scoped approval', () => {
