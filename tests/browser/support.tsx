@@ -8,6 +8,6 @@ createRoot(document.getElementById('root')!).render(<>
     <p>Isolated preview of the actual support component and website stylesheet.</p>
     <button id="background-action" style={{ marginTop: '1rem' }}>Background action</button>
   </main>
-  <nav aria-label="Fixture mobile navigation" style={{ position: 'fixed', bottom: 0, height: 76, width: '100%', background: 'white', borderTop: '1px solid #e8e3db', padding: '1rem' }}>Home · Jobs · Account</nav>
+  {new URLSearchParams(location.search).get('surface') !== 'home' && <nav data-support-obstruction aria-label="Fixture mobile navigation" className="md:hidden" style={{ position: 'fixed', bottom: 0, height: 76, width: '100%', background: 'white', borderTop: '1px solid #e8e3db', padding: '1rem' }}>Home · Jobs · Account</nav>}
   <SupportButton />
 </>)

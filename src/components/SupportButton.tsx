@@ -2,9 +2,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { MessageCircle, X } from 'lucide-react'
 import { supportSchema, SUPPORT_RETRY_WINDOW_MS } from '@/lib/support'
+import { useSupportClearance } from './useSupportClearance'
 import styles from './SupportButton.module.css'
 
 export default function SupportButton() {
+  const widgetRef = useSupportClearance()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState({ name: '', email: '', message: '', consent: false, website: '' })
   const [busy, setBusy] = useState(false)
@@ -69,9 +71,9 @@ export default function SupportButton() {
     } finally { sending.current = false; setBusy(false) }
   }
 
-  return <>
-    <button ref={openerRef} type="button" className={styles.trigger} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-      <MessageCircle size={20} aria-hidden="true" /> Support
+  return <div ref={widgetRef}>
+    <button ref={openerRef} type="button" className={styles.trigger} aria-label="Support" title="Contact support — replies by email" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+      <MessageCircle size={25} aria-hidden="true" />
     </button>
     <dialog ref={dialogRef} className={styles.dialog} aria-labelledby={titleId} aria-describedby={descriptionId}
       onCancel={event => { event.preventDefault(); setOpen(false) }} onClose={() => setOpen(false)}
@@ -85,10 +87,11 @@ export default function SupportButton() {
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
       }}>
       <div className={styles.header}>
-        <h2 id={titleId}>Contact support</h2>
+        <div className={styles.heading}><MessageCircle size={20} aria-hidden="true" /><div><h2 id={titleId}>JobLinks support</h2><p>Replies by email</p></div></div>
         <button ref={closeRef} type="button" className={styles.close} aria-label="Close support" onClick={() => setOpen(false)}><X size={22} aria-hidden="true" /></button>
       </div>
-      <p id={descriptionId} className={styles.description}>Need help with JobLinks? Tell us what happened and how we can reply. No account needed.</p>
+      <div className={styles.body}>
+      <p id={descriptionId} className={styles.description}>Send us a message about JobLinks. We’ll reply to your email.</p>
       {reference ? <div role="status" className={styles.receipt}>
         <h3>Message accepted for sending</h3>
         <p>Our email provider accepted your message for support. This does not confirm inbox delivery.</p>
@@ -98,14 +101,15 @@ export default function SupportButton() {
         <fieldset disabled={busy} className={styles.fields}>
           <label>Your name<input value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} name="name" autoComplete="name" maxLength={100} required /></label>
           <label>Reply email<input value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} name="email" type="email" autoComplete="email" maxLength={254} required /></label>
-          <div><label htmlFor={messageId}>Message</label><textarea id={messageId} value={draft.message} onChange={event => setDraft({ ...draft, message: event.target.value })} name="message" minLength={10} maxLength={5000} rows={5} aria-describedby={messageHintId} required /></div>
-          <p id={messageHintId} className={styles.hint}>10–5,000 characters. Please leave out passwords, payment details, and other people’s private information.</p>
+          <div><label htmlFor={messageId}>Message</label><textarea id={messageId} value={draft.message} onChange={event => setDraft({ ...draft, message: event.target.value })} name="message" minLength={10} maxLength={5000} rows={3} aria-describedby={messageHintId} required /></div>
+          <p id={messageHintId} className={styles.hint}>10–5,000 characters. Leave out passwords, payment details, and others’ private information.</p>
           <div className={styles.honeypot} aria-hidden="true"><label>Leave this empty<input name="website" value={draft.website} onChange={event => setDraft({ ...draft, website: event.target.value })} tabIndex={-1} autoComplete="off" maxLength={300} /></label></div>
-          <label className={styles.consent}><input name="consent" type="checkbox" checked={draft.consent} onChange={event => setDraft({ ...draft, consent: event.target.checked })} required /><span>I agree to send my name, email, and message to JobLinks support by email and be contacted about this request. <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy policy (opens in a new tab)</a></span></label>
+          <label className={styles.consent}><input name="consent" type="checkbox" checked={draft.consent} onChange={event => setDraft({ ...draft, consent: event.target.checked })} required /><span>I agree to email my name, reply email, and message to JobLinks support and be contacted about this request. <a href="/privacy" target="_blank" rel="noopener noreferrer" aria-label="Privacy policy (opens in a new tab)">Privacy policy ↗</a></span></label>
         </fieldset>
         {error && <p role="alert" className={styles.error}>{error}</p>}
         <button type="submit" className={styles.submit} disabled={busy}>{busy ? 'Sending message…' : 'Send message'}</button>
       </form>}
+      </div>
     </dialog>
-  </>
+  </div>
 }

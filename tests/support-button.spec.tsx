@@ -12,6 +12,15 @@ function openAndFill() {
 }
 function submit() { fireEvent.submit(screen.getByRole('button', { name: 'Send message' }).closest('form')!) }
 
+it('opens only on request and explains that support replies by email', () => {
+  render(<SupportButton />)
+  expect(screen.queryByRole('dialog')).toBeNull()
+  const bubble = screen.getByRole('button', { name: 'Support' })
+  expect(bubble.getAttribute('aria-expanded')).toBe('false')
+  fireEvent.click(bubble)
+  expect(screen.getByRole('dialog', { name: 'JobLinks support' }).textContent).toMatch(/reply.*email/i)
+})
+
 it('loops Tab and Shift+Tab within the support controls', () => {
   render(<SupportButton />)
   fireEvent.click(screen.getByRole('button', { name: 'Support' }))

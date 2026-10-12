@@ -691,7 +691,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         <div className="h-36 md:h-20 lg:hidden" />
 
         {/* Mobile sticky apply button — sits above bottom nav on mobile */}
-        <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
+        <div data-support-obstruction className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
           <ApplyButton jobId={job.id} state={applyState} />
         </div>
       </div>

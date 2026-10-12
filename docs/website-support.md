@@ -1,14 +1,22 @@
 # Website support intake
 
-The website has a site-wide **Support** button and a native modal. Visitors can
+The website has a small site-wide **Support** chat bubble in the bottom right,
+opening a compact native modal panel. Visitors can
 send their name (1–100 characters), reply email (up to 254 characters), and message
 (10–5,000 characters), after agreeing to share those details with JobLinks support
 and be contacted about the request. No account or attachment is required.
 
+The panel explicitly says **Replies by email**; it makes no live-chat,
+online-agent, or instant-response claim and opens only after a visitor action.
 The dialog uses the site's existing teal controls. Native modal behavior contains
 keyboard focus and makes the background inert. Escape and the close button dismiss
-it and restore focus to Support. The dialog scrolls within the mobile viewport;
-the trigger sits above the existing mobile bottom navigation. Closing or failing
+it and restore focus to Support. The panel body scrolls while its close control
+stays visible. The 56px bubble and right-edge panel sit above the actual visible
+bottom navigation and Apply bar, measured with ResizeObserver and checked again
+after route changes. Safe-area insets and the visual viewport are respected.
+There is no current cookie banner in the repository. Future bottom cookie or
+consent UI must use `data-support-obstruction` to join the same collision handling;
+tests simulate such a banner. Closing or failing
 keeps the draft in component memory. Refreshing or leaving the site clears it;
 private drafts are not written to browser storage.
 
@@ -91,13 +99,13 @@ this task. There was no root `AGENTS.md` or `.agents` directory; the existing
 
 | Check | Result |
 | --- | --- |
-| Focused support API/form specs | 32 passed; red/green validation, focus-loop and proxy-origin regressions verified |
-| Full Vitest suite (`npm run test:unit -- --maxWorkers=2`) | 1,338 passed, 1 existing live-email test skipped |
+| Focused support API/form specs | 33 passed; red/green validation, focus-loop, proxy-origin and explicit email-response behavior verified |
+| Full Vitest suite (`npm run test:unit -- --maxWorkers=2`) | 1,339 passed, 1 existing live-email test skipped |
 | Existing Node suite (`npm run test:node`) | 34 passed |
 | `npm run typecheck` | Passed |
 | `npm run lint` | 0 errors; 9 existing navigation warnings, no added warnings |
 | `npm run build -- --webpack` | Passed with inert public placeholders and blank email/service credentials |
-| Headless browser fixture | 6/6 passed: 320, 390, 1440 px × light/dark preferences, reduced motion |
+| Headless browser fixture | 10/10 normal cases: 320, 375, 390, 768, 1440 px × light/dark preferences; reduced motion, 200% text, nav/Apply/cookie clearance; 2/2 keyboard viewport cases |
 | Compiled local production API | Correct 503 for unconfigured delivery, 403 for foreign origin, 400 for missing consent, 413 for excessive body; no-store responses |
 | Diff whitespace check | Passed |
 
@@ -117,6 +125,45 @@ absorbed filled text. The compiled-route check exposed and fixed an origin check
 that relied on Next's normalized internal hostname. The route now compares the
 browser Origin with Host and the edge-set protocol; tests cover both local and
 HTTPS proxy hosts and continue to reject foreign origins.
+
+## Independent review and component research
+
+An independent read-only reviewer checked the exact original diff from base
+`32d7ed3` to `82a9b6a`, then the compact-bubble follow-up. No important backend,
+header/injection, limiter, configuration, provider-error, or duplicate-path
+findings remained. The reviewer independently reran all 33 focused specs.
+
+The UI review found a mobile keyboard bug: the keyboard inset was counted twice
+in available panel height. A failing synthetic visualViewport regression
+reproduced panel collapse. The fix calculates available space from layout height,
+subtracting clearance once and preserving viewport pan offset. The reviewer
+confirmed the fix and both 400px keyboard viewport scenarios (offset 0/100).
+Normal browser checks also exercise focus, Escape, focus restoration, consent,
+draft failure/retry, duplicate prevention, clearing accepted drafts, and no
+automatic opening. Physical software keyboards still merit the normal device
+smoke check before publication; the automated keyboard cases are simulations.
+
+Public resource reviewed on October 12, 2026:
+
+| Field | Evidence / decision |
+| --- | --- |
+| Component / author | shadcn/ui Dialog by shadcn |
+| Catalog | [21st.dev Dialog](https://21st.dev/@shadcn/components/dialog) |
+| Upstream source | [shadcn/ui dialog.tsx](https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/v4/registry/new-york-v4/ui/dialog.tsx) |
+| License | [MIT, copyright 2023 shadcn](https://raw.githubusercontent.com/shadcn-ui/ui/main/LICENSE.md) |
+| Catalog dependencies | lucide-react and @radix-ui/react-dialog; current upstream uses radix-ui |
+| Reuse | Functional reference only; no source, CSS, demo data, media, or notices copied |
+| Implementation decision | Keep existing native dialog and installed Lucide icons; add no registry/package dependency |
+
+The public Dialog pattern fits accessible modal behavior. A chat runtime would
+add unnecessary capabilities to an email-only support flow. The adaptation is
+original local UI using existing website colors and controls, following Julian's
+explicit small-bubble direction. No component purchase, account, paid registry,
+or additional credential is used. Since no third-party code is vendored, there is
+no new copied-code license notice to retain; existing dependency licenses remain
+in their installed packages. Static asset totals before/after are recorded in the
+local evidence bundle as aggregate uncompressed build sizes, not a per-page
+performance claim.
 
 All screenshots are isolated component fixtures with synthetic data. No iOS
 working copy, existing task, live configuration, real inbox, or desktop Chrome
