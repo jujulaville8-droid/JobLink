@@ -2,6 +2,9 @@ import { type ComponentPropsWithoutRef } from "react"
 
 import { cn } from "@/lib/utils"
 
+// Magic UI Marquee (MIT): https://magicui.design/docs/components/marquee
+// Copyright and permission notice are retained in ./LICENSE.md.
+
 interface MarqueeProps extends ComponentPropsWithoutRef<"div"> {
   /**
    * Optional CSS class name to apply custom styles

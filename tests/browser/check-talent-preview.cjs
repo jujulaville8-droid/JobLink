@@ -27,14 +27,17 @@ const checkTalentPreview = async (page) => {
   await section.scrollIntoViewIfNeeded();
   await page.mouse.move(0, 0);
   check(await signup.getAttribute('href') === '/signup?role=employer&returnTo=%2Fmembers', 'Anonymous CTA preserves employer intent and guarded return');
-  check(await section.locator('#talent-preview-illustration').evaluate(el => getComputedStyle(el).filter) === 'blur(3px)', 'Frosted preview blur is applied in the production build');
+  check(await section.locator('#talent-preview-illustration').evaluate(el => el.getAttribute('aria-hidden') === 'true' && !el.querySelector('img, a, button, [tabindex]')), 'Anonymous decorative cards have no photos or interactive profile links');
   check((await section.innerText()).includes('Create an employer account to browse candidates'), 'Positive employer-access caption is visible');
   check(!requests.some(url => /seeker_profiles|cv-download|cv\/export|browse-candidates/.test(url)), 'Anonymous browser makes no candidate/CV requests');
   check(!(await page.content()).includes('PRIVATE_CANDIDATE_CANARY'), 'Anonymous HTML and RSC contain no private candidate canary');
   check(await track.evaluate(el => getComputedStyle(el).animationPlayState) === 'running', 'Animation starts after hydration');
   const before = await track.evaluate(el => getComputedStyle(el).transform);
-  await page.waitForTimeout(250);
-  check(await track.evaluate(el => getComputedStyle(el).transform) !== before, 'Carousel moves');
+  await page.waitForFunction(previous => {
+    const el = document.querySelector('section[aria-labelledby="talent-preview-title"] .animate-marquee');
+    return el && getComputedStyle(el).transform !== previous;
+  }, before, { timeout: 3000 });
+  check(true, 'Carousel moves');
   await control.click();
   await page.mouse.move(0, 0);
   await control.evaluate(el => el.blur());
@@ -68,7 +71,9 @@ const checkTalentPreview = async (page) => {
       return link.left >= card.left && link.right <= card.right && link.top >= card.top && link.bottom <= card.bottom;
     }), `Employer signup stays inside its card at ${width}px`);
     check(await signup.isVisible() && await control.isVisible(), `Signup and pause usable at ${width}px`);
-    if (width === 390 || width === 1440) await section.screenshot({ path: `output/playwright/talent-preview-${width}.png` });
+    check(await track.evaluate(el => el.clientWidth >= el.closest('#talent-preview-illustration').clientWidth), `Repeated track fills the preview without a loop gap at ${width}px`);
+    check(await control.evaluate(el => { const box = el.getBoundingClientRect(); return box.width >= 44 && box.height >= 44; }), `Pause target is at least 44px at ${width}px`);
+    await section.screenshot({ path: `output/playwright/candidate-after-${width}.png` });
   }
   await page.emulateMedia({ reducedMotion: 'reduce' });
   check(await track.evaluate(el => getComputedStyle(el).animationName) === 'none', 'Reduced motion disables the carousel');
