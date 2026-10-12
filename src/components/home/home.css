@@ -97,7 +97,7 @@ main:has(.local-roots-home){min-height:0;padding-bottom:0}
 .home-trust-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
 .home-stat{min-height:92px;padding-right:20px;border-right:1px solid #e8e3db}
 .home-stat:last-child{border-right:0}
-.home-stat>span{min-width:4ch;line-height:1.1}
+.home-stat>span{min-width:4ch;line-height:1.1;color:#102040}
 .home-stat p,.home-trust-people p{margin:9px 0 0;color:#65717c;font-size:12px;line-height:1.5}
 .home-trust-people{display:flex;align-items:center;gap:20px;min-width:330px}
 .home-trust-people p{max-width:170px;margin:0;font-weight:600;color:#095355}
@@ -143,7 +143,7 @@ main:has(.local-roots-home){min-height:0;padding-bottom:0}
 .home-role-rotate{font-size:13px;min-height:38px;flex-wrap:wrap}.home-role-rotate>div{min-width:145px;padding-block:4px}
 .home-search-demo{margin-top:12px;max-width:none;min-height:44px;padding:10px 15px}
 .home-trust{grid-template-columns:1fr;gap:24px;min-height:0;padding:27px 24px}
-.home-trust-stats{gap:10px}.home-stat{min-height:80px;padding-right:9px}.home-stat>span{font-size:29px}.home-stat p{font-size:10px}.home-trust-people{min-width:0;flex-direction:row;align-items:center}
+.home-trust-stats{display:flex;flex-wrap:wrap;gap:10px}.home-stat{flex:1;min-width:min-content;min-height:80px;padding-right:9px}.home-stat>span{min-width:3ch;font-size:29px}.home-stat p{font-size:10px}.home-trust-people{min-width:0;flex-direction:row;align-items:center}
 .home-job-grid{grid-template-columns:1fr;gap:12px!important}.home-job-grid-1{min-height:130px}.home-job-grid-2{min-height:272px}.home-job-grid-3{min-height:414px}
 .home-category-marquee{margin-top:20px}
 .home-step-card{padding:16px}.home-step-card p{font-size:12px}
