@@ -45,6 +45,24 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Street Blends replied yes on 2026-10-12 (ET) to posting this Barista Prep
+  // Assistants vacancy. Full Time is an unconfirmed placeholder.
+  "03aeffa0-f680-46b2-b5eb-ea3891d0ce44": {
+    companyId: "6b354ee5-ff32-44b3-a5c8-29f73650b51a",
+    companyName: "Street Blends",
+    attestedOn: "2026-10-12",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/41",
+    employmentTypeUnconfirmed: true,
+  },
+  // Hermitage Bay HR replied on 2026-10-12 asking JobLink to post their roles,
+  // starting with this Line Cook vacancy. Full Time is an unconfirmed placeholder.
+  "40b28447-7653-4646-bc21-b8f0653d9409": {
+    companyId: "22a1fd24-ef01-4b55-8043-1cdca65bc25c",
+    companyName: "Hermitage Bay",
+    attestedOn: "2026-10-12",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/41",
+    employmentTypeUnconfirmed: true,
+  },
   // Mark Thomas replied yes on 2026-10-09 to publishing this Van Sales
   // Assistant/Operator vacancy (Oct 9 to Oct 30) and later confirmed Full Time.
   "d4fdb396-a0b0-427d-aae0-ed756274375e": {

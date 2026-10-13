@@ -25,6 +25,13 @@ const PUBLIC_JOB_DEADLINES: Record<string, PublicJobDeadline> = {
     companyId: "1b68107a-228a-4e97-b047-d4c14bd730ef",
     validThrough: "2026-10-30",
   },
+  // https://joblinkantigua.com/jobs/03aeffa0-f680-46b2-b5eb-ea3891d0ce44
+  // Original Dadli Jobs posting (https://dadlijobs.com/job/barista-prep-assistants-2/):
+  // "Deadline: October 15, 2026."
+  "03aeffa0-f680-46b2-b5eb-ea3891d0ce44": {
+    companyId: "6b354ee5-ff32-44b3-a5c8-29f73650b51a",
+    validThrough: "2026-10-15",
+  },
 };
 
 export function getPublicJobDeadline(jobId: string, companyId: string | null | undefined): string | undefined {
