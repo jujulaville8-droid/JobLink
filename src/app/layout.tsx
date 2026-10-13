@@ -5,6 +5,7 @@ import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
+import SupportButton from "@/components/SupportButton";
 import "./globals.css";
 import "@/components/home/home.css";
 
@@ -93,6 +94,7 @@ export default function RootLayout({
           <main className="min-h-screen pb-20 md:pb-0">{children}</main>
           <Footer />
           <BottomNav />
+          <SupportButton />
         </AuthProvider>
         <Analytics />
       </body>
