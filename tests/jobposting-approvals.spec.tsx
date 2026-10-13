@@ -405,3 +405,49 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     expect((await schemas())[0].employmentType).toBe('FULL_TIME');
   });
 });
+
+describe.each([
+  ['03aeffa0-f680-46b2-b5eb-ea3891d0ce44', '6b354ee5-ff32-44b3-a5c8-29f73650b51a', 'Street Blends', 'Barista Prep Assistants', '2026-10-15'],
+  ['40b28447-7653-4646-bc21-b8f0653d9409', '22a1fd24-ef01-4b55-8043-1cdca65bc25c', 'Hermitage Bay', 'Line Cook', undefined],
+])('%s October 12 vacancy-scoped approval', (jobId, companyId, companyName, title, validThrough) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-12T22:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy without the placeholder employment type', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-12', employmentTypeUnconfirmed: true,
+      evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/41',
+    });
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    if (validThrough) expect(schema.validThrough).toBe(validThrough);
+    else expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  if (validThrough) {
+    it('retires the markup after the Antigua deadline date', async () => {
+      vi.setSystemTime(new Date('2026-10-16T05:00:00Z'));
+      expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+    });
+  }
+});

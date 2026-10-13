@@ -181,3 +181,22 @@ Both jobs keep their existing October 30 date-only deadline from
 Antigua. The deadline record itself still grants no approval. Stored listing
 content, status and the application route are unchanged, and there are no
 database writes.
+
+## October 12, 2026 vacancy-scoped employer approvals (Street Blends, Hermitage Bay)
+
+[PR #41](https://github.com/jujulaville8-droid/JobLink/pull/41) records two
+employer replies from the JobLink outreach CRM received on October 12, 2026.
+Each permission covers one vacancy only and lives in `EMPLOYER_APPROVED_JOBS`,
+bound to both IDs. No company-wide permission is claimed, and other current or
+future jobs at either company stay excluded. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Street Blends — Barista Prep Assistants | `03aeffa0-f680-46b2-b5eb-ea3891d0ce44` | `6b354ee5-ff32-44b3-a5c8-29f73650b51a` | 2026-10-12 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Hermitage Bay — Line Cook | `40b28447-7653-4646-bc21-b8f0653d9409` | `22a1fd24-ef01-4b55-8043-1cdca65bc25c` | 2026-10-12 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+Street Blends keeps the original October 15 date-only deadline from its public
+Dadli Jobs posting, recorded in `public-job-deadlines.ts` and emitted as
+`validThrough`; markup retires after that date in Antigua. Hermitage Bay has no
+published deadline, so no `validThrough` is emitted. Stored listing content,
+status and the application route are unchanged, and there are no database writes.
