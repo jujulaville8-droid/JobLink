@@ -5,9 +5,12 @@ import { supportSchema, SUPPORT_RETRY_WINDOW_MS } from '@/lib/support'
 import { useSupportClearance } from './useSupportClearance'
 import styles from './SupportButton.module.css'
 
+const FADE_MS = 180
+
 export default function SupportButton() {
   const widgetRef = useSupportClearance()
   const [open, setOpen] = useState(false)
+  const [phase, setPhase] = useState<'opening' | 'open' | 'closing'>('opening')
   const [draft, setDraft] = useState({ name: '', email: '', message: '', consent: false, website: '' })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -15,12 +18,29 @@ export default function SupportButton() {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const openerRef = useRef<HTMLButtonElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  const openingFrame = useRef<number | null>(null)
+  const closingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sending = useRef(false)
   const attempt = useRef<{ signature: string; id: string; created_at: number } | null>(null)
   const titleId = useId()
   const descriptionId = useId()
   const messageHintId = useId()
   const messageId = useId()
+  const dialogId = useId()
+
+  function openSupport() {
+    if (closingTimer.current !== null) { clearTimeout(closingTimer.current); closingTimer.current = null }
+    setPhase(open || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'open' : 'opening')
+    setOpen(true)
+  }
+
+  function closeSupport() {
+    if (phase === 'closing') return
+    if (openingFrame.current !== null) { cancelAnimationFrame(openingFrame.current); openingFrame.current = null }
+    setPhase('closing')
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setOpen(false); return }
+    closingTimer.current = setTimeout(() => { closingTimer.current = null; setOpen(false) }, FADE_MS)
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -31,7 +51,18 @@ export default function SupportButton() {
     document.body.style.overflow = 'hidden'
     // Avoid opening a mobile keyboard before the visitor has read the form.
     closeRef.current?.focus({ preventScroll: true })
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      // Paint the transparent panel before advancing to its visible state.
+      openingFrame.current = requestAnimationFrame(() => {
+        openingFrame.current = requestAnimationFrame(() => {
+          openingFrame.current = null
+          setPhase(current => current === 'opening' ? 'open' : current)
+        })
+      })
+    }
     return () => {
+      if (openingFrame.current !== null) { cancelAnimationFrame(openingFrame.current); openingFrame.current = null }
+      if (closingTimer.current !== null) { clearTimeout(closingTimer.current); closingTimer.current = null }
       if (dialog.open) dialog.close()
       document.body.style.overflow = previousOverflow
       opener?.focus({ preventScroll: true })
@@ -72,11 +103,11 @@ export default function SupportButton() {
   }
 
   return <div ref={widgetRef}>
-    <button ref={openerRef} type="button" className={styles.trigger} aria-label="Support" title="Contact support — replies by email" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
+    <button ref={openerRef} type="button" className={styles.trigger} data-hidden={open} aria-hidden={open || undefined} aria-label="Support" title="Contact support — replies by email" aria-haspopup="dialog" aria-controls={dialogId} aria-expanded={open} onClick={openSupport}>
       <MessageCircle size={25} aria-hidden="true" />
     </button>
-    <dialog ref={dialogRef} className={styles.dialog} aria-labelledby={titleId} aria-describedby={descriptionId}
-      onCancel={event => { event.preventDefault(); setOpen(false) }} onClose={() => setOpen(false)}
+    <dialog ref={dialogRef} id={dialogId} className={styles.dialog} data-phase={phase} aria-labelledby={titleId} aria-describedby={descriptionId}
+      onCancel={event => { event.preventDefault(); closeSupport() }} onClose={event => { if (!event.currentTarget.open) setOpen(false) }}
       onKeyDown={event => {
         if (event.key !== 'Tab') return
         const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, textarea, [tabindex]'))
@@ -90,9 +121,10 @@ export default function SupportButton() {
         event.preventDefault()
         controls[next].focus()
       }}>
+      <div className={styles.panel}>
       <div className={styles.header}>
         <div className={styles.heading}><MessageCircle size={20} aria-hidden="true" /><div><h2 id={titleId}>JobLinks support</h2><p>Replies by email</p></div></div>
-        <button ref={closeRef} type="button" className={styles.close} aria-label="Close support" onClick={() => setOpen(false)}><X size={22} aria-hidden="true" /></button>
+        <button ref={closeRef} type="button" className={styles.close} aria-label="Close support" onClick={closeSupport}><X size={22} aria-hidden="true" /></button>
       </div>
       <div className={styles.body}>
       <p id={descriptionId} className={styles.description}>Send us a message about JobLinks. We’ll reply to your email.</p>
@@ -114,6 +146,12 @@ export default function SupportButton() {
         <button type="submit" className={styles.submit} disabled={busy}>{busy ? 'Sending message…' : 'Send message'}</button>
       </form>}
       </div>
+      </div>
+      {/* The active launcher belongs to the modal's top layer so it can receive
+          clicks while the rest of the page is inert. */}
+      <button type="button" className={styles.trigger} aria-label={phase === 'closing' ? 'Open support panel' : 'Close support panel'} title={phase === 'closing' ? 'Open support panel' : 'Close support panel'} aria-haspopup="dialog" aria-controls={dialogId} aria-expanded={phase !== 'closing'} onClick={phase === 'closing' ? openSupport : closeSupport}>
+        <X size={25} aria-hidden="true" />
+      </button>
     </dialog>
   </div>
 }

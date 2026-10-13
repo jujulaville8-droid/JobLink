@@ -16,23 +16,39 @@
   cursor: pointer;
 }
 .trigger:hover, .submit:hover { background: #073d3f; }
+.trigger[data-hidden='true'] { visibility: hidden; }
 .dialog {
   position: fixed;
   inset: auto max(1rem, env(safe-area-inset-right)) calc(max(var(--support-clearance, 5.5rem), calc(1rem + env(safe-area-inset-bottom))) + 68px) auto;
   margin: 0;
   width: min(24rem, calc(100% - 2rem));
   max-height: min(680px, calc(var(--support-layout-height, 100dvh) - max(var(--support-clearance, 5.5rem), calc(1rem + env(safe-area-inset-bottom))) - 100px));
-  overflow: hidden;
+  overflow: visible;
   overscroll-behavior: contain;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--color-text, #1a1a1a);
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: inherit;
+  overflow: hidden;
   border: 1px solid var(--color-border, #e8e3db);
   border-radius: 18px;
   padding: 0;
   background: var(--color-surface, white);
   color: var(--color-text, #1a1a1a);
   box-shadow: var(--shadow-lg);
+  opacity: 1;
+  transition: opacity 180ms ease;
 }
 .dialog[open] { display: flex; flex-direction: column; }
-.dialog::backdrop { background: rgb(10 46 47 / 12%); }
+.dialog::backdrop { background: rgb(10 46 47 / 12%); opacity: 1; transition: opacity 180ms ease; }
+.dialog[data-phase='opening'] .panel, .dialog[data-phase='closing'] .panel,
+.dialog[data-phase='opening']::backdrop, .dialog[data-phase='closing']::backdrop { opacity: 0; }
 .header { display: flex; flex-shrink: 0; justify-content: space-between; align-items: center; gap: .5rem; padding: 12px 12px 12px 16px; border-bottom: 1px solid #e8e3db; }
 .heading { display: flex; align-items: center; gap: .625rem; min-width: 0; }
 .heading > svg { color: #095355; flex-shrink: 0; }
@@ -72,4 +88,7 @@
 .reference { overflow-wrap: anywhere; font-size: .8125rem; }
 .trigger:focus-visible, .dialog :focus-visible { outline: 3px solid #0d7377; outline-offset: 3px; }
 @media (min-width: 768px) { .trigger { bottom: max(var(--support-clearance, 1rem), calc(1rem + env(safe-area-inset-bottom))); } }
-@media (prefers-reduced-motion: reduce) { .trigger, .dialog { animation: none; transition: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .trigger, .dialog, .panel, .dialog::backdrop { animation: none; transition: none; }
+  .dialog[data-phase='opening'] .panel, .dialog[data-phase='opening']::backdrop { opacity: 1; }
+}

@@ -17,12 +17,14 @@ const assert = require('node:assert/strict');
         const page = await browser.newPage({ viewport: { width, height: 844 }, colorScheme: scheme, reducedMotion: 'reduce' });
         const errors = [], submissions = [];
         let accept = false;
+        let releaseResponse, requestArrived;
+        const waitForRequest = () => new Promise(resolve => { requestArrived = resolve; });
         page.on('pageerror', error => errors.push(error.message));
         await page.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
         await page.route('**/api/support', async route => {
           const payload = route.request().postDataJSON();
           submissions.push(payload);
-          await new Promise(done => setTimeout(done, 200));
+          await new Promise(done => { releaseResponse = done; requestArrived(); });
           await route.fulfill({ status: accept ? 200 : 503, contentType: 'application/json', body: JSON.stringify(accept ? { success: true, reference: payload.id } : { error: 'TEST: Support is unavailable. Your draft is still here.' }) });
         });
         await page.goto(`${base}/tests/browser/support.html`);
@@ -51,7 +53,7 @@ const assert = require('node:assert/strict');
         const dialog = page.getByRole('dialog', { name: 'JobLinks support' });
         await dialog.waitFor({ state: 'visible' });
         assert.match(await dialog.innerText(), /reply.*email/i);
-        assert(await page.getByRole('button', { name: 'Close support' }).evaluate(el => document.activeElement === el), 'Initial focus missing');
+        assert(await page.getByRole('button', { name: 'Close support', exact: true }).evaluate(el => document.activeElement === el), 'Initial focus missing');
         for (let i = 0; i < 10; i++) {
           await page.keyboard.press('Tab');
           assert(await dialog.evaluate(el => el.contains(document.activeElement)), 'Keyboard focus escaped modal');
@@ -64,10 +66,13 @@ const assert = require('node:assert/strict');
         await page.getByRole('button', { name: 'Send message', exact: true }).click();
         assert.equal(submissions.length, 0, 'Consent bypassed');
         await page.getByRole('checkbox').check();
+        const firstRequest = waitForRequest();
         await page.getByRole('button', { name: 'Send message', exact: true }).click();
+        await firstRequest;
         await page.waitForFunction(() => document.querySelector('form[aria-busy="true"]'));
         // Dispatch duplicate submit while pending; the component's ref must block it.
         await dialog.locator('form').evaluate(form => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+        releaseResponse();
         await page.getByRole('alert').waitFor();
         assert.equal(submissions.length, 1, 'Duplicate submitted');
         assert.equal(await page.getByLabel('Message', { exact: true }).count(), 1, 'Message label changed after filling');
@@ -76,6 +81,13 @@ const assert = require('node:assert/strict');
         await dialog.waitFor({ state: 'hidden' });
         assert(await trigger.evaluate(el => document.activeElement === el), 'Focus not restored');
         assert.equal(await page.evaluate(() => document.body.style.overflow), '', 'Scroll lock not released');
+        await trigger.click();
+        assert.equal(await page.getByLabel('Message', { exact: true }).inputValue(), 'TEST ONLY: I need help with my account.');
+        const activeLauncher = page.getByRole('button', { name: 'Close support panel', exact: true });
+        const launcherBounds = await activeLauncher.boundingBox();
+        assert(launcherBounds.width >= 44 && launcherBounds.height >= 44, 'Active launcher touch target too small');
+        await activeLauncher.click(); await dialog.waitFor({ state: 'hidden' });
+        assert(await trigger.evaluate(el => document.activeElement === el), 'Launcher dismissal lost focus');
         await trigger.click();
         assert.equal(await page.getByLabel('Message', { exact: true }).inputValue(), 'TEST ONLY: I need help with my account.');
         const geometry = await dialog.evaluate(el => {
@@ -88,7 +100,9 @@ const assert = require('node:assert/strict');
         assert(geometry.scrollWidth <= geometry.clientWidth && geometry.pageWidth <= width, 'Horizontal overflow');
         await page.screenshot({ path: resolve(out, `support-${width}-${scheme}.png`) });
         accept = true;
+        const retryRequest = waitForRequest();
         await page.getByRole('button', { name: 'Send message', exact: true }).click();
+        await retryRequest; releaseResponse();
         await page.getByRole('status').waitFor();
         assert.deepEqual(submissions[0], submissions[1], 'Retry changed identity/content');
         assert.match(await page.getByRole('status').innerText(), /does not confirm inbox delivery/);
@@ -97,7 +111,7 @@ const assert = require('node:assert/strict');
         assert.equal(await page.getByLabel('Reply email', { exact: true }).inputValue(), '');
         assert.equal(await page.getByLabel('Message', { exact: true }).inputValue(), '');
         assert.equal(await page.getByRole('checkbox').isChecked(), false);
-        await page.getByRole('button', { name: 'Close support' }).click();
+        await page.getByRole('button', { name: 'Close support', exact: true }).click();
         // Simulate a future consent banner and safe-area navigation enlargement.
         await page.evaluate(() => {
           const cookie = document.createElement('div'); cookie.dataset.supportObstruction = ''; cookie.id = 'fixture-cookie';
@@ -140,11 +154,54 @@ const assert = require('node:assert/strict');
       assert(bounds.height >= 200, 'Software keyboard collapses the support panel');
       assert(bounds.y >= offsetTop && bounds.y + bounds.height <= offsetTop + 400, 'Panel escapes visible keyboard viewport');
       await keyboardPage.getByRole('button', { name: 'Send message', exact: true }).scrollIntoViewIfNeeded();
-      assert(await keyboardPage.getByRole('button', { name: 'Close support' }).isVisible(), 'Keyboard hides close control');
+      assert(await keyboardPage.getByRole('button', { name: 'Close support', exact: true }).isVisible(), 'Keyboard hides close control');
       results.push({ width: 390, mode: 'synthetic-keyboard', height: 400, offsetTop, pass: true, bounds });
       console.log(`PASS synthetic keyboard 400px offset=${offsetTop}: panel stays visible, form scrolls, close remains reachable`);
     }
     await keyboardPage.close();
+    for (const width of [390, 1440]) {
+      for (const reducedMotion of ['no-preference', 'reduce']) {
+        const fadePage = await browser.newPage({ viewport: { width, height: 844 }, reducedMotion });
+        await fadePage.goto(`${base}/tests/browser/support.html?surface=home`);
+        await fadePage.evaluate(() => {
+          window.supportFadeEvents = [];
+          const panel = document.querySelector('dialog > div');
+          panel.addEventListener('transitionrun', event => {
+            if (event.propertyName === 'opacity') window.supportFadeEvents.push({ phase: panel.parentElement.dataset.phase, opacity: getComputedStyle(panel).opacity });
+          });
+        });
+        const opener = fadePage.getByRole('button', { name: 'Support', exact: true });
+        await fadePage.waitForFunction(() => document.querySelector('button[aria-label="Support"]').parentElement.style.getPropertyValue('--support-clearance') !== '');
+        const openerBounds = await opener.boundingBox();
+        await opener.click();
+        const fadeDialog = fadePage.getByRole('dialog', { name: 'JobLinks support' });
+        await fadeDialog.waitFor();
+        await fadePage.getByLabel('Message', { exact: true }).fill('Preserve this draft through launcher toggles.');
+        await fadePage.waitForFunction(() => getComputedStyle(document.querySelector('dialog > div')).opacity === '1');
+        const transition = await fadeDialog.locator(':scope > div').evaluate(el => ({ duration: getComputedStyle(el).transitionDuration, events: window.supportFadeEvents }));
+        if (reducedMotion === 'reduce') assert.equal(transition.duration, '0s');
+        else { assert.equal(transition.duration, '0.18s'); assert(transition.events.some(event => event.phase === 'open'), 'Opening did not fade'); }
+        const active = fadePage.getByRole('button', { name: 'Close support panel', exact: true });
+        const activeBounds = await active.boundingBox();
+        assert(Math.abs(activeBounds.x - openerBounds.x) < 1 && Math.abs(activeBounds.y - openerBounds.y) < 1, 'Launcher moved when panel opened');
+        await active.click();
+        if (reducedMotion === 'no-preference') {
+          assert.equal(await fadeDialog.getAttribute('data-phase'), 'closing');
+          assert(await fadeDialog.isVisible(), 'Closing was abrupt');
+        }
+        await fadeDialog.waitFor({ state: 'hidden' });
+        const events = await fadePage.evaluate(() => window.supportFadeEvents);
+        if (reducedMotion === 'no-preference') assert(events.some(event => event.phase === 'closing'), 'Closing did not fade');
+        else assert.equal(events.length, 0, 'Reduced motion still animated');
+        assert(await opener.evaluate(el => document.activeElement === el));
+        await opener.click();
+        assert.equal(await fadePage.getByLabel('Message', { exact: true }).inputValue(), 'Preserve this draft through launcher toggles.');
+        await fadePage.keyboard.press('Escape'); await fadeDialog.waitFor({ state: 'hidden' });
+        results.push({ width, mode: 'toggle-fade', reducedMotion, pass: true, transition });
+        console.log(`PASS ${width} ${reducedMotion}: launcher toggle, draft, focus, opening/closing opacity, reduced motion`);
+        await fadePage.close();
+      }
+    }
     const preview = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
     await preview.goto(`${base}/tests/browser/support.html?surface=home`);
     assert.equal(await preview.getByRole('dialog').count(), 0, 'Support opened without a click');

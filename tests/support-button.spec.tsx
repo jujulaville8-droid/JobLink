@@ -25,11 +25,43 @@ it('loops Tab and Shift+Tab within the support controls', () => {
   render(<SupportButton />)
   fireEvent.click(screen.getByRole('button', { name: 'Support' }))
   const first = screen.getByRole('button', { name: 'Close support' })
-  const last = screen.getByRole('button', { name: 'Send message' })
+  const last = screen.getByRole('button', { name: 'Close support panel' })
   last.focus(); fireEvent.keyDown(last, { key: 'Tab' })
   expect(document.activeElement).toBe(first)
   fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
   expect(document.activeElement).toBe(last)
+})
+
+it('dismisses from the launcher with a short fade and keeps the draft', async () => {
+  render(<SupportButton />)
+  const opener = screen.getByRole('button', { name: 'Support' })
+  fireEvent.click(opener)
+  fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Keep this unsent draft.' } })
+  const dialog = screen.getByRole('dialog')
+  fireEvent.click(screen.getByRole('button', { name: 'Close support panel' }))
+  expect(dialog.getAttribute('data-phase')).toBe('closing')
+  expect(screen.getByRole('dialog')).toBe(dialog)
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expect(document.activeElement).toBe(opener)
+  fireEvent.click(opener)
+  expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('Keep this unsent draft.')
+})
+
+it('can reverse closing when the launcher is tapped again', async () => {
+  render(<SupportButton />)
+  fireEvent.click(screen.getByRole('button', { name: 'Support' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Close support panel' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Open support panel' }))
+  await new Promise(done => setTimeout(done, 220))
+  expect(screen.getByRole('dialog').getAttribute('data-phase')).toBe('open')
+})
+
+it('dismisses immediately when reduced motion is requested', () => {
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+  render(<SupportButton />)
+  fireEvent.click(screen.getByRole('button', { name: 'Support' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Close support panel' }))
+  expect(screen.queryByRole('dialog')).toBeNull()
 })
 
 it('keeps Safari keyboard navigation on the consent and action controls', () => {
@@ -57,6 +89,7 @@ it('keeps the draft and retry identity through failure and closing/reopening', a
   openAndFill(); submit()
   await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/couldn.t confirm/i))
   fireEvent.click(screen.getByRole('button', { name: 'Close support' }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   fireEvent.click(screen.getByRole('button', { name: 'Support' }))
   expect((screen.getByLabelText('Message') as HTMLTextAreaElement).value).toBe('I need help signing in to my account.')
   submit()
