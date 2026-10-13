@@ -105,7 +105,7 @@ Resend handles transactional emails AFTER auth (not auth emails themselves).
 
 **API Route:** `src/app/api/send-email/route.ts`
 **Helper:** `src/lib/email.ts` → `sendEmail({ to, type, data })`
-**From:** `JobLinks <notifications@joblinkantigua.com>`
+**From:** `JobLink <notifications@joblinkantigua.com>`
 
 ### Email Types Supported
 | Type | Trigger | Recipient |

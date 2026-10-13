@@ -42,7 +42,7 @@ function generatePostText(job: ShareableJob): string {
     "",
     `Apply now 👉 https://joblinkantigua.com/jobs/${job.id}`,
     "",
-    "#AntiguaJobs #JobLinks #NowHiring #AntiguaAndBarbuda #CaribbeanJobs"
+    "#AntiguaJobs #JobLink #NowHiring #AntiguaAndBarbuda #CaribbeanJobs"
   );
 
   return lines.join("\n");

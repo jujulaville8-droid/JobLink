@@ -28,17 +28,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!job || job.status !== "active") {
-    return { title: { absolute: "Job Not Found | JobLinks" } };
+    return { title: { absolute: "Job Not Found | JobLink" } };
   }
 
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
-  const title = `${job.title} at ${company?.company_name || "Company"} | JobLinks`;
+  const title = `${job.title} at ${company?.company_name || "Company"} | JobLink`;
   const description = jobMetaDescription({ ...job, companyName: company?.company_name });
   const url = `https://joblinkantigua.com/jobs/${id}`;
 
   return {
-    // absolute: the root layout's "%s | JobLinks" template would otherwise
-    // append the suffix a second time ("... | JobLinks | JobLinks").
+    // absolute: the root layout's "%s | JobLink" template would otherwise
+    // append the suffix a second time ("... | JobLink | JobLink").
     title: { absolute: title },
     description,
     alternates: { canonical: url },
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url,
-      siteName: "JobLinks",
+      siteName: "JobLink",
       type: "website",
       locale: "en_AG",
       images: company?.logo_url ? [{ url: company.logo_url, width: 200, height: 200, alt: company.company_name }] : [],
@@ -315,7 +315,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     "@type": "JobPosting",
     identifier: {
       "@type": "PropertyValue",
-      name: "JobLinks",
+      name: "JobLink",
       value: job.id,
     },
     title: job.title,

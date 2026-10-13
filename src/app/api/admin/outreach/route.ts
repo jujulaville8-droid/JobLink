@@ -8,7 +8,7 @@ import { TEAM_INBOX } from '@/lib/team-inbox'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLink <hello@joblinkantigua.com>'
 const HELP_URL = `${PILOT_URL}?source=employer-outreach`
 const RATE_LIMIT_MS = 100 // Resend premium — faster sends
 /**
@@ -31,7 +31,7 @@ interface Employer {
   email1_already_sent?: boolean
 }
 
-// ─── Email wrapper (matches existing JobLinks branding) ─────────────────────
+// ─── Email wrapper (matches existing JobLink branding) ─────────────────────
 
 function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
@@ -43,13 +43,13 @@ function emailWrapper(content: string): string {
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #ffffff; margin: 0; padding: 0;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; overflow: hidden;">
     <div style="background-color: #0d7377; padding: 24px; text-align: center;">
-      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLinks</h1>
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLink</h1>
     </div>
     <div style="padding: 32px 24px;">
       ${content}
     </div>
     <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
+      <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink &mdash; Antigua &amp; Barbuda's Job Platform</p>
       <p style="color: #9ca3af; font-size: 11px; margin-top: 4px;">
         Don't want emails from us?
         <a href="mailto:${TEAM_INBOX}?subject=Unsubscribe" style="color: #9ca3af;">Unsubscribe</a>
@@ -66,13 +66,13 @@ function buildPilotEmail(companyName: string, emailNumber: number): { subject: s
   const company = escapeHtml(companyName)
   const subjects = ['Can we help with your next vacancy?', 'Still looking for staff?', 'Hiring help, whenever you need it']
   const introductions = [
-    'I’m Julian, the founder of JobLinks Antigua. I’m opening a hands-on hiring pilot for local employers.',
-    'A quick follow-up: if you have a vacancy to fill, I’d be happy to discuss how JobLinks can help.',
+    'I’m Julian, the founder of JobLink Antigua. I’m opening a hands-on hiring pilot for local employers.',
+    'A quick follow-up: if you have a vacancy to fill, I’d be happy to discuss how JobLink can help.',
     'I’ll leave this with you for now. If you need help with a vacancy, you can send it over when the timing is right.',
   ]
   return {
     subject: subjects[emailNumber - 1],
-    html: emailWrapper('<p>Hi there,</p><p>' + introductions[emailNumber - 1] + '</p><p>For ' + company + ', our free first-vacancy pilot includes help preparing the advert, reaching relevant job seekers and checking applications against the requirements we agree with you.</p><p>No account is needed to request help. We’ll confirm the role and whether the pilot is a fit before we start, and agree the details with you before publishing.</p><p><a href="' + HELP_URL + '" style="display:inline-block;padding:14px 24px;background:#0d7377;color:white;border-radius:8px;text-decoration:none;font-weight:bold">Send us your vacancy</a></p><p>You can also reply with your existing advert or tell me what has been difficult about filling the role.</p><p>Best,<br>Julian<br>JobLinks Antigua</p>'),
+    html: emailWrapper('<p>Hi there,</p><p>' + introductions[emailNumber - 1] + '</p><p>For ' + company + ', our free first-vacancy pilot includes help preparing the advert, reaching relevant job seekers and checking applications against the requirements we agree with you.</p><p>No account is needed to request help. We’ll confirm the role and whether the pilot is a fit before we start, and agree the details with you before publishing.</p><p><a href="' + HELP_URL + '" style="display:inline-block;padding:14px 24px;background:#0d7377;color:white;border-radius:8px;text-decoration:none;font-weight:bold">Send us your vacancy</a></p><p>You can also reply with your existing advert or tell me what has been difficult about filling the role.</p><p>Best,<br>Julian<br>JobLink Antigua</p>'),
   }
 }
 

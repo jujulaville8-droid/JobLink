@@ -50,7 +50,7 @@ const assert = require('node:assert/strict');
         }
         if (width < 768) assert(triggerBounds.y + triggerBounds.height <= 844 - 76, 'Trigger covers mobile navigation');
         await trigger.focus(); await page.keyboard.press('Enter');
-        const dialog = page.getByRole('dialog', { name: 'JobLinks support' });
+        const dialog = page.getByRole('dialog', { name: 'JobLink support' });
         await dialog.waitFor({ state: 'visible' });
         assert.match(await dialog.innerText(), /reply.*email/i);
         assert(await page.getByRole('button', { name: 'Close support', exact: true }).evaluate(el => document.activeElement === el), 'Initial focus missing');
@@ -142,7 +142,7 @@ const assert = require('node:assert/strict');
     });
     await keyboardPage.goto(`${base}/tests/browser/support.html?surface=home`);
     await keyboardPage.getByRole('button', { name: 'Support', exact: true }).click();
-    const keyboardDialog = keyboardPage.getByRole('dialog', { name: 'JobLinks support' });
+    const keyboardDialog = keyboardPage.getByRole('dialog', { name: 'JobLink support' });
     await keyboardPage.getByLabel('Your name', { exact: true }).focus();
     for (const offsetTop of [0, 100]) {
       await keyboardPage.evaluate(offset => {
@@ -174,7 +174,7 @@ const assert = require('node:assert/strict');
         await fadePage.waitForFunction(() => document.querySelector('button[aria-label="Support"]').parentElement.style.getPropertyValue('--support-clearance') !== '');
         const openerBounds = await opener.boundingBox();
         await opener.click();
-        const fadeDialog = fadePage.getByRole('dialog', { name: 'JobLinks support' });
+        const fadeDialog = fadePage.getByRole('dialog', { name: 'JobLink support' });
         await fadeDialog.waitFor();
         await fadePage.getByLabel('Message', { exact: true }).fill('Preserve this draft through launcher toggles.');
         await fadePage.waitForFunction(() => getComputedStyle(document.querySelector('dialog > div')).opacity === '1');
@@ -212,7 +212,7 @@ const assert = require('node:assert/strict');
     assert.equal(await preview.getByRole('dialog').count(), 0, 'Support opened without a click');
     await preview.screenshot({ path: resolve(out, 'support-chat-bubble-mobile-closed.png') });
     await preview.getByRole('button', { name: 'Support', exact: true }).click();
-    await preview.getByRole('dialog', { name: 'JobLinks support' }).waitFor();
+    await preview.getByRole('dialog', { name: 'JobLink support' }).waitFor();
     await preview.screenshot({ path: resolve(out, 'support-chat-bubble-mobile.png') });
     await preview.close();
   } finally { await browser.close(); writeFileSync(resolve(out, 'results.json'), JSON.stringify(results, null, 2)); }

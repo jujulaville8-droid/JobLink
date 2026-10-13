@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!company) {
-    return { title: { absolute: "Company Not Found | JobLinks" } };
+    return { title: { absolute: "Company Not Found | JobLink" } };
   }
 
   // A profile with no live jobs is a thin page that Google reports as a soft
@@ -37,15 +37,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? `${company.company_name} Jobs in Antigua (${count} open)`
       : `${company.company_name} — Jobs & Company Profile`,
     description: count
-      ? `${company.company_name} is hiring: ${count} open ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. View the company profile and apply on JobLinks.`
-      : `View ${company.company_name}'s profile and open job listings on JobLinks, Antigua and Barbuda's #1 job platform.`,
+      ? `${company.company_name} is hiring: ${count} open ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. View the company profile and apply on JobLink.`
+      : `View ${company.company_name}'s profile and open job listings on JobLink, Antigua and Barbuda's #1 job platform.`,
     alternates: { canonical: url },
     ...(count ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title: `${company.company_name} — Jobs & Company Profile`,
-      description: `View ${company.company_name}'s profile and open job listings on JobLinks.`,
+      description: `View ${company.company_name}'s profile and open job listings on JobLink.`,
       url,
-      siteName: "JobLinks",
+      siteName: "JobLink",
     },
   };
 }

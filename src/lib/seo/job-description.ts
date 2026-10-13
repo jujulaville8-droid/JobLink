@@ -15,7 +15,7 @@ const normalize = (value?: string | null) => (value ?? '').replace(/\s+/g, ' ').
 export function jobMetaDescription(job: JobDescriptionInput): string {
   const context = `Apply for ${normalize(job.title)} at ${normalize(job.companyName) || 'a company'} in ${normalize(job.location) || 'Antigua and Barbuda'}.`;
   const description = normalize(publicVacancyDescription(job));
-  if (!description) return `${context} View the vacancy and apply on JobLinks.`;
+  if (!description) return `${context} View the vacancy and apply on JobLink.`;
 
   // An editorial excerpt, not a Google character limit. Keep the full role and
   // employer context even for long titles, and avoid cutting a word or surrogate pair.

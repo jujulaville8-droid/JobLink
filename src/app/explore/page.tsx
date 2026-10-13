@@ -67,7 +67,7 @@ export default function ExplorePage() {
             <Compass className="h-6 w-6" />
           </div>
           <h1 className="text-2xl md:text-4xl font-bold font-display mb-2">
-            Explore JobLinks
+            Explore JobLink
           </h1>
           <p className="text-white/60 text-sm">
             Signed in as <span className="text-white/80 font-medium">{roleLabel}</span>
@@ -111,7 +111,7 @@ export default function ExplorePage() {
               All Jobs
             </Link>
             <Link href="/about" className="text-text-light hover:text-primary link-animated">
-              About JobLinks
+              About JobLink
             </Link>
             <Link href="/privacy" className="text-text-light hover:text-primary link-animated">
               Privacy Policy

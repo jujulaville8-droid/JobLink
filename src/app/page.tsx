@@ -123,18 +123,18 @@ export default async function Home() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Organization", name: "JobLinks", url: "https://joblinkantigua.com",
+        "@type": "Organization", name: "JobLink", url: "https://joblinkantigua.com",
         logo: "https://joblinkantigua.com/favicon.png",
         description: "Connecting job seekers with employers across Antigua and Barbuda.",
         areaServed: { "@type": "Country", name: "Antigua and Barbuda" },
         contactPoint: { "@type": "ContactPoint", email: "hello@joblinkantigua.com", contactType: "customer service" },
       },
       {
-        "@type": "WebSite", name: "JobLinks", url: "https://joblinkantigua.com",
+        "@type": "WebSite", name: "JobLink", url: "https://joblinkantigua.com",
         potentialAction: { "@type": "SearchAction", target: "https://joblinkantigua.com/jobs?q={search_term_string}", "query-input": "required name=search_term_string" },
       },
       {
-        "@type": "EmploymentAgency", name: "JobLinks", url: "https://joblinkantigua.com",
+        "@type": "EmploymentAgency", name: "JobLink", url: "https://joblinkantigua.com",
         email: "hello@joblinkantigua.com",
         areaServed: { "@type": "Country", name: "Antigua and Barbuda" },
         address: { "@type": "PostalAddress", addressLocality: "St. John's", addressCountry: "AG" },

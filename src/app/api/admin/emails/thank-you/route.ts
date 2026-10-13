@@ -5,7 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 // Bulk work needs more than the default function timeout.
 export const maxDuration = 300
 
-const FROM_ADDRESS = 'JobLinks <hello@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLink <hello@joblinkantigua.com>'
 const RATE_LIMIT_MS = 250
 const SITE = 'https://joblinkantigua.com'
 
@@ -25,8 +25,8 @@ function esc(str: string | undefined | null): string {
 function buildThankYouEmail(name: string | null): { subject: string; html: string } {
   const greeting = name ? `Hi ${esc(name)},` : 'Hi there,'
   const subject = name
-    ? `${name}, thank you for joining JobLinks`
-    : 'Thank you for joining JobLinks'
+    ? `${name}, thank you for joining JobLink`
+    : 'Thank you for joining JobLink'
 
   const html = `<!DOCTYPE html>
 <html>
@@ -37,15 +37,15 @@ function buildThankYouEmail(name: string | null): { subject: string; html: strin
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <div style="background-color: #0d7377; padding: 24px; text-align: center;">
-      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLinks</h1>
+      <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLink</h1>
     </div>
     <div style="padding: 32px 24px;">
       <p style="color: #374151; line-height: 1.6; font-size: 15px;">${greeting}</p>
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        Just wanted to say a quick thank you for signing up on <strong style="color: #0d7377;">JobLinks</strong>. You're one of the first people on the platform and that genuinely means a lot.
+        Just wanted to say a quick thank you for signing up on <strong style="color: #0d7377;">JobLink</strong>. You're one of the first people on the platform and that genuinely means a lot.
       </p>
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
-        We built JobLinks because Antigua needed something better than scrolling through outdated business directories or hoping the right person sees your Facebook post. This isn't a list of phone numbers and addresses. It's an actual platform where employers post real jobs and job seekers apply with real profiles, CVs, and qualifications. Everything in one place, built specifically for how we do things here.
+        We built JobLink because Antigua needed something better than scrolling through outdated business directories or hoping the right person sees your Facebook post. This isn't a list of phone numbers and addresses. It's an actual platform where employers post real jobs and job seekers apply with real profiles, CVs, and qualifications. Everything in one place, built specifically for how we do things here.
       </p>
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">
         The thing is, a platform like this really only works when more people know about it. If you're looking for work, chances are you know someone else who is too. And if you're hiring, you probably know another business owner who's tired of the same old ways of finding staff and could use something that actually works.
@@ -55,7 +55,7 @@ function buildThankYouEmail(name: string | null): { subject: string; html: strin
       </p>
 
       <p style="text-align: center; margin-top: 28px;">
-        <a href="${SITE}" style="background-color: #0d7377; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; font-size: 15px;">Visit JobLinks</a>
+        <a href="${SITE}" style="background-color: #0d7377; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; font-size: 15px;">Visit JobLink</a>
       </p>
 
       <div style="background-color: #f0fafa; border-radius: 10px; padding: 20px; margin: 24px 0;">
@@ -67,11 +67,11 @@ function buildThankYouEmail(name: string | null): { subject: string; html: strin
 
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 16px;">This is your platform. Help us make it what Antigua deserves.</p>
       <p style="color: #374151; line-height: 1.6; font-size: 15px; margin-top: 24px;">
-        All the best,<br><strong>Julian</strong><br><span style="color: #6b7280; font-size: 14px;">JobLinks Antigua</span>
+        All the best,<br><strong>Julian</strong><br><span style="color: #6b7280; font-size: 14px;">JobLink Antigua</span>
       </p>
     </div>
     <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
+      <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink &mdash; Antigua &amp; Barbuda's Job Platform</p>
       <p style="color: #9ca3af; font-size: 11px; margin-top: 4px;">
         Don't want emails from us? <a href="#" style="color: #9ca3af;">Unsubscribe</a>
       </p>

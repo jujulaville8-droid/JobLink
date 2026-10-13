@@ -18,7 +18,7 @@ it('opens only on request and explains that support replies by email', () => {
   const bubble = screen.getByRole('button', { name: 'Support' })
   expect(bubble.getAttribute('aria-expanded')).toBe('false')
   fireEvent.click(bubble)
-  expect(screen.getByRole('dialog', { name: 'JobLinks support' }).textContent).toMatch(/reply.*email/i)
+  expect(screen.getByRole('dialog', { name: 'JobLink support' }).textContent).toMatch(/reply.*email/i)
 })
 
 it('loops Tab and Shift+Tab within the support controls', () => {

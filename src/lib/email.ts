@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
 
 export const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://joblinkantigua.com'
 

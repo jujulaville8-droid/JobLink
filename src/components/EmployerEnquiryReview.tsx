@@ -24,7 +24,7 @@ export default function EmployerEnquiryReview({ id, initialStatus, initialNotes,
   }}>
     <label className="block text-sm font-medium">Progress<select className="mt-1 block w-full rounded-lg border p-3" value={status} onChange={e => setStatus(e.target.value)}>{enquiryStatuses.map(s => <option key={s} value={s}>{statusLabels[s]}</option>)}</select></label>
     <label className="block text-sm font-medium">Private follow-up notes<textarea className="mt-1 block min-h-24 w-full rounded-lg border p-3" value={notes} onChange={e => setNotes(e.target.value)} maxLength={6000} placeholder="Contact attempts, agreed requirements, permission to publish, next action…" /></label>
-    <label className="block text-sm font-medium">Published JobLinks URL or listing ID<input className="mt-1 block w-full rounded-lg border p-3" value={listing} onChange={e => setListing(e.target.value)} placeholder="https://joblinkantigua.com/jobs/…" /></label>
+    <label className="block text-sm font-medium">Published JobLink URL or listing ID<input className="mt-1 block w-full rounded-lg border p-3" value={listing} onChange={e => setListing(e.target.value)} placeholder="https://joblinkantigua.com/jobs/…" /></label>
     <button disabled={busy} className="rounded-xl bg-primary px-5 py-2.5 font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save progress'}</button><span className="ml-3 text-sm" role="status">{message}</span>
   </form>
 }
