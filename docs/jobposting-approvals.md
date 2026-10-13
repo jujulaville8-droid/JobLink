@@ -125,7 +125,8 @@ date-only in `validThrough`; after October 3 has passed in Antigua, only
 `JobPosting` is suppressed. No new employer permission or deadline is invented.
 The page, breadcrumbs, description and Apply remain available until manual
 status change. Other Top Bun jobs do not inherit this vacancy's deadline.
-Shhatterr Shack remains excluded from imported-job markup without authorization.
+Shhatterr Shack was excluded from imported-job markup until its vacancy-scoped
+approval below (October 12 ledger entry).
 
 Legacy `expires_at` values no longer hide active pages, browse/category/company
 results, sitemap entries, invitations or applications. Manual inactive statuses
@@ -161,3 +162,22 @@ The helper deliberately leaves ambiguous prose, work schedules, duty deadlines
 and contact/application instructions intact. It is not a general natural-language
 deadline detector. Mail APIs/templates, database records, application behavior,
 and unrelated security, certification, Pro and billing expiry remain unchanged.
+
+## October 12, 2026 vacancy-scoped employer approvals
+
+[PR #38](https://github.com/jujulaville8-droid/JobLink/pull/38) records two
+employer replies from the JobLink outreach CRM. Each permission covers one
+vacancy only and lives in `EMPLOYER_APPROVED_JOBS`, bound to both IDs. No
+company-wide permission is claimed, and other current or future jobs at either
+company stay excluded. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Food Brokerage Services Ltd. — Van Sales Assistant/Operator | `d4fdb396-a0b0-427d-aae0-ed756274375e` | `42e58a5e-3f56-4f2b-b829-b9b335d45b81` | 2026-10-09 | Full Time, confirmed by the employer on 2026-10-09 |
+| Shhatterr Shack Rage Room — Rage Room Attendant | `ade78a5c-e0f6-4f5f-8008-117d7a4b96ee` | `1b68107a-228a-4e97-b047-d4c14bd730ef` | 2026-10-08 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+Both jobs keep their existing October 30 date-only deadline from
+`public-job-deadlines.ts` as `validThrough`; markup retires after that date in
+Antigua. The deadline record itself still grants no approval. Stored listing
+content, status and the application route are unchanged, and there are no
+database writes.

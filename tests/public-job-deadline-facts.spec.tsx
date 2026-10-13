@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { getPublicJobDeadline } from '@/lib/seo/public-job-deadlines';
-import { getEmployerApproval } from '@/lib/seo/employerApproved';
+import { EMPLOYER_APPROVED_JOBS, getEmployerApproval } from '@/lib/seo/employerApproved';
 
 const facts = [
   ['e03a2b8c-f69b-42bb-bc43-13a5d0917291', '362300b7-c0c5-4c2e-a9f6-6fe79f187e71', '2026-10-03'],
@@ -16,7 +16,18 @@ it.each(facts)('retains original date-only facts scoped to vacancy and company: 
 });
 
 it.each(facts.slice(1))('never treats a preserved deadline as employer approval: %s', (jobId, companyId) => {
-  expect(getEmployerApproval(companyId, jobId)).toBeNull();
+  // These vacancies are approved only through their own EMPLOYER_APPROVED_JOBS
+  // entries; the deadline record grants nothing on its own.
+  expect(getEmployerApproval(companyId, jobId)).toMatchObject({ companyId });
+  expect(getEmployerApproval(companyId, 'another-job')).toBeNull();
+  const approval = EMPLOYER_APPROVED_JOBS[jobId];
+  delete EMPLOYER_APPROVED_JOBS[jobId];
+  try {
+    expect(getPublicJobDeadline(jobId, companyId)).toBeDefined();
+    expect(getEmployerApproval(companyId, jobId)).toBeNull();
+  } finally {
+    EMPLOYER_APPROVED_JOBS[jobId] = approval;
+  }
 });
 
 it.each(['constructor', '__proto__', 'toString'])('ignores inherited record keys: %s', jobId => {

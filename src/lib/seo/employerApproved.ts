@@ -45,6 +45,23 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Mark Thomas replied yes on 2026-10-09 to publishing this Van Sales
+  // Assistant/Operator vacancy (Oct 9 to Oct 30) and later confirmed Full Time.
+  "d4fdb396-a0b0-427d-aae0-ed756274375e": {
+    companyId: "42e58a5e-3f56-4f2b-b829-b9b335d45b81",
+    companyName: "Food Brokerage Services Ltd.",
+    attestedOn: "2026-10-09",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/38",
+  },
+  // Lishawn Wilson replied yes on 2026-10-08 (ET) to posting this Rage Room
+  // Attendant vacancy. Full Time is an unconfirmed placeholder.
+  "ade78a5c-e0f6-4f5f-8008-117d7a4b96ee": {
+    companyId: "1b68107a-228a-4e97-b047-d4c14bd730ef",
+    companyName: "Shhatterr Shack Rage Room",
+    attestedOn: "2026-10-08",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/38",
+    employmentTypeUnconfirmed: true,
+  },
   "232f9e93-d28c-4e8b-bdb5-3c85093e61d6": {
     companyId: "e9703c50-bfef-41fb-99f1-5ba9387418c2",
     companyName: "Star Times Adventure Tours",
