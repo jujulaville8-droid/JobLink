@@ -29,7 +29,7 @@ it('uses the public vacancy summary and actual location across search and share 
   expect(metadata.twitter?.description).toBe(expected);
   expect(metadata.description).not.toContain('#1');
   expect(db.select).toHaveBeenCalledWith('id, company_id, title, description, location, status, company:companies(company_name, logo_url)');
-  expect(metadata.title).toEqual({ absolute: 'Carpenter / Boatbuilder at Woodstock BoatBuilders | JobLinks' });
+  expect(metadata.title).toEqual({ absolute: 'Carpenter / Boatbuilder at Woodstock BoatBuilders | JobLink' });
   expect(metadata.alternates?.canonical).toBe('https://joblinkantigua.com/jobs/test-job');
 });
 
@@ -52,7 +52,7 @@ it('omits application cutoffs consistently from search and social snippets, pres
 
 it('uses honest fallbacks when optional public fields are empty', () => {
   expect(jobMetaDescription({ title: 'Cook', companyName: '  ', location: '\n', description: ' ' }))
-    .toBe('Apply for Cook at a company in Antigua and Barbuda. View the vacancy and apply on JobLinks.');
+    .toBe('Apply for Cook at a company in Antigua and Barbuda. View the vacancy and apply on JobLink.');
 });
 
 it('normalizes whitespace without inventing requirements or altering public punctuation', () => {
@@ -78,5 +78,5 @@ it('does not split surrogate pairs in unbroken long text', () => {
 it.each([null, { status: 'closed' }])('does not expose a summary for unavailable jobs: %j', async job => {
   db.job = job;
   expect(await generateMetadata({ params: Promise.resolve({ id: 'missing' }) }))
-    .toEqual({ title: { absolute: 'Job Not Found | JobLinks' } });
+    .toEqual({ title: { absolute: 'Job Not Found | JobLink' } });
 });

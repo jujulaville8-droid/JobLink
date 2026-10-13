@@ -1,12 +1,12 @@
 export const metadata = {
   title: 'Privacy Policy',
-  description: 'JobLinks privacy policy. How we collect, use, and protect your data.',
+  description: 'JobLink privacy policy. How we collect, use, and protect your data.',
   alternates: { canonical: 'https://joblinkantigua.com/privacy' },
   openGraph: {
-    title: 'Privacy Policy | JobLinks',
-    description: 'JobLinks privacy policy. How we collect, use, and protect your data.',
+    title: 'Privacy Policy | JobLink',
+    description: 'JobLink privacy policy. How we collect, use, and protect your data.',
     url: 'https://joblinkantigua.com/privacy',
-    siteName: 'JobLinks',
+    siteName: 'JobLink',
   },
 }
 
@@ -25,7 +25,7 @@ export default function PrivacyPage() {
               1. Information We Collect
             </h2>
             <p className="text-text-light leading-relaxed">
-              When you create an account on JobLinks, we collect your email
+              When you create an account on JobLink, we collect your email
               address and the information you provide in your profile, including
               your name, phone number, location, skills, work experience,
               education, and uploaded documents such as your CV and cover
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
               business name, contact name, email, optional phone number and the
               vacancy details you submit. We use these to respond to your request
               and coordinate the service. These contact details and our follow-up
-              notes are available to authorised JobLinks administrators, not
+              notes are available to authorised JobLink administrators, not
               published as part of the request. We agree any public vacancy
               details with you before publishing. Requesting help does not
               subscribe you to marketing emails. Contact us to correct or request

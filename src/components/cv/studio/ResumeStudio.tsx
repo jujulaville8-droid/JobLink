@@ -53,7 +53,7 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
   const wordCount = String(form.summary ?? form.description ?? '').trim().split(/\s+/).filter(Boolean).length;
   return <div className={styles.studio}>
     <header className={styles.toolbar}>
-      <a href="/dashboard" className={styles.brand}>JobLinks<span>Resume Builder</span></a>
+      <a href="/dashboard" className={styles.brand}>JobLink<span>Resume Builder</span></a>
       <div className={styles.documentName}><FileText size={17} /><span>{cv.profile.job_title || 'My resume'}</span></div>
       <div className={styles.toolbarActions}>
         <span role="status" className={styles.saveStatus}>{editor.busy ? <LoaderCircle size={15} className={styles.spinner} /> : editor.dirty ? <span className={styles.unsavedDot} /> : <Check size={15} />}{editor.busy ? 'Saving…' : editor.dirty ? 'Unsaved changes' : 'All changes saved'}</span>
@@ -89,7 +89,7 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
 
       <section className={styles.editor} aria-label="Resume editor">
         {contactOpen ? <>
-          <h1>Personal details</h1><p className={styles.intro}>These details come from your JobLinks profile, so you only need to keep them up to date in one place.</p>
+          <h1>Personal details</h1><p className={styles.intro}>These details come from your JobLink profile, so you only need to keep them up to date in one place.</p>
           <dl className={styles.contactList}>{[['Name', [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join(' ')], ['Email', cv.contact.email], ['Phone', cv.contact.phone], ['Location', cv.contact.location]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || 'Not added yet'}</dd></div>)}</dl>
           <a className={styles.secondary} href={profileHref}>Edit personal details<ChevronRight size={16} /></a>
         </> : <>

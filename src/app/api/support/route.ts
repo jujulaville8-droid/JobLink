@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   // Host is the browser-facing authority; Vercel sets the proxy protocol header.
   const host = request.headers.get('host') ?? request.nextUrl.host
   const protocol = request.headers.get('x-forwarded-proto') ?? request.nextUrl.protocol.slice(0, -1)
-  if (!['http', 'https'].includes(protocol) || request.headers.get('origin') !== `${protocol}://${host}`) return fail('Please send your message from the JobLinks website.', 403)
+  if (!['http', 'https'].includes(protocol) || request.headers.get('origin') !== `${protocol}://${host}`) return fail('Please send your message from the JobLink website.', 403)
   if (request.headers.get('content-type')?.split(';')[0].trim().toLowerCase() !== 'application/json') return fail('Please use the support form.', 415)
   if (Number(request.headers.get('content-length')) > BODY_LIMIT) return fail('Your message is too long.', 413)
 
@@ -76,12 +76,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await new Resend(apiKey).emails.send({
-      from: 'JobLinks <notifications@joblinkantigua.com>',
+      from: 'JobLink <notifications@joblinkantigua.com>',
       to: recipient,
       replyTo: fields.email,
-      subject: 'Website support request — JobLinks',
-      text: `Website support request\nReference: ${fields.id}\nName: ${fields.name}\nReply email: ${fields.email}\n\n${fields.message}\n\nThe sender agreed to share these details with JobLinks support and be contacted about this request.`,
-      html: `<h1>Website support request</h1><p>Reference: ${fields.id}</p><p>Name: ${escapeHtml(fields.name)}</p><p>Reply email: ${escapeHtml(fields.email)}</p><p style="white-space:pre-wrap">${escapeHtml(fields.message)}</p><p>The sender agreed to share these details with JobLinks support and be contacted about this request.</p>`,
+      subject: 'Website support request — JobLink',
+      text: `Website support request\nReference: ${fields.id}\nName: ${fields.name}\nReply email: ${fields.email}\n\n${fields.message}\n\nThe sender agreed to share these details with JobLink support and be contacted about this request.`,
+      html: `<h1>Website support request</h1><p>Reference: ${fields.id}</p><p>Name: ${escapeHtml(fields.name)}</p><p>Reply email: ${escapeHtml(fields.email)}</p><p style="white-space:pre-wrap">${escapeHtml(fields.message)}</p><p>The sender agreed to share these details with JobLink support and be contacted about this request.</p>`,
     }, { idempotencyKey: `website-support/${fields.id}` })
     if (error || !data?.id) return fail(uncertain, 503)
     // Provider acceptance only; no claim that the inbox or support bot received it.

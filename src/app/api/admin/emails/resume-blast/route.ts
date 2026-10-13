@@ -7,7 +7,7 @@ import { requireVerifiedUser } from '@/lib/api-auth'
 // Bulk work needs more than the default function timeout.
 export const maxDuration = 300
 
-const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
 
 /**
  * POST /api/admin/emails/resume-blast

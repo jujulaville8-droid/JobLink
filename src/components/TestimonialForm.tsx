@@ -25,11 +25,11 @@ export default function TestimonialForm({ id, initialFeedback, initialRating, in
       </select>
     </label>
     <label className="block font-medium">Tell us what worked and what could be better
-      <textarea className="mt-2 block min-h-36 w-full rounded-lg border p-3" value={feedback} onChange={e => setFeedback(e.target.value)} minLength={10} maxLength={600} required placeholder="One or two sentences about finding your new hire through JobLinks…" />
+      <textarea className="mt-2 block min-h-36 w-full rounded-lg border p-3" value={feedback} onChange={e => setFeedback(e.target.value)} minLength={10} maxLength={600} required placeholder="One or two sentences about finding your new hire through JobLink…" />
       <span className="text-sm font-normal text-text-light">{feedback.length}/600 characters. Please leave out candidate names and personal details.</span>
     </label>
     <label className="flex items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
-      <span>JobLinks may share my feedback, or a short exact excerpt, with my company name and job title on its website and in outreach emails. This is optional. Uncheck and save to stop future reuse.</span>
+      <span>JobLink may share my feedback, or a short exact excerpt, with my company name and job title on its website and in outreach emails. This is optional. Uncheck and save to stop future reuse.</span>
     </label>
     <button disabled={busy} className="rounded-xl bg-primary px-6 py-3 font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save feedback'}</button>
     <p role="status" className="text-sm">{message}</p>

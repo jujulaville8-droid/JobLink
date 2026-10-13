@@ -217,7 +217,7 @@ export default function Navbar() {
                 className="h-9 w-9 object-contain"
               />
               <span className="font-display text-xl font-bold tracking-tight text-primary">
-                JobLinks
+                JobLink
               </span>
               <span className={`hidden sm:inline text-[11px] font-medium ${isRouteActive(pathname, '/admin/applications') ? 'text-[#526565]' : 'text-text-muted/70'} border-l border-border pl-2.5 leading-tight`}>
                 Antigua&apos;s Career Network

@@ -19,10 +19,10 @@ export async function notifyEmployerEnquiry(id: string) {
   // Fixed recipient prevents this public form from becoming an email relay.
   // Keep status/notes out of the message so retries have an identical payload.
   const { data, error: sendError } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-    from: 'JobLinks <notifications@joblinkantigua.com>',
+    from: 'JobLink <notifications@joblinkantigua.com>',
     to: TEAM_INBOX,
     replyTo: row.email,
-    subject: 'New employer vacancy request — JobLinks',
+    subject: 'New employer vacancy request — JobLink',
     html: `<h1>A business has asked for hiring help</h1><p><strong>${escapeHtml(row.company_name)}</strong> — ${escapeHtml(row.job_title)}</p><p>Contact: ${escapeHtml(row.contact_name)} (${escapeHtml(row.email)})</p><p>Phone: ${escapeHtml(row.phone || 'Not provided')}</p><p style="white-space:pre-wrap">${escapeHtml(row.details)}</p><p><a href="https://joblinkantigua.com/admin/employer-enquiries#${id}">Review this request</a></p><p>The employer has agreed to be contacted about this vacancy. Confirm the final wording and permission before publishing.</p>`,
   }, { idempotencyKey: `employer-enquiry/${id}` })
   if (sendError || !data?.id) return false

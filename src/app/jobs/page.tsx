@@ -18,15 +18,15 @@ const JOBS_URL = "https://joblinkantigua.com/jobs";
 const baseMetadata: Metadata = {
   title: "Browse Jobs in Antigua and Barbuda",
   description:
-    "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type. Apply in minutes on JobLinks.",
+    "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type. Apply in minutes on JobLink.",
   alternates: { canonical: JOBS_URL },
   openGraph: {
-    title: "Browse Jobs in Antigua and Barbuda | JobLinks",
+    title: "Browse Jobs in Antigua and Barbuda | JobLink",
     description:
       "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type.",
     url: JOBS_URL,
-    siteName: "JobLinks",
-    images: [{ url: "/images/colorful-buildings.jpg", width: 1200, height: 630, alt: "JobLinks — Browse Jobs" }],
+    siteName: "JobLink",
+    images: [{ url: "/images/colorful-buildings.jpg", width: 1200, height: 630, alt: "JobLink — Browse Jobs" }],
   },
 };
 
@@ -92,15 +92,15 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 
   const title = `${category} Jobs in Antigua and Barbuda`;
   const description = count
-    ? `${count} open ${category} ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. Apply in minutes on JobLinks.`
-    : `${category} jobs in Antigua and Barbuda. Get an email alert when one is posted on JobLinks.`;
+    ? `${count} open ${category} ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. Apply in minutes on JobLink.`
+    : `${category} jobs in Antigua and Barbuda. Get an email alert when one is posted on JobLink.`;
 
   return {
     title,
     description,
     alternates: { canonical: url },
     ...(count ? {} : { robots: noindex }),
-    openGraph: { ...baseMetadata.openGraph, title: `${title} | JobLinks`, description, url },
+    openGraph: { ...baseMetadata.openGraph, title: `${title} | JobLink`, description, url },
   };
 }
 

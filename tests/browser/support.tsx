@@ -4,7 +4,7 @@ import '../../src/app/globals.css'
 
 createRoot(document.getElementById('root')!).render(<>
   <main style={{ padding: '2rem', minHeight: '150vh', background: '#faf8f5' }}>
-    <h1 style={{ fontSize: '2rem', color: '#095355' }}>JobLinks support test fixture</h1>
+    <h1 style={{ fontSize: '2rem', color: '#095355' }}>JobLink support test fixture</h1>
     <p>Isolated preview of the actual support component and website stylesheet.</p>
     <button id="background-action" style={{ marginTop: '1rem' }}>Background action</button>
   </main>

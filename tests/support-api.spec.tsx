@@ -30,7 +30,7 @@ it('routes only to the configured support inbox with safe content and a stable r
   expect(response.status).toBe(200)
   expect(await response.json()).toEqual({ success: true, reference: id })
   const [email, options] = external.send.mock.calls[0]
-  expect(email).toMatchObject({ from: 'JobLinks <notifications@joblinkantigua.com>', to: 'support@joblinkantigua.com', replyTo: 'alex@example.test', subject: 'Website support request — JobLinks' })
+  expect(email).toMatchObject({ from: 'JobLink <notifications@joblinkantigua.com>', to: 'support@joblinkantigua.com', replyTo: 'alex@example.test', subject: 'Website support request — JobLink' })
   expect(email.html).toContain('&lt;b&gt;Alex &amp; Co&lt;/b&gt;')
   expect(email.html).toContain('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; thank you.')
   expect(email.html).not.toContain('<script>')

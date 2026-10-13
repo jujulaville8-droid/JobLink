@@ -10,7 +10,7 @@ import observedJobs from './fixtures/approved-job-listings.json';
 
 const woodstock = observedJobs[1];
 const previousInstructions = 'How to apply: all enquiries must be by email. Send your CV/resume and any other pertinent information to office@woodstockboats.com. We will get back to all applicants.';
-const instructions = 'How to apply: use the Apply button on this page to submit your application and CV/resume through JobLinks. Include any other pertinent information in the cover letter field. We will get back to all applicants.';
+const instructions = 'How to apply: use the Apply button on this page to submit your application and CV/resume through JobLink. Include any other pertinent information in the cover letter field. We will get back to all applicants.';
 const expected = publicJobDescription(woodstock.description.replace(previousInstructions, instructions));
 
 function makeJob() {

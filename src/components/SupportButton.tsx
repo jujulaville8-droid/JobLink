@@ -123,11 +123,11 @@ export default function SupportButton() {
       }}>
       <div className={styles.panel}>
       <div className={styles.header}>
-        <div className={styles.heading}><MessageCircle size={20} aria-hidden="true" /><div><h2 id={titleId}>JobLinks support</h2><p>Replies by email</p></div></div>
+        <div className={styles.heading}><MessageCircle size={20} aria-hidden="true" /><div><h2 id={titleId}>JobLink support</h2><p>Replies by email</p></div></div>
         <button ref={closeRef} type="button" className={styles.close} aria-label="Close support" onClick={closeSupport}><X size={22} aria-hidden="true" /></button>
       </div>
       <div className={styles.body}>
-      <p id={descriptionId} className={styles.description}>Send us a message about JobLinks. We’ll reply to your email.</p>
+      <p id={descriptionId} className={styles.description}>Send us a message about JobLink. We’ll reply to your email.</p>
       {reference ? <div role="status" className={styles.receipt}>
         <h3>Message accepted for sending</h3>
         <p>Our email provider accepted your message for support. This does not confirm inbox delivery.</p>
@@ -140,7 +140,7 @@ export default function SupportButton() {
           <div><label htmlFor={messageId}>Message</label><textarea id={messageId} value={draft.message} onChange={event => setDraft({ ...draft, message: event.target.value })} name="message" minLength={10} maxLength={5000} rows={3} aria-describedby={messageHintId} required /></div>
           <p id={messageHintId} className={styles.hint}>10–5,000 characters. Leave out passwords, payment details, and others’ private information.</p>
           <div className={styles.honeypot} aria-hidden="true"><label>Leave this empty<input name="website" value={draft.website} onChange={event => setDraft({ ...draft, website: event.target.value })} tabIndex={-1} autoComplete="off" maxLength={300} /></label></div>
-          <label className={styles.consent}><input name="consent" type="checkbox" checked={draft.consent} onChange={event => setDraft({ ...draft, consent: event.target.checked })} required /><span>I agree to email my name, reply email, and message to JobLinks support and be contacted about this request. <a href="/privacy" target="_blank" rel="noopener noreferrer" aria-label="Privacy policy (opens in a new tab)">Privacy policy ↗</a></span></label>
+          <label className={styles.consent}><input name="consent" type="checkbox" checked={draft.consent} onChange={event => setDraft({ ...draft, consent: event.target.checked })} required /><span>I agree to email my name, reply email, and message to JobLink support and be contacted about this request. <a href="/privacy" target="_blank" rel="noopener noreferrer" aria-label="Privacy policy (opens in a new tab)">Privacy policy ↗</a></span></label>
         </fieldset>
         {error && <p role="alert" className={styles.error}>{error}</p>}
         <button type="submit" className={styles.submit} disabled={busy}>{busy ? 'Sending message…' : 'Send message'}</button>

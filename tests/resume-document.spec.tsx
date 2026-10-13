@@ -17,7 +17,7 @@ describe('studio resume document', () => {
     for (const value of ['Simone Francis', 'Skill 12', 'Service operations coursework', 'Recognised for mentoring', 'Feb 2027', 'Guest welcome guide', 'https://example.com/guide', 'Spanish', 'Conversational', 'Community Pantry', 'Organise weekly deliveries', 'Hospitality Network', 'Alex Example', 'Former supervisor', 'alex@example.com']) {
       expect(text).toContain(value);
     }
-    expect(text).not.toContain('Built with JobLinks');
+    expect(text).not.toContain('Built with JobLink');
   });
   it('does not invent present employment for an undated, non-current role', () => {
     const cv = structuredClone(resumeFixture);

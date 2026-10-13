@@ -68,13 +68,13 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
     <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <div style="background-color: #0d7377; padding: 24px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLinks</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">JobLink</h1>
         </div>
         <div style="padding: 32px 24px;">
           ${content}
         </div>
         <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLinks &mdash; Antigua &amp; Barbuda's Job Platform</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink &mdash; Antigua &amp; Barbuda's Job Platform</p>
         </div>
       </div>
     </body>
@@ -144,7 +144,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             <p style="color: ${info.color}; font-weight: 700; margin: 0; font-size: 16px;">${esc(info.text)}</p>
           </div>
           ${isInterview ? `<p style="color: #374151; line-height: 1.6;">The employer would like to interview you. Expect to hear from them shortly with details.</p>` : ''}
-          ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLinks.</p>` : ''}
+          ${isRejected ? `<p style="color: #374151; line-height: 1.6;">This one didn't work out, but don't let it stop you. There are more opportunities waiting on JobLink.</p>` : ''}
           ${isHold ? `<p style="color: #374151; line-height: 1.6;">Your application is on hold. The employer may follow up with next steps.</p>` : ''}
           ${!isInterview && !isRejected && !isHold ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
           ${isRejected ? btn('Browse More Jobs', '/jobs') : btn('View My Applications', '/applications')}
@@ -154,7 +154,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     case 'job_alert':
       return {
-        subject: `New jobs on JobLinks that match your alert`,
+        subject: `New jobs on JobLink that match your alert`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Jobs Matching Your Alert</h2>
           <p style="color: #374151; line-height: 1.6;">
@@ -245,7 +245,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             <p style="color: #374151; margin: 0; white-space: pre-wrap;">${esc(d.admin_message)}</p>
           </div>
           <p style="color: #374151; line-height: 1.6;">
-            We appreciate you helping keep JobLinks safe and trustworthy for everyone.
+            We appreciate you helping keep JobLink safe and trustworthy for everyone.
           </p>
           ${btn('Browse Jobs', '/jobs')}
         `),
@@ -317,7 +317,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           </div>
 
           <div style="background-color: #f9fafb; border-radius: 10px; padding: 16px 20px; margin: 24px 0; text-align: center;">
-            <p style="color: #6b7280; font-size: 13px; margin: 0 0 4px 0;">Keep your JobLinks profile up to date</p>
+            <p style="color: #6b7280; font-size: 13px; margin: 0 0 4px 0;">Keep your JobLink profile up to date</p>
             <a href="${SITE}/profile" style="color: #0d7377; font-size: 13px; text-decoration: none; font-weight: 600;">Edit profile</a>
           </div>
         `),
@@ -347,14 +347,14 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
         html: wrapper(`
           <h2 style="color: #1f2937; margin: 0 0 8px;">You're almost there, ${esc(d.applicant_name) || 'there'}!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            You signed up for JobLinks — great first step! But we noticed you haven't added a resume to your profile yet.
+            You signed up for JobLink — great first step! But we noticed you haven't added a resume to your profile yet.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Employers across Antigua &amp; Barbuda are actively searching for candidates right now.
             Profiles with a resume are <strong>3x more likely</strong> to get contacted by employers.
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            You can upload a resume you already have, or build one right on JobLinks in just a few minutes.
+            You can upload a resume you already have, or build one right on JobLink in just a few minutes.
           </p>
           <div style="margin: 24px 0; text-align: center;">
             ${btn('Upload My Resume', '/profile')}
@@ -370,7 +370,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
         html: wrapper(`
           <h2 style="color: #1f2937; margin: 0 0 8px;">Quick reminder, ${esc(d.applicant_name) || 'there'}!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            We noticed you still haven't added a resume to your JobLinks profile. That's okay — it only takes a couple of minutes.
+            We noticed you still haven't added a resume to your JobLink profile. That's okay — it only takes a couple of minutes.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Right now, there are employers in Antigua &amp; Barbuda actively looking for candidates.
@@ -381,7 +381,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           </p>
           <ul style="color: #374151; line-height: 1.8; padding-left: 20px;">
             <li><strong>Upload</strong> a resume you already have (PDF)</li>
-            <li><strong>Build one</strong> on JobLinks in under 3 minutes</li>
+            <li><strong>Build one</strong> on JobLink in under 3 minutes</li>
           </ul>
           <div style="margin: 24px 0; text-align: center;">
             ${btn('Add My Resume Now', '/profile')}
@@ -400,7 +400,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             Hi ${esc(d.applicant_name) || 'there'},
           </p>
           <p style="color: #374151; line-height: 1.6;">
-            Here's something most people don't realise: <strong>employers on JobLinks are browsing profiles every single day</strong> — even when they haven't posted a job yet. They're searching for the right person before they ever publish a listing.
+            Here's something most people don't realise: <strong>employers on JobLink are browsing profiles every single day</strong> — even when they haven't posted a job yet. They're searching for the right person before they ever publish a listing.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             If your profile doesn't have a resume, you're invisible to them. It's that simple.
@@ -442,11 +442,11 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     case 'signup_reminder_1':
       return {
-        subject: `Don't forget to verify your JobLinks account`,
+        subject: `Don't forget to verify your JobLink account`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">One Step Left!</h2>
           <p style="color: #374151; line-height: 1.6;">
-            You recently signed up for JobLinks — Antigua &amp; Barbuda's job platform — but you haven't verified your email yet.
+            You recently signed up for JobLink — Antigua &amp; Barbuda's job platform — but you haven't verified your email yet.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Without verifying, you won't be able to browse jobs, apply, or set up your profile. It only takes a second.
@@ -458,17 +458,17 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     case 'signup_reminder_2':
       return {
-        subject: `Your JobLinks account is still waiting for you`,
+        subject: `Your JobLink account is still waiting for you`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">You're Almost There</h2>
           <p style="color: #374151; line-height: 1.6;">
-            A few days ago you signed up for JobLinks, but your account still isn't verified.
+            A few days ago you signed up for JobLink, but your account still isn't verified.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             Right now, employers across Antigua &amp; Barbuda are posting new jobs daily. Verify your email so you don't miss out on opportunities.
           </p>
           <div style="background-color: #f0fafa; border-left: 4px solid #0d7377; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;">
-            <p style="color: #374151; margin: 0; font-weight: 600;">What you get with JobLinks:</p>
+            <p style="color: #374151; margin: 0; font-weight: 600;">What you get with JobLink:</p>
             <ul style="color: #374151; margin: 8px 0 0; padding-left: 18px; line-height: 1.8;">
               <li>Browse and apply to local jobs</li>
               <li>Build a free professional resume</li>
@@ -482,11 +482,11 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     case 'signup_reminder_3':
       return {
-        subject: `Last chance — verify your JobLinks account before it expires`,
+        subject: `Last chance — verify your JobLink account before it expires`,
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Final Reminder</h2>
           <p style="color: #374151; line-height: 1.6;">
-            This is our last reminder — your JobLinks account is still unverified.
+            This is our last reminder — your JobLink account is still unverified.
           </p>
           <p style="color: #374151; line-height: 1.6;">
             We don't want you to miss out. Employers are hiring right now and your profile could be the one they're looking for.
@@ -501,10 +501,10 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     default:
       return {
-        subject: 'Notification from JobLinks',
+        subject: 'Notification from JobLink',
         html: wrapper(`
-          <p style="color: #374151;">You have a new notification from JobLinks.</p>
-          ${btn('Go to JobLinks', '/dashboard')}
+          <p style="color: #374151;">You have a new notification from JobLink.</p>
+          ${btn('Go to JobLink', '/dashboard')}
         `),
       }
   }

@@ -3,7 +3,7 @@
 The website has a small site-wide **Support** chat bubble in the bottom right,
 opening a compact native modal panel. Visitors can
 send their name (1–100 characters), reply email (up to 254 characters), and message
-(10–5,000 characters), after agreeing to share those details with JobLinks support
+(10–5,000 characters), after agreeing to share those details with JobLink support
 and be contacted about the request. No account or attachment is required.
 
 The panel explicitly says **Replies by email**; it makes no live-chat,
@@ -30,7 +30,7 @@ does not provision that mailbox, verify its delivery, or connect the support bot
 invalid, or different recipient fails closed. The API never routes using submitted
 `to`, `cc`, or other recipient values. It does not fall back to `hello@` or the
 owner forwarding inbox. The existing sender is
-`JobLinks <notifications@joblinkantigua.com>`; the validated visitor email is
+`JobLink <notifications@joblinkantigua.com>`; the validated visitor email is
 Reply-To. There is no automatic email to unverified visitor addresses.
 
 Existing Supabase URL and service-role configuration and the existing

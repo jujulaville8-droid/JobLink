@@ -105,7 +105,7 @@ function ClassicTemplate({ cv }: { cv: CvFull }) {
         {cv.skills.length > 0 && (<><Text style={s.section}>Skills</Text><View style={s.skillsRow}>{cv.skills.map((sk, i) => <Text key={sk.id} style={s.skill}>{sk.name}{i < cv.skills.length - 1 ? '  ·  ' : ''}</Text>)}</View></>)}
         {cv.awards.length > 0 && (<><Text style={s.section}>Awards</Text>{cv.awards.map(a => <View key={a.id} style={s.entry}><View style={s.row}><Text style={s.entryTitle}>{a.title}</Text>{a.date_received && <Text style={s.date}>{fmtDate(a.date_received)}</Text>}</View>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}{a.description && <Text style={s.desc}>{a.description}</Text>}</View>)}</>)}
         {cv.certifications.length > 0 && (<><Text style={s.section}>Certifications</Text>{cv.certifications.map(c => <View key={c.id} style={s.entry}><View style={s.row}><Text style={s.entryTitle}>{c.name}</Text>{c.issue_date && <Text style={s.date}>{fmtDate(c.issue_date)}</Text>}</View>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -161,7 +161,7 @@ function SidebarTemplate({ cv }: { cv: CvFull }) {
             <View key={e.id} style={s.entry}><View style={s.row}><Text style={s.entryTitle}>{e.degree}{e.field_of_study ? ` in ${e.field_of_study}` : ''}</Text></View><Text style={s.subtitle}>{e.institution}</Text></View>
           ))}</>)}
           {cv.awards.length > 0 && (<><Text style={s.section}>Awards</Text>{cv.awards.map(a => <View key={a.id} style={s.entry}><Text style={s.entryTitle}>{a.title}</Text>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}</View>)}</>)}
-          <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+          <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
         </View>
       </Page>
     </Document>
@@ -218,7 +218,7 @@ function BannerTemplate({ cv }: { cv: CvFull }) {
           {cv.awards.length > 0 && (<><SectionHead title="Awards" />{cv.awards.map(a => <View key={a.id} style={s.entry}><Text style={s.entryTitle}>{a.title}</Text>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}</View>)}</>)}
           {cv.certifications.length > 0 && (<><SectionHead title="Certifications" />{cv.certifications.map(c => <View key={c.id} style={s.entry}><Text style={s.entryTitle}>{c.name}</Text>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
         </View>
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -261,7 +261,7 @@ function MinimalTemplate({ cv }: { cv: CvFull }) {
         {cv.skills.length > 0 && (<><Text style={s.section}>Skills</Text><Text style={s.skills}>{cv.skills.map(sk => sk.name).join(', ')}</Text></>)}
         {cv.awards.length > 0 && (<><Text style={s.section}>Awards</Text>{cv.awards.map(a => <View key={a.id} style={s.entry}><Text style={s.entryTitle}>{a.title}</Text>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}</View>)}</>)}
         {cv.certifications.length > 0 && (<><Text style={s.section}>Certifications</Text>{cv.certifications.map(c => <View key={c.id} style={s.entry}><Text style={s.entryTitle}>{c.name}</Text>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -310,7 +310,7 @@ function ProfessionalTemplate({ cv }: { cv: CvFull }) {
         {cv.skills.length > 0 && (<><View style={s.section}><Text style={s.sectionTitle}>Skills</Text></View><View style={s.skillsRow}>{cv.skills.map(sk => <Text key={sk.id} style={s.skillChip}>{sk.name}</Text>)}</View></>)}
         {cv.awards.length > 0 && (<><View style={s.section}><Text style={s.sectionTitle}>Awards</Text></View>{cv.awards.map(a => <View key={a.id} style={s.entry}><Text style={s.entryTitle}>{a.title}</Text>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}</View>)}</>)}
         {cv.certifications.length > 0 && (<><View style={s.section}><Text style={s.sectionTitle}>Certifications</Text></View>{cv.certifications.map(c => <View key={c.id} style={s.entry}><Text style={s.entryTitle}>{c.name}</Text>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -372,7 +372,7 @@ function ExecutiveTemplate({ cv }: { cv: CvFull }) {
             {cv.certifications.length > 0 && (<><SBar title="Certifications" />{cv.certifications.map(c => <View key={c.id} style={s.entry}><Text style={s.entryTitle}>{c.name}</Text>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
           </View>
         </View>
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -425,7 +425,7 @@ function TimelineTemplate({ cv }: { cv: CvFull }) {
           <TEntry key={e.id} date={fmtDate(e.start_date)} title={`${e.degree}${e.field_of_study ? ` in ${e.field_of_study}` : ''}`} sub={e.institution} />
         ))}</View></>)}
         {cv.skills.length > 0 && (<><Text style={s.section}>Skills</Text><View style={s.skillsRow}>{cv.skills.map(sk => <Text key={sk.id} style={s.skillChip}>{sk.name}</Text>)}</View></>)}
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -490,7 +490,7 @@ function ModularTemplate({ cv }: { cv: CvFull }) {
             ))}</Card>}
           </View>
         </View>
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -545,7 +545,7 @@ function CompactTemplate({ cv }: { cv: CvFull }) {
           {cv.awards.length > 0 && (<><Text style={s.section}>Awards</Text>{cv.awards.map(a => <View key={a.id} style={s.entry}><Text style={s.entryTitle}>{a.title}</Text>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}</View>)}</>)}
           {cv.certifications.length > 0 && (<><Text style={s.section}>Certifications</Text>{cv.certifications.map(c => <View key={c.id} style={s.entry}><Text style={s.entryTitle}>{c.name}</Text>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
         </View>
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )
@@ -595,7 +595,7 @@ function ElegantTemplate({ cv }: { cv: CvFull }) {
         {cv.skills.length > 0 && (<><SHead title="Skills" /><View style={s.skillsRow}>{cv.skills.map(sk => <Text key={sk.id} style={s.skillChip}>{sk.name}</Text>)}</View></>)}
         {cv.awards.length > 0 && (<><SHead title="Awards" />{cv.awards.map(a => <View key={a.id} style={s.entry}><Text style={s.entryTitle}>{a.title}</Text>{a.issuer && <Text style={s.subtitle}>{a.issuer}</Text>}</View>)}</>)}
         {cv.certifications.length > 0 && (<><SHead title="Certifications" />{cv.certifications.map(c => <View key={c.id} style={s.entry}><Text style={s.entryTitle}>{c.name}</Text>{c.issuing_organization && <Text style={s.subtitle}>{c.issuing_organization}</Text>}</View>)}</>)}
-        <Text style={s.footer}>Built with JobLinks · joblinkantigua.com</Text>
+        <Text style={s.footer}>Built with JobLink · joblinkantigua.com</Text>
       </Page>
     </Document>
   )

@@ -13,7 +13,7 @@ export default function EmployerEnquiryForm() {
   if (done) return <div role="status" className="rounded-2xl border border-teal-200 bg-teal-50 p-8">
     <p className="mb-3 text-sm font-semibold uppercase tracking-wide text-teal-800">Request received</p>
     <h2 className="font-display text-3xl text-slate-900">You’ve taken the first step.</h2>
-    <p className="mt-4 text-slate-700">We’ve saved your vacancy request. Julian at JobLinks will review it and contact you using the details you provided to confirm the role and whether the pilot is a fit.</p>
+    <p className="mt-4 text-slate-700">We’ve saved your vacancy request. Julian at JobLink will review it and contact you using the details you provided to confirm the role and whether the pilot is a fit.</p>
     <p className="mt-4 text-slate-700">Your vacancy is not published yet. We’ll agree the wording and next steps with you first.</p>
     <div className="mt-6 rounded-xl border border-teal-200 bg-white p-5">
       <h3 className="text-xl font-semibold text-slate-900">Get ready to manage your hiring</h3>
@@ -52,7 +52,7 @@ export default function EmployerEnquiryForm() {
     <label className="block font-medium">Who are you hiring?<input className={input} name="job_title" placeholder="For example, a part-time cook" minLength={2} maxLength={150} required /></label>
     <label className="block font-medium">Paste your advert, or tell us about the role<textarea className={`${input} min-h-40`} name="details" minLength={20} maxLength={6000} required placeholder="Include the location, duties, hours, pay range and when you need someone, if you know them. You can paste a link to an existing advert too." /><span className="mt-2 block text-sm font-normal text-slate-500">No polished job description needed. Please don’t include applicants’ personal details.</span></label>
     <div className="absolute -left-[10000px]" aria-hidden="true"><label>Leave this empty<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
-    <label className="flex items-start gap-3 text-sm leading-6"><input name="consent" type="checkbox" required className="mt-1.5 h-4 w-4 shrink-0 accent-teal-700" /><span>I’m authorised to enquire for this business, and JobLinks may contact me about this vacancy using the details above. I understand this doesn’t publish a job or subscribe me to marketing. <Link className="underline" href="/privacy">Privacy policy</Link></span></label>
+    <label className="flex items-start gap-3 text-sm leading-6"><input name="consent" type="checkbox" required className="mt-1.5 h-4 w-4 shrink-0 accent-teal-700" /><span>I’m authorised to enquire for this business, and JobLink may contact me about this vacancy using the details above. I understand this doesn’t publish a job or subscribe me to marketing. <Link className="underline" href="/privacy">Privacy policy</Link></span></label>
     {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{error}</p>}
     <button className="w-full rounded-xl bg-teal-800 px-6 py-4 font-semibold text-white transition hover:bg-teal-900 disabled:opacity-50" disabled={busy}>{busy ? 'Sending your request…' : 'Send us your vacancy'}</button>
     <p className="text-center text-sm text-slate-500">Free first-vacancy pilot. No account or payment details needed.</p>

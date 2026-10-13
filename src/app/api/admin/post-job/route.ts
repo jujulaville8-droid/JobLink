@@ -7,7 +7,7 @@ import { BASE_URL } from '@/lib/email'
 import { buildEmailHtml } from '@/lib/email-templates'
 import { parseCompanyContactEmail } from '@/lib/company-contact-email'
 
-const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
 
 export const maxDuration = 300
 

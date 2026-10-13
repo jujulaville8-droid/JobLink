@@ -191,7 +191,7 @@ it.each(['2026-09-30T20:09:59Z', '2026-09-30T20:10:00Z'])('keeps the page and Ap
   expect(html).not.toContain('Expires');
   expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   const metadata = await generateMetadata({ params: Promise.resolve({ id: db.job!.id }) });
-  expect(metadata.title).not.toEqual({ absolute: 'Job Not Found | JobLinks' });
+  expect(metadata.title).not.toEqual({ absolute: 'Job Not Found | JobLink' });
   expect(db.job).toEqual(before);
 });
 

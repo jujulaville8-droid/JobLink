@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Explore — JobLinks Dashboard",
+  title: "Explore — JobLink Dashboard",
   description:
-    "Explore your JobLinks dashboard. Access job searches, applications, messages, and account settings.",
+    "Explore your JobLink dashboard. Access job searches, applications, messages, and account settings.",
   robots: { index: false, follow: false },
 };
 
