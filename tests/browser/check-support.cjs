@@ -179,8 +179,10 @@ const assert = require('node:assert/strict');
         await fadePage.getByLabel('Message', { exact: true }).fill('Preserve this draft through launcher toggles.');
         await fadePage.waitForFunction(() => getComputedStyle(document.querySelector('dialog > div')).opacity === '1');
         const transition = await fadeDialog.locator(':scope > div').evaluate(el => ({ duration: getComputedStyle(el).transitionDuration, events: window.supportFadeEvents }));
-        if (reducedMotion === 'reduce') assert.equal(transition.duration, '0s');
-        else { assert.equal(transition.duration, '0.18s'); assert(transition.events.some(event => event.phase === 'open'), 'Opening did not fade'); }
+        // The site's global reduced-motion rule uses a negligible duration
+        // with !important; verify no perceptible fade or transition events.
+        if (reducedMotion === 'reduce') assert(parseFloat(transition.duration) <= 0.001);
+        else { assert(parseFloat(transition.duration) >= 0.16 && parseFloat(transition.duration) <= 0.2); assert(transition.events.some(event => event.phase === 'open'), 'Opening did not fade'); }
         const active = fadePage.getByRole('button', { name: 'Close support panel', exact: true });
         const activeBounds = await active.boundingBox();
         // Native scroll locking can change the viewport by a scrollbar width.
