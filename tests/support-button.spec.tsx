@@ -32,6 +32,24 @@ it('loops Tab and Shift+Tab within the support controls', () => {
   expect(document.activeElement).toBe(last)
 })
 
+it('keeps Safari keyboard navigation on the consent and action controls', () => {
+  render(<SupportButton />)
+  fireEvent.click(screen.getByRole('button', { name: 'Support' }))
+  const message = screen.getByLabelText('Message')
+  const consent = screen.getByRole('checkbox')
+  const privacy = screen.getByRole('link', { name: /Privacy policy/ })
+  const send = screen.getByRole('button', { name: 'Send message' })
+  message.focus()
+  expect(fireEvent.keyDown(message, { key: 'Tab' })).toBe(false)
+  expect(document.activeElement).toBe(consent)
+  fireEvent.keyDown(consent, { key: 'Tab' })
+  expect(document.activeElement).toBe(privacy)
+  fireEvent.keyDown(privacy, { key: 'Tab' })
+  expect(document.activeElement).toBe(send)
+  fireEvent.keyDown(send, { key: 'Tab', shiftKey: true })
+  expect(document.activeElement).toBe(privacy)
+})
+
 it('keeps the draft and retry identity through failure and closing/reopening', async () => {
   const send = vi.fn().mockRejectedValueOnce(new Error('offline')).mockImplementationOnce(async (_url, init) => Response.json({ success: true, reference: JSON.parse(init.body).id }))
   vi.stubGlobal('fetch', send)

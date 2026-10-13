@@ -99,13 +99,13 @@ this task. There was no root `AGENTS.md` or `.agents` directory; the existing
 
 | Check | Result |
 | --- | --- |
-| Focused support API/form specs | 33 passed; red/green validation, focus-loop, proxy-origin and explicit email-response behavior verified |
-| Full Vitest suite (`npm run test:unit -- --maxWorkers=2`) | 1,339 passed, 1 existing live-email test skipped |
+| Focused support API/form specs | 34 passed; red/green validation, Safari focus traversal, proxy-origin and explicit email-response behavior verified |
+| Full Vitest suite (`npm run test:unit -- --maxWorkers=2`) | 1,340 passed, 1 existing live-email test skipped |
 | Existing Node suite (`npm run test:node`) | 34 passed |
 | `npm run typecheck` | Passed |
 | `npm run lint` | 0 errors; 9 existing navigation warnings, no added warnings |
 | `npm run build -- --webpack` | Passed with inert public placeholders and blank email/service credentials |
-| Headless browser fixture | 10/10 normal cases: 320, 375, 390, 768, 1440 px × light/dark preferences; reduced motion, 200% text, nav/Apply/cookie clearance; 2/2 keyboard viewport cases |
+| Headless browser fixture | Chromium and WebKit each passed 10/10 normal cases: 320, 375, 390, 768, 1440 px × light/dark preferences; reduced motion, 200% text, nav/Apply/cookie clearance; 2/2 keyboard viewport cases |
 | Compiled local production API | Correct 503 for unconfigured delivery, 403 for foreign origin, 400 for missing consent, 413 for excessive body; no-store responses |
 | Diff whitespace check | Passed |
 
@@ -125,6 +125,13 @@ absorbed filled text. The compiled-route check exposed and fixed an origin check
 that relied on Next's normalized internal hostname. The route now compares the
 browser Origin with Host and the edge-set protocol; tests cover both local and
 HTTPS proxy hosts and continue to reject foreign origins.
+
+WebKit also reproduced Tab leaving the native dialog after the message field
+under Safari's default keyboard navigation, which skips some controls. The modal
+now advances Tab and Shift+Tab explicitly through its eligible controls, including
+consent, privacy, and send. A focused regression failed before the fix and passed
+afterward. Run the same browser fixture with `SUPPORT_BROWSER=webkit` to cover
+that behavior without changing a user's Safari preferences.
 
 ## Independent review and component research
 

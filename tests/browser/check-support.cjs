@@ -1,5 +1,5 @@
 /* Run against support-vite.config.ts. All delivery is intercepted, never sent. */
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const { chromium, webkit } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const { mkdirSync, writeFileSync } = require('node:fs');
 const { resolve } = require('node:path');
 const assert = require('node:assert/strict');
@@ -8,7 +8,8 @@ const assert = require('node:assert/strict');
   const base = process.env.SUPPORT_BASE_URL || 'http://127.0.0.1:4357';
   const out = resolve(process.env.EVIDENCE_DIR || '/tmp/joblink-support-evidence');
   mkdirSync(out, { recursive: true });
-  const browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
+  const browserType = process.env.SUPPORT_BROWSER === 'webkit' ? webkit : chromium;
+  const browser = await browserType.launch({ headless: true, ...(browserType === chromium && process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
   const results = [];
   try {
     for (const width of [320, 375, 390, 768, 1440]) {

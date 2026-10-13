@@ -81,10 +81,14 @@ export default function SupportButton() {
         if (event.key !== 'Tab') return
         const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('a[href], button, input, textarea, [tabindex]'))
           .filter(control => control.tabIndex >= 0 && !control.matches(':disabled') && !control.closest('[aria-hidden="true"]'))
-        const first = controls[0], last = controls[controls.length - 1]
-        if (!first || !last) return
-        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
-        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+        if (!controls.length) return
+        // Safari's default Tab navigation can skip checkbox/link/button controls.
+        // Advance explicitly so consent and actions stay reachable in the modal.
+        const current = controls.indexOf(document.activeElement as HTMLElement)
+        const next = current < 0 ? (event.shiftKey ? controls.length - 1 : 0)
+          : (current + (event.shiftKey ? -1 : 1) + controls.length) % controls.length
+        event.preventDefault()
+        controls[next].focus()
       }}>
       <div className={styles.header}>
         <div className={styles.heading}><MessageCircle size={20} aria-hidden="true" /><div><h2 id={titleId}>JobLinks support</h2><p>Replies by email</p></div></div>
