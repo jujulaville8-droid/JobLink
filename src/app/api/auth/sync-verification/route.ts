@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { syncAccountVerification } from '@/lib/sync-account-verification'
 
 /**
  * POST /api/auth/sync-verification
@@ -32,40 +33,12 @@ export async function POST() {
     const metadataRole = user.user_metadata?.role
     const role = metadataRole === 'employer' ? 'employer' : 'seeker'
 
-    // Check if user row exists
-    const { data: existingUser } = await admin
-      .from('users')
-      .select('id, role')
-      .eq('id', user.id)
-      .single()
-
-    let finalRole = role
-
-    if (existingUser) {
-      finalRole = existingUser.role || role
-      const { error: updateError } = await admin
-        .from('users')
-        .update({ email_verified: true })
-        .eq('id', user.id)
-
-      if (updateError) {
-        console.error('[sync-verification] Update failed', updateError.message)
-        return NextResponse.json({ error: 'Failed to sync verification' }, { status: 500 })
-      }
-    } else {
-      // User row missing (trigger may have failed) — create it
-      const { error: insertError } = await admin.from('users').insert({
-        id: user.id,
-        email: user.email!,
-        role,
-        email_verified: true,
-      })
-
-      if (insertError) {
-        console.error('[sync-verification] Insert failed', insertError.message)
-        return NextResponse.json({ error: 'Failed to create user record' }, { status: 500 })
-      }
+    const synced = await syncAccountVerification(admin, user, role)
+    if (synced.error) {
+      console.error('[sync-verification] Account verification sync failed')
+      return NextResponse.json({ error: 'Failed to sync verification' }, { status: 500 })
     }
+    const finalRole = synced.role
 
     // Check if the user has created a profile yet
     let hasProfile = false

@@ -1,8 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createAdminClientRaw } from '@supabase/supabase-js'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest, type NextFetchEvent } from 'next/server'
+import { syncAccountVerification } from '@/lib/sync-account-verification'
 
-export async function updateSession(request: NextRequest) {
+export async function updateSession(request: NextRequest, event?: NextFetchEvent) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -97,23 +98,15 @@ export async function updateSession(request: NextRequest) {
               auth: { autoRefreshToken: false, persistSession: false },
             })
 
-            // supabase-js RETURNS errors rather than throwing them, so the
-            // result has to be inspected. The previous try/catch could never
-            // fire, and a failed repair was silently treated as success.
-            const { error: syncError } = userData
-              ? await admin
-                  .from('users')
-                  .update({ email_verified: true })
-                  .eq('id', user.id)
-              : await admin.from('users').insert({
-                  id: user.id,
-                  email: user.email!,
-                  role: user.user_metadata?.role === 'employer' ? 'employer' : 'seeker',
-                  email_verified: true,
-                })
+            // Share the atomic verification transition with auth callbacks.
+            // The winning path owns one generic notification attempt.
+            const synced = await syncAccountVerification(
+              admin, user, user.user_metadata?.role === 'employer' ? 'employer' : 'seeker',
+              event ? work => event.waitUntil(work()) : undefined,
+            )
 
-            if (syncError) {
-              console.error('[auth-middleware] Auto-sync failed:', syncError.message)
+            if (synced.error) {
+              console.error('[auth-middleware] Auto-sync failed')
               isVerified = false
             }
           } catch (syncErr) {

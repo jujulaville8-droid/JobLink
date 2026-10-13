@@ -47,7 +47,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: () => ({
-      select: () => ({ eq: () => ({ single: async () => ({ data: { role: api.role }, error: null }) }) }),
+      select: () => ({ eq: () => ({ single: async () => ({ data: { role: api.role, email_verified: true }, error: null }) }) }),
       update: () => ({ eq: async () => ({ error: null }) }),
     }),
   }),
