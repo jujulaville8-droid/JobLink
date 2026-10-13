@@ -451,3 +451,42 @@ describe.each([
     });
   }
 });
+
+describe.each([
+  ['97fec756-f008-4409-8e77-155a334d6f43', 'Chef de Partie'],
+  ['ddcfe8d3-f258-4447-9161-08e224a1a81a', 'Jr. Sous Chef'],
+])('Hermitage Bay %s October 13 vacancy-scoped approval', (jobId, title) => {
+  const companyId = '22a1fd24-ef01-4b55-8043-1cdca65bc25c';
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-13T20:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = 'Hermitage Bay';
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting with the confirmed employment type and no deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-13', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/45',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, employmentType: 'FULL_TIME' });
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+});

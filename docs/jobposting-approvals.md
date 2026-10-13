@@ -200,3 +200,19 @@ Dadli Jobs posting, recorded in `public-job-deadlines.ts` and emitted as
 `validThrough`; markup retires after that date in Antigua. Hermitage Bay has no
 published deadline, so no `validThrough` is emitted. Stored listing content,
 status and the application route are unchanged, and there are no database writes.
+
+## October 13, 2026 vacancy-scoped employer approvals (Hermitage Bay kitchen roles)
+
+[PR #45](https://github.com/jujulaville8-droid/JobLink/pull/45) records Hermitage Bay's October 13, 2026 reply from the JobLink
+outreach CRM, which sent two further vacancies to post and confirmed both are
+full-time. Each permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Hermitage Bay — Chef de Partie | `97fec756-f008-4409-8e77-155a334d6f43` | `22a1fd24-ef01-4b55-8043-1cdca65bc25c` | 2026-10-13 | Full Time, confirmed by the employer on 2026-10-13 |
+| Hermitage Bay — Jr. Sous Chef | `ddcfe8d3-f258-4447-9161-08e224a1a81a` | `22a1fd24-ef01-4b55-8043-1cdca65bc25c` | 2026-10-13 | Full Time, confirmed by the employer on 2026-10-13 |
+
+No deadline was published, so no `validThrough` is emitted. Stored listing
+content, status and the application route are unchanged; no database writes.
