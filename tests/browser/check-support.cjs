@@ -183,8 +183,11 @@ const assert = require('node:assert/strict');
         else { assert.equal(transition.duration, '0.18s'); assert(transition.events.some(event => event.phase === 'open'), 'Opening did not fade'); }
         const active = fadePage.getByRole('button', { name: 'Close support panel', exact: true });
         const activeBounds = await active.boundingBox();
-        assert(Math.abs(activeBounds.x - openerBounds.x) < 1 && Math.abs(activeBounds.y - openerBounds.y) < 1, 'Launcher moved when panel opened');
-        await active.click();
+        // Native scroll locking can change the viewport by a scrollbar width.
+        // Repeating the original tap must still hit the active launcher.
+        const tap = { x: openerBounds.x + openerBounds.width / 2, y: openerBounds.y + openerBounds.height / 2 };
+        assert(tap.x >= activeBounds.x && tap.x <= activeBounds.x + activeBounds.width && tap.y >= activeBounds.y && tap.y <= activeBounds.y + activeBounds.height, 'Repeated launcher tap would miss');
+        await fadePage.mouse.click(tap.x, tap.y);
         if (reducedMotion === 'no-preference') {
           assert.equal(await fadeDialog.getAttribute('data-phase'), 'closing');
           assert(await fadeDialog.isVisible(), 'Closing was abrupt');
