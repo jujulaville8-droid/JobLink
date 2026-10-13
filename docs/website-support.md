@@ -99,8 +99,8 @@ this task. There was no root `AGENTS.md` or `.agents` directory; the existing
 
 | Check | Result |
 | --- | --- |
-| Focused support API/form specs | 34 passed; red/green validation, Safari focus traversal, proxy-origin and explicit email-response behavior verified |
-| Full Vitest suite (`npm run test:unit -- --maxWorkers=2`) | 1,340 passed, 1 existing live-email test skipped |
+| Focused support API/form specs | 37 passed; validation, Safari focus traversal, launcher dismissal/reopen, reduced motion, proxy-origin and explicit email-response behavior verified |
+| Full Vitest suite (`npm run test:unit -- --maxWorkers=2`) | 1,358 passed, 1 existing live-email test skipped (includes later job-approval tests) |
 | Existing Node suite (`npm run test:node`) | 34 passed |
 | `npm run typecheck` | Passed |
 | `npm run lint` | 0 errors; 9 existing navigation warnings, no added warnings |
@@ -132,6 +132,14 @@ now advances Tab and Shift+Tab explicitly through its eligible controls, includi
 consent, privacy, and send. A focused regression failed before the fix and passed
 afterward. Run the same browser fixture with `SUPPORT_BROWSER=webkit` to cover
 that behavior without changing a user's Safari preferences.
+
+The launcher also dismisses the open panel. Its active button belongs to the
+native modal's top layer, so the backdrop does not block that button while the
+background remains inert. The panel and backdrop fade over 180 ms on opening
+and closing. Reduced motion removes the fade and closes immediately. Drafts
+remain intact; dismissing restores focus to the original launcher, and another
+tap during closing cancels the pending close. The browser fixture covers opacity
+transitions and reduced motion on mobile and desktop with intercepted delivery.
 
 ## Independent review and component research
 
