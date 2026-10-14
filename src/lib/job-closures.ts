@@ -26,6 +26,12 @@ const JOB_CLOSURES: Record<string, JobClosure> = {
     closedAfter: "2026-10-15",
     reason: "Applications for this vacancy closed on October 15, 2026.",
   },
+  // Seagull Inflatables — Operations & Admin Coordinator. Deadline: October 18, 2026.
+  "7181a600-df8e-45dd-b8d1-a0e910c1f494": {
+    companyId: "8b95a031-0ce5-4e2d-9087-fda18d2ccc7c",
+    closedAfter: "2026-10-18",
+    reason: "Applications for this vacancy closed on October 18, 2026.",
+  },
 };
 
 function antiguaDate(now: Date): string {
