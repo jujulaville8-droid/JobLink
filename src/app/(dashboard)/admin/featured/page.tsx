@@ -27,9 +27,13 @@ interface ListingRow {
   location: string
   is_featured: boolean
   created_at: string
-  companies: {
-    company_name: string
-  }[] | null
+  // PostgREST embeds a many-to-one relation as a single object, not an array.
+  companies: { company_name: string } | { company_name: string }[] | null
+}
+
+function companyName(listing: ListingRow): string {
+  const company = Array.isArray(listing.companies) ? listing.companies[0] : listing.companies
+  return company?.company_name || 'Unknown'
 }
 
 export default async function AdminFeaturedPage() {
@@ -91,7 +95,7 @@ export default async function AdminFeaturedPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text text-sm">{listing.title}</h3>
                   <p className="text-xs text-text-light mt-0.5">
-                    {listing.companies?.[0]?.company_name || 'Unknown'} &middot; {listing.location} &middot;{' '}
+                    {companyName(listing)} &middot; {listing.location} &middot;{' '}
                     {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
                     {' '}&middot;{' '}
                     <span className="font-medium text-primary">{appCounts.get(listing.id) || 0} applicants</span>
@@ -133,7 +137,7 @@ export default async function AdminFeaturedPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text text-sm">{listing.title}</h3>
                   <p className="text-xs text-text-light mt-0.5">
-                    {listing.companies?.[0]?.company_name || 'Unknown'} &middot; {listing.location} &middot;{' '}
+                    {companyName(listing)} &middot; {listing.location} &middot;{' '}
                     {JOB_TYPE_LABELS[listing.job_type] || listing.job_type}
                     {' '}&middot;{' '}
                     <span className="font-medium text-primary">{appCounts.get(listing.id) || 0} applicants</span>
