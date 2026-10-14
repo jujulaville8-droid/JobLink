@@ -202,8 +202,7 @@ describe('canonical sitemap SEO', () => {
     expect(Object.hasOwn(byUrl[`${BASE_URL}/jobs/no-date`], 'lastModified')).toBe(false);
     expect(Object.hasOwn(byUrl[`${BASE_URL}/jobs/bad-date`], 'lastModified')).toBe(false);
     expect(first.filter(entry => !entry.url.includes('/jobs/') || entry.url.includes('?')).every(entry => !Object.hasOwn(entry, 'lastModified'))).toBe(true);
-    // updated_at does not exist in production; selecting it would break the query.
-    expect(db.queries.filter(query => query.table === 'job_listings').every(query => query.selection === 'id, company_id, category, created_at')).toBe(true);
+    expect(db.queries.filter(query => query.table === 'job_listings').every(query => query.selection === 'id, company_id, category, created_at, updated_at')).toBe(true);
   });
 
   it.each(['job_listings', 'companies'])('fails rather than returning a partial sitemap on a %s read error', async table => {
