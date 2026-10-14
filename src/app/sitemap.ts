@@ -11,13 +11,25 @@ type SitemapJob = {
   id: string;
   company_id: string;
   category: string | null;
+  created_at: string | null;
+  updated_at?: string | null;
 };
+
+// job_listings has no updated_at column in production (only created_at), so
+// selecting it would fail the query. Prefer updated_at if it is ever added and
+// selected; otherwise fall back to created_at. Invalid dates emit no lastmod.
+function jobLastModified(job: SitemapJob): Date | undefined {
+  const raw = job.updated_at ?? job.created_at;
+  if (!raw) return undefined;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient();
 
-  // No lastModified until an authoritative content-modification date exists.
-  // A request timestamp or a record's creation date is not that date.
+  // Static pages carry no lastModified: a request timestamp is not a content
+  // modification date. Job pages use their stored listing timestamp below.
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, changeFrequency: "daily", priority: 1.0 },
     { url: `${BASE_URL}/jobs`, changeFrequency: "daily", priority: 0.9 },
@@ -35,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (let start = 0; ; start += JOB_PAGE_SIZE) {
     const { data, error } = await supabase
       .from("job_listings")
-      .select("id, company_id, category")
+      .select("id, company_id, category, created_at")
       .eq("status", "active")
       .not("id", "in", closedJobIdFilter())
       .order("id", { ascending: true })
@@ -48,11 +60,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
   const liveJobs = [...jobs.values()];
 
-  const jobPages: MetadataRoute.Sitemap = liveJobs.map((job) => ({
-    url: `${BASE_URL}/jobs/${job.id}`,
-    changeFrequency: "daily" as const,
-    priority: 0.8,
-  }));
+  const jobPages: MetadataRoute.Sitemap = liveJobs.map((job) => {
+    const lastModified = jobLastModified(job);
+    return {
+      url: `${BASE_URL}/jobs/${job.id}`,
+      ...(lastModified ? { lastModified } : {}),
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    };
+  });
 
   // Category queries use exact taxonomy spelling. Do not normalize a stored
   // noncanonical value into a category whose canonical page would be empty.
