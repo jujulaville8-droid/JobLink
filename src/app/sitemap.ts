@@ -1,3 +1,4 @@
+import { closedJobIdFilter } from "@/lib/job-closures";
 import type { MetadataRoute } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { INDUSTRIES } from "@/lib/types";
@@ -36,6 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from("job_listings")
       .select("id, company_id, category")
       .eq("status", "active")
+      .not("id", "in", closedJobIdFilter())
       .order("id", { ascending: true })
       .range(start, start + JOB_PAGE_SIZE - 1);
 

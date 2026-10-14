@@ -25,6 +25,7 @@ vi.mock('@/lib/supabase/server', () => ({
           head = options?.head ?? false;
           return query;
         },
+        not: () => query,
         eq: (field: string, value: unknown) => {
           entry.calls.push(['eq', field, value]);
           filters.push(row => row[field] === value);

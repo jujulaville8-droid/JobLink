@@ -216,3 +216,19 @@ claimed. No email content is copied here.
 
 No deadline was published, so no `validThrough` is emitted. Stored listing
 content, status and the application route are unchanged; no database writes.
+
+## October 14, 2026 vacancy closures
+
+`src/lib/job-closures.ts` records vacancies that are no longer available while
+their stored status is still `active`. Each entry is bound to the job and
+company IDs and closes once its date-only `closedAfter` has passed in Antigua.
+A closed vacancy keeps its URL with a visible "no longer available" notice and
+a link to similar jobs, is `noindex`, emits no `JobPosting`, rejects Apply, and
+is removed from the sitemap, browse/category results, the homepage and company
+pages.
+
+- Top Bun — Cook (`e03a2b8c-f69b-42bb-bc43-13a5d0917291`): closed now (after October 3).
+- Street Blends — Barista Prep Assistants (`03aeffa0-f680-46b2-b5eb-ea3891d0ce44`): closes after October 15, 2026.
+
+Setting either listing's stored status to `closed` from the admin tools makes
+the page a real 404; the entry can then be removed.

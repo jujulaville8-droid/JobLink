@@ -25,6 +25,7 @@ vi.mock('@/lib/supabase/server', () => ({
       db.queries.push(request);
       const query = {
         select: (selection: string) => { request.selection = selection; return query; },
+        not: () => query,
         eq: (column: string, value: string) => { request.filters.push([column, value]); return query; },
         or: (filter: string) => { request.expiryFilter = filter; return query; },
         in: (column: string, ids: string[]) => {
