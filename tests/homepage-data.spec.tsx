@@ -5,6 +5,7 @@ function createQueryResult<T>(result: T) {
   const query = {
     select: () => query,
     eq: () => query,
+    not: () => query,
     or: () => query,
     order: () => query,
     limit: () => query,

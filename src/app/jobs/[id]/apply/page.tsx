@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { getJobClosure } from "@/lib/job-closures";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -37,6 +38,7 @@ type JobInfo = {
   title: string;
   location: string;
   job_type: string;
+  company_id: string;
   status: string;
   company: { company_name: string } | null;
 };
@@ -123,7 +125,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       const { data: jobData, error: jobError } = await supabase
         .from("job_listings")
         .select(
-          "id, title, location, job_type, status, company:companies(company_name)"
+          "id, company_id, title, location, job_type, status, company:companies(company_name)"
         )
         .eq("id", jobId)
         .single();
@@ -139,7 +141,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       };
       setJob(jobInfo);
 
-      if (jobInfo.status !== "active") {
+      if (jobInfo.status !== "active" || getJobClosure(jobInfo.id, jobInfo.company_id)) {
         setState("job-closed");
         return;
       }

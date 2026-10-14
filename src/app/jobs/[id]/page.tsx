@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
+import { getJobClosure } from "@/lib/job-closures";
 import { jobMetaDescription } from "@/lib/seo/job-description";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
@@ -35,8 +36,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${job.title} at ${company?.company_name || "Company"} | JobLink`;
   const description = jobMetaDescription({ ...job, companyName: company?.company_name });
   const url = `https://joblinkantigua.com/jobs/${id}`;
+  // A closed vacancy keeps a visible "no longer available" page but drops out
+  // of search results.
+  const closed = !!getJobClosure(job.id, job.company_id);
 
   return {
+    ...(closed ? { robots: { index: false, follow: true } } : {}),
     // absolute: the root layout's "%s | JobLink" template would otherwise
     // append the suffix a second time ("... | JobLink | JobLink").
     title: { absolute: title },
@@ -179,7 +184,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   let applyState: "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete" = "login";
   let isSaved = false;
 
-  if (job.status !== "active") {
+  const closure = getJobClosure(job.id, company?.id ?? job.company_id);
+
+  if (job.status !== "active" || closure) {
     applyState = "closed";
   } else if (!user) {
     applyState = "login";
@@ -305,7 +312,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Google requires a description. Do not invent one if only a cutoff remains
   // in the original text; the public page and Apply still stay available.
   const emitJobPosting =
-    !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
+    !closure && !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
 
   const employmentTypeConfirmed = !hasUnconfirmedEmploymentType(job.id, job.company_id) &&
     !(employerApproval && "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
@@ -406,6 +413,21 @@ export default async function JobDetailPage({ params }: PageProps) {
           </svg>
           Back to jobs
         </Link>
+
+        {closure && (
+          <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-5 mb-6">
+            <p className="font-semibold text-amber-900">This job is no longer available</p>
+            <p className="mt-1 text-sm text-amber-800">
+              {closure.reason}{" "}
+              <Link
+                href={job.category ? `/jobs?category=${encodeURIComponent(job.category)}` : "/jobs"}
+                className="underline"
+              >
+                {job.category ? `See similar ${job.category} jobs` : "Browse current jobs"}
+              </Link>.
+            </p>
+          </div>
+        )}
 
         {/* ─── Hero header card ─── */}
         <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8 mb-6">
@@ -581,7 +603,9 @@ export default async function JobDetailPage({ params }: PageProps) {
                   Apply for this job
                 </h2>
                 <p className="text-xs text-text-muted mb-5">
-                  {applyState === "login"
+                  {applyState === "closed"
+                    ? "This job is no longer accepting applications."
+                    : applyState === "login"
                     ? "Sign in to submit your application and track your status."
                     : applyState === "applied"
                     ? "You've already submitted your application for this role."

@@ -19,6 +19,7 @@ function client() {
       };
       const query = {
         select: () => query,
+        not: () => query,
         eq: (key: string, value: unknown) => {
           filters.push(row => key === 'job_listings.status'
             ? db.tables.job_listings.some(job => job.company_id === row.id && job.status === value)

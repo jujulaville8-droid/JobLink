@@ -8,6 +8,7 @@ const { eq, query, result } = vi.hoisted(() => {
   const query: Record<string, unknown> = {};
   for (const method of ['select','or','order','range','ilike','in']) query[method] = vi.fn(() => query);
   query.eq = eq.mockImplementation(() => query);
+  query.not = vi.fn(() => query);
   query.then = (resolve:(value:unknown)=>unknown) => Promise.resolve(resolve(result));
   return {eq,query,result};
 });

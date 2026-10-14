@@ -1,3 +1,4 @@
+import { closedJobIdFilter } from "@/lib/job-closures";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import JobCard, { Job } from "@/components/JobCard";
@@ -29,7 +30,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from("job_listings")
     .select("id", { count: "exact", head: true })
     .eq("company_id", id)
-    .eq("status", "active");
+    .eq("status", "active")
+    .not("id", "in", closedJobIdFilter());
 
   const url = `https://joblinkantigua.com/companies/${id}`;
   return {
@@ -71,6 +73,7 @@ export default async function CompanyPage({ params }: PageProps) {
     .select("*")
     .eq("company_id", id)
     .eq("status", "active")
+    .not("id", "in", closedJobIdFilter())
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 

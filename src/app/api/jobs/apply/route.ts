@@ -1,3 +1,4 @@
+import { getJobClosure } from '@/lib/job-closures'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job listing not found' }, { status: 404 })
     }
 
-    if (job.status !== 'active') {
+    if (job.status !== 'active' || getJobClosure(job.id, job.company_id)) {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
     }
 

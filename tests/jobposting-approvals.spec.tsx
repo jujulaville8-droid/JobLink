@@ -268,7 +268,7 @@ it.each([
   ['2026-10-04T03:59:59.999Z', true],
   ['2026-10-04T04:00:00.000Z', false],
   ['2026-10-10T04:00:00.000Z', false],
-] as const)('limits Top Bun Google markup to its public deadline, keeping page and Apply: %s', async (now, eligible) => {
+] as const)('limits Top Bun Google markup to its public deadline and closes the page after it: %s', async (now, eligible) => {
   vi.setSystemTime(new Date(now));
   db.job!.id = 'e03a2b8c-f69b-42bb-bc43-13a5d0917291';
   db.job!.company_id = '362300b7-c0c5-4c2e-a9f6-6fe79f187e71';
@@ -284,7 +284,11 @@ it.each([
   const html = await pageHtml();
   expect(html).not.toContain('Application deadline: October 3, 2026.');
   expect(html).toContain('Cook on Saturdays only.');
-  expect(html).toContain('Sign In to Apply');
+  if (eligible) expect(html).toContain('Sign In to Apply');
+  else {
+    expect(html).toContain('This job is no longer available');
+    expect(html).not.toContain('Sign In to Apply');
+  }
   expect(html).toContain('Part Time');
   expect(db.job).toEqual(before);
 });
