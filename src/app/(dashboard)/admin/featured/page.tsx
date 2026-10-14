@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
@@ -96,6 +97,9 @@ export default async function AdminFeaturedPage() {
                     <span className="font-medium text-primary">{appCounts.get(listing.id) || 0} applicants</span>
                   </p>
                 </div>
+                <Link href={`/admin/edit-job?id=${listing.id}`} className="text-xs font-medium text-primary hover:underline">
+                  Edit
+                </Link>
                 <form action={toggleFeatured}>
                   <input type="hidden" name="job_id" value={listing.id} />
                   <input type="hidden" name="is_featured" value="true" />
@@ -135,6 +139,9 @@ export default async function AdminFeaturedPage() {
                     <span className="font-medium text-primary">{appCounts.get(listing.id) || 0} applicants</span>
                   </p>
                 </div>
+                <Link href={`/admin/edit-job?id=${listing.id}`} className="text-xs font-medium text-primary hover:underline">
+                  Edit
+                </Link>
                 <form action={toggleFeatured}>
                   <input type="hidden" name="job_id" value={listing.id} />
                   <input type="hidden" name="is_featured" value="false" />

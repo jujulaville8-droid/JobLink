@@ -4,7 +4,12 @@ import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/api-auth'
 
+import { INDUSTRIES, JOB_TYPE_LABELS } from '@/lib/types'
+
 export const maxDuration = 300
+
+const TEXT_FIELDS = ['title', 'description', 'category', 'job_type', 'location'] as const
+const ALLOWED_FIELDS: string[] = ['status', 'is_featured', ...TEXT_FIELDS]
 
 export async function PATCH(
   request: NextRequest,
@@ -19,10 +24,34 @@ export async function PATCH(
     const admin = createAdminClient()
 
     const body = await request.json()
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+    const unknownFields = Object.keys(body).filter(key => !ALLOWED_FIELDS.includes(key))
+    if (unknownFields.length) {
+      return NextResponse.json({ error: `Unknown fields: ${unknownFields.join(', ')}` }, { status: 400 })
+    }
     const { status, is_featured } = body
 
     // Build update object with only allowed fields
     const updates: Record<string, unknown> = {}
+
+    // Content edits use the service-role client, so a live listing stays
+    // active instead of returning to pending_approval.
+    for (const field of TEXT_FIELDS) {
+      if (body[field] === undefined) continue
+      const value = typeof body[field] === 'string' ? body[field].trim() : ''
+      if (!value) {
+        return NextResponse.json({ error: `${field} must be a non-empty string` }, { status: 400 })
+      }
+      if (field === 'category' && !INDUSTRIES.includes(value)) {
+        return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+      }
+      if (field === 'job_type' && !Object.hasOwn(JOB_TYPE_LABELS, value)) {
+        return NextResponse.json({ error: 'Invalid job_type' }, { status: 400 })
+      }
+      updates[field] = value
+    }
 
     if (status !== undefined) {
       const validStatuses = ['active', 'closed']
