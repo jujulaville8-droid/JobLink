@@ -15,9 +15,8 @@ type SitemapJob = {
   updated_at?: string | null;
 };
 
-// job_listings has no updated_at column in production (only created_at), so
-// selecting it would fail the query. Prefer updated_at if it is ever added and
-// selected; otherwise fall back to created_at. Invalid dates emit no lastmod.
+// updated_at is bumped by the job_listings_set_updated_at trigger on content or
+// status changes. Fall back to created_at; invalid dates emit no lastmod.
 function jobLastModified(job: SitemapJob): Date | undefined {
   const raw = job.updated_at ?? job.created_at;
   if (!raw) return undefined;
@@ -47,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (let start = 0; ; start += JOB_PAGE_SIZE) {
     const { data, error } = await supabase
       .from("job_listings")
-      .select("id, company_id, category, created_at")
+      .select("id, company_id, category, created_at, updated_at")
       .eq("status", "active")
       .not("id", "in", closedJobIdFilter())
       .order("id", { ascending: true })
