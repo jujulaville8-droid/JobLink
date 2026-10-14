@@ -31,6 +31,31 @@ export function applicantCvPath(value: unknown, userId: string): string | null {
 export async function notifyNewApplicant(applicationId: string, applicantUserId: string): Promise<boolean> {
   // No provider key means no private-file reads or accidental delivery in local builds.
   if (!process.env.RESEND_API_KEY) return false
+  const sent = await forwardApplicationToEmployer(applicationId, applicantUserId)
+  await recordEmployerForward(applicationId, sent)
+  return sent
+}
+
+/**
+ * Records whether the application reached the employer, for admins. Stores no
+ * recipient or message content. Tolerates a database without the tracking
+ * columns so applying never fails because of bookkeeping.
+ */
+async function recordEmployerForward(applicationId: string, sent: boolean): Promise<void> {
+  try {
+    const now = new Date().toISOString()
+    const { error } = await createAdminClient().from('applications').update({
+      employer_forward_status: sent ? 'sent' : 'not_sent',
+      employer_forward_attempted_at: now,
+      ...(sent ? { employer_forwarded_at: now } : {}),
+    }).eq('id', applicationId)
+    if (error) console.warn('[applicant-notification] Forward status not recorded')
+  } catch {
+    console.warn('[applicant-notification] Forward status not recorded')
+  }
+}
+
+async function forwardApplicationToEmployer(applicationId: string, applicantUserId: string): Promise<boolean> {
   try {
     const db = createAdminClient()
     const { data: application, error: applicationError } = await db.from('applications')

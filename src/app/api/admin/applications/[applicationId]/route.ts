@@ -48,6 +48,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       if (resumeResult.data) resume.builtHref = `/api/cv/export?userId=${userId}`;
     }
 
+    // Read separately so the drawer keeps working before the tracking migration.
+    let notificationTracking: ApplicationDetail['notificationTracking'] = 'not_tracked';
+    const forward = await admin.from('applications')
+      .select('employer_forward_status, employer_forward_attempted_at, employer_forwarded_at')
+      .eq('id', applicationId).maybeSingle();
+    if (!forward.error && forward.data) {
+      const value = record(forward.data);
+      const status = value.employer_forward_status;
+      if ((status === 'sent' || status === 'not_sent') && typeof value.employer_forward_attempted_at === 'string') {
+        notificationTracking = {
+          status, attemptedAt: value.employer_forward_attempted_at,
+          forwardedAt: nullableText(value.employer_forwarded_at),
+        };
+      }
+    }
+
     const application: ApplicationDetail = {
       id: uuid(row.id), jobId: uuid(row.job_id), appliedAt: text(row.applied_at),
       status: text(row.status), coverLetterText: nullableText(row.cover_letter_text),
@@ -55,7 +71,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         id: uuid(job.id), title: text(job.title),
         company: company ? { id: uuid(company.id), name: text(company.company_name) } : null,
       } : null,
-      applicant, resume, notificationTracking: 'not_tracked',
+      applicant, resume, notificationTracking,
     };
     return privateJson({ application });
   } catch {

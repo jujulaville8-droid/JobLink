@@ -215,8 +215,16 @@ function OpenApplicationDetailDrawer({ applicationId, jobId, onClose, returnFocu
             </section>
             <section className={styles.notification} aria-labelledby={`${titleId}-notification`}>
               <h3 id={`${titleId}-notification`} className={styles.sectionTitle}>Employer notification</h3>
-              <p className={styles.label}>Not tracked</p>
-              <p className={styles.small}>Delivery and read status are not recorded for this application.</p>
+              {detail.notificationTracking === 'not_tracked' ? <>
+                <p className={styles.label}>Not tracked</p>
+                <p className={styles.small}>Delivery and read status are not recorded for this application.</p>
+              </> : detail.notificationTracking.status === 'sent' ? <>
+                <p className={styles.label}>Sent to employer</p>
+                <p className={styles.small}>Emailed {applicationDate(detail.notificationTracking.forwardedAt ?? detail.notificationTracking.attemptedAt)} (Antigua time). Read status is not tracked.</p>
+              </> : <>
+                <p className={styles.label}>Not sent</p>
+                <p className={styles.small}>The employer email could not be sent on {applicationDate(detail.notificationTracking.attemptedAt)} (Antigua time).</p>
+              </>}
             </section>
           </>}
         </div>

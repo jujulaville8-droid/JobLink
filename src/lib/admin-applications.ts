@@ -51,7 +51,11 @@ export interface ApplicationDetail {
     email: string | null; phone: string | null; location: string | null
   } | null
   resume: { label: 'Current résumé'; uploadedHref: string | null; builtHref: string | null }
-  notificationTracking: 'not_tracked'
+  /** Whether the application was emailed to the employer; 'not_tracked' before tracking existed. */
+  notificationTracking: 'not_tracked' | EmployerForward
+}
+export interface EmployerForward {
+  status: 'sent' | 'not_sent'; attemptedAt: string; forwardedAt: string | null
 }
 export interface ApplicationFilterOptions { items: { id: string; name: string }[]; page: number; limit: number; totalCount: number }
 export type QueryResult<T> = { value: T; error?: never } | { error: string; value?: never }

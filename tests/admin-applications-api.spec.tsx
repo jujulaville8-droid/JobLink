@@ -294,7 +294,8 @@ describe('admin application detail', () => {
       id: applicationId, job: null, applicant: null,
       resume: { label: 'Current résumé', uploadedHref: null, builtHref: null },
     } })
-    expect(mocks.from).toHaveBeenCalledTimes(1)
+    // The main read plus the separate employer-forward tracking read.
+    expect(mocks.from).toHaveBeenCalledTimes(2)
   })
 
   it('returns null resume links when neither an upload nor a built resume exists', async () => {
