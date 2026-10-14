@@ -186,14 +186,24 @@ describe('canonical sitemap SEO', () => {
     expect(db.queries.some(query => query.table === 'companies')).toBe(false);
   });
 
-  it('never fabricates lastmod from generation time or record creation dates', async () => {
-    db.rows.job_listings = [job('job', 'Accounting', { expires_at: '2026-10-10T23:00:00.000Z' })];
+  it('emits job lastmod from updated_at, falling back to created_at, never from generation time', async () => {
+    db.rows.job_listings = [
+      job('created-only', 'Accounting', { created_at: '2026-09-01T12:00:00.000Z' }),
+      job('updated', 'Accounting', { created_at: '2026-09-01T12:00:00.000Z', updated_at: '2026-10-12T08:30:00.000Z' }),
+      job('no-date', 'Accounting', { created_at: null }),
+      job('bad-date', 'Accounting', { created_at: 'not-a-date' }),
+    ];
     const first = await sitemap();
     vi.setSystemTime(new Date('2026-10-11T04:00:00.000Z'));
-    const later = await sitemap();
-    expect(later).toEqual(first);
-    expect(first.every(entry => !Object.hasOwn(entry, 'lastModified'))).toBe(true);
-    expect(db.queries.every(query => !query.selection?.includes('created_at'))).toBe(true);
+    expect(await sitemap()).toEqual(first);
+    const byUrl = Object.fromEntries(first.map(entry => [entry.url, entry]));
+    expect(byUrl[`${BASE_URL}/jobs/created-only`].lastModified).toEqual(new Date('2026-09-01T12:00:00.000Z'));
+    expect(byUrl[`${BASE_URL}/jobs/updated`].lastModified).toEqual(new Date('2026-10-12T08:30:00.000Z'));
+    expect(Object.hasOwn(byUrl[`${BASE_URL}/jobs/no-date`], 'lastModified')).toBe(false);
+    expect(Object.hasOwn(byUrl[`${BASE_URL}/jobs/bad-date`], 'lastModified')).toBe(false);
+    expect(first.filter(entry => !entry.url.includes('/jobs/') || entry.url.includes('?')).every(entry => !Object.hasOwn(entry, 'lastModified'))).toBe(true);
+    // updated_at does not exist in production; selecting it would break the query.
+    expect(db.queries.filter(query => query.table === 'job_listings').every(query => query.selection === 'id, company_id, category, created_at')).toBe(true);
   });
 
   it.each(['job_listings', 'companies'])('fails rather than returning a partial sitemap on a %s read error', async table => {
