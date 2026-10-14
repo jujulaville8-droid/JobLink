@@ -12,11 +12,13 @@ const uid = '11111111-1111-4111-8111-111111111111'
 const jobId = '22222222-2222-4222-8222-222222222222'
 let rows: Record<string, Record<string, unknown> | null>
 const queries: { table: string; filters: [string, unknown][] }[] = []
+const updates: { table: string; value: Record<string, unknown> }[] = []
 beforeEach(() => {
   vi.clearAllMocks()
   vi.stubEnv('RESEND_API_KEY', 'test-only-no-delivery')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
   queries.length = 0
+  updates.length = 0
   rows = {
     applications: { id: 'saved-app', job_id: jobId, seeker_id: 'seeker', cover_letter_text: '<script>alert(1)</script>' + 'x'.repeat(2000) },
     seeker_profiles: { id: 'seeker', user_id: uid, first_name: 'Applicant', last_name: '<Name>', phone: '+1 268 555 0100', cv_url: `${uid}/cv-1.pdf` },
@@ -28,7 +30,7 @@ beforeEach(() => {
   mocks.from.mockImplementation((table: string) => {
     const filters: [string, unknown][] = []
     queries.push({ table, filters })
-    const q = { select: () => q, eq: (field: string, value: unknown) => { filters.push([field, value]); return q }, single: async () => {
+    const q = { update: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve), select: () => q, eq: (field: string, value: unknown) => { filters.push([field, value]); return q }, single: async () => {
       const row = rows[table === 'users' ? (filters.some(([, v]) => v === 'owner') ? 'owner' : 'applicant') : table]
       return { data: row && filters.every(([k, v]) => row[k] === v) ? row : null, error: null }
     } }
@@ -167,4 +169,17 @@ it('escapes applicant content, says when CV unavailable, and hides unusable dash
   expect(html).not.toContain('<script>')
   expect(buildEmailHtml('new_applicant', { review_path: 'https://evil.test' }).html).not.toContain('evil.test')
   expect(buildEmailHtml('new_applicant', { cv_attached: true, review_path: `/my-listings/${jobId}/applicants` }).html).toContain(`https://joblinkantigua.com/my-listings/${jobId}/applicants`)
+})
+
+it('records for admins whether the application was forwarded, without recipient details', async () => {
+  expect(await notifyNewApplicant('saved-app', uid)).toBe(true)
+  expect(updates).toEqual([{ table: 'applications', value: {
+    employer_forward_status: 'sent',
+    employer_forward_attempted_at: expect.any(String),
+    employer_forwarded_at: expect.any(String),
+  } }])
+  mocks.send.mockResolvedValue({ success: false })
+  updates.length = 0
+  expect(await notifyNewApplicant('saved-app', uid)).toBe(false)
+  expect(updates).toEqual([{ table: 'applications', value: { employer_forward_status: 'not_sent', employer_forward_attempted_at: expect.any(String) } }])
 })
