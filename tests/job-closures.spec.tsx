@@ -14,20 +14,16 @@ it('closes Top Bun now, bound to its company', () => {
   expect(getJobClosure(TOP_BUN, 'other', now)).toBeUndefined();
 });
 
-it('keeps Street Blends open through October 15 in Antigua, closed after', () => {
-  expect(getJobClosure(STREET, STREET_CO, new Date('2026-10-16T03:59:00Z'))).toBeUndefined();
-  expect(getJobClosure(STREET, STREET_CO, new Date('2026-10-16T04:00:00Z'))).toBeDefined();
-});
-
-it('keeps Seagull Inflatables open through October 18 in Antigua, closed after, bound to its company', () => {
-  expect(getJobClosure(SEAGULL, SEAGULL_CO, new Date('2026-10-19T03:59:00Z'))).toBeUndefined();
-  expect(getJobClosure(SEAGULL, SEAGULL_CO, new Date('2026-10-19T04:00:00Z'))).toBeDefined();
-  expect(getJobClosure(SEAGULL, STREET_CO, new Date('2026-10-20T12:00:00Z'))).toBeUndefined();
+it('never auto-closes Street Blends or Seagull Inflatables after their deadlines', () => {
+  for (const now of ['2026-10-16T04:00:00Z', '2026-10-19T04:00:00Z', '2027-06-01T12:00:00Z']) {
+    expect(getJobClosure(STREET, STREET_CO, new Date(now))).toBeUndefined();
+    expect(getJobClosure(SEAGULL, SEAGULL_CO, new Date(now))).toBeUndefined();
+  }
 });
 
 it('builds a valid PostgREST id list', () => {
   expect(closedJobIds(new Date('2026-10-14T12:00:00Z'))).toEqual([TOP_BUN]);
+  expect(closedJobIds(new Date('2026-10-20T12:00:00Z'))).toEqual([TOP_BUN]);
   expect(closedJobIdFilter(new Date('2026-10-01T12:00:00Z'))).toBe('(00000000-0000-0000-0000-000000000000)');
-  expect(closedJobIdFilter(new Date('2026-10-20T12:00:00Z'))).toBe(`(${TOP_BUN},${STREET},${SEAGULL})`);
-  expect(closedJobIds(new Date('2026-10-17T12:00:00Z'))).toEqual([TOP_BUN, STREET]);
+  expect(closedJobIdFilter(new Date('2026-10-20T12:00:00Z'))).toBe(`(${TOP_BUN})`);
 });
