@@ -232,3 +232,23 @@ pages.
 
 Setting either listing's stored status to `closed` from the admin tools makes
 the page a real 404; the entry can then be removed.
+
+## October 14, 2026 vacancy-scoped employer approvals (Seagull Inflatables, Antigua's Donkey Sanctuary)
+
+[PR #55](https://github.com/jujulaville8-droid/JobLink/pull/55) records two October 14, 2026 replies from the
+JobLink outreach CRM in which each employer said yes to JobLink posting the
+vacancy. Each permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Seagull Inflatables — Operations & Admin Coordinator | `7181a600-df8e-45dd-b8d1-a0e910c1f494` | `8b95a031-0ce5-4e2d-9087-fda18d2ccc7c` | 2026-10-14 | Full Time (seasonal), confirmed by the employer on 2026-10-14 |
+| Antigua's Donkey Sanctuary — Team Member (Visitor Services & Gift Shop) | `66737b60-cf1a-4fd0-980c-14f1c9412923` | `ea87a75a-dece-4fd6-afa7-64efbd51a88d` | 2026-10-14 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+Seagull Inflatables keeps the October 18 date-only deadline from its public
+Youth On The Move Facebook posting, recorded in `public-job-deadlines.ts` and
+emitted as `validThrough`; markup retires after that date in Antigua, matching
+the `job-closures.ts` entry from PR #54. The Donkey Sanctuary posting published
+no deadline, so no `validThrough` is emitted. Stored listing content, status and
+the application route are unchanged; no database writes.

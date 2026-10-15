@@ -32,6 +32,14 @@ const PUBLIC_JOB_DEADLINES: Record<string, PublicJobDeadline> = {
     companyId: "6b354ee5-ff32-44b3-a5c8-29f73650b51a",
     validThrough: "2026-10-15",
   },
+  // https://joblinkantigua.com/jobs/7181a600-df8e-45dd-b8d1-a0e910c1f494
+  // Original public posting (Youth On The Move Facebook group,
+  // https://facebook.com/groups/144927202218946/permalink/29146341108317503/):
+  // deadline October 18, 2026.
+  "7181a600-df8e-45dd-b8d1-a0e910c1f494": {
+    companyId: "8b95a031-0ce5-4e2d-9087-fda18d2ccc7c",
+    validThrough: "2026-10-18",
+  },
 };
 
 export function getPublicJobDeadline(jobId: string, companyId: string | null | undefined): string | undefined {
