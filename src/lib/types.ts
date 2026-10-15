@@ -48,6 +48,8 @@ export interface Company {
   industry: string;
   website: string;
   location: string;
+  /** Admin-managed employer notification address; absent on older records. */
+  contact_email?: string | null;
   is_verified: boolean;
   is_pro: boolean;
   stripe_customer_id: string | null;

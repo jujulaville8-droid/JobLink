@@ -13,10 +13,10 @@ export async function processJobAlerts(jobId: string, scope?: { seekerId: string
   try {
     const db = createAdminClient();
     const { data: job, error: jobError } = await db.from('job_listings')
-      .select('id, title, description, category, job_type, status, expires_at, companies(company_name)')
+      .select('id, title, description, category, job_type, status, companies(company_name)')
       .eq('id', jobId).single();
     if (jobError) throw jobError;
-    if (!job || job.status !== 'active' || (job.expires_at && new Date(job.expires_at).getTime() <= Date.now())) return result;
+    if (!job || job.status !== 'active') return result;
 
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies;
     const text = `${job.title} ${job.description || ''}`.toLowerCase();

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { getJobClosure } from "@/lib/job-closures";
 import { motion } from "motion/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -22,6 +23,9 @@ import {
 } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/AuthProvider";
+import ApplicationDraftControls from "@/components/ApplicationDraftControls";
+import { APPLICATION_DRAFT_MAX_LENGTH, deleteApplicationDraft } from "@/lib/application-drafts";
 
 type ProfileStatus = {
   hasProfile: boolean;
@@ -34,6 +38,7 @@ type JobInfo = {
   title: string;
   location: string;
   job_type: string;
+  company_id: string;
   status: string;
   company: { company_name: string } | null;
 };
@@ -81,6 +86,12 @@ const btnOutline =
 export default function ApplyPage() {
   const params = useParams();
   const jobId = params.id as string;
+  const { user } = useAuth();
+  // Account or job changes must not carry another form's private text forward.
+  return <ApplicationForm key={`${jobId}:${user?.id ?? "anonymous"}`} jobId={jobId} />;
+}
+
+function ApplicationForm({ jobId }: { jobId: string }) {
 
   const [state, setState] = useState<PageState>("loading");
   const [job, setJob] = useState<JobInfo | null>(null);
@@ -92,24 +103,29 @@ export default function ApplyPage() {
   const [coverLetter, setCoverLetter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [applicantUserId, setApplicantUserId] = useState<string | null>(null);
+  const [draftCleanupFailed, setDraftCleanupFailed] = useState(false);
 
   useEffect(() => {
+    let active = true;
     async function init() {
       const supabase = createClient();
 
       const {
         data: { user },
       } = await supabase.auth.getUser();
+      if (!active) return;
 
       if (!user) {
-        window.location.href = `/login?returnTo=/jobs/${jobId}/apply`;
+        window.location.href = `/login?returnTo=${encodeURIComponent(`/jobs/${jobId}/apply`)}`;
         return;
       }
+      setApplicantUserId(user.id);
 
       const { data: jobData, error: jobError } = await supabase
         .from("job_listings")
         .select(
-          "id, title, location, job_type, status, company:companies(company_name)"
+          "id, company_id, title, location, job_type, status, company:companies(company_name)"
         )
         .eq("id", jobId)
         .single();
@@ -125,7 +141,7 @@ export default function ApplyPage() {
       };
       setJob(jobInfo);
 
-      if (jobInfo.status !== "active") {
+      if (jobInfo.status !== "active" || getJobClosure(jobInfo.id, jobInfo.company_id)) {
         setState("job-closed");
         return;
       }
@@ -186,8 +202,10 @@ export default function ApplyPage() {
         .eq("job_id", jobId)
         .eq("seeker_id", profile.id)
         .maybeSingle();
+      if (!active) return;
 
       if (existing) {
+        setDraftCleanupFailed(!deleteApplicationDraft(user.id, jobId));
         setState("already-applied");
         return;
       }
@@ -201,6 +219,7 @@ export default function ApplyPage() {
     }
 
     init();
+    return () => { active = false; };
   }, [jobId]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -222,6 +241,8 @@ export default function ApplyPage() {
 
       if (!res.ok) {
         if (res.status === 409) {
+          if (applicantUserId) setDraftCleanupFailed(!deleteApplicationDraft(applicantUserId, jobId));
+          setCoverLetter("");
           setState("already-applied");
           return;
         }
@@ -235,6 +256,8 @@ export default function ApplyPage() {
       if (data.conversation_id) {
         setConversationId(data.conversation_id);
       }
+      if (applicantUserId) setDraftCleanupFailed(!deleteApplicationDraft(applicantUserId, jobId));
+      setCoverLetter("");
       setState("success");
     } catch {
       setErrorMessage(
@@ -249,6 +272,7 @@ export default function ApplyPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
         <motion.div
+          key="application-loading"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center"
@@ -458,7 +482,7 @@ export default function ApplyPage() {
               </div>
 
               <Link
-                href={`/profile?returnTo=/jobs/${jobId}/apply`}
+                href={`/profile?returnTo=${encodeURIComponent(`/jobs/${jobId}/apply`)}`}
                 className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-600 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-amber-500/20"
               >
                 <HugeiconsIcon icon={UserIcon} size={14} />
@@ -476,6 +500,7 @@ export default function ApplyPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
         <motion.div
+          key="application-already-applied"
           variants={container}
           initial="hidden"
           animate="show"
@@ -503,6 +528,7 @@ export default function ApplyPage() {
                 You&apos;ve already submitted your application for this
                 position.
               </p>
+              {draftCleanupFailed && <p role="alert" className="mt-3 text-xs text-red-700">This browser could not remove its saved draft. Clear this site&apos;s data in your browser settings.</p>}
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link href="/applications" className={btnPrimary}>
                   <HugeiconsIcon icon={ViewIcon} size={14} />
@@ -597,6 +623,7 @@ export default function ApplyPage() {
                 The employer will review your profile and Resume. Track the status
                 from your dashboard.
               </p>
+              {draftCleanupFailed && <p role="alert" className="mt-3 text-xs text-red-700">This browser could not remove its saved draft. Clear this site&apos;s data in your browser settings.</p>}
 
               {/* Progress indicator */}
               <div className="mt-6 flex items-center justify-center gap-1.5 rounded-xl bg-white border border-border/30 px-5 py-3.5 mx-auto max-w-xs">
@@ -665,6 +692,7 @@ export default function ApplyPage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
         <motion.div
+          key="application-error"
           variants={container}
           initial="hidden"
           animate="show"
@@ -826,10 +854,11 @@ export default function ApplyPage() {
             <div>
               <textarea
                 id="cover_letter"
+                aria-label="Cover letter"
                 value={coverLetter}
                 onChange={(e) => setCoverLetter(e.target.value)}
                 rows={7}
-                maxLength={2000}
+                maxLength={APPLICATION_DRAFT_MAX_LENGTH}
                 placeholder="Tell the employer why you're a great fit for this role..."
                 className="w-full rounded-xl border border-border/60 bg-[--color-bg] px-4 py-3.5 text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 resize-y leading-relaxed"
               />
@@ -846,6 +875,14 @@ export default function ApplyPage() {
                 </p>
               </div>
             </div>
+
+            {applicantUserId && <ApplicationDraftControls
+              userId={applicantUserId}
+              jobId={jobId}
+              coverLetter={coverLetter}
+              onResume={setCoverLetter}
+              disabled={state === "submitting"}
+            />}
 
             {/* Consent notice */}
             <div className="flex items-start gap-3 rounded-xl bg-bg-alt/60 border border-border/30 p-4">

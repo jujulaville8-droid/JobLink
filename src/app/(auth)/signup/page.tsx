@@ -217,7 +217,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
     return (
       <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14">
         <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-2">
-          Join JobLinks
+          Join JobLink
         </h1>
         <p className="text-center text-sm sm:text-base text-text-light mb-10 sm:mb-12">
           I want to...

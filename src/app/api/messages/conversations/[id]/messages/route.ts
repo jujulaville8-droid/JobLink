@@ -137,32 +137,13 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
     }
 
-    // Send notification to other participant (fire-and-forget)
-    const { data: otherPart } = await supabase
-      .from('conversation_participants')
-      .select('user_id')
-      .eq('conversation_id', conversationId)
-      .neq('user_id', user.id)
-      .single()
-
-    if (otherPart) {
-      // Get sender name and job context for notification
-      const { data: convMeta } = await supabase.rpc('get_conversation_meta', {
-        p_user_id: otherPart.user_id,
-        p_conversation_id: conversationId,
-      })
-
-      const meta = convMeta?.[0]
-      if (meta) {
-        await sendMessageNotification(supabase, {
-          conversationId,
-          recipientId: otherPart.user_id,
-          senderName: meta.other_display_name || 'Someone',
-          jobTitle: meta.job_title || 'a position',
-          messagePreview: body.trim().slice(0, 100),
-        })
-      }
-    }
+    // Notification resolves its recipient from this persisted, sender-owned message.
+    // Caller-bound RPCs must never be queried as the other participant.
+    await sendMessageNotification(supabase, {
+      messageId: message.id,
+      conversationId,
+      senderId: user.id,
+    })
 
     return NextResponse.json(message, { status: 201 })
   } catch {

@@ -1,9 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
+import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
+import { getJobClosure } from "@/lib/job-closures";
+import { jobMetaDescription } from "@/lib/seo/job-description";
+import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import { getEmployerApproval } from "@/lib/seo/employerApproved";
+import { hasUnconfirmedEmploymentType } from "@/lib/seo/unconfirmed-employment-types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
@@ -19,22 +24,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("title, status, expires_at, company:companies(company_name, logo_url)")
+    .select("id, company_id, title, description, location, status, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
-  if (!job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
-    return { title: { absolute: "Job Not Found | JobLinks" } };
+  if (!job || job.status !== "active") {
+    return { title: { absolute: "Job Not Found | JobLink" } };
   }
 
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
-  const title = `${job.title} at ${company?.company_name || "Company"} | JobLinks`;
-  const description = `Apply for ${job.title} at ${company?.company_name || "a company"} in Antigua and Barbuda. Browse jobs on JobLinks, Antigua's #1 job platform.`;
+  const title = `${job.title} at ${company?.company_name || "Company"} | JobLink`;
+  const description = jobMetaDescription({ ...job, companyName: company?.company_name });
   const url = `https://joblinkantigua.com/jobs/${id}`;
+  // A closed vacancy keeps a visible "no longer available" page but drops out
+  // of search results.
+  const closed = !!getJobClosure(job.id, job.company_id);
 
   return {
-    // absolute: the root layout's "%s | JobLinks" template would otherwise
-    // append the suffix a second time ("... | JobLinks | JobLinks").
+    ...(closed ? { robots: { index: false, follow: true } } : {}),
+    // absolute: the root layout's "%s | JobLink" template would otherwise
+    // append the suffix a second time ("... | JobLink | JobLink").
     title: { absolute: title },
     description,
     alternates: { canonical: url },
@@ -42,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url,
-      siteName: "JobLinks",
+      siteName: "JobLink",
       type: "website",
       locale: "en_AG",
       images: company?.logo_url ? [{ url: company.logo_url, width: 200, height: 200, alt: company.company_name }] : [],
@@ -125,10 +134,11 @@ export default async function JobDetailPage({ params }: PageProps) {
     .eq("id", id)
     .single();
 
-  // A closed, expired or missing listing must return a real 404. Rendering a
+  // Only manual status controls availability. A non-active or missing listing
+  // must return a real 404. Rendering a
   // "not found" body with a 200 makes it a soft 404: Google keeps the URL in
   // the index and reports it as an error in Search Console.
-  if (error || !job || job.status !== "active" || (job.expires_at && new Date(job.expires_at) <= new Date())) {
+  if (error || !job || job.status !== "active") {
     notFound();
   }
 
@@ -149,11 +159,12 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const salary =
     job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : null;
+  const description = publicVacancyDescription(job);
 
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
   // A job type override there corrects both the visible label and the
   // JobPosting markup, so the two always agree.
-  const employerApproval = getEmployerApproval(company?.id ?? job.company_id);
+  const employerApproval = getEmployerApproval(company?.id ?? job.company_id, job.id);
   const jobType: string =
     employerApproval?.jobTypeOverrides?.[job.id] ?? job.job_type;
 
@@ -173,7 +184,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   let applyState: "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete" = "login";
   let isSaved = false;
 
-  if (job.status !== "active") {
+  const closure = getJobClosure(job.id, company?.id ?? job.company_id);
+
+  if (job.status !== "active" || closure) {
     applyState = "closed";
   } else if (!user) {
     applyState = "login";
@@ -252,6 +265,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")
     .trim();
+  const isRemoteJob = rawLocality.toLowerCase().includes("remote");
 
   // salary_min/max are only meaningful with a pay period. The forms collect a
   // salary_type but it is not stored yet, so only send unitText once it is.
@@ -265,31 +279,59 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   // Google for Jobs does not allow "job postings on behalf of an organization
   // without authorization". JobPosting markup is emitted only when the
-  // employer posted the job themselves, or the employer is on the approved
-  // list in lib/seo/employerApproved.ts. Listings the JobLink team created or
+  // employer posted the job themselves, or this vacancy/company has a verified
+  // approval in lib/seo/employerApproved.ts. Listings the JobLink team created or
   // imported from public posts (posted_by_admin, or the standard import footer
   // in the description) are otherwise skipped; the page itself stays
   // indexable. A dedicated column would be cleaner but needs a migration.
-  // Closed/expired jobs never reach this point (they 404 above).
+  // Non-active jobs never reach this point (they 404 above).
   const isImportedListing =
     !!job.posted_by_admin ||
     /imported by JobLink from a public job post/i.test(job.description || "");
+
+  // Preserve the employer's original date-only deadline even when it is no
+  // longer displayed. Never infer renewed permission or a new cutoff time.
+  const publicDeadline = getPublicJobDeadline(job.id, company?.id ?? job.company_id);
+  const approvalDeadline = publicDeadline ?? (employerApproval && "validThrough" in employerApproval
+    ? employerApproval.validThrough
+    : undefined);
+  const validThrough = job.expires_at
+    ? new Date(job.expires_at).toISOString()
+    : approvalDeadline;
+  // Woodstock's "Apply before" excludes the named date. The other recorded
+  // application deadlines include that date. Compare calendar dates in Antigua
+  // without inventing a time in validThrough. This affects only Google markup.
+  const todayInAntigua = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Antigua", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
+  const pastApprovalDeadline = !job.expires_at && approvalDeadline
+    ? (publicDeadline ? todayInAntigua > approvalDeadline : todayInAntigua >= approvalDeadline)
+    : false;
+  // A stored deadline can retire Google Jobs markup, but never the page or Apply.
+  const pastStoredDeadline = !!job.expires_at && new Date(job.expires_at) <= new Date();
+  // Google requires a description. Do not invent one if only a cutoff remains
+  // in the original text; the public page and Apply still stay available.
   const emitJobPosting =
-    !!company?.company_name && (!isImportedListing || !!employerApproval);
+    !closure && !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
+
+  const employmentTypeConfirmed = !hasUnconfirmedEmploymentType(job.id, job.company_id) &&
+    !(employerApproval && "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
     identifier: {
       "@type": "PropertyValue",
-      name: "JobLinks",
+      name: "JobLink",
       value: job.id,
     },
     title: job.title,
-    description: textToHtml(job.description || ""),
+    description: textToHtml(description),
     datePosted: job.created_at,
-    ...(employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
-    ...(job.category ? { industry: job.category } : {}),
+    ...(employmentTypeConfirmed && employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
+    // Markup must match what the page shows: the company's industry, not the
+    // job's category. Omit it when the page shows no industry.
+    ...(company?.industry?.trim() ? { industry: company.industry.trim() } : {}),
     hiringOrganization: {
       "@type": "Organization",
       name: company?.company_name,
@@ -304,12 +346,14 @@ export default async function JobDetailPage({ params }: PageProps) {
         addressCountry: "AG",
       },
     },
-    applicantLocationRequirements: {
+    // Google uses applicantLocationRequirements for remote-job geography.
+    // On-site location stays in jobLocation; visible eligibility text is intact.
+    ...(isRemoteJob ? { applicantLocationRequirements: {
       "@type": "Country",
       name: "Antigua and Barbuda",
-    },
-    jobLocationType: rawLocality.toLowerCase().includes("remote") ? "TELECOMMUTE" : undefined,
-    ...(job.expires_at ? { validThrough: new Date(job.expires_at).toISOString() } : {}),
+    } } : {}),
+    jobLocationType: isRemoteJob ? "TELECOMMUTE" : undefined,
+    ...(validThrough ? { validThrough } : {}),
     // Applying requires signing in and completing a profile/CV first, which
     // Google does not count as a direct apply experience.
     directApply: false,
@@ -371,6 +415,21 @@ export default async function JobDetailPage({ params }: PageProps) {
           </svg>
           Back to jobs
         </Link>
+
+        {closure && (
+          <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-5 mb-6">
+            <p className="font-semibold text-amber-900">This job is no longer available</p>
+            <p className="mt-1 text-sm text-amber-800">
+              {closure.reason}{" "}
+              <Link
+                href={job.category ? `/jobs?category=${encodeURIComponent(job.category)}` : "/jobs"}
+                className="underline"
+              >
+                {job.category ? `See similar ${job.category} jobs` : "Browse current jobs"}
+              </Link>.
+            </p>
+          </div>
+        )}
 
         {/* ─── Hero header card ─── */}
         <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8 mb-6">
@@ -470,7 +529,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* Posted / expires */}
+              {/* Posted date */}
               <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-text-muted">
                 <span className="inline-flex items-center gap-1">
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -479,22 +538,6 @@ export default async function JobDetailPage({ params }: PageProps) {
                   </svg>
                   Posted {timeAgo(job.created_at)}
                 </span>
-                {job.expires_at && (
-                  <span className="inline-flex items-center gap-1">
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    Expires{" "}
-                    {new Date(job.expires_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -517,7 +560,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 Job Description
               </h2>
               <div className="text-text-light whitespace-pre-wrap leading-[1.8] text-[0.9375rem] min-h-[120px]">
-                {job.description}
+                {description}
               </div>
             </div>
 
@@ -562,7 +605,9 @@ export default async function JobDetailPage({ params }: PageProps) {
                   Apply for this job
                 </h2>
                 <p className="text-xs text-text-muted mb-5">
-                  {applyState === "login"
+                  {applyState === "closed"
+                    ? "This job is no longer accepting applications."
+                    : applyState === "login"
                     ? "Sign in to submit your application and track your status."
                     : applyState === "applied"
                     ? "You've already submitted your application for this role."
@@ -672,7 +717,7 @@ export default async function JobDetailPage({ params }: PageProps) {
         <div className="h-36 md:h-20 lg:hidden" />
 
         {/* Mobile sticky apply button — sits above bottom nav on mobile */}
-        <div className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
+        <div data-support-obstruction className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
           <ApplyButton jobId={job.id} state={applyState} />
         </div>
       </div>

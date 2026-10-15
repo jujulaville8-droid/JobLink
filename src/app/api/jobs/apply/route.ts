@@ -1,7 +1,9 @@
+import { getJobClosure } from '@/lib/job-closures'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
+import { notifyNewApplicant } from '@/lib/applicant-notifications'
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, title, company_id, posted_by_admin, expires_at, companies(company_name, user_id)')
+      .select('id, status, title, company_id, posted_by_admin, companies(company_name, user_id, contact_email)')
       .eq('id', job_id)
       .single()
 
@@ -59,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job listing not found' }, { status: 404 })
     }
 
-    if (job.status !== 'active' || (job.expires_at && new Date(job.expires_at) <= new Date())) {
+    if (job.status !== 'active' || getJobClosure(job.id, job.company_id)) {
       return NextResponse.json({ error: 'This job is no longer accepting applications' }, { status: 400 })
     }
 
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
       if (insertError.code === '23505') {
         return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
       }
-      console.error('[apply] insert application error:', insertError)
+      console.error('[apply] Failed to save application')
       return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
     }
 
@@ -97,10 +99,6 @@ export async function POST(request: NextRequest) {
       .select('first_name, last_name, cv_url')
       .eq('id', seekerProfile.id)
       .single()
-
-    const seekerName = seekerInfo
-      ? `${seekerInfo.first_name || ''} ${seekerInfo.last_name || ''}`.trim() || 'A candidate'
-      : 'A candidate'
 
     // ── Auto-create messaging thread ──
     // Use admin client to bypass RLS since we've already verified authorization.
@@ -151,7 +149,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (convError) {
-          console.error('[apply] create conversation error:', convError)
+          console.error('[apply] Failed to create application conversation')
         }
 
         if (conversation) {
@@ -166,7 +164,7 @@ export async function POST(request: NextRequest) {
             ])
 
           if (partError) {
-            console.error('[apply] insert participants error:', partError)
+            console.error('[apply] Failed to add application conversation participants')
           }
 
           // Insert the first message with CV as attachment
@@ -180,11 +178,11 @@ export async function POST(request: NextRequest) {
             })
 
           if (msgError) {
-            console.error('[apply] insert message error:', msgError)
+            console.error('[apply] Failed to save application message')
           }
         }
-      } catch (adminErr) {
-        console.error('[apply] admin client unavailable; application thread was not created:', adminErr)
+      } catch {
+        console.error('[apply] Application conversation unavailable')
       }
     }
 
@@ -199,33 +197,16 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (company?.user_id) {
-      const { data: employerUser } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', company.user_id)
-        .single()
-
-      if (employerUser?.email) {
-        await sendEmail({
-          to: employerUser.email,
-          type: 'new_applicant',
-          data: {
-            applicant_name: seekerName,
-            job_title: job.title,
-            application_url: `${BASE_URL}/my-listings`,
-          },
-        })
-      }
-    }
+    await notifyNewApplicant(application.id, user.id)
 
     return NextResponse.json({
       success: true,
       application,
       conversation_id: conversationId,
     }, { status: 201 })
-  } catch (err) {
-    console.error('[apply] unexpected error:', err)
+  } catch {
+    // Database/provider errors may include cover letters, contact data or CV paths.
+    console.error('[apply] Application request failed')
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -1,3 +1,5 @@
+import SeekerDetailsSummary from '@/components/profile/SeekerDetailsSummary';
+import { seekerDetailsFromRow } from '@/lib/seeker-details';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { requireAuth } from '@/lib/auth';
@@ -54,7 +56,7 @@ interface ApplicantData {
     education: string | null;
     cv_url: string | null;
     phone: string | null;
-  } | null;
+  } & Record<string, unknown> | null;
 }
 
 export default async function ApplicantsPage({
@@ -110,7 +112,16 @@ export default async function ApplicantsPage({
         bio,
         education,
         cv_url,
-        phone
+        phone,
+        currently_employed,
+        has_own_transport,
+        has_drivers_licence,
+        availability,
+        willing_to_relocate,
+        languages,
+        certifications,
+        notice_period,
+        earliest_start_date
       )
     `
     )
@@ -384,6 +395,12 @@ export default async function ApplicantsPage({
                         </p>
                       </div>
                     )}
+
+                    {/* Practical details only; sensitive details are admin-only. */}
+                    <SeekerDetailsSummary
+                      details={seekerDetailsFromRow(seeker)}
+                      className="sm:col-span-2"
+                    />
 
                     {seeker?.phone && (
                       <div>

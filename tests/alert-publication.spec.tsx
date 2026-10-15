@@ -28,12 +28,12 @@ it('queues matching only on a transition to active, not edits to an already acti
   expect(s.queue).toHaveLength(0);
 });
 it('queues matching for an admin-published job without broadcasting to all seekers', async () => {
-  const response = await POST(new NextRequest('http://localhost/api/admin/post-job', { method: 'POST', body: JSON.stringify({ company_id: 'company', title: 'Chef', description: 'Kitchen', category: 'Food & Beverage', job_type: 'full_time' }) }));
+  const response = await POST(new NextRequest('http://localhost/api/admin/post-job', { method: 'POST', body: JSON.stringify({ company_id: '55555555-5555-4555-8555-555555555555', title: 'Chef', description: 'Kitchen', category: 'Food & Beverage', job_type: 'full_time' }) }));
   expect(response?.status).toBe(200); expect(s.queue).toHaveLength(1);
   await s.queue[0](); expect(s.processed).toEqual(['job']);
 });
 it('ignores legacy duration input and publishes without expiry', async () => {
-  const response = await POST(new NextRequest('http://localhost/api/admin/post-job', { method: 'POST', body: JSON.stringify({ company_id: 'company', title: 'Chef', description: 'Kitchen', category: 'Food & Beverage', job_type: 'full_time', duration: '7' }) }));
+  const response = await POST(new NextRequest('http://localhost/api/admin/post-job', { method: 'POST', body: JSON.stringify({ company_id: '55555555-5555-4555-8555-555555555555', title: 'Chef', description: 'Kitchen', category: 'Food & Beverage', job_type: 'full_time', duration: '7' }) }));
   expect(response?.status).toBe(200);
   expect(s.inserted.expires_at).toBeNull();
 });

@@ -70,15 +70,6 @@ const TEMPLATES: TemplateDef[] = [
     ],
   },
   {
-    type: 'listing_expiry',
-    label: 'Listing Expiry Warning',
-    description: 'Sent to an employer when their listing is about to expire',
-    fields: [
-      { key: 'listing_title', label: 'Listing Title', placeholder: 'e.g. Bartender' },
-      { key: 'expires_at', label: 'Expires At', placeholder: 'e.g. March 30, 2026' },
-    ],
-  },
-  {
     type: 'new_message',
     label: 'New Message',
     description: 'Sent when a user receives a new message',

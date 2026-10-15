@@ -30,10 +30,10 @@ export async function requestTestimonial(id: string) {
     placement.request_email = user.email
   }
   const { data, error: sendError } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-    from: 'JobLinks <notifications@joblinkantigua.com>',
+    from: 'JobLink <notifications@joblinkantigua.com>',
     to: placement.request_email,
-    subject: 'How did your JobLinks hire go?',
-    html: `<h1>Congratulations on your hire!</h1><p>You confirmed a hire for ${escapeHtml(placement.job_title)} at ${escapeHtml(placement.company_name)}.</p><p>Would you share one or two sentences about your experience? Feedback is optional. We will only publish it or use it in outreach with your permission.</p><p><a href="${SITE}/placement-feedback/${id}">Share your experience</a> (sign in to your employer account).</p><p>Thank you,<br>JobLinks Antigua</p>`,
+    subject: 'How did your JobLink hire go?',
+    html: `<h1>Congratulations on your hire!</h1><p>You confirmed a hire for ${escapeHtml(placement.job_title)} at ${escapeHtml(placement.company_name)}.</p><p>Would you share one or two sentences about your experience? Feedback is optional. We will only publish it or use it in outreach with your permission.</p><p><a href="${SITE}/placement-feedback/${id}">Share your experience</a> (sign in to your employer account).</p><p>Thank you,<br>JobLink Antigua</p>`,
   }, { idempotencyKey: `placement-testimonial/${id}` })
   if (sendError || !data?.id) return false
   const { error: saveError } = await db.from('placements').update({ request_sent_at: new Date().toISOString() }).eq('id', id)

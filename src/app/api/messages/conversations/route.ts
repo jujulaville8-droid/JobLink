@@ -71,15 +71,10 @@ export async function POST(request: NextRequest) {
 
       if (msgError) return NextResponse.json({ error: msgError.message }, { status: 500 })
 
-      const senderName = user.id === seekerUserId
-        ? `${seeker.first_name} ${seeker.last_name}`.trim()
-        : job.companies.company_name
       await sendMessageNotification(supabase, {
         conversationId: existing.id,
-        recipientId: otherUserId,
-        senderName,
-        jobTitle: job.title,
-        messagePreview: body.trim().slice(0, 100),
+        messageId: message.id,
+        senderId: user.id,
       })
 
       return NextResponse.json({ conversation_id: existing.id, message })
@@ -127,15 +122,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Send notification
-      const senderName = user.id === seekerUserId
-        ? `${seeker.first_name} ${seeker.last_name}`.trim()
-        : job.companies.company_name
       await sendMessageNotification(supabase, {
         conversationId: conversation.id,
-        recipientId: otherUserId,
-        senderName,
-        jobTitle: job.title,
-        messagePreview: body.trim().slice(0, 100),
+        messageId: message.id,
+        senderId: user.id,
       })
 
       return NextResponse.json({ conversation_id: conversation.id, message }, { status: 201 })

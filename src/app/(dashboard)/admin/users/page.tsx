@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { User } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { AVAILABILITY_OPTIONS } from '@/lib/seeker-details'
 
 async function toggleBan(formData: FormData) {
   'use server'
@@ -35,14 +36,14 @@ async function toggleVerify(formData: FormData) {
 }
 
 interface UserWithProfile extends User {
-  seeker_profiles?: { first_name: string; last_name: string }[] | null
+  seeker_profiles?: { first_name: string; last_name: string; currently_employed?: boolean | null; has_own_transport?: boolean | null; availability?: string[] | null }[] | null
   companies?: { company_name: string }[] | null
 }
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; role?: string }>
+  searchParams: Promise<{ search?: string; role?: string; employed?: string; transport?: string; availability?: string }>
 }) {
   await requireRole('admin')
   const supabase = await createClient()
@@ -50,10 +51,15 @@ export default async function AdminUsersPage({
 
   const search = params.search || ''
   const roleFilter = params.role || ''
+  // Seekers only: yes / no / unknown (did not answer).
+  const triState = (value?: string) => ['yes', 'no', 'unknown'].includes(value || '') ? value! : ''
+  const employedFilter = triState(params.employed)
+  const transportFilter = triState(params.transport)
+  const availabilityFilter = Object.hasOwn(AVAILABILITY_OPTIONS, params.availability || '') ? params.availability! : ''
 
   let query = supabase
     .from('users')
-    .select('*, seeker_profiles(first_name, last_name), companies(company_name)')
+    .select('*, seeker_profiles(first_name, last_name, currently_employed, has_own_transport, availability), companies(company_name)')
     .not('email', 'like', 'admin-company-%@joblinkantigua.com')
     .order('created_at', { ascending: false })
 
@@ -75,7 +81,21 @@ export default async function AdminUsersPage({
     )
   }
 
-  const typedUsers = (users || []) as UserWithProfile[]
+  const matchesTriState = (filter: string, value: boolean | null | undefined) =>
+    !filter || (filter === 'unknown' ? value == null : value === (filter === 'yes'))
+  const typedUsers = ((users || []) as UserWithProfile[]).filter(user => {
+    // Profile-detail filters apply to seekers only.
+    if (!employedFilter && !transportFilter && !availabilityFilter) return true
+    if (user.role !== 'seeker') return false
+    const profile = user.seeker_profiles?.[0]
+    return matchesTriState(employedFilter, profile?.currently_employed)
+      && matchesTriState(transportFilter, profile?.has_own_transport)
+      && (!availabilityFilter || (profile?.availability ?? []).includes(availabilityFilter))
+  })
+  function employmentLabel(user: UserWithProfile): string | null {
+    const employed = user.role === 'seeker' ? user.seeker_profiles?.[0]?.currently_employed ?? null : null
+    return employed === null ? null : employed ? 'Currently employed' : 'Not currently employed'
+  }
 
   function getDisplayName(user: UserWithProfile): string {
     if (user.role === 'seeker' && user.seeker_profiles?.length) {
@@ -111,6 +131,37 @@ export default async function AdminUsersPage({
           <option value="employer">Employer</option>
           <option value="admin">Admin</option>
         </select>
+        <select
+          name="employed"
+          defaultValue={employedFilter}
+          aria-label="Currently employed (seekers)"
+          className="px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          <option value="">Employed: any</option>
+          <option value="yes">Employed: yes</option>
+          <option value="no">Employed: no</option>
+          <option value="unknown">Employed: not answered</option>
+        </select>
+        <select
+          name="transport"
+          defaultValue={transportFilter}
+          aria-label="Own transport (seekers)"
+          className="px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          <option value="">Transport: any</option>
+          <option value="yes">Transport: yes</option>
+          <option value="no">Transport: no</option>
+          <option value="unknown">Transport: not answered</option>
+        </select>
+        <select
+          name="availability"
+          defaultValue={availabilityFilter}
+          aria-label="Availability (seekers)"
+          className="px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          <option value="">Availability: any</option>
+          {Object.entries(AVAILABILITY_OPTIONS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
         <button
           type="submit"
           className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-light transition-colors"
@@ -144,7 +195,7 @@ export default async function AdminUsersPage({
               typedUsers.map((user) => (
                 <tr key={user.id} className="border-b border-border last:border-0 hover:bg-bg-alt">
                   <td className="px-4 py-3 text-text">{user.email}</td>
-                  <td className="px-4 py-3 text-text-light">{getDisplayName(user)}</td>
+                  <td className="px-4 py-3 text-text-light">{getDisplayName(user)}{employmentLabel(user) && <span className="block text-xs text-text-muted">{employmentLabel(user)}</span>}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${

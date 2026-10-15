@@ -3,7 +3,7 @@ import HomeFooter from "@/components/home/HomeFooter";
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 
 const DASHBOARD_PREFIXES = [
   "/dashboard", "/admin", "/messages", "/profile", "/settings",
@@ -13,9 +13,10 @@ const DASHBOARD_PREFIXES = [
 
 export default function Footer() {
   const pathname = usePathname();
+  const segment = useSelectedLayoutSegment();
   const isDashboard = DASHBOARD_PREFIXES.some((p) => pathname.startsWith(p));
 
-  if (pathname === "/" || pathname === "/design-preview") return <HomeFooter />;
+  if (segment === null || segment === "design-preview") return <HomeFooter />;
 
   if (isDashboard) return null;
 
@@ -34,7 +35,7 @@ export default function Footer() {
             <Link href="/" className="flex items-center">
               <Image
                 src="/company-logo.png"
-                alt="JobLinks"
+                alt="JobLink"
                 width={400}
                 height={400}
                 className="h-40 w-auto brightness-0 invert -my-4"
@@ -63,7 +64,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               <li><Link href="/employers/hiring-help" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Get hiring help</Link></li>
               <li><Link href="/dashboard" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Dashboard</Link></li>
-              <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Why JobLinks</Link></li>
+              <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Why JobLink</Link></li>
             </ul>
           </div>
 
@@ -82,7 +83,7 @@ export default function Footer() {
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/30">
-            &copy; {new Date().getFullYear()} JobLinks. Made in Antigua &amp; Barbuda.
+            &copy; {new Date().getFullYear()} JobLink. Made in Antigua &amp; Barbuda.
           </p>
         </div>
       </div>

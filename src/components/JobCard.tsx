@@ -122,7 +122,13 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
-                {job.title}
+                <Link
+                  href={`/jobs/${job.id}`}
+                  className="after:absolute after:inset-0 after:rounded-[--radius-card] focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
+                  aria-label={`View ${job.title} at ${job.company_name}`}
+                >
+                  {job.title}
+                </Link>
               </h3>
               {isFeatured && (
                 <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm shadow-amber-300/40">
@@ -192,11 +198,6 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
           </div>
         </div>
       </div>
-      <Link
-        href={`/jobs/${job.id}`}
-        className="absolute inset-0 rounded-[--radius-card] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        aria-label={`View ${job.title} at ${job.company_name}`}
-      />
     </div>
   );
 }

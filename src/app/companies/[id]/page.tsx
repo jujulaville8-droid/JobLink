@@ -1,3 +1,4 @@
+import { closedJobIdFilter } from "@/lib/job-closures";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import JobCard, { Job } from "@/components/JobCard";
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .single();
 
   if (!company) {
-    return { title: { absolute: "Company Not Found | JobLinks" } };
+    return { title: { absolute: "Company Not Found | JobLink" } };
   }
 
   // A profile with no live jobs is a thin page that Google reports as a soft
@@ -30,7 +31,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .select("id", { count: "exact", head: true })
     .eq("company_id", id)
     .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+    .not("id", "in", closedJobIdFilter());
 
   const url = `https://joblinkantigua.com/companies/${id}`;
   return {
@@ -38,15 +39,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       ? `${company.company_name} Jobs in Antigua (${count} open)`
       : `${company.company_name} — Jobs & Company Profile`,
     description: count
-      ? `${company.company_name} is hiring: ${count} open ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. View the company profile and apply on JobLinks.`
-      : `View ${company.company_name}'s profile and open job listings on JobLinks, Antigua and Barbuda's #1 job platform.`,
+      ? `${company.company_name} is hiring: ${count} open ${count === 1 ? "job" : "jobs"} in Antigua and Barbuda. View the company profile and apply on JobLink.`
+      : `View ${company.company_name}'s profile and open job listings on JobLink, Antigua and Barbuda's #1 job platform.`,
     alternates: { canonical: url },
     ...(count ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       title: `${company.company_name} — Jobs & Company Profile`,
-      description: `View ${company.company_name}'s profile and open job listings on JobLinks.`,
+      description: `View ${company.company_name}'s profile and open job listings on JobLink.`,
       url,
-      siteName: "JobLinks",
+      siteName: "JobLink",
     },
   };
 }
@@ -67,13 +68,12 @@ export default async function CompanyPage({ params }: PageProps) {
   }
 
   // Fetch active jobs from this company
-  const now = new Date().toISOString();
   const { data: jobs } = await supabase
     .from("job_listings")
     .select("*")
     .eq("company_id", id)
     .eq("status", "active")
-    .or(`expires_at.is.null,expires_at.gt.${now}`)
+    .not("id", "in", closedJobIdFilter())
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false });
 

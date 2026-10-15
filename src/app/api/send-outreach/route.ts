@@ -57,10 +57,10 @@ export async function POST(req: NextRequest) {
 
   // Send via Resend
   const { error: sendError } = await resend.emails.send({
-    from: 'JobLinks Antigua <team@joblinkantigua.com>',
+    from: 'JobLink Antigua <team@joblinkantigua.com>',
     to: email,
     replyTo: TEAM_INBOX,
-    subject: `Help with your ${role} vacancy — JobLinks Antigua`,
+    subject: `Help with your ${role} vacancy — JobLink Antigua`,
     html: insertProof(email_html, pilotEmailCta() + await outreachProof())
   })
 

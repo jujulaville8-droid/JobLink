@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSelectedLayoutSegment } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigationFeedback } from "@/components/useNavigationFeedback";
 import { getActiveHref } from "@/lib/navigation-state";
@@ -12,6 +12,7 @@ const HIDDEN_PREFIXES = ["/post-job", "/profile/cv"];
 export default function BottomNav() {
   const { isAuthenticated, userRole } = useAuth();
   const pathname = usePathname();
+  const segment = useSelectedLayoutSegment();
   const isHidden = HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
   const {
     activePathname,
@@ -29,7 +30,7 @@ export default function BottomNav() {
   const activeHref = getActiveHref(activePathname, visiblePaths);
   const isActive = (path: string) => activeHref === path;
 
-  if (pathname === "/" || pathname === "/design-preview") return null;
+  if (segment === null || segment === "design-preview") return null;
 
   if (isHidden) return null;
 
@@ -62,7 +63,7 @@ export default function BottomNav() {
   );
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-[--color-surface]/90 backdrop-blur-xl md:hidden">
+    <nav data-support-obstruction className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-[--color-surface]/90 backdrop-blur-xl md:hidden">
       <div className="flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <Link href="/" className={linkClass("/")} {...navigationProps("/")}>
           <svg className={iconClass("/")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

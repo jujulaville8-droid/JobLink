@@ -1,4 +1,4 @@
-# JobLinks
+# JobLink
 
 The job board for Antigua and Barbuda. Job seekers browse and apply, build a
 resume, and message employers; employers post listings, review applicants, and
@@ -6,6 +6,8 @@ upgrade to Pro for candidate access and priority placement.
 
 Built with Next.js 16 (App Router), Supabase (Postgres, Auth, Storage), Stripe
 and Resend.
+
+Customer-facing spelling follows [the JobLink naming convention](docs/brand-naming.md).
 
 ## Getting started
 

@@ -308,7 +308,7 @@ export default function VerifyEmailPage() {
           Verify Your Email
         </h2>
         <p className="text-text-light mb-2">
-          You need to verify your email address before you can access JobLinks.
+          You need to verify your email address before you can access JobLink.
         </p>
         {email && (
           <p className="text-sm text-text-light mb-4">

@@ -52,13 +52,13 @@ export async function POST(request: NextRequest) {
     // Invitations must point at one of this employer's open listings.
     const { data: listing } = await supabase
       .from('job_listings')
-      .select('title, expires_at')
+      .select('title')
       .eq('id', listing_id)
       .eq('company_id', company.id)
       .eq('status', 'active')
       .single()
 
-    if (!listing || (listing.expires_at && new Date(listing.expires_at) <= new Date())) {
+    if (!listing) {
       return NextResponse.json({ error: 'Choose one of your active listings' }, { status: 400 })
     }
 
@@ -113,16 +113,18 @@ export async function POST(request: NextRequest) {
 
     if (existingConversationId) {
       // Send message in existing conversation
-      await admin
+      const { data: message, error: messageError } = await admin
         .from('messages')
         .insert({ conversation_id: existingConversationId, sender_id: user.id, body: body.trim() })
+        .select('id')
+        .single()
+
+      if (messageError || !message) return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
 
       await sendMessageNotification(supabase, {
         conversationId: existingConversationId,
-        recipientId: recipient_user_id,
-        senderName: companyName,
-        jobTitle,
-        messagePreview: body.trim().slice(0, 100),
+        messageId: message.id,
+        senderId: user.id,
       })
 
       if (recipientEmail) {
@@ -166,17 +168,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Send the invitation message
-    await admin
+    const { data: message, error: messageError } = await admin
       .from('messages')
       .insert({ conversation_id: conversation.id, sender_id: user.id, body: body.trim() })
+      .select('id')
+      .single()
+
+    if (messageError || !message) return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
 
     // Send notification
     await sendMessageNotification(supabase, {
       conversationId: conversation.id,
-      recipientId: recipient_user_id,
-      senderName: companyName,
-      jobTitle,
-      messagePreview: body.trim().slice(0, 100),
+      messageId: message.id,
+      senderId: user.id,
     })
 
     // Send invite email

@@ -38,7 +38,7 @@ export default function GlobalError({
       >
         <div style={{ maxWidth: "32rem" }}>
           <h1 style={{ fontSize: "1.5rem", margin: 0 }}>
-            JobLinks is temporarily unavailable
+            JobLink is temporarily unavailable
           </h1>
           <p style={{ marginTop: "0.75rem", color: "#6b7280", lineHeight: 1.6 }}>
             We hit an unexpected error while loading the page. Please try again

@@ -1,5 +1,6 @@
 "use client";
 
+import { jobCategoryFilter } from "@/lib/job-category";
 import { useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { INDUSTRIES, JOB_TYPE_LABELS, JobType } from "@/lib/types";
@@ -21,12 +22,14 @@ export default function JobFilters() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const currentCategory = searchParams.get("category") || "";
+  const currentCategory = jobCategoryFilter(searchParams.get("category") || undefined) || "";
   const currentJobTypes = searchParams.getAll("job_type");
 
   function updateParams(updates: Record<string, string | string[] | null>) {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    const category = jobCategoryFilter(params.get("category") || undefined);
+    if (category) params.set("category", category);
 
     for (const [key, value] of Object.entries(updates)) {
       params.delete(key);

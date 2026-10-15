@@ -10,7 +10,7 @@ import { buildEmailHtml } from '@/lib/email-templates'
 import { createAdminClient } from '@/lib/supabase/admin'
 import RejectJobButton from '@/components/RejectJobButton'
 
-const FROM_ADDRESS = 'JobLinks <notifications@joblinkantigua.com>'
+const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
 
 export const maxDuration = 300
 

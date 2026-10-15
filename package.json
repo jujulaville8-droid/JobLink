@@ -15,7 +15,8 @@
     "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:node",
     "smoke": "node scripts/smoke-local.mjs",
     "discover": "npx tsx scripts/discover-businesses.ts",
-    "test:claims:concurrency": "node --test tests/company-claims-concurrency.test.mjs"
+    "test:claims:concurrency": "node --test tests/company-claims-concurrency.test.mjs",
+    "indexnow": "npx tsx scripts/indexnow-submit.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.0.0",
@@ -39,6 +40,7 @@
     "react-dom": "^19.3.0",
     "recharts": "^3.8.0",
     "resend": "^6.9.3",
+    "sharp": "0.35.4",
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5"

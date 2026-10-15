@@ -1,3 +1,4 @@
+import { closedJobIdFilter } from "@/lib/job-closures";
 import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -18,10 +19,9 @@ async function getFeaturedJobs(): Promise<Job[]> {
     // The admin client, like getHomepageStats below: the cookie-bound client
     // reads cookies, which opts the whole route out of static rendering and
     // makes the revalidate window above do nothing. The query is restricted to
-    // active, unexpired listings, which is what the public RLS policy allows
-    // anyway.
+    // active listings, which is what the public RLS policy allows. Listings
+    // stay available until the employer or an admin closes them.
     const supabase = createAdminClient();
-    const now = new Date().toISOString();
 
     const { data: jobs, error } = await supabase
       .from("job_listings")
@@ -33,7 +33,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       `
       )
       .eq("status", "active")
-      .or(`expires_at.is.null,expires_at.gt.${now}`)
+      .not("id", "in", closedJobIdFilter())
       .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(3);
@@ -76,7 +76,6 @@ async function getFeaturedJobs(): Promise<Job[]> {
 async function getHomepageStats(): Promise<HomepageStats> {
   try {
     const supabase = createAdminClient();
-    const now = new Date().toISOString();
 
     const [jobsResult, hiringResult, membersResult, applicationsResult] =
       await Promise.all([
@@ -84,14 +83,11 @@ async function getHomepageStats(): Promise<HomepageStats> {
           .from("job_listings")
           .select("id", { count: "exact", head: true })
           .eq("status", "active")
-          .or(`expires_at.is.null,expires_at.gt.${now}`),
+          .not("id", "in", closedJobIdFilter()),
         supabase
           .from("companies")
           .select("id, job_listings!inner(id)", { count: "exact", head: true })
-          .eq("job_listings.status", "active")
-          .or(`expires_at.is.null,expires_at.gt.${now}`, {
-            referencedTable: "job_listings",
-          }),
+          .eq("job_listings.status", "active"),
         supabase
           .from("users")
           .select("id", { count: "exact", head: true }),
@@ -130,18 +126,18 @@ export default async function Home() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Organization", name: "JobLinks", url: "https://joblinkantigua.com",
+        "@type": "Organization", name: "JobLink", url: "https://joblinkantigua.com",
         logo: "https://joblinkantigua.com/favicon.png",
         description: "Connecting job seekers with employers across Antigua and Barbuda.",
         areaServed: { "@type": "Country", name: "Antigua and Barbuda" },
         contactPoint: { "@type": "ContactPoint", email: "hello@joblinkantigua.com", contactType: "customer service" },
       },
       {
-        "@type": "WebSite", name: "JobLinks", url: "https://joblinkantigua.com",
+        "@type": "WebSite", name: "JobLink", url: "https://joblinkantigua.com",
         potentialAction: { "@type": "SearchAction", target: "https://joblinkantigua.com/jobs?q={search_term_string}", "query-input": "required name=search_term_string" },
       },
       {
-        "@type": "EmploymentAgency", name: "JobLinks", url: "https://joblinkantigua.com",
+        "@type": "EmploymentAgency", name: "JobLink", url: "https://joblinkantigua.com",
         email: "hello@joblinkantigua.com",
         areaServed: { "@type": "Country", name: "Antigua and Barbuda" },
         address: { "@type": "PostalAddress", addressLocality: "St. John's", addressCountry: "AG" },
