@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { calculateProfileCompletion } from '@/lib/profile-completion'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
+import { parseSeekerDetails, parseSensitiveDetails, type SensitiveDetails } from '@/lib/seeker-details'
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +40,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { profile_id, ...profileData } = body
+    const { profile_id, details, sensitive, ...profileData } = body
+
+    // Optional deeper profile sections. Practical details are stored on the
+    // profile; sensitive ones in an admin-only table (see seeker-details.ts).
+    let sensitiveDetails: SensitiveDetails | null = null
+    let detailFields: Record<string, unknown> = {}
+    if (details !== undefined) {
+      const parsed = parseSeekerDetails(details)
+      if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+      detailFields = parsed.value
+    }
+    if (sensitive !== undefined) {
+      const parsed = parseSensitiveDetails(sensitive)
+      if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 })
+      sensitiveDetails = parsed.value
+    }
 
     // Whitelist allowed fields — never accept arbitrary input
     const payload: Record<string, unknown> = {
@@ -58,6 +74,8 @@ export async function POST(request: NextRequest) {
         payload[field] = profileData[field]
       }
     }
+
+    Object.assign(payload, detailFields)
 
     // Check if user has a built resume (for completion calc)
     const { data: cvProfile } = await supabase
@@ -111,9 +129,29 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const savedProfileId = newProfileId || profile_id
+
+    if (sensitiveDetails && savedProfileId) {
+      // RLS: only the profile owner can write; nobody but admins can read it back.
+      const empty = sensitiveDetails.marital_status === null && sensitiveDetails.children_count === null
+      const { error: sensitiveError } = empty
+        ? await supabase.from('seeker_sensitive_details').delete().eq('seeker_id', savedProfileId)
+        : await supabase.from('seeker_sensitive_details').upsert(
+          { seeker_id: savedProfileId, ...sensitiveDetails, updated_at: new Date().toISOString() },
+          { onConflict: 'seeker_id' },
+        )
+      if (sensitiveError) {
+        console.error('Sensitive details save error:', sensitiveError.code)
+        return NextResponse.json(
+          { error: 'Profile saved, but your optional personal details could not be saved. Please try again.', profile_id: savedProfileId },
+          { status: 500 }
+        )
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      profile_id: newProfileId || profile_id,
+      profile_id: savedProfileId,
     })
   } catch (err) {
     console.error('Profile API error:', err)

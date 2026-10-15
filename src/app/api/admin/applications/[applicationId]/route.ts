@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/api-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { UUID_PATTERN, type ApplicationDetail } from '@/lib/admin-applications';
 import { nullableText, record, relation, text, uuid } from '../_data';
+import { SEEKER_DETAIL_COLUMNS, seekerDetailsFromRow, sensitiveDetailsFromRow } from '@/lib/seeker-details';
 import { applicationReadError, privateJson, privateResponse } from '../_response';
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ applicationId: string }> }) {
@@ -64,6 +65,19 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     }
 
+    // Optional profile details. Read separately so the drawer keeps working
+    // before the profile-details migration; failures just omit the section.
+    let profileDetails: ApplicationDetail['profileDetails'] = null;
+    let sensitiveDetails: ApplicationDetail['sensitiveDetails'] = null;
+    if (applicant) {
+      const [detailsResult, sensitiveResult] = await Promise.all([
+        admin.from('seeker_profiles').select(SEEKER_DETAIL_COLUMNS.join(', ')).eq('id', applicant.id).maybeSingle(),
+        admin.from('seeker_sensitive_details').select('marital_status, children_count').eq('seeker_id', applicant.id).maybeSingle(),
+      ]);
+      if (!detailsResult.error && detailsResult.data) profileDetails = seekerDetailsFromRow(record(detailsResult.data));
+      if (!sensitiveResult.error && sensitiveResult.data) sensitiveDetails = sensitiveDetailsFromRow(record(sensitiveResult.data));
+    }
+
     const application: ApplicationDetail = {
       id: uuid(row.id), jobId: uuid(row.job_id), appliedAt: text(row.applied_at),
       status: text(row.status), coverLetterText: nullableText(row.cover_letter_text),
@@ -71,7 +85,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         id: uuid(job.id), title: text(job.title),
         company: company ? { id: uuid(company.id), name: text(company.company_name) } : null,
       } : null,
-      applicant, resume, notificationTracking,
+      applicant, resume, notificationTracking, profileDetails, sensitiveDetails,
     };
     return privateJson({ application });
   } catch {

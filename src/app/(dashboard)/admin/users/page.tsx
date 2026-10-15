@@ -35,14 +35,14 @@ async function toggleVerify(formData: FormData) {
 }
 
 interface UserWithProfile extends User {
-  seeker_profiles?: { first_name: string; last_name: string }[] | null
+  seeker_profiles?: { first_name: string; last_name: string; currently_employed?: boolean | null }[] | null
   companies?: { company_name: string }[] | null
 }
 
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; role?: string }>
+  searchParams: Promise<{ search?: string; role?: string; employed?: string }>
 }) {
   await requireRole('admin')
   const supabase = await createClient()
@@ -50,10 +50,12 @@ export default async function AdminUsersPage({
 
   const search = params.search || ''
   const roleFilter = params.role || ''
+  // Seekers only: yes / no / unknown (did not answer).
+  const employedFilter = ['yes', 'no', 'unknown'].includes(params.employed || '') ? params.employed! : ''
 
   let query = supabase
     .from('users')
-    .select('*, seeker_profiles(first_name, last_name), companies(company_name)')
+    .select('*, seeker_profiles(first_name, last_name, currently_employed), companies(company_name)')
     .not('email', 'like', 'admin-company-%@joblinkantigua.com')
     .order('created_at', { ascending: false })
 
@@ -75,7 +77,16 @@ export default async function AdminUsersPage({
     )
   }
 
-  const typedUsers = (users || []) as UserWithProfile[]
+  const typedUsers = ((users || []) as UserWithProfile[]).filter(user => {
+    if (!employedFilter) return true
+    if (user.role !== 'seeker') return false
+    const employed = user.seeker_profiles?.[0]?.currently_employed ?? null
+    return employedFilter === 'unknown' ? employed === null : employed === (employedFilter === 'yes')
+  })
+  function employmentLabel(user: UserWithProfile): string | null {
+    const employed = user.role === 'seeker' ? user.seeker_profiles?.[0]?.currently_employed ?? null : null
+    return employed === null ? null : employed ? 'Currently employed' : 'Not currently employed'
+  }
 
   function getDisplayName(user: UserWithProfile): string {
     if (user.role === 'seeker' && user.seeker_profiles?.length) {
@@ -111,6 +122,17 @@ export default async function AdminUsersPage({
           <option value="employer">Employer</option>
           <option value="admin">Admin</option>
         </select>
+        <select
+          name="employed"
+          defaultValue={employedFilter}
+          aria-label="Currently employed (seekers)"
+          className="px-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          <option value="">Employed: any</option>
+          <option value="yes">Employed: yes</option>
+          <option value="no">Employed: no</option>
+          <option value="unknown">Employed: not answered</option>
+        </select>
         <button
           type="submit"
           className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-light transition-colors"
@@ -144,7 +166,7 @@ export default async function AdminUsersPage({
               typedUsers.map((user) => (
                 <tr key={user.id} className="border-b border-border last:border-0 hover:bg-bg-alt">
                   <td className="px-4 py-3 text-text">{user.email}</td>
-                  <td className="px-4 py-3 text-text-light">{getDisplayName(user)}</td>
+                  <td className="px-4 py-3 text-text-light">{getDisplayName(user)}{employmentLabel(user) && <span className="block text-xs text-text-muted">{employmentLabel(user)}</span>}</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${

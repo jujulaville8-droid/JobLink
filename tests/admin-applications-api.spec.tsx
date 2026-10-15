@@ -262,7 +262,7 @@ describe('admin application detail', () => {
         label: 'Current résumé', uploadedHref: `/api/cv-download?profileId=${profileId}`,
         builtHref: `/api/cv/export?userId=${userId}`,
       },
-      notificationTracking: 'not_tracked',
+      notificationTracking: 'not_tracked', profileDetails: null, sensitiveDetails: null,
     } })
     const serialized = JSON.stringify(body)
     for (const excluded of [privateCv, privateCoverLetter, 'cv_url', 'cover_letter_url', 'private-employer@example.test']) {
@@ -413,7 +413,7 @@ describe('admin job applicants', () => {
     expect(await response.json()).toEqual(applicants)
     expect(mocks.applicantsRead).toHaveBeenCalledExactlyOnceWith(mocks.createAdmin.mock.results[0].value, jobId, {
       from: scope.from, to: scope.to, status: 'interview',
-      applicantQ: 'Ada', applicantSort: 'name', applicantPage: 2, applicantLimit: 5,
+      applicantQ: 'Ada', applicantSort: 'name', applicantPage: 2, applicantLimit: 5, employed: 'all', transport: 'all', availability: 'all',
     }, expect.any(AbortSignal))
     expect(mocks.overviewRead).not.toHaveBeenCalled()
     expect(mocks.from).not.toHaveBeenCalled()
@@ -444,7 +444,7 @@ describe('admin job applicants', () => {
     expect(await response.json()).toEqual(empty)
     expect(mocks.applicantsRead).toHaveBeenCalledWith(expect.anything(), jobId, {
       from: scope.from, to: scope.to, status: 'all',
-      applicantQ: '', applicantSort: 'newest', applicantPage: 1, applicantLimit: 20,
+      applicantQ: '', applicantSort: 'newest', applicantPage: 1, applicantLimit: 20, employed: 'all', transport: 'all', availability: 'all',
     }, expect.any(AbortSignal))
   })
 
