@@ -1,7 +1,14 @@
-import { type NextRequest, type NextFetchEvent } from 'next/server'
+import { NextResponse, type NextRequest, type NextFetchEvent } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
+import { stripBackslashes } from '@/lib/backslash-path'
 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
+  const cleanPath = stripBackslashes(request.nextUrl.pathname)
+  if (cleanPath !== null) {
+    const url = request.nextUrl.clone()
+    url.pathname = cleanPath
+    return NextResponse.redirect(url, 308)
+  }
   return await updateSession(request, event)
 }
 
