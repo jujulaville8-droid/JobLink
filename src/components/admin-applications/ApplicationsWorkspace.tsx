@@ -216,7 +216,7 @@ function ApplicationsWorkspaceContent({ jobId, initialDates }: WorkspaceProps) {
         <Pagination page={applicants.page} limit={applicants.limit} total={applicants.totalCount} onPage={applicantPage => navigate({ applicantPage }, { resetPage: false })} label="Applicants pagination" />
       </> : null}
     </section>
-    <p className={styles.privacyNote}>Admin access only. Résumés reflect the applicant’s current profile. Employer notification delivery is not tracked.</p>
+    <p className={styles.privacyNote}>Admin access only. Résumés reflect the applicant’s current profile. Each application shows whether it was emailed to the employer (tracked from Oct 14, 2026); read status is not tracked.</p>
     {jobId ? <ApplicationDetailDrawer applicationId={applicationId} jobId={jobId} onClose={() => navigate({ application: null }, { replace: true, resetPage: false })} /> : null}
     <noscript><p className={styles.notice}>JavaScript is needed to load this private Applications workspace and its filters. Your applications remain unchanged.</p></noscript>
   </div>
