@@ -8,6 +8,12 @@ import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { getResumePreviewUrl } from "@/lib/resume-url";
 import { getApplicationReturnTo } from "@/lib/return-to";
 import type { VisibilityMode } from "@/lib/types";
+import {
+  EMPTY_SEEKER_DETAILS, EMPTY_SENSITIVE_DETAILS, seekerDetailsFromRow, sensitiveDetailsFromRow,
+  type SeekerDetails, type SensitiveDetails,
+} from "@/lib/seeker-details";
+import SeekerDetailsFields from "@/components/profile/SeekerDetailsFields";
+import SeekerDetailsSummary from "@/components/profile/SeekerDetailsSummary";
 
 interface ProfileData {
   first_name: string;
@@ -21,6 +27,10 @@ interface ProfileData {
   cv_url: string;
   avatar_url: string;
   visibility: VisibilityMode;
+  /** Optional practical details; employers you apply to can see them. */
+  details: SeekerDetails;
+  /** Optional sensitive details; only the seeker and JobLinks admins can read them. */
+  sensitive: SensitiveDetails;
 }
 
 const INITIAL_PROFILE: ProfileData = {
@@ -35,6 +45,8 @@ const INITIAL_PROFILE: ProfileData = {
   cv_url: "",
   avatar_url: "",
   visibility: "actively_looking",
+  details: EMPTY_SEEKER_DETAILS,
+  sensitive: EMPTY_SENSITIVE_DETAILS,
 };
 
 function getCompletion(p: ProfileData, hasBuiltResume = false) {
@@ -675,6 +687,22 @@ function ProfileView({
         </div>
       </div>
 
+      {/* ── Work & personal details (optional) ── */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold font-display text-text">More about you</h2>
+          <button onClick={() => onEdit(2)} className="text-sm font-medium text-primary hover:underline">
+            Edit
+          </button>
+        </div>
+        <div className="rounded-lg border border-border bg-white p-4">
+          <SeekerDetailsSummary details={profile.details} sensitive={profile.sensitive} />
+          {!profile.details.currently_employed && profile.details.currently_employed !== false && !profile.details.availability.length && (
+            <p className="text-sm text-text-muted mt-2">Optional: add your availability, transport, languages and more.</p>
+          )}
+        </div>
+      </div>
+
       {/* ── About / Bio Section ── */}
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
@@ -816,6 +844,8 @@ function ProfileEditForm({
           avatar_url: profile.avatar_url,
           visibility: profile.visibility,
           profile_complete_pct: pct,
+          details: profile.details,
+          sensitive: profile.sensitive,
         }),
       });
 
@@ -1165,6 +1195,13 @@ function ProfileEditForm({
                 placeholder="e.g. BSc in Computer Science, UWI"
               />
             </div>
+
+            <SeekerDetailsFields
+              details={profile.details}
+              sensitive={profile.sensitive}
+              onDetailsChange={(details) => setProfile((p) => ({ ...p, details }))}
+              onSensitiveChange={(sensitive) => setProfile((p) => ({ ...p, sensitive }))}
+            />
           </div>
         )}
 
@@ -1350,6 +1387,13 @@ export default function ProfilePage() {
       }
 
       if (existing) {
+        // Missing row means nothing was shared. RLS: own row (or admin) only.
+        const { data: sensitiveRow } = await supabase
+          .from("seeker_sensitive_details")
+          .select("marital_status, children_count")
+          .eq("seeker_id", existing.id)
+          .maybeSingle();
+        if (cancelled) return;
         setProfileId(existing.id);
         setProfile({
           first_name: existing.first_name ?? "",
@@ -1363,6 +1407,8 @@ export default function ProfilePage() {
           cv_url: existing.cv_url ?? "",
           avatar_url: existing.avatar_url ?? "",
           visibility: existing.visibility ?? "actively_looking",
+          details: seekerDetailsFromRow(existing),
+          sensitive: sensitiveDetailsFromRow(sensitiveRow),
         });
         setMode("view");
       } else {

@@ -61,7 +61,7 @@ describe('admin application scope and filters', () => {
     if (!result.value) throw new Error(result.error)
     expect(result.value).toEqual({
       from: '2026-10-01', to: '2026-10-08', status: 'interview', applicantQ: 'Taylor',
-      applicantSort: 'oldest', applicantPage: 2, applicantLimit: 10,
+      applicantSort: 'oldest', applicantPage: 2, applicantLimit: 10, employed: 'all', transport: 'all', availability: 'all',
     })
     const defaults = parseApplicantQuery(query('q=Chef&sort=company_asc&page=8&limit=50'), now)
     expect(defaults.value?.applicantQ).toBe('')

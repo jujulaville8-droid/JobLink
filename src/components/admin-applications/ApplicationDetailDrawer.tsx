@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, type RefObject } from 'react'
+import SeekerDetailsSummary from '@/components/profile/SeekerDetailsSummary'
+import { EMPTY_SEEKER_DETAILS, EMPTY_SENSITIVE_DETAILS, seekerDetailRows, seekerDetailsFromRow, sensitiveDetailRows, sensitiveDetailsFromRow } from '@/lib/seeker-details'
 import { ArrowLeft, ArrowUpRight, FileText, X } from 'lucide-react'
 import {
   APPLICATION_TIME_ZONE, UUID_PATTERN, applicantName, applicationStatusLabel,
@@ -45,8 +47,18 @@ function readApplication(value: unknown, applicationId: string, jobId: string): 
       email: nullableText(applicant.email), phone: nullableText(applicant.phone), location: nullableText(applicant.location),
     } : null,
     resume: { label: 'Current résumé', uploadedHref: nullableText(resume?.uploadedHref), builtHref: nullableText(resume?.builtHref) },
-    notificationTracking: 'not_tracked',
+    notificationTracking: forwardTracking(application.notificationTracking),
+    profileDetails: record(application.profileDetails) ? seekerDetailsFromRow(record(application.profileDetails)) : null,
+    sensitiveDetails: record(application.sensitiveDetails) ? sensitiveDetailsFromRow(record(application.sensitiveDetails)) : null,
   }
+}
+
+function forwardTracking(value: unknown): ApplicationDetail['notificationTracking'] {
+  const tracking = record(value)
+  if (!tracking || (tracking.status !== 'sent' && tracking.status !== 'not_sent')) return 'not_tracked'
+  const attemptedAt = nullableText(tracking.attemptedAt)
+  if (!attemptedAt || !Number.isFinite(Date.parse(attemptedAt))) return 'not_tracked'
+  return { status: tracking.status, attemptedAt, forwardedAt: nullableText(tracking.forwardedAt) }
 }
 
 function emailHref(value: string | null): string | undefined {
@@ -213,6 +225,11 @@ function OpenApplicationDetailDrawer({ applicationId, jobId, onClose, returnFocu
                 <div><dt>Location</dt><dd>{applicant?.location || 'Not provided'}</dd></div>
               </dl>
             </section>
+            {(detail.profileDetails || detail.sensitiveDetails) && <section className={styles.section} aria-labelledby={`${titleId}-details`}>
+              <h3 id={`${titleId}-details`} className={styles.sectionTitle}>Profile details</h3>
+              <SeekerDetailsSummary details={detail.profileDetails ?? EMPTY_SEEKER_DETAILS} sensitive={detail.sensitiveDetails} title="Work details" />
+              {!seekerDetailRows(detail.profileDetails ?? EMPTY_SEEKER_DETAILS).length && !sensitiveDetailRows(detail.sensitiveDetails ?? EMPTY_SENSITIVE_DETAILS).length && <p className={styles.muted}>No optional details provided.</p>}
+            </section>}
             <section className={styles.notification} aria-labelledby={`${titleId}-notification`}>
               <h3 id={`${titleId}-notification`} className={styles.sectionTitle}>Employer notification</h3>
               {detail.notificationTracking === 'not_tracked' ? <>

@@ -1,4 +1,5 @@
 /** Shared, serializable contracts for the read-only admin Applications area. */
+import type { SeekerDetails, SensitiveDetails } from '@/lib/seeker-details'
 export const APPLICATION_TIME_ZONE = 'America/Antigua' as const
 export const ADMIN_APPLICATION_PAGE_SIZE = 20
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![\s\S])/i
@@ -16,9 +17,13 @@ export interface OverviewQuery {
   from: string; to: string; q: string; companyId: string | null; jobId: string | null
   status: ApplicationStatusFilter; jobStatus: JobStatusFilter; sort: OverviewSort; page: number; limit: number
 }
+export type TriStateFilter = 'all' | 'yes' | 'no' | 'unknown'
+export type AvailabilityFilter = 'all' | 'full_time' | 'part_time' | 'shifts' | 'weekends'
 export interface ApplicantQuery {
   from: string; to: string; status: ApplicationStatusFilter; applicantQ: string
   applicantSort: ApplicantSort; applicantPage: number; applicantLimit: number
+  /** Optional profile-detail filters; 'unknown' means the seeker did not answer. */
+  employed?: TriStateFilter; transport?: TriStateFilter; availability?: AvailabilityFilter
 }
 export interface FilterQuery { kind: 'company' | 'job'; q: string; companyId: string | null; page: number; limit: number }
 export interface ApplicationJob {
@@ -37,7 +42,10 @@ export interface ApplicationOverview {
 }
 export interface JobApplicantRow {
   id: string; appliedAt: string; status: string
-  applicant: { id: string; firstName: string | null; lastName: string | null }
+  applicant: {
+    id: string; firstName: string | null; lastName: string | null
+    currentlyEmployed?: boolean | null; hasOwnTransport?: boolean | null; availability?: string[]
+  }
 }
 export interface JobApplicants {
   scope: ApplicationDateScope; page: number; limit: number; job: ApplicationJob
@@ -53,6 +61,10 @@ export interface ApplicationDetail {
   resume: { label: 'Current résumé'; uploadedHref: string | null; builtHref: string | null }
   /** Whether the application was emailed to the employer; 'not_tracked' before tracking existed. */
   notificationTracking: 'not_tracked' | EmployerForward
+  /** Optional practical profile details (also visible to the employer). */
+  profileDetails?: SeekerDetails | null
+  /** Optional sensitive details. Admin-only; never send to employer views. */
+  sensitiveDetails?: SensitiveDetails | null
 }
 export interface EmployerForward {
   status: 'sent' | 'not_sent'; attemptedAt: string; forwardedAt: string | null
@@ -65,6 +77,8 @@ const STATUSES = ['all', 'applied', 'interview', 'hold', 'rejected'] as const
 const JOB_STATUSES = ['all', 'active', 'closed', 'pending_approval'] as const
 const OVERVIEW_SORTS = ['latest', 'applications_desc', 'applications_asc', 'job_asc', 'company_asc', 'newest_job'] as const
 const APPLICANT_SORTS = ['newest', 'oldest', 'name'] as const
+const TRI_STATES = ['all', 'yes', 'no', 'unknown'] as const
+const AVAILABILITY_FILTERS = ['all', 'full_time', 'part_time', 'shifts', 'weekends'] as const
 
 export function defaultApplicationDates(now = new Date()): { from: string; to: string } {
   const parts = new Intl.DateTimeFormat('en', {
@@ -133,6 +147,8 @@ export function parseApplicantQuery(params: URLSearchParams, now = new Date()): 
     ...dateScope(params, now), status: choice(params, 'status', STATUSES, 'all'),
     applicantQ: search(params, 'applicantQ'), applicantSort: choice(params, 'applicantSort', APPLICANT_SORTS, 'newest'),
     applicantPage: integer(params, 'applicantPage', 1, 10_000), applicantLimit: integer(params, 'applicantLimit', ADMIN_APPLICATION_PAGE_SIZE, 50),
+    employed: choice(params, 'employed', TRI_STATES, 'all'), transport: choice(params, 'transport', TRI_STATES, 'all'),
+    availability: choice(params, 'availability', AVAILABILITY_FILTERS, 'all'),
   }))
 }
 export function parseFilterQuery(params: URLSearchParams): QueryResult<FilterQuery> {
@@ -149,4 +165,14 @@ export function applicantName(applicant: { firstName: string | null; lastName: s
 }
 export function applicationStatusLabel(status: string): string {
   return APPLICATION_STATUS_LABELS[status as keyof typeof APPLICATION_STATUS_LABELS] ?? 'Status unavailable'
+}
+
+/** Applies the optional profile-detail filters to an applicant. */
+export function matchesApplicantDetails(applicant: JobApplicantRow['applicant'], query: Pick<ApplicantQuery, 'employed' | 'transport' | 'availability'>): boolean {
+  const tri = (filter: TriStateFilter | undefined, value: boolean | null | undefined) =>
+    !filter || filter === 'all' || (filter === 'unknown' ? value == null : value === (filter === 'yes'))
+  if (!tri(query.employed, applicant.currentlyEmployed)) return false
+  if (!tri(query.transport, applicant.hasOwnTransport)) return false
+  if (query.availability && query.availability !== 'all' && !(applicant.availability ?? []).includes(query.availability)) return false
+  return true
 }

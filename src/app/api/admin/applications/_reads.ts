@@ -1,6 +1,7 @@
 import type { createAdminClient } from '@/lib/supabase/admin'
 import {
   APPLICATION_TIME_ZONE, applicationScope,
+  matchesApplicantDetails,
   type ApplicantQuery, type ApplicationJobRow, type ApplicationOverview, type JobApplicantRow, type JobApplicants, type OverviewQuery,
 } from '@/lib/admin-applications'
 import { nullableText, record, relation, rows, text, uuid } from './_data'
@@ -18,7 +19,7 @@ type BatchQuery = PromiseLike<{ data: unknown; error: unknown }> & {
 export const APPLICATION_READ_BUDGET = { rows: 50_000, requests: 160, milliseconds: 15_000, batchSize: 1_000 } as const
 const JOB_FIELDS = 'id,title,status,created_at,company:companies!inner(id,company_name)'
 const OVERVIEW_APPLICATION_FIELDS = 'id,job_id,status,applied_at,job_listings!inner(company_id,status)'
-const APPLICANT_FIELDS = 'id,status,applied_at,applicant:seeker_profiles!inner(id,first_name,last_name)'
+const APPLICANT_FIELDS = 'id,status,applied_at,applicant:seeker_profiles!inner(id,first_name,last_name,currently_employed,has_own_transport,availability)'
 const DAY = 86_400_000
 const clock = new Intl.DateTimeFormat('en-US', {
   timeZone: APPLICATION_TIME_ZONE, era: 'short', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -143,8 +144,11 @@ function applicantRow(value: unknown): JobApplicantRow {
   const row = record(value)
   const applicant = relation(row.applicant)
   if (!applicant) throw unavailable()
+  const bool = (value: unknown) => typeof value === 'boolean' ? value : null
   return { id: id(row.id), status: text(row.status), appliedAt: timestamp(row.applied_at), applicant: {
     id: id(applicant.id), firstName: nullableText(applicant.first_name), lastName: nullableText(applicant.last_name),
+    currentlyEmployed: bool(applicant.currently_employed), hasOwnTransport: bool(applicant.has_own_transport),
+    availability: Array.isArray(applicant.availability) ? applicant.availability.filter((item): item is string => typeof item === 'string') : [],
   } }
 }
 
@@ -230,7 +234,7 @@ export async function readJobApplicants(admin: AdminClient, jobId: string, query
   }, signal)
   if (!snapshot.jobs.length) return null
   const name = (row: JobApplicantRow) => [row.applicant.firstName, row.applicant.lastName].filter(Boolean).join(' ').trim().toLowerCase()
-  const applications = snapshot.applications.filter(row => name(row).includes(query.applicantQ.toLowerCase()))
+  const applications = snapshot.applications.filter(row => name(row).includes(query.applicantQ.toLowerCase()) && matchesApplicantDetails(row.applicant, query))
   applications.sort((a, b) => (query.applicantSort === 'name' ? compare(name(a), name(b))
     : query.applicantSort === 'oldest' ? compareTimestamp(a.appliedAt, b.appliedAt) : compareTimestamp(b.appliedAt, a.appliedAt)) || compare(a.id, b.id))
   const { id, title, status, company } = snapshot.jobs[0]
