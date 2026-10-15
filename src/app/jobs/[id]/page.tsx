@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
-import { formatDeadline, getJobClosure, isDateOnly } from "@/lib/job-closures";
+import { formatDeadline, getJobClosure, isDateOnly, withoutEmailLines } from "@/lib/job-closures";
 import { jobMetaDescription } from "@/lib/seo/job-description";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
@@ -34,11 +34,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
   const title = `${job.title} at ${company?.company_name || "Company"} | JobLink`;
-  const description = jobMetaDescription({ ...job, companyName: company?.company_name });
-  const url = `https://joblinkantigua.com/jobs/${id}`;
   // A closed vacancy keeps a visible "no longer available" page but drops out
   // of search results.
   const closed = !!getJobClosure(job.id, job.company_id, undefined, job.closes_after);
+  const description = closed
+    ? jobMetaDescription({ ...job, id: undefined, description: withoutEmailLines(publicVacancyDescription(job)), companyName: company?.company_name })
+    : jobMetaDescription({ ...job, companyName: company?.company_name });
+  const url = `https://joblinkantigua.com/jobs/${id}`;
 
   return {
     ...(closed ? { robots: { index: false, follow: true } } : {}),
@@ -159,7 +161,11 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const salary =
     job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : null;
-  const description = publicVacancyDescription(job);
+  const closure = getJobClosure(job.id, company?.id ?? job.company_id, undefined, job.closes_after);
+  // Closed listings never expose an employer email.
+  const description = closure
+    ? withoutEmailLines(publicVacancyDescription(job))
+    : publicVacancyDescription(job);
 
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
   // A job type override there corrects both the visible label and the
@@ -184,7 +190,6 @@ export default async function JobDetailPage({ params }: PageProps) {
   let applyState: "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete" = "login";
   let isSaved = false;
 
-  const closure = getJobClosure(job.id, company?.id ?? job.company_id, undefined, job.closes_after);
   // Stored admin deadline (date-only, Antigua). Open through the named day.
   const closesAfter: string | null = isDateOnly(job.closes_after) ? job.closes_after : null;
 

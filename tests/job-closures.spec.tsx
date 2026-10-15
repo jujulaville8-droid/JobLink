@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { closedJobIdFilter, closedJobIds, formatDeadline, getJobClosure, isDateOnly, openDeadlineFilter, parseClosesAfter } from '@/lib/job-closures';
+import { closedJobIdFilter, closedJobIds, formatDeadline, getJobClosure, withoutEmailLines, isDateOnly, openDeadlineFilter, parseClosesAfter } from '@/lib/job-closures';
 
 const TOP_BUN = 'e03a2b8c-f69b-42bb-bc43-13a5d0917291';
 const TOP_BUN_CO = '362300b7-c0c5-4c2e-a9f6-6fe79f187e71';
@@ -60,4 +60,9 @@ it('validates admin deadlines: blank clears, real dates only, not in the past', 
   }
   expect(isDateOnly('2028-02-29')).toBe(true);
   expect(formatDeadline('2026-10-01')).toBe('October 1, 2026');
+});
+
+it('drops description lines containing an email for closed listings', () => {
+  expect(withoutEmailLines('Role facts.\n\nEmail CV to jobs@example.com today.\n\nMore facts.')).toBe('Role facts.\n\nMore facts.');
+  expect(withoutEmailLines('No contact here.')).toBe('No contact here.');
 });

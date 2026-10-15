@@ -7,7 +7,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: 
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
   auth: { getUser: async () => ({ data: { user: null } }) },
   from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ error: null, data: {
-    id: 'deadline-job', company_id: 'deadline-company', title: 'Front Desk Agent', description: 'Greet guests.',
+    id: 'deadline-job', company_id: 'deadline-company', title: 'Front Desk Agent', description: 'Greet guests.\nSend your CV to hr@hotel.example to apply.',
     status: 'active', posted_by_admin: false, expires_at: null, created_at: '2026-10-01', closes_after: fixture.closesAfter,
     job_type: 'full_time', location: 'St. John\'s, Antigua', salary_visible: false, category: 'Tourism & Hospitality',
     company: { id: 'deadline-company', company_name: 'Hotel', logo_url: null, description: null, industry: 'Hospitality', location: 'Antigua', website: null, is_verified: false },
@@ -47,6 +47,10 @@ it('closes the listing after the deadline: notice, no Apply by, no JobPosting, n
   expect(text).toContain('Applications for this vacancy closed on October 14, 2026.');
   expect(text).not.toContain('Apply by');
   expect(posting).toBeUndefined();
+  expect(text).toContain('Greet guests.');
+  expect(text).not.toContain('hr@hotel.example');
+  const metadata = await generateMetadata({ params: Promise.resolve({ id: 'deadline-job' }) });
+  expect(String(metadata.description)).not.toContain('hr@hotel.example');
   expect((await generateMetadata({ params: Promise.resolve({ id: 'deadline-job' }) })).robots).toEqual({ index: false, follow: true });
 });
 

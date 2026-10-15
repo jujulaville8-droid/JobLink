@@ -118,3 +118,15 @@ export function closedJobIdFilter(now: Date = new Date()): string {
   const ids = closedJobIds(now);
   return `(${(ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]).join(",")})`;
 }
+
+const EMAIL = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+
+/**
+ * Closed vacancies must not expose an employer email. Drops every line of the
+ * public description that contains an email address (application
+ * instructions are moot once a listing is closed).
+ */
+export function withoutEmailLines(description: string): string {
+  if (!EMAIL.test(description)) return description;
+  return description.split("\n").filter(line => !EMAIL.test(line)).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
