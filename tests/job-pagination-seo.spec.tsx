@@ -194,7 +194,7 @@ describe('public job pagination validation', () => {
     expect(calls).toContainEqual(['eq', 'category', 'Retail & Trade']);
     expect(calls).toContainEqual(['ilike', 'location', '%Antigua%']);
     expect(calls).toContainEqual(['in', 'job_type', ['full_time', 'part_time']]);
-    expect(calls.find(([method]) => method === 'or')?.[1]).toBe('title.ilike."%Cashier, 100\\\\%%",description.ilike."%Cashier, 100\\\\%%",company_search.not.is.null');
+    expect(calls.find(([method, filter]) => method === 'or' && !String(filter).startsWith('closes_after.'))?.[1]).toBe('title.ilike."%Cashier, 100\\\\%%",description.ilike."%Cashier, 100\\\\%%",company_search.not.is.null');
     expect(calls).toContainEqual(['ilike', 'company_search.company_name', '%Cashier, 100\\%%']);
   });
 

@@ -16,7 +16,7 @@ export default async function AdminEditJobPage({ searchParams }: PageProps) {
 
   const { data: job } = await createAdminClient()
     .from('job_listings')
-    .select('id, title, description, category, job_type, location, status, companies(company_name)')
+    .select('id, title, description, category, job_type, location, status, closes_after, companies(company_name)')
     .eq('id', id)
     .maybeSingle()
   if (!job) notFound()
@@ -38,6 +38,7 @@ export default async function AdminEditJobPage({ searchParams }: PageProps) {
           category: job.category ?? '',
           job_type: job.job_type ?? '',
           location: job.location ?? '',
+          closes_after: job.closes_after ?? '',
         }}
         categories={INDUSTRIES}
         jobTypes={JOB_TYPE_LABELS}

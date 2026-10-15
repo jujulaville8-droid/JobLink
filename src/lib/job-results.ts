@@ -1,4 +1,4 @@
-import { closedJobIdFilter } from "@/lib/job-closures";
+import { closedJobIdFilter, openDeadlineFilter } from "@/lib/job-closures";
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { jobCategoryFilter } from "@/lib/job-category";
@@ -67,6 +67,7 @@ const loadJobResults = cache(async (
     )
     .eq("status", "active")
     .not("id", "in", closedJobIdFilter())
+    .or(openDeadlineFilter())
     .order("is_featured", { ascending: false })
     .order("created_at", { ascending: false })
     .range(from, to);

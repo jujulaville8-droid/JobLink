@@ -166,3 +166,20 @@ describe('admin posting employer notification email', () => {
     expect(mocks.after).not.toHaveBeenCalled()
   })
 })
+
+describe('admin posting application deadline', () => {
+  it('stores a valid closes_after, and null when omitted', async () => {
+    const future = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+    expect((await send({ ...job, company_id: companyId, closes_after: future })).status).toBe(200)
+    expect(mocks.listingInsert).toHaveBeenLastCalledWith(expect.objectContaining({ closes_after: future }))
+    expect((await send({ ...job, company_id: companyId })).status).toBe(200)
+    expect(mocks.listingInsert).toHaveBeenLastCalledWith(expect.objectContaining({ closes_after: null }))
+  })
+
+  it.each(['2020-01-01', '2026-02-30', 'tomorrow'])('rejects %j before any write', async closesAfter => {
+    const response = await send({ ...job, company_id: companyId, closes_after: closesAfter })
+    expect(response.status).toBe(400)
+    expect(mocks.listingInsert).not.toHaveBeenCalled()
+    expect(mocks.companyUpdate).not.toHaveBeenCalled()
+  })
+})

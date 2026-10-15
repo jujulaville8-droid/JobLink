@@ -40,6 +40,7 @@ type JobInfo = {
   job_type: string;
   company_id: string;
   status: string;
+  closes_after: string | null;
   company: { company_name: string } | null;
 };
 
@@ -125,7 +126,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       const { data: jobData, error: jobError } = await supabase
         .from("job_listings")
         .select(
-          "id, company_id, title, location, job_type, status, company:companies(company_name)"
+          "id, company_id, title, location, job_type, status, closes_after, company:companies(company_name)"
         )
         .eq("id", jobId)
         .single();
@@ -141,7 +142,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       };
       setJob(jobInfo);
 
-      if (jobInfo.status !== "active" || getJobClosure(jobInfo.id, jobInfo.company_id)) {
+      if (jobInfo.status !== "active" || getJobClosure(jobInfo.id, jobInfo.company_id, undefined, jobInfo.closes_after)) {
         setState("job-closed");
         return;
       }

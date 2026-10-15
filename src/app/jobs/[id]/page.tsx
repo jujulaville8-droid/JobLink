@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
-import { getJobClosure } from "@/lib/job-closures";
+import { formatDeadline, getJobClosure, isDateOnly } from "@/lib/job-closures";
 import { jobMetaDescription } from "@/lib/seo/job-description";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("id, company_id, title, description, location, status, company:companies(company_name, logo_url)")
+    .select("id, company_id, title, description, location, status, closes_after, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const url = `https://joblinkantigua.com/jobs/${id}`;
   // A closed vacancy keeps a visible "no longer available" page but drops out
   // of search results.
-  const closed = !!getJobClosure(job.id, job.company_id);
+  const closed = !!getJobClosure(job.id, job.company_id, undefined, job.closes_after);
 
   return {
     ...(closed ? { robots: { index: false, follow: true } } : {}),
@@ -184,7 +184,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   let applyState: "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete" = "login";
   let isSaved = false;
 
-  const closure = getJobClosure(job.id, company?.id ?? job.company_id);
+  const closure = getJobClosure(job.id, company?.id ?? job.company_id, undefined, job.closes_after);
+  // Stored admin deadline (date-only, Antigua). Open through the named day.
+  const closesAfter: string | null = isDateOnly(job.closes_after) ? job.closes_after : null;
 
   if (job.status !== "active" || closure) {
     applyState = "closed";
@@ -295,9 +297,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   const approvalDeadline = publicDeadline ?? (employerApproval && "validThrough" in employerApproval
     ? employerApproval.validThrough
     : undefined);
-  const validThrough = job.expires_at
-    ? new Date(job.expires_at).toISOString()
-    : approvalDeadline;
+  // A stored closes_after deadline is the authoritative, visible cutoff.
+  const validThrough = closesAfter
+    ?? (job.expires_at ? new Date(job.expires_at).toISOString() : approvalDeadline);
   // Woodstock's "Apply before" excludes the named date. The other recorded
   // application deadlines include that date. Compare calendar dates in Antigua
   // without inventing a time in validThrough. This affects only Google markup.
@@ -511,6 +513,13 @@ export default async function JobDetailPage({ params }: PageProps) {
                 {salary && (
                   <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     {salary}
+                  </span>
+                )}
+
+                {/* Application deadline */}
+                {closesAfter && !closure && (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+                    Apply by {formatDeadline(closesAfter)}
                   </span>
                 )}
 

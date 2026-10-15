@@ -7,6 +7,7 @@ type Query = {
   selection?: string;
   filters: [string, string][];
   expiryFilter?: string;
+  deadlineFilter?: string;
   ids?: string[];
   order?: [string, { ascending: boolean }];
   range?: [number, number];
@@ -27,7 +28,11 @@ vi.mock('@/lib/supabase/server', () => ({
         select: (selection: string) => { request.selection = selection; return query; },
         not: () => query,
         eq: (column: string, value: string) => { request.filters.push([column, value]); return query; },
-        or: (filter: string) => { request.expiryFilter = filter; return query; },
+        or: (filter: string) => {
+          if (filter.startsWith('closes_after.')) request.deadlineFilter = filter;
+          else request.expiryFilter = filter;
+          return query;
+        },
         in: (column: string, ids: string[]) => {
           expect(column).toBe('id');
           request.ids = ids;
@@ -48,6 +53,12 @@ vi.mock('@/lib/supabase/server', () => ({
             expect(request.expiryFilter.startsWith(prefix)).toBe(true);
             const now = Date.parse(request.expiryFilter.slice(prefix.length));
             data = data.filter(row => row.expires_at === null || Date.parse(row.expires_at!) > now);
+          }
+          if (request.deadlineFilter) {
+            const prefix = 'closes_after.is.null,closes_after.gte.';
+            expect(request.deadlineFilter.startsWith(prefix)).toBe(true);
+            const today = request.deadlineFilter.slice(prefix.length);
+            data = data.filter(row => !row.closes_after || row.closes_after >= today);
           }
           if (request.ids) data = data.filter(row => request.ids!.includes(row.id!));
           if (request.order) {
@@ -203,6 +214,20 @@ describe('canonical sitemap SEO', () => {
     expect(Object.hasOwn(byUrl[`${BASE_URL}/jobs/bad-date`], 'lastModified')).toBe(false);
     expect(first.filter(entry => !entry.url.includes('/jobs/') || entry.url.includes('?')).every(entry => !Object.hasOwn(entry, 'lastModified'))).toBe(true);
     expect(db.queries.filter(query => query.table === 'job_listings').every(query => query.selection === 'id, company_id, category, created_at, updated_at')).toBe(true);
+  });
+
+  it('drops jobs whose closes_after deadline has passed in Antigua, keeping the named day', async () => {
+    // NOW is 2026-10-10 00:00 in Antigua.
+    db.rows.job_listings = [
+      job('no-deadline', 'Accounting'),
+      job('deadline-today', 'Accounting', { closes_after: '2026-10-10' }),
+      job('deadline-passed', 'Legal', { closes_after: '2026-10-09', company_id: 'past-only' }),
+    ];
+    const entries = await sitemap();
+    const jobUrls = entries.filter(entry => entry.url.includes('/jobs/')).map(entry => entry.url);
+    expect(jobUrls).toEqual([`${BASE_URL}/jobs/deadline-today`, `${BASE_URL}/jobs/no-deadline`]);
+    expect(categoryUrls(entries)).toEqual([`${BASE_URL}/jobs?category=Accounting`]);
+    expect(db.queries.filter(query => query.table === 'job_listings').every(query => query.deadlineFilter === 'closes_after.is.null,closes_after.gte.2026-10-10')).toBe(true);
   });
 
   it.each(['job_listings', 'companies'])('fails rather than returning a partial sitemap on a %s read error', async table => {

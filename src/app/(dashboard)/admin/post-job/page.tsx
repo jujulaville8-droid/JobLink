@@ -7,6 +7,7 @@ import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { INDUSTRIES, JOB_TYPE_LABELS, type JobType } from '@/lib/types';
 import { parseCompanyContactEmail } from '@/lib/company-contact-email';
+import { antiguaDate, parseClosesAfter } from '@/lib/job-closures';
 
 type SalaryType = 'hourly' | 'weekly' | 'biweekly' | 'monthly' | 'annually';
 
@@ -27,6 +28,7 @@ interface JobFormData {
   salary_max: string;
   salary_type: SalaryType;
   salary_visible: boolean;
+  closes_after: string;
 }
 
 interface NewCompanyData {
@@ -89,6 +91,7 @@ export default function AdminPostJobPage() {
     salary_max: '',
     salary_type: 'monthly',
     salary_visible: true,
+    closes_after: '',
   });
 
   useEffect(() => {
@@ -154,6 +157,8 @@ export default function AdminPostJobPage() {
         errs.salary_max = 'Max must be greater than min';
       }
     }
+    const deadline = parseClosesAfter(form.closes_after);
+    if (!deadline.ok) errs.closes_after = deadline.error;
     return errs;
   }
 
@@ -183,6 +188,7 @@ export default function AdminPostJobPage() {
         salary_min: form.salary_min || null,
         salary_max: form.salary_max || null,
         salary_visible: form.salary_visible,
+        closes_after: form.closes_after || null,
       };
 
       if (companyMode === 'existing') {
@@ -515,7 +521,23 @@ export default function AdminPostJobPage() {
           </div>
         </motion.div>
 
-        <p className="text-sm text-text-muted">Jobs stay active until you close them. No expiry date.</p>
+        <motion.div variants={item} className={cn(cardBase, 'p-6 space-y-2')}>
+          <label htmlFor="closes-after" className="block text-sm font-medium text-text">
+            Application deadline <span className="font-normal text-text-muted">(optional)</span>
+          </label>
+          <input
+            id="closes-after"
+            type="date"
+            min={antiguaDate()}
+            value={form.closes_after}
+            onChange={e => updateField('closes_after', e.target.value)}
+            className={cn(inputBase, errors.closes_after ? 'border-red-400' : 'border-border/40')}
+          />
+          {errors.closes_after && <p className="text-xs text-red-500">{errors.closes_after}</p>}
+          <p className="text-xs text-text-muted">
+            Shown as &ldquo;Apply by&rdquo; on the job page. The job closes automatically after this date (Antigua time). Leave blank to keep it open until you close it.
+          </p>
+        </motion.div>
 
         {/* Error + Submit */}
         {serverError && (

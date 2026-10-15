@@ -34,26 +34,81 @@ const JOB_CLOSURES: Record<string, JobClosure> = {
   },
 };
 
-function antiguaDate(now: Date): string {
+export function antiguaDate(now: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Antigua", year: "numeric", month: "2-digit", day: "2-digit",
   }).format(now);
 }
 
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** A real calendar date in YYYY-MM-DD form (rejects e.g. 2026-02-30). */
+export function isDateOnly(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const match = DATE_ONLY.exec(value);
+  if (!match) return false;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return date.toISOString().slice(0, 10) === value;
+}
+
+/** "October 18, 2026" for a date-only value, without shifting the day. */
+export function formatDeadline(value: string): string {
+  return new Date(`${value}T12:00:00Z`).toLocaleDateString("en-US", {
+    timeZone: "UTC", month: "long", day: "numeric", year: "numeric",
+  });
+}
+
+/**
+ * Validates an admin-entered job_listings.closes_after value. Blank clears it.
+ * A new deadline may not already be in the past (Antigua calendar date); the
+ * named day itself is allowed because the listing stays open through it.
+ */
+export function parseClosesAfter(
+  value: unknown,
+  now: Date = new Date(),
+): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (value === null || value === "") return { ok: true, value: null };
+  if (!isDateOnly(value)) return { ok: false, error: "Deadline must be a valid date (YYYY-MM-DD)." };
+  if (value < antiguaDate(now)) return { ok: false, error: "Deadline cannot be in the past." };
+  return { ok: true, value };
+}
+
+/**
+ * The closure for a listing, if any: a hardcoded JOB_CLOSURES entry, or the
+ * stored closes_after deadline once that Antigua calendar date has passed.
+ */
 export function getJobClosure(
   jobId: string,
   companyId: string | null | undefined,
   now: Date = new Date(),
+  closesAfter?: string | null,
 ): JobClosure | undefined {
-  if (!Object.hasOwn(JOB_CLOSURES, jobId)) return undefined;
-  const closure = JOB_CLOSURES[jobId];
-  if (closure.companyId !== companyId) return undefined;
-  return antiguaDate(now) > closure.closedAfter ? closure : undefined;
+  if (Object.hasOwn(JOB_CLOSURES, jobId)) {
+    const closure = JOB_CLOSURES[jobId];
+    if (closure.companyId === companyId && antiguaDate(now) > closure.closedAfter) return closure;
+  }
+  if (closesAfter && isDateOnly(closesAfter) && antiguaDate(now) > closesAfter) {
+    return {
+      companyId: companyId ?? "",
+      closedAfter: closesAfter,
+      reason: `Applications for this vacancy closed on ${formatDeadline(closesAfter)}.`,
+    };
+  }
+  return undefined;
+}
+
+/**
+ * PostgREST `.or()` filter keeping only listings whose stored deadline has not
+ * passed: no deadline, or closes_after on/after today's Antigua date. Repeated
+ * or= params are ANDed by PostgREST, so this composes with search filters.
+ */
+export function openDeadlineFilter(now: Date = new Date()): string {
+  return `closes_after.is.null,closes_after.gte.${antiguaDate(now)}`;
 }
 
 export function closedJobIds(now: Date = new Date()): string[] {
   return Object.entries(JOB_CLOSURES)
-    .filter(([id, closure]) => getJobClosure(id, closure.companyId, now))
+    .filter(([, closure]) => antiguaDate(now) > closure.closedAfter)
     .map(([id]) => id);
 }
 

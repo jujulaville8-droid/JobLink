@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getJobClosure } from '@/lib/job-closures';
 import { sendEmail, BASE_URL } from '@/lib/email';
 import type { AlertCriteria } from '@/lib/job-alert-criteria';
 
@@ -13,10 +14,11 @@ export async function processJobAlerts(jobId: string, scope?: { seekerId: string
   try {
     const db = createAdminClient();
     const { data: job, error: jobError } = await db.from('job_listings')
-      .select('id, title, description, category, job_type, status, companies(company_name)')
+      .select('id, title, description, category, job_type, status, company_id, closes_after, companies(company_name)')
       .eq('id', jobId).single();
     if (jobError) throw jobError;
-    if (!job || job.status !== 'active') return result;
+    // Never alert seekers about a vacancy that is already closed.
+    if (!job || job.status !== 'active' || getJobClosure(job.id, job.company_id, undefined, job.closes_after)) return result;
 
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies;
     const text = `${job.title} ${job.description || ''}`.toLowerCase();

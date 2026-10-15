@@ -1,4 +1,4 @@
-import { closedJobIdFilter } from "@/lib/job-closures";
+import { closedJobIdFilter, openDeadlineFilter } from "@/lib/job-closures";
 import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -34,6 +34,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       )
       .eq("status", "active")
       .not("id", "in", closedJobIdFilter())
+      .or(openDeadlineFilter())
       .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(3);
@@ -83,7 +84,8 @@ async function getHomepageStats(): Promise<HomepageStats> {
           .from("job_listings")
           .select("id", { count: "exact", head: true })
           .eq("status", "active")
-          .not("id", "in", closedJobIdFilter()),
+          .not("id", "in", closedJobIdFilter())
+          .or(openDeadlineFilter()),
         supabase
           .from("companies")
           .select("id, job_listings!inner(id)", { count: "exact", head: true })

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { antiguaDate, parseClosesAfter } from '@/lib/job-closures'
 
 interface EditableJob {
   id: string
@@ -9,6 +10,7 @@ interface EditableJob {
   category: string
   job_type: string
   location: string
+  closes_after: string
 }
 
 const inputClass = 'w-full rounded-lg border border-border bg-white px-3 py-2 text-sm'
@@ -28,11 +30,20 @@ export default function EditJobForm({ job, categories, jobTypes }: {
     event.preventDefault()
     setSaving(true)
     setMessage(null)
-    const changes = Object.fromEntries(
+    const changes: Record<string, string | null> = Object.fromEntries(
       (['title', 'description', 'category', 'job_type', 'location'] as const)
         .filter(key => values[key] !== job[key])
         .map(key => [key, values[key]]),
     )
+    if (values.closes_after !== job.closes_after) {
+      const deadline = parseClosesAfter(values.closes_after)
+      if (!deadline.ok) {
+        setSaving(false)
+        setMessage({ ok: false, text: deadline.error })
+        return
+      }
+      changes.closes_after = deadline.value
+    }
     if (!Object.keys(changes).length) {
       setSaving(false)
       setMessage({ ok: true, text: 'No changes to save.' })
@@ -66,6 +77,10 @@ export default function EditJobForm({ job, categories, jobTypes }: {
         <select className={inputClass} value={values.job_type} onChange={set('job_type')}>
           {Object.entries(jobTypes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
+      </label>
+      <label className="block text-sm font-medium">Application deadline <span className="font-normal text-text-muted">(optional)</span>
+        <input type="date" className={inputClass} value={values.closes_after} min={antiguaDate()} onChange={set('closes_after')} />
+        <span className="mt-1 block text-xs font-normal text-text-muted">Shown as &ldquo;Apply by&rdquo;; the job closes automatically after this date (Antigua time). Clear to remove.</span>
       </label>
       <label className="block text-sm font-medium">Description
         <textarea className={`${inputClass} min-h-[320px]`} value={values.description} onChange={set('description')} required />

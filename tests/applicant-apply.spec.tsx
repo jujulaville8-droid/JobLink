@@ -270,3 +270,12 @@ it('accepts an application for an active job with a past stored deadline without
   expect(state.inserts[0].job_id).toBe(JOB_ID)
   expect(state.job).toEqual(originalJob)
 })
+
+it('refuses applications once the closes_after deadline has passed, and accepts on the named day', async () => {
+  state.job.closes_after = '2020-01-01'
+  expect((await apply()).status).toBe(400)
+  expect(state.inserts).toHaveLength(0)
+  expect(state.notify).not.toHaveBeenCalled()
+  state.job.closes_after = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Antigua' }).format(new Date())
+  expect((await apply()).status).toBe(201)
+})

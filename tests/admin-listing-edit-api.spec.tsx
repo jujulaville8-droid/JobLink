@@ -57,4 +57,16 @@ describe('admin live listing edits', () => {
     expect((await send({ status: 'closed', is_featured: false })).status).toBe(200)
     expect(mocks.update).toHaveBeenCalledWith({ status: 'closed', is_featured: false })
   })
+
+  it('sets, clears and validates the closes_after deadline', async () => {
+    const future = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+    expect((await send({ closes_after: future })).status).toBe(200)
+    expect(mocks.update).toHaveBeenLastCalledWith({ closes_after: future })
+    expect((await send({ closes_after: null })).status).toBe(200)
+    expect(mocks.update).toHaveBeenLastCalledWith({ closes_after: null })
+    mocks.update.mockClear()
+    expect((await send({ closes_after: '2020-01-01' })).status).toBe(400)
+    expect((await send({ closes_after: '2026-02-30' })).status).toBe(400)
+    expect(mocks.update).not.toHaveBeenCalled()
+  })
 })

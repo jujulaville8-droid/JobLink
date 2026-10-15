@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { buildEmailHtml } from '@/lib/email-templates'
 import { BASE_URL } from '@/lib/email'
 import { requireVerifiedUser } from '@/lib/api-auth'
+import { getJobClosure } from '@/lib/job-closures'
 
 // Bulk work needs more than the default function timeout.
 export const maxDuration = 300
@@ -42,12 +43,16 @@ export async function POST(request: NextRequest) {
   // Get full job details
   const { data: job } = await supabase
     .from('job_listings')
-    .select('title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name)')
+    .select('id, company_id, closes_after, title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name)')
     .eq('id', job_id)
     .single()
 
   if (!job) {
     return NextResponse.json({ error: 'Job not found' }, { status: 404 })
+  }
+
+  if (getJobClosure(job.id, job.company_id, undefined, job.closes_after)) {
+    return NextResponse.json({ error: 'This job is closed; seekers were not notified.' }, { status: 400 })
   }
 
   const company = Array.isArray(job.companies) ? job.companies[0] : job.companies

@@ -6,6 +6,7 @@ import { Resend } from 'resend'
 import { BASE_URL } from '@/lib/email'
 import { buildEmailHtml } from '@/lib/email-templates'
 import { parseCompanyContactEmail } from '@/lib/company-contact-email'
+import { parseClosesAfter } from '@/lib/job-closures'
 
 const FROM_ADDRESS = 'JobLink <notifications@joblinkantigua.com>'
 
@@ -131,11 +132,18 @@ export async function POST(req: NextRequest) {
     salary_min,
     salary_max,
     salary_visible,
+    closes_after,
   } = body
 
   // Validate required job fields
   if (typeof title !== 'string' || !title.trim() || typeof description !== 'string' || !description.trim() || !category || !job_type) {
     return NextResponse.json({ error: 'Missing required job fields' }, { status: 400 })
+  }
+
+  // Optional application deadline: the listing closes after this Antigua date.
+  const deadline = parseClosesAfter(closes_after ?? null)
+  if (!deadline.ok) {
+    return NextResponse.json({ error: deadline.error }, { status: 400 })
   }
 
   let resolvedCompanyId: string = company_id
@@ -241,6 +249,7 @@ export async function POST(req: NextRequest) {
       status: 'active',
       posted_by_admin: true,
       expires_at: null,
+      closes_after: deadline.value,
     })
     .select('id')
     .single()

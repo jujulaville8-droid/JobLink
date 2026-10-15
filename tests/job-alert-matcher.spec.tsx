@@ -63,3 +63,9 @@ it('allows a targeted retry without notifying other matching seekers', async () 
   await processJobAlerts('job', { seekerId: 'p' });
   expect(s.sent).toEqual(['allowed@example.com']);
 });
+it('never emails for an active job whose closes_after deadline has passed', async () => {
+  s.tables.job_listings[0].closes_after = '2020-01-01';
+  await processJobAlerts('job');
+  expect(s.sent).toHaveLength(0);
+  expect(s.tables.job_alert_log).toHaveLength(0);
+});

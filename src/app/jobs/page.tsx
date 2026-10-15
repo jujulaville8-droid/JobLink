@@ -1,4 +1,4 @@
-import { closedJobIdFilter } from "@/lib/job-closures";
+import { closedJobIdFilter, openDeadlineFilter } from "@/lib/job-closures";
 import JobResults from "@/components/JobResults";
 import JobFilters from "@/components/JobFilters";
 import JobSearchBar from "@/components/JobSearchBar";
@@ -88,6 +88,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
       .select("id", { count: "exact", head: true })
       .eq("status", "active")
       .not("id", "in", closedJobIdFilter())
+      .or(openDeadlineFilter())
       .eq("category", category);
     count = response.count;
   }

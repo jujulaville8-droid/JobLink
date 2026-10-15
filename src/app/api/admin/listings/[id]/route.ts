@@ -3,13 +3,14 @@ import { processJobAlerts } from '@/lib/job-alert-matcher'
 import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/api-auth'
+import { parseClosesAfter } from '@/lib/job-closures'
 
 import { INDUSTRIES, JOB_TYPE_LABELS } from '@/lib/types'
 
 export const maxDuration = 300
 
 const TEXT_FIELDS = ['title', 'description', 'category', 'job_type', 'location'] as const
-const ALLOWED_FIELDS: string[] = ['status', 'is_featured', ...TEXT_FIELDS]
+const ALLOWED_FIELDS: string[] = ['status', 'is_featured', 'closes_after', ...TEXT_FIELDS]
 
 export async function PATCH(
   request: NextRequest,
@@ -51,6 +52,12 @@ export async function PATCH(
         return NextResponse.json({ error: 'Invalid job_type' }, { status: 400 })
       }
       updates[field] = value
+    }
+
+    if (body.closes_after !== undefined) {
+      const deadline = parseClosesAfter(body.closes_after)
+      if (!deadline.ok) return NextResponse.json({ error: deadline.error }, { status: 400 })
+      updates.closes_after = deadline.value
     }
 
     if (status !== undefined) {
