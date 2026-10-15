@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { claimReturnTo, onboardingReturnTo, withReturnTo } from '@/lib/claim-links'
 import { createClient } from '@/lib/supabase/client'
 
 const RESEND_COOLDOWN_SECONDS = 60
@@ -110,7 +111,9 @@ export default function VerifyEmailPage() {
       }
 
       // Full page navigation to ensure middleware sees updated session/cookies
-      window.location.href = new URLSearchParams(window.location.search).get('returnTo') === '/members' ? '/members' : dest
+      const returnTo = onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to)
+      if (user.user_metadata?.claim_return_to) await supabase.auth.updateUser({ data: { claim_return_to: null } })
+      window.location.href = returnTo ?? dest
       return true
     } catch (err) {
       console.error('[verify-email] Error checking verification', err)
@@ -185,7 +188,7 @@ export default function VerifyEmailPage() {
         type: 'signup',
         email: user.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup${new URLSearchParams(window.location.search).get('returnTo') === '/members' ? '&returnTo=%2Fmembers' : ''}`,
+          emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to))}`,
         },
       })
 
@@ -268,10 +271,9 @@ export default function VerifyEmailPage() {
           <a
             href="/login"
             onClick={(event) => {
-              if (new URLSearchParams(window.location.search).get('returnTo') === '/members') {
-                event.preventDefault()
-                window.location.href = '/login?returnTo=%2Fmembers'
-              }
+              event.preventDefault()
+              const returnTo = onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo'))
+              window.location.href = withReturnTo(claimReturnTo(returnTo) ? '/employer/login' : '/login', returnTo)
             }}
             className="inline-block w-full btn-primary py-3 text-center"
           >

@@ -33,6 +33,7 @@ const adminLinks = [
   { href: "/admin/inbox", label: "Applicant Inbox", icon: "mail" },
   { href: "/admin/applications", label: "Applications", icon: "file-text" },
   { href: "/admin/post-job", label: "Post a Job", icon: "plus-circle" },
+  { href: "/admin/jobs", label: "Company Claim Links", icon: "building" },
   { href: "/admin/companies", label: "Company Logos", icon: "building" },
   { href: "/admin/users", label: "Users", icon: "users" },
   { href: "/admin/approvals", label: "Job Approvals", icon: "check-circle" },

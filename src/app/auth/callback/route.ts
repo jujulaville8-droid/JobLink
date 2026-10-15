@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withReturnTo } from '@/lib/claim-links'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSafeReturnTo } from '@/lib/return-to'
 import { syncAccountVerification } from '@/lib/sync-account-verification'
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
           `${origin}/forgot-password?error=${encodeURIComponent('Reset link is invalid or expired. Please request a new one.')}`
         )
       }
-      return NextResponse.redirect(`${origin}/login?error=auth`)
+      return NextResponse.redirect(`${origin}${withReturnTo(signupRole === 'employer' ? '/employer/login?error=auth' : '/login?error=auth', searchParams.get('returnTo'))}`)
     }
 
     // Password recovery flow — redirect straight to reset-password form.
@@ -99,10 +100,10 @@ export async function GET(request: NextRequest) {
         : userRole === 'employer' ? '/post-job' : '/jobs'
     }
 
-    console.log('[auth-callback] Redirecting', { dest, role: userRole })
+    console.log('[auth-callback] Redirecting', { hasReturnTo: !!returnTo, role: userRole })
     return NextResponse.redirect(`${origin}${dest}`)
   }
 
   console.error('[auth-callback] No code parameter')
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  return NextResponse.redirect(`${origin}${withReturnTo(signupRole === 'employer' ? '/employer/login?error=auth' : '/login?error=auth', searchParams.get('returnTo'))}`)
 }

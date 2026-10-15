@@ -51,3 +51,6 @@ redesign-homepage-full.png
 
 # Local MCP server config (contains a per-machine extension token)
 .mcp.json
+
+# Local claim-flow browser evidence
+/output/playwright/

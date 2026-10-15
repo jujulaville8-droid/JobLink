@@ -57,7 +57,7 @@ beforeEach(() => {
 
 it('shows active employer listings and posted dates without countdowns or expiry warnings', async () => {
   const before = structuredClone(db.tables);
-  const page = await DashboardPage();
+  const page = await DashboardPage({ searchParams: Promise.resolve({}) });
   const employerDashboard = page.type as (props: Record<string, unknown>) => Promise<ReactElement>;
   const html = renderToStaticMarkup(await employerDashboard(page.props));
   expect(html).toContain('Cook');

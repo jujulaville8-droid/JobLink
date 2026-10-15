@@ -1,11 +1,13 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { claimReturnTo, onboardingReturnTo, withReturnTo } from '@/lib/claim-links'
 import { createClient } from '@/lib/supabase/client'
 
 function VerifyConfirmContent() {
   const searchParams = useSearchParams()
+  const startedFor = useRef<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('Verifying your email...')
 
@@ -143,10 +145,18 @@ function VerifyConfirmContent() {
     }
     console.log('[verify-confirm] Redirecting', { dest, role: userRole })
     setStatus('Verification complete! Redirecting...')
-    window.location.href = searchParams.get('returnTo') === '/members' ? '/members' : dest
+    const returnTo = onboardingReturnTo(searchParams.get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to)
+    if (user.user_metadata?.claim_return_to) {
+      await createClient().auth.updateUser({ data: { claim_return_to: null } })
+    }
+    window.location.href = returnTo ?? dest
   }
 
   useEffect(() => {
+    // Redeem once per URL, including React Strict Mode's repeated effect setup.
+    const verificationUrl = searchParams.toString()
+    if (startedFor.current === verificationUrl) return
+    startedFor.current = verificationUrl
     const tokenHash = searchParams.get('token_hash')
     const type = searchParams.get('type')
     const code = searchParams.get('code')
@@ -187,7 +197,8 @@ function VerifyConfirmContent() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = searchParams.get('returnTo') === '/members' ? '/login?returnTo=%2Fmembers' : '/login'
+    const returnTo = onboardingReturnTo(searchParams.get('returnTo'))
+    window.location.href = withReturnTo(claimReturnTo(returnTo) ? '/employer/login' : '/login', returnTo)
   }
 
   if (error) {
