@@ -4,6 +4,7 @@ import { withReturnTo } from '@/lib/claim-links'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSafeReturnTo } from '@/lib/return-to'
 import { syncAccountVerification } from '@/lib/sync-account-verification'
+import { promoteNewOAuthEmployer } from '@/lib/promote-oauth-employer'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -55,6 +56,13 @@ export async function GET(request: NextRequest) {
         emailConfirmed: !!user.email_confirmed_at,
         provider: user.app_metadata?.provider,
       })
+
+      // Google sends no role, so the signup trigger makes every new OAuth row a
+      // seeker. Before syncing, give a brand-new account from employer sign-in
+      // the role it asked for. Seeker sign-in never reaches this.
+      if (signupRole === 'employer' && await promoteNewOAuthEmployer(admin, user)) {
+        console.log('[auth-callback] New Google account set to employer', { userId: user.id })
+      }
 
       const synced = await syncAccountVerification(admin, user, userRole)
       userRole = synced.role
