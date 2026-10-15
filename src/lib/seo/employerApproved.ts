@@ -45,6 +45,23 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Seagull Inflatables replied yes on 2026-10-14 (ET) to posting this Operations
+  // & Admin Coordinator vacancy and confirmed it is Full Time (seasonal).
+  "7181a600-df8e-45dd-b8d1-a0e910c1f494": {
+    companyId: "8b95a031-0ce5-4e2d-9087-fda18d2ccc7c",
+    companyName: "Seagull Inflatables",
+    attestedOn: "2026-10-14",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/55",
+  },
+  // Antigua's Donkey Sanctuary replied yes on 2026-10-14 (ET) to posting this Team
+  // Member (Visitor Services & Gift Shop) vacancy. Full Time is an unconfirmed placeholder.
+  "66737b60-cf1a-4fd0-980c-14f1c9412923": {
+    companyId: "ea87a75a-dece-4fd6-afa7-64efbd51a88d",
+    companyName: "Antigua's Donkey Sanctuary",
+    attestedOn: "2026-10-14",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/55",
+    employmentTypeUnconfirmed: true,
+  },
   // Hermitage Bay HR sent this Chef de Partie vacancy on 2026-10-13 asking JobLink to
   // post it, and confirmed it is Full Time.
   "97fec756-f008-4409-8e77-155a334d6f43": {

@@ -494,3 +494,50 @@ describe.each([
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   });
 });
+
+describe.each([
+  ['7181a600-df8e-45dd-b8d1-a0e910c1f494', '8b95a031-0ce5-4e2d-9087-fda18d2ccc7c', 'Seagull Inflatables', 'Operations & Admin Coordinator', '2026-10-18', false],
+  ['66737b60-cf1a-4fd0-980c-14f1c9412923', 'ea87a75a-dece-4fd6-afa7-64efbd51a88d', "Antigua's Donkey Sanctuary", 'Team Member (Visitor Services & Gift Shop)', undefined, true],
+])('%s October 14 vacancy-scoped approval', (jobId, companyId, companyName, title, validThrough, unconfirmed) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-15T14:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy with the right employment type and deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-14', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/55',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
+    else expect(schema.employmentType).toBe('FULL_TIME');
+    if (validThrough) expect(schema.validThrough).toBe(validThrough);
+    else expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  if (validThrough) {
+    it('retires the markup after the Antigua deadline date', async () => {
+      vi.setSystemTime(new Date('2026-10-19T05:00:00Z'));
+      expect((await schemas()).map(schema => schema['@type'])).not.toContain('JobPosting');
+    });
+  }
+});
