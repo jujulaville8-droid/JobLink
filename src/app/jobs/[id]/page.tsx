@@ -329,7 +329,9 @@ export default async function JobDetailPage({ params }: PageProps) {
     description: textToHtml(description),
     datePosted: job.created_at,
     ...(employmentTypeConfirmed && employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
-    ...(job.category ? { industry: job.category } : {}),
+    // Markup must match what the page shows: the company's industry, not the
+    // job's category. Omit it when the page shows no industry.
+    ...(company?.industry?.trim() ? { industry: company.industry.trim() } : {}),
     hiringOrganization: {
       "@type": "Organization",
       name: company?.company_name,
