@@ -297,9 +297,7 @@ export default async function ApplicantsPage({
         <div className="mt-6 space-y-4">
           {applicants.map((app) => {
             const seeker = app.seeker_profiles;
-            const name = seeker
-              ? `${seeker.first_name} ${seeker.last_name}`
-              : 'Unknown Applicant';
+            const name = (seeker && [seeker.first_name, seeker.last_name].filter(Boolean).join(' ')) || 'Unknown Applicant';
 
             return (
               <details
@@ -311,9 +309,7 @@ export default async function ApplicantsPage({
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-                        {seeker
-                          ? `${seeker.first_name.charAt(0)}${seeker.last_name.charAt(0)}`
-                          : '?'}
+                        {(seeker && `${seeker.first_name?.charAt(0) ?? ''}${seeker.last_name?.charAt(0) ?? ''}`) || '?'}
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">

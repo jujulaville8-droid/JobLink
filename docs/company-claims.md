@@ -35,7 +35,7 @@ Postgres trigger with the same contact guidance. New names work as before.
 
 ## Migration and deployment prerequisites
 
-Apply `supabase/migrations/20261015210000_company_claims.sql` through the project's
+Apply `supabase/migrations/20261015204106_company_claims.sql` through the project's
 reviewed migration process **before** deploying this code. See
 [deployment.md](deployment.md): production migration history must be reconciled
 before any blanket `supabase db push`. This PR does not apply a live migration.

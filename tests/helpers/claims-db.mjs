@@ -31,7 +31,7 @@ export async function setupClaimsDb(db) {
   await db.exec(loadSql('supabase/migrations/20260601_security_hardening.sql'));
   await db.exec(loadSql('supabase/migrations/20260925_security_hardening_2.sql'));
   await db.exec(loadSql('supabase/migrations/20261005152749_company_contact_email.sql'));
-  await db.exec(loadSql('supabase/migrations/20261015210000_company_claims.sql'));
+  await db.exec(loadSql('supabase/migrations/20261015204106_company_claims.sql'));
   await db.exec(`GRANT USAGE ON SCHEMA public, auth TO authenticated, anon, service_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON public.users, public.companies, public.job_listings TO authenticated;
     GRANT SELECT ON public.companies, public.job_listings TO anon;`);
