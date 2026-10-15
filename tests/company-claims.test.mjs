@@ -16,7 +16,7 @@ async function unchanged(f) {
   assert.equal(row.claimed_by, null); assert.equal(row.is_banned, false); assert.equal(row.banned_until, null);
 }
 
-test('migration is idempotent', async () => { await db.exec(loadSql('supabase/migrations/20260930_company_claims.sql')); });
+test('migration is idempotent', async () => { await db.exec(loadSql('supabase/migrations/20261015210000_company_claims.sql')); });
 test('transfers company and job access, keeps history, consumes token and disables Auth atomically', async () => {
   const f = await fixture(db);
   await claim(f);
