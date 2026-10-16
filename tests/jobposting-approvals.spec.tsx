@@ -598,7 +598,7 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     db.job!.title = 'Brewmaster';
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy with FULL_TIME and the Oct 16 deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with FULL_TIME and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -608,7 +608,8 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
     expect(schema.employmentType).toBe('FULL_TIME');
-    expect(schema.validThrough).toBe('2026-10-16');
+    // Deadline removed per Julian on Oct 16: no validThrough is emitted.
+    expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
   });
@@ -622,8 +623,12 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     db.job!.company.id = db.job!.company_id;
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   });
-  it('retires the markup after the Antigua deadline date', async () => {
+  it('keeps JobPosting live past Oct 16 because no deadline or closure is recorded', async () => {
     vi.setSystemTime(new Date('2026-10-17T05:00:00Z'));
-    expect((await schemas()).map(schema => schema['@type'])).not.toContain('JobPosting');
+    const after = (await schemas()).find(schema => schema['@type'] === 'JobPosting');
+    expect(after).toBeDefined();
+    expect(after).not.toHaveProperty('validThrough');
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
