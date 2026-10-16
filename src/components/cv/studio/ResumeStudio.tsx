@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowDownToLine, Undo2, Redo2, Check, FileText, UserRound, BriefcaseBusiness, GraduationCap, Sparkles, Plus, Trash2, Eye, PencilLine, LoaderCircle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowDownToLine, ArrowUpRight, Undo2, Redo2, Check, FileText, UserRound, BriefcaseBusiness, GraduationCap, Sparkles, Plus, Trash2, Eye, PencilLine, LoaderCircle, ChevronRight } from 'lucide-react';
 import { profileFields, resumeSectionDefinitions, type EditorSection } from '@/lib/resume-sections';
 import { getApplicationReturnTo } from '@/lib/return-to';
 import { useResumeEditor } from './useResumeEditor';
@@ -113,6 +113,11 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
             <p className={styles.saveHint}>Save each entry when you’re ready. Your preview updates as you type.</p>
           </form> : <div className={styles.emptyEditor}><FileText size={32} /><h2>Add your first {definition!.singular}</h2><p>You don’t need to fill every section. Include what supports your next role.</p><button className={styles.primary} onClick={() => editor.add(definition!.key)}><Plus size={16} />Add {definition!.singular}</button></div>}
         </>}
+        <aside className={styles.consultation} aria-label="Optional résumé help">
+          <h2>Need help getting started?</h2>
+          <p>The consultation is free. Résumé writing is an optional paid service. The builder and job applications remain free.</p>
+          <a className={styles.secondary} href="https://calendly.com/qqwebsitesolutions/qq-solutions-consultation" target="_blank" rel="noopener noreferrer" aria-label="Book a free résumé consultation (opens in a new tab)">Book a free résumé consultation<ArrowUpRight size={16} aria-hidden="true" /></a>
+        </aside>
       </section>
 
       <section className={styles.preview} role="region" aria-label="Live resume preview">
