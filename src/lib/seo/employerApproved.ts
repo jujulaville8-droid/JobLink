@@ -45,6 +45,24 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Trappas Restaurant and Bar replied yes on 2026-10-15 (ET) to posting this Experienced
+  // Chef (Nights) vacancy. Full Time is an unconfirmed placeholder.
+  "c38baf47-a23c-4908-b2ed-c80163d6b06d": {
+    companyId: "a528f079-6706-4e64-a351-eabcc47359f4",
+    companyName: "Trappas Restaurant and Bar",
+    attestedOn: "2026-10-15",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/65",
+    employmentTypeUnconfirmed: true,
+  },
+  // Trappas Restaurant and Bar replied yes on 2026-10-15 (ET) to posting this Kitchen
+  // Staff (Nights) vacancy. Full Time is an unconfirmed placeholder.
+  "ab781b7c-5c68-404f-bb7c-479a8b58264f": {
+    companyId: "a528f079-6706-4e64-a351-eabcc47359f4",
+    companyName: "Trappas Restaurant and Bar",
+    attestedOn: "2026-10-15",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/65",
+    employmentTypeUnconfirmed: true,
+  },
   // Seagull Inflatables replied yes on 2026-10-14 (ET) to posting this Operations
   // & Admin Coordinator vacancy and confirmed it is Full Time (seasonal).
   "7181a600-df8e-45dd-b8d1-a0e910c1f494": {

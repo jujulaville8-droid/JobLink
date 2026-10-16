@@ -541,3 +541,47 @@ describe.each([
     });
   }
 });
+
+describe.each([
+  ['c38baf47-a23c-4908-b2ed-c80163d6b06d', 'Experienced Chef (Nights)'],
+  ['ab781b7c-5c68-404f-bb7c-479a8b58264f', 'Kitchen Staff (Nights)'],
+])('%s October 15 Trappas vacancy-scoped approval', (jobId, title) => {
+  const companyId = 'a528f079-6706-4e64-a351-eabcc47359f4';
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-16T14:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = 'Trappas Restaurant and Bar';
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-15', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/65',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});

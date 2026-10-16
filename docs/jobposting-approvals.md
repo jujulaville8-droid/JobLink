@@ -252,3 +252,20 @@ emitted as `validThrough`; markup retires after that date in Antigua, matching
 the `job-closures.ts` entry from PR #54. The Donkey Sanctuary posting published
 no deadline, so no `validThrough` is emitted. Stored listing content, status and
 the application route are unchanged; no database writes.
+
+## October 15, 2026 vacancy-scoped employer approvals (Trappas Restaurant and Bar)
+
+[PR #65](https://github.com/jujulaville8-droid/JobLink/pull/65) records an October 15, 2026 reply from the
+JobLink outreach CRM in which the employer said yes to JobLink posting these
+two vacancies. Each permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Trappas Restaurant and Bar — Experienced Chef (Nights) | `c38baf47-a23c-4908-b2ed-c80163d6b06d` | `a528f079-6706-4e64-a351-eabcc47359f4` | 2026-10-15 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Trappas Restaurant and Bar — Kitchen Staff (Nights) | `ab781b7c-5c68-404f-bb7c-479a8b58264f` | `a528f079-6706-4e64-a351-eabcc47359f4` | 2026-10-15 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+Neither public posting published a deadline, so no `validThrough` is emitted
+and no closure entry is added (no automatic job closing). Stored listing
+content, status and the application route are unchanged; no database writes.
