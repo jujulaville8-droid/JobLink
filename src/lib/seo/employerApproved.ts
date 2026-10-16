@@ -45,6 +45,14 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // North Sound Brewery (Antigua Distillery) HR replied yes on 2026-10-16 (ET) to posting
+  // this Brewmaster vacancy. Full Time per the employer's public Dadli Jobs posting.
+  "7bd1f5b0-4da5-4177-b4c5-3cacc65b904b": {
+    companyId: "07533d6c-77cc-4e6e-bdde-14d4fd3923a9",
+    companyName: "North Sound Brewery (Antigua Distillery)",
+    attestedOn: "2026-10-16",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/67",
+  },
   // Trappas Restaurant and Bar replied yes on 2026-10-15 (ET) to posting this Experienced
   // Chef (Nights) vacancy. Full Time is an unconfirmed placeholder.
   "c38baf47-a23c-4908-b2ed-c80163d6b06d": {
