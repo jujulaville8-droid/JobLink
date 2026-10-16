@@ -629,3 +629,45 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
+
+describe('e080f894-4e7f-48b7-b39a-1a274f52fd97 October 16 Super Service Center vacancy-scoped approval', () => {
+  const jobId = 'e080f894-4e7f-48b7-b39a-1a274f52fd97';
+  const companyId = '4b3ecdcd-01cc-4b67-8756-dc0247a04473';
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-16T20:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = 'Super Service Center';
+    db.job!.title = 'Tire Technician';
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-16', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/70',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});

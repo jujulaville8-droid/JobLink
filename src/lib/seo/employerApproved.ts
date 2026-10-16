@@ -45,6 +45,16 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Super Service Center replied yes on 2026-10-16 (ET) by email reply to
+  // jobs@joblinkantigua.com to posting this Tire Technician vacancy. Full Time is an
+  // unconfirmed placeholder.
+  "e080f894-4e7f-48b7-b39a-1a274f52fd97": {
+    companyId: "4b3ecdcd-01cc-4b67-8756-dc0247a04473",
+    companyName: "Super Service Center",
+    attestedOn: "2026-10-16",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/70",
+    employmentTypeUnconfirmed: true,
+  },
   // North Sound Brewery (Antigua Distillery) HR replied yes on 2026-10-16 (ET) to posting
   // this Brewmaster vacancy. Full Time per the employer's public Dadli Jobs posting.
   "7bd1f5b0-4da5-4177-b4c5-3cacc65b904b": {
