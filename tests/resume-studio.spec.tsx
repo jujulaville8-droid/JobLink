@@ -22,6 +22,25 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('premium resume workspace', () => {
+  it('offers an optional paid writing service through a free consultation without saving or losing the draft', async () => {
+    const user = userEvent.setup();
+    render(<ResumeStudio />);
+    const summary = await screen.findByLabelText('Professional summary');
+    fireEvent.change(summary, { target: { value: 'Keep my unsaved consultation draft' } });
+    const link = screen.getByRole('link', { name: 'Book a free résumé consultation (opens in a new tab)' });
+    expect(link.getAttribute('href')).toBe('https://calendly.com/qqwebsitesolutions/qq-solutions-consultation');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(screen.getByText(/Résumé writing is an optional paid service/)).toBeTruthy();
+    expect(screen.getByText(/The builder and job applications remain free/)).toBeTruthy();
+    // Browser verification covers the new tab; keep this unit test offline.
+    link.addEventListener('click', event => event.preventDefault(), { once: true });
+    await user.click(link);
+    expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved consultation draft');
+    expect(screen.getByRole('status').textContent).toContain('Unsaved changes');
+    expect((screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
+  });
   it('keeps the application destination on explicit profile links from the resume builder', async () => {
     const applicationPath = '/jobs/123e4567-e89b-42d3-a456-426614174000/apply';
     const profileHref = `/profile?returnTo=${encodeURIComponent(applicationPath)}`;

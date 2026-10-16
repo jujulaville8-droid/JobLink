@@ -67,6 +67,11 @@
 .formActions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); }
 .delete { display: flex; align-items: center; gap: 7px; border: 0; background: none; color: #7b5e58; min-height: 44px; font-size: 11px !important; }
 .saveHint { font-size: 11px; color: var(--muted); line-height: 1.7; margin-top: 13px; }
+.consultation { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }
+.consultation h2 { margin: 0 0 8px; font-size: 14px; font-weight: 650; }
+.consultation p { margin: 0 0 14px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+.consultation a { max-width: 100%; white-space: normal; }
+.consultation a svg { flex-shrink: 0; }
 .preview { background: #f1f2ee; min-width: 0; padding: 25px 28px 30px; position: sticky; top: 0; max-height: 100dvh; overflow: auto; }
 .previewToolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; font-size: 12px; }
 .previewToolbar > span { display: flex; align-items: center; gap: 8px; }
