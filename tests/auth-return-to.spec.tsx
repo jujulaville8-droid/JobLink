@@ -187,3 +187,28 @@ describe('OAuth callback return destination', () => {
     expect(await callbackDestination()).toBe(`${origin}${destination}`);
   });
 });
+
+describe('application context at account creation', () => {
+  it('preselects seeker signup and preserves the validated application route', () => {
+    openAuthPage(applicationPath);
+    render(<LoginPage />);
+    expect(screen.getByRole('link', { name: 'Create one' }).getAttribute('href'))
+      .toBe(`/signup?role=seeker&returnTo=${encodeURIComponent(applicationPath)}`);
+    expect(screen.getByText(/continue your job application/)).toBeTruthy();
+  });
+  it.each(unsafeDestinations)('does not propagate unsafe signup destination %s', returnTo => {
+    openAuthPage(returnTo);
+    render(<LoginPage />);
+    expect(screen.getByRole('link', { name: 'Create one' }).getAttribute('href')).toBe('/signup');
+  });
+  it('preserves the application while an existing account verifies email', async () => {
+    openAuthPage(applicationPath);
+    api.password.mockResolvedValue({ data: { user: { id: 'seeker-id', email_confirmed_at: null, user_metadata: { role: 'seeker' } } }, error: null });
+    await submitPassword();
+    await waitFor(() => expect(window.location.href).toBe(`${origin}/verify-email?returnTo=${encodeURIComponent(applicationPath)}`));
+  });
+  it('keeps application context when OAuth fails or has no code', async () => {
+    const response = await authCallback(new NextRequest(`${origin}/auth/callback?returnTo=${encodeURIComponent(applicationPath)}`));
+    expect(response.headers.get('location')).toBe(`${origin}/login?error=auth&returnTo=${encodeURIComponent(applicationPath)}`);
+  });
+});

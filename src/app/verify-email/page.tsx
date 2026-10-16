@@ -111,8 +111,9 @@ export default function VerifyEmailPage() {
       }
 
       // Full page navigation to ensure middleware sees updated session/cookies
-      const returnTo = onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to)
+      const returnTo = onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to) ?? onboardingReturnTo(user.user_metadata?.onboarding_return_to)
       if (user.user_metadata?.claim_return_to) await supabase.auth.updateUser({ data: { claim_return_to: null } })
+      if (user.user_metadata?.onboarding_return_to) await supabase.auth.updateUser({ data: { onboarding_return_to: null } })
       window.location.href = returnTo ?? dest
       return true
     } catch (err) {
@@ -188,7 +189,7 @@ export default function VerifyEmailPage() {
         type: 'signup',
         email: user.email,
         options: {
-          emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to))}`,
+          emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', onboardingReturnTo(new URLSearchParams(window.location.search).get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to) ?? onboardingReturnTo(user.user_metadata?.onboarding_return_to))}`,
         },
       })
 
@@ -225,7 +226,7 @@ export default function VerifyEmailPage() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    window.location.href = withReturnTo('/login', new URLSearchParams(window.location.search).get('returnTo'))
   }
 
   // Show loading while checking initial verification status
