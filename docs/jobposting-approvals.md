@@ -291,3 +291,19 @@ so no `validThrough` is emitted and the markup is treated like other no-deadline
 jobs. No closure entry is added (no automatic job closing), so the page stays
 open until Julian approves closing it. Stored listing content, status and the
 application route are unchanged; no database writes.
+
+## October 16, 2026 vacancy-scoped employer approval (Super Service Center)
+
+[PR #70](https://github.com/jujulaville8-droid/JobLink/pull/70) records an October 16, 2026 (12:59 PM ET) email reply to
+jobs@joblinkantigua.com in which the employer said yes to JobLink posting this
+vacancy. The permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content beyond the approval is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Super Service Center — Tire Technician (Pares Village) | `e080f894-4e7f-48b7-b39a-1a274f52fd97` | `4b3ecdcd-01cc-4b67-8756-dc0247a04473` | 2026-10-16 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+The posting published no deadline, so no `validThrough` is emitted and no
+closure entry is added (no automatic job closing). Stored listing content,
+status and the application route are unchanged; no database writes.
