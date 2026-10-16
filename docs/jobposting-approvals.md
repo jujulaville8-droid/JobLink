@@ -270,3 +270,22 @@ claimed. No email content is copied here.
 Neither public posting published a deadline, so no `validThrough` is emitted
 and no closure entry is added (no automatic job closing). Stored listing
 content, status and the application route are unchanged; no database writes.
+
+## October 16, 2026 vacancy-scoped employer approval (North Sound Brewery / Antigua Distillery)
+
+[PR #67](https://github.com/jujulaville8-droid/JobLink/pull/67) records an October 16, 2026 reply from the
+JobLink outreach CRM in which the employer's HR said yes to JobLink posting this
+vacancy. The permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| North Sound Brewery (Antigua Distillery) — Brewmaster | `7bd1f5b0-4da5-4177-b4c5-3cacc65b904b` | `07533d6c-77cc-4e6e-bdde-14d4fd3923a9` | 2026-10-16 | Full Time, as stated on the employer's public Dadli Jobs posting |
+
+The October 16 date-only deadline from the public Dadli Jobs posting
+(https://dadlijobs.com/job/brewmaster/) is recorded in `public-job-deadlines.ts`
+and emitted as `validThrough`; markup retires after that date in Antigua. No
+closure entry is added (no automatic job closing), so the page stays open until
+Julian approves closing it. Stored listing content, status and the application
+route are unchanged; no database writes.

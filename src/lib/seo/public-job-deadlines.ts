@@ -40,6 +40,13 @@ const PUBLIC_JOB_DEADLINES: Record<string, PublicJobDeadline> = {
     companyId: "8b95a031-0ce5-4e2d-9087-fda18d2ccc7c",
     validThrough: "2026-10-18",
   },
+  // https://joblinkantigua.com/jobs/7bd1f5b0-4da5-4177-b4c5-3cacc65b904b
+  // Original Dadli Jobs posting (https://dadlijobs.com/job/brewmaster/):
+  // "Apply Before : October 16, 2026."
+  "7bd1f5b0-4da5-4177-b4c5-3cacc65b904b": {
+    companyId: "07533d6c-77cc-4e6e-bdde-14d4fd3923a9",
+    validThrough: "2026-10-16",
+  },
 };
 
 export function getPublicJobDeadline(jobId: string, companyId: string | null | undefined): string | undefined {
