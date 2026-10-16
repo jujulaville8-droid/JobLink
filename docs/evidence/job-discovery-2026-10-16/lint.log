@@ -1,0 +1,23 @@
+> joblink@0.1.0 lint
+> eslint
+
+
+/Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit/src/app/(auth)/login/page.tsx
+  116:5  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit/src/app/(auth)/reset-password/page.tsx
+  79:7  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit/src/app/jobs/[id]/apply/page.tsx
+  120:9  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit/src/components/AuthProvider.tsx
+  84:5  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit/src/components/EmployerAccountGate.tsx
+  18:7  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+/Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit/src/components/ReportListingButton.tsx
+  57:13  warning  Do not use `window.location.href` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+✖ 6 problems (0 errors, 6 warnings)

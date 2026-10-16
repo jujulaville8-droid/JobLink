@@ -1,0 +1,178 @@
+> joblink@0.1.0 build
+> next build
+
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 178ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.8s
+  Running TypeScript ...
+  Finished TypeScript in 3.0s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/113) ...
+  Generating static pages using 7 workers (28/113)
+  Generating static pages using 7 workers (56/113)
+  Generating static pages using 7 workers (84/113)
+[homepage] Could not load featured jobs: {
+  message: 'TypeError: fetch failed',
+  details: 'TypeError: fetch failed\n' +
+    '\n' +
+    'Caused by: Error: getaddrinfo ENOTFOUND example.supabase.co (ENOTFOUND)\n' +
+    'Error: getaddrinfo ENOTFOUND example.supabase.co\n' +
+    '    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:120:26)\n' +
+    '    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)',
+  hint: '',
+  code: ''
+}
+✓ Generating static pages using 7 workers (113/113) in 7.5s
+  Finalizing page optimization ...
+
+Route (app)                                          Revalidate  Expire
+┌ ○ /                                                        1m      1y
+├ ○ /_not-found
+├ ○ /about
+├ ƒ /admin
+├ ƒ /admin/analytics
+├ ƒ /admin/applications
+├ ƒ /admin/applications/[jobId]
+├ ƒ /admin/approvals
+├ ƒ /admin/companies
+├ ƒ /admin/discovered
+├ ƒ /admin/edit-job
+├ ƒ /admin/emails
+├ ƒ /admin/employer-enquiries
+├ ƒ /admin/featured
+├ ƒ /admin/inbox
+├ ƒ /admin/jobs
+├ ƒ /admin/post-job
+├ ƒ /admin/reports
+├ ƒ /admin/testimonials
+├ ƒ /admin/users
+├ ƒ /alerts
+├ ƒ /api/admin/applications/[applicationId]
+├ ƒ /api/admin/applications/filters
+├ ƒ /api/admin/applications/jobs/[jobId]/applicants
+├ ƒ /api/admin/applications/overview
+├ ƒ /api/admin/companies
+├ ƒ /api/admin/companies/logo
+├ ƒ /api/admin/company-claims
+├ ƒ /api/admin/emails/notify-seekers
+├ ƒ /api/admin/emails/resume-blast
+├ ƒ /api/admin/emails/send-all
+├ ƒ /api/admin/emails/send-reminder
+├ ƒ /api/admin/emails/send-template
+├ ƒ /api/admin/emails/thank-you
+├ ƒ /api/admin/employer-enquiries/[id]
+├ ƒ /api/admin/listings/[id]
+├ ƒ /api/admin/outreach
+├ ƒ /api/admin/post-job
+├ ƒ /api/admin/post-job/companies
+├ ƒ /api/admin/reply-report
+├ ƒ /api/admin/testimonials/[id]
+├ ƒ /api/admin/users/[id]
+├ ƒ /api/alerts
+├ ƒ /api/applications/[id]/context
+├ ƒ /api/applications/[id]/status
+├ ƒ /api/applications/hire
+├ ƒ /api/auth/sync-verification
+├ ƒ /api/claim/[token]
+├ ƒ /api/cron/employer-enquiries
+├ ƒ /api/cron/expire-listings
+├ ƒ /api/cron/resume-nudge
+├ ƒ /api/cron/signup-reminder
+├ ƒ /api/cron/testimonials
+├ ƒ /api/cv
+├ ƒ /api/cv-delete
+├ ƒ /api/cv-download
+├ ƒ /api/cv-download-attachment
+├ ƒ /api/cv/awards
+├ ƒ /api/cv/certifications
+├ ƒ /api/cv/education
+├ ƒ /api/cv/events
+├ ƒ /api/cv/experience
+├ ƒ /api/cv/export
+├ ƒ /api/cv/languages
+├ ƒ /api/cv/memberships
+├ ƒ /api/cv/projects
+├ ƒ /api/cv/references
+├ ƒ /api/cv/skills
+├ ƒ /api/cv/studio
+├ ƒ /api/cv/volunteer
+├ ƒ /api/employer-enquiries
+├ ƒ /api/jobs/apply
+├ ƒ /api/jobs/report
+├ ƒ /api/jobs/save
+├ ƒ /api/messages/conversations
+├ ƒ /api/messages/conversations/[id]/archive
+├ ƒ /api/messages/conversations/[id]/block
+├ ƒ /api/messages/conversations/[id]/delete
+├ ƒ /api/messages/conversations/[id]/messages
+├ ƒ /api/messages/conversations/[id]/meta
+├ ƒ /api/messages/conversations/[id]/read
+├ ƒ /api/messages/conversations/[id]/report
+├ ƒ /api/messages/conversations/by-application
+├ ƒ /api/messages/invite
+├ ƒ /api/messages/presence
+├ ƒ /api/messages/settings
+├ ƒ /api/messages/templates
+├ ƒ /api/messages/unread-count
+├ ƒ /api/profile
+├ ƒ /api/send-outreach
+├ ƒ /api/stripe/cancel-subscription
+├ ƒ /api/stripe/checkout
+├ ƒ /api/stripe/create-checkout-session
+├ ƒ /api/support
+├ ƒ /api/switch-role
+├ ƒ /api/testimonials/[id]
+├ ƒ /api/webhooks/resend-inbound
+├ ƒ /api/webhooks/stripe
+├ ƒ /applications
+├ ƒ /auth/callback
+├ ƒ /auth/callback/reset
+├ ƒ /auth/reset-confirm
+├ ƒ /auth/signout
+├ ○ /auth/verify-confirm
+├ ƒ /browse-candidates
+├ ƒ /browse-jobs
+├ ƒ /candidates/[id]
+├ ƒ /claim/[token]
+├ ƒ /companies/[id]
+├ ƒ /company-profile
+├ ƒ /dashboard
+├ ○ /employer/login
+├ ƒ /employer/signup
+├ ƒ /employers/hiring-help
+├ ○ /employers/upgrade
+├ ○ /explore
+├ ○ /forgot-password
+├ ƒ /jobs
+├ ƒ /jobs/[id]
+├ ƒ /jobs/[id]/apply
+├ ○ /login
+├ ƒ /members
+├ ƒ /messages
+├ ƒ /messages/[id]
+├ ƒ /messages/new
+├ ƒ /my-listings
+├ ƒ /my-listings/[id]/applicants
+├ ƒ /placement-feedback/[id]
+├ ƒ /post-job
+├ ○ /privacy
+├ ƒ /profile
+├ ƒ /profile/cv
+├ ○ /reset-password
+├ ○ /robots.txt
+├ ƒ /saved
+├ ƒ /settings
+├ ○ /signup
+├ ○ /signup/cv-prompt
+├ ƒ /sitemap.xml
+├ ƒ /success-stories
+├ ○ /terms
+└ ○ /verify-email
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

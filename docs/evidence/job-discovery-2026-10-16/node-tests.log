@@ -1,0 +1,279 @@
+TAP version 13
+# Subtest: admin navigation no longer advertises discovery
+ok 1 - admin navigation no longer advertises discovery
+  ---
+  duration_ms: 3.51875
+  ...
+# Subtest: retired route only checks admin access and redirects; no discovery actions remain
+ok 2 - retired route only checks admin access and redirects; no discovery actions remain
+  ---
+  duration_ms: 0.580666
+  ...
+# Subtest: shared buttons expose brief press and busy feedback
+ok 3 - shared buttons expose brief press and busy feedback
+  ---
+  duration_ms: 8.21875
+  ...
+# Subtest: migration is idempotent
+ok 4 - migration is idempotent
+  ---
+  duration_ms: 1789.511375
+  ...
+# Subtest: transfers company and job access, keeps history, consumes token and disables Auth atomically
+ok 5 - transfers company and job access, keeps history, consumes token and disables Auth atomically
+  ---
+  duration_ms: 25.474625
+  ...
+# Subtest: expired and unknown tokens fail without side effects
+ok 6 - expired and unknown tokens fail without side effects
+  ---
+  duration_ms: 5.623875
+  ...
+# Subtest: default expiry is 30 days; token format and uniqueness are enforced
+ok 7 - default expiry is 30 days; token format and uniqueness are enforced
+  ---
+  duration_ms: 7.615958
+  ...
+# Subtest: rejects seeker, suspended, placeholder and unverified claimants
+ok 8 - rejects seeker, suspended, placeholder and unverified claimants
+  ---
+  duration_ms: 24.719459
+  ...
+# Subtest: rejects an employer already owning a different company
+ok 9 - rejects an employer already owning a different company
+  ---
+  duration_ms: 6.447708
+  ...
+# Subtest: rechecks changed owner and invalidates all other links after a claim
+ok 10 - rechecks changed owner and invalidates all other links after a claim
+  ---
+  duration_ms: 8.459
+  ...
+# Subtest: rolls back ownership and token use when placeholder disabling fails
+ok 11 - rolls back ownership and token use when placeholder disabling fails
+  ---
+  duration_ms: 4.306667
+  ...
+# Subtest: only admins can read or write tokens and only service_role can call either RPC
+ok 12 - only admins can read or write tokens and only service_role can call either RPC
+  ---
+  duration_ms: 5.855667
+  ...
+# Subtest: case-insensitive exact-name duplicate prevention applies to direct inserts and rename
+ok 13 - case-insensitive exact-name duplicate prevention applies to direct inserts and rename
+  ---
+  duration_ms: 4.41575
+  ...
+# Subtest: dashboard loading feedback is decorative and preserves page geometry
+ok 14 - dashboard loading feedback is decorative and preserves page geometry
+  ---
+  duration_ms: 7.789625
+  ...
+# Subtest: root is active only on the root pathname
+ok 15 - root is active only on the root pathname
+  ---
+  duration_ms: 0.809333
+  ...
+# Subtest: dashboard links stay active on nested routes
+ok 16 - dashboard links stay active on nested routes
+  ---
+  duration_ms: 0.468209
+  ...
+# Subtest: modified and non-primary clicks preserve native browser navigation
+ok 17 - modified and non-primary clicks preserve native browser navigation
+  ---
+  duration_ms: 0.123125
+  ...
+# Subtest: a pending destination becomes active immediately
+ok 18 - a pending destination becomes active immediately
+  ---
+  duration_ms: 0.0465
+  ...
+# Subtest: the most specific dashboard destination owns a nested route
+ok 19 - the most specific dashboard destination owns a nested route
+  ---
+  duration_ms: 0.080125
+  ...
+# Subtest: pending feedback clears as soon as the pathname changes
+ok 20 - pending feedback clears as soon as the pathname changes
+  ---
+  duration_ms: 0.047875
+  ...
+# Subtest: the migration itself
+    # Subtest: is idempotent
+    ok 1 - is idempotent
+      ---
+      duration_ms: 8.898209
+      ...
+    1..1
+ok 21 - the migration itself
+  ---
+  duration_ms: 1837.328875
+  type: 'suite'
+  ...
+# Subtest: companies: privileged fields are server-managed
+    # Subtest: an employer cannot grant themselves Pro
+    ok 1 - an employer cannot grant themselves Pro
+      ---
+      duration_ms: 2.055667
+      ...
+    # Subtest: an employer cannot grant themselves a verified badge
+    ok 2 - an employer cannot grant themselves a verified badge
+      ---
+      duration_ms: 0.57775
+      ...
+    # Subtest: an employer cannot extend their own Pro expiry
+    ok 3 - an employer cannot extend their own Pro expiry
+      ---
+      duration_ms: 0.743417
+      ...
+    # Subtest: an employer cannot attach an arbitrary Stripe customer
+    ok 4 - an employer cannot attach an arbitrary Stripe customer
+      ---
+      duration_ms: 0.458625
+      ...
+    # Subtest: an employer can still edit their own profile copy
+    ok 5 - an employer can still edit their own profile copy
+      ---
+      duration_ms: 0.624834
+      ...
+    # Subtest: the Stripe webhook can still set Pro
+    ok 6 - the Stripe webhook can still set Pro
+      ---
+      duration_ms: 0.818125
+      ...
+    1..6
+ok 22 - companies: privileged fields are server-managed
+  ---
+  duration_ms: 5.617083
+  type: 'suite'
+  ...
+# Subtest: companies: input constraints
+    # Subtest: a javascript: website is refused
+    ok 1 - a javascript: website is refused
+      ---
+      duration_ms: 1.149292
+      ...
+    # Subtest: an https website is accepted
+    ok 2 - an https website is accepted
+      ---
+      duration_ms: 0.618291
+      ...
+    # Subtest: an unbounded description is refused
+    ok 3 - an unbounded description is refused
+      ---
+      duration_ms: 0.601625
+      ...
+    1..3
+ok 23 - companies: input constraints
+  ---
+  duration_ms: 2.476125
+  type: 'suite'
+  ...
+# Subtest: job_listings: moderation cannot be skipped
+    # Subtest: an insert is forced to pending_approval and unfeatured
+    ok 1 - an insert is forced to pending_approval and unfeatured
+      ---
+      duration_ms: 2.370625
+      ...
+    # Subtest: an employer cannot approve their own listing
+    ok 2 - an employer cannot approve their own listing
+      ---
+      duration_ms: 1.33775
+      ...
+    # Subtest: an employer cannot feature their own listing
+    ok 3 - an employer cannot feature their own listing
+      ---
+      duration_ms: 1.062834
+      ...
+    # Subtest: an employer can close their own listing
+    ok 4 - an employer can close their own listing
+      ---
+      duration_ms: 0.660458
+      ...
+    # Subtest: a non-material edit leaves an approved listing live
+    ok 5 - a non-material edit leaves an approved listing live
+      ---
+      duration_ms: 1.368958
+      ...
+    # Subtest: rewriting an approved listing sends it back for review
+    ok 6 - rewriting an approved listing sends it back for review
+      ---
+      duration_ms: 0.717583
+      ...
+    # Subtest: a listing cannot be moved to another company
+    ok 7 - a listing cannot be moved to another company
+      ---
+      duration_ms: 1.134792
+      ...
+    1..7
+ok 24 - job_listings: moderation cannot be skipped
+  ---
+  duration_ms: 8.834167
+  type: 'suite'
+  ...
+# Subtest: job_listings: free tier cap
+    # Subtest: a free account is capped at one open listing
+    ok 1 - a free account is capped at one open listing
+      ---
+      duration_ms: 0.695
+      ...
+    # Subtest: a Pro account is not capped
+    ok 2 - a Pro account is not capped
+      ---
+      duration_ms: 1.402459
+      ...
+    1..2
+ok 25 - job_listings: free tier cap
+  ---
+  duration_ms: 2.148541
+  type: 'suite'
+  ...
+# Subtest: rate limiting
+    # Subtest: allows exactly the configured number of calls
+    ok 1 - allows exactly the configured number of calls
+      ---
+      duration_ms: 3.376292
+      ...
+    # Subtest: reports a usable retry_after once exhausted
+    ok 2 - reports a usable retry_after once exhausted
+      ---
+      duration_ms: 0.595458
+      ...
+    # Subtest: buckets are independent
+    ok 3 - buckets are independent
+      ---
+      duration_ms: 0.439417
+      ...
+    # Subtest: an expired window resets the counter
+    ok 4 - an expired window resets the counter
+      ---
+      duration_ms: 0.655958
+      ...
+    1..4
+ok 26 - rate limiting
+  ---
+  duration_ms: 5.140708
+  type: 'suite'
+  ...
+# Subtest: stripe webhook idempotency
+    # Subtest: the same event id cannot be recorded twice
+    ok 1 - the same event id cannot be recorded twice
+      ---
+      duration_ms: 5.096375
+      ...
+    1..1
+ok 27 - stripe webhook idempotency
+  ---
+  duration_ms: 5.212
+  type: 'suite'
+  ...
+1..27
+# tests 44
+# suites 7
+# pass 44
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12345.464334
