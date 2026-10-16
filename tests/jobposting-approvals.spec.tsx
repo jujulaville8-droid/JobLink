@@ -87,9 +87,10 @@ describe.each(candidates)('$companyName owner-attested approval', (candidate) =>
       employmentType: 'FULL_TIME',
       jobLocation: { address: {
         addressCountry: 'AG',
-        addressLocality: candidate.job.company.location.replace(', Antigua', ''),
+        ...(String(candidate.job.location || '').trim() ? { addressLocality: String(candidate.job.location || '').trim().replace(', Antigua', '') } : {}),
       } },
     });
+    if (!String(candidate.job.location || '').trim()) expect(data[0].jobLocation.address).not.toHaveProperty('addressLocality');
     const description = document.createElement('div');
     description.innerHTML = data[0].description;
     const expectedDescription = publicVacancyDescription(candidate.job);

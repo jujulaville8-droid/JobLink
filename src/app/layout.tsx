@@ -90,8 +90,9 @@ export default function RootLayout({
       </head>
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased font-sans`}>
         <AuthProvider>
+          <a href="#main-content" className="skip-link">Skip to main content</a>
           <Navbar />
-          <main className="min-h-screen pb-20 md:pb-0">{children}</main>
+          <main id="main-content" tabIndex={-1} className="min-h-screen pb-20 md:pb-0">{children}</main>
           <Footer />
           <BottomNav />
           <SupportButton />

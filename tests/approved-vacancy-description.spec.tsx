@@ -252,13 +252,23 @@ describe('applicantLocationRequirements remote-job scope', () => {
     },
   );
 
-  it.each(['listing', 'company'])('preserves existing remote behavior when the %s supplies remote location', async source => {
+  it('preserves remote behavior when the listing supplies remote location', async () => {
     db.job = makeJob(vacancies[1]);
-    db.job.location = source === 'listing' ? 'Remote, Antigua' : '';
-    db.job.company.location = source === 'company' ? 'Remote, Antigua' : 'Vista, Antigua';
+    db.job.location = 'Remote, Antigua';
+    db.job.company.location = 'Vista, Antigua';
     const { schema } = await publicRepresentations();
     expect(schema.jobLocationType).toBe('TELECOMMUTE');
     expect(schema.applicantLocationRequirements).toEqual({ '@type': 'Country', name: 'Antigua and Barbuda' });
     expect(schema.jobLocation.address).toMatchObject({ addressLocality: 'Remote', addressCountry: 'AG' });
+  });
+
+  it('does not infer remote work from the company location when the listing location is missing', async () => {
+    db.job = makeJob(vacancies[1]);
+    db.job.location = '';
+    db.job.company.location = 'Remote, Antigua';
+    const { schema } = await publicRepresentations();
+    expect(schema).not.toHaveProperty('jobLocationType');
+    expect(schema).not.toHaveProperty('applicantLocationRequirements');
+    expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
   });
 });

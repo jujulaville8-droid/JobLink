@@ -1,7 +1,7 @@
 "use client";
 
 import { jobCategoryFilter } from "@/lib/job-category";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { INDUSTRIES, JOB_TYPE_LABELS, JobType } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export default function JobFilters() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const filterId = useId();
 
   const currentCategory = jobCategoryFilter(searchParams.get("category") || undefined) || "";
   const currentJobTypes = searchParams.getAll("job_type");
@@ -64,14 +65,15 @@ export default function JobFilters() {
   const hasFilters =
     currentCategory || currentJobTypes.length > 0;
 
-  const filterContent = (
+  const filterContent = (surface: string) => (
     <div className="space-y-6">
       {/* Category */}
       <div>
-        <label className="block text-sm font-semibold text-text mb-2">
+        <label htmlFor={`${filterId}-${surface}-industry`} className="block text-sm font-semibold text-text mb-2">
           Industry / Category
         </label>
         <select
+          id={`${filterId}-${surface}-industry`}
           value={currentCategory}
           onChange={(e) => updateParams({ category: e.target.value || null })}
           className="input-base"
@@ -86,10 +88,10 @@ export default function JobFilters() {
       </div>
 
       {/* Job Type */}
-      <div>
-        <label className="block text-sm font-semibold text-text mb-2">
+      <fieldset>
+        <legend className="block text-sm font-semibold text-text mb-2">
           Job Type
-        </label>
+        </legend>
         <div className="space-y-2">
           {JOB_TYPES.map(({ value, label }) => (
             <label
@@ -106,7 +108,7 @@ export default function JobFilters() {
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Clear all */}
       {hasFilters && (
@@ -126,6 +128,8 @@ export default function JobFilters() {
       <div className="lg:hidden mb-4">
         <button
           onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={`${filterId}-mobile`}
           className="flex w-full items-center justify-between rounded-[--radius-button] border border-border bg-white px-4 py-3 text-sm font-medium text-text hover:border-primary/30 transition-colors"
         >
           <span className="flex items-center gap-2">
@@ -162,8 +166,8 @@ export default function JobFilters() {
           </svg>
         </button>
         {open && (
-          <div className="mt-2 rounded-[--radius-button] border border-border bg-white p-4 animate-fade-up">
-            {filterContent}
+          <div id={`${filterId}-mobile`} className="mt-2 rounded-[--radius-button] border border-border bg-white p-4 animate-fade-up">
+            {filterContent("mobile")}
           </div>
         )}
       </div>
@@ -172,7 +176,7 @@ export default function JobFilters() {
       <aside className="hidden lg:block w-64 shrink-0">
         <div className="sticky top-20 rounded-[--radius-card] border border-border bg-white p-5">
           <h2 className="font-display text-base text-text mb-4">Filters</h2>
-          {filterContent}
+          {filterContent("desktop")}
         </div>
       </aside>
     </>

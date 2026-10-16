@@ -13,6 +13,7 @@ import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
 import ReportListingButton from "@/components/ReportListingButton";
+import { normalizeJobLocation } from "@/lib/job-location";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -260,7 +261,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Only send a locality we actually have. A bare "Antigua" / "Antigua and
   // Barbuda" is the country, not a town, and a hardcoded default town/parish
   // would be false location data under Google's job posting policies.
-  const rawLocality = (job.location || company?.location || "").trim();
+  const rawLocality = normalizeJobLocation(job.location);
   const addressLocality = rawLocality
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")
@@ -499,7 +500,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
-                  {job.location}
+                  {rawLocality || "Location not provided"}
                 </span>
 
                 {/* Employment type */}
