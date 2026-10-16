@@ -598,7 +598,7 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     db.job!.title = 'Brewmaster';
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy with FULL_TIME and the Oct 16 deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with FULL_TIME and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -608,7 +608,7 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
     expect(schema.employmentType).toBe('FULL_TIME');
-    expect(schema.validThrough).toBe('2026-10-16');
+    expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
   });
@@ -622,8 +622,10 @@ describe('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b October 16 North Sound Brewery va
     db.job!.company.id = db.job!.company_id;
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   });
-  it('retires the markup after the Antigua deadline date', async () => {
+  it('stays live after October 16 because the owner removed the deadline and no closure is recorded', async () => {
     vi.setSystemTime(new Date('2026-10-17T05:00:00Z'));
-    expect((await schemas()).map(schema => schema['@type'])).not.toContain('JobPosting');
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });

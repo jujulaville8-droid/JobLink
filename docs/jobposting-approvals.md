@@ -283,9 +283,11 @@ claimed. No email content is copied here.
 | --- | --- | --- | --- | --- |
 | North Sound Brewery (Antigua Distillery) — Brewmaster | `7bd1f5b0-4da5-4177-b4c5-3cacc65b904b` | `07533d6c-77cc-4e6e-bdde-14d4fd3923a9` | 2026-10-16 | Full Time, as stated on the employer's public Dadli Jobs posting |
 
-The October 16 date-only deadline from the public Dadli Jobs posting
-(https://dadlijobs.com/job/brewmaster/) is recorded in `public-job-deadlines.ts`
-and emitted as `validThrough`; markup retires after that date in Antigua. No
-closure entry is added (no automatic job closing), so the page stays open until
-Julian approves closing it. Stored listing content, status and the application
-route are unchanged; no database writes.
+The public Dadli Jobs posting (https://dadlijobs.com/job/brewmaster/) listed an
+October 16 date-only deadline, which PR #67 recorded in `public-job-deadlines.ts`.
+On October 16, 2026 Julian removed that deadline, and
+[PR #68](https://github.com/jujulaville8-droid/JobLink/pull/68) deleted the entry,
+so no `validThrough` is emitted and the markup is treated like other no-deadline
+jobs. No closure entry is added (no automatic job closing), so the page stays
+open until Julian approves closing it. Stored listing content, status and the
+application route are unchanged; no database writes.
