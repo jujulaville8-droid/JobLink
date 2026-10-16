@@ -716,10 +716,10 @@ export default async function JobDetailPage({ params }: PageProps) {
         {/* Spacer for mobile sticky bar + bottom nav */}
         <div className="h-36 md:h-20 lg:hidden" />
 
-        {/* Mobile sticky apply button — sits above bottom nav on mobile */}
-        <div data-support-obstruction className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
-          <ApplyButton jobId={job.id} state={applyState} />
-        </div>
+      </div>
+      {/* Keep fixed UI outside the transformed entrance animation. */}
+      <div data-support-obstruction data-mobile-apply className="fixed bottom-[max(4.5rem,calc(4rem+env(safe-area-inset-bottom)))] md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
+        <ApplyButton jobId={job.id} state={applyState} />
       </div>
     </div>
   );
