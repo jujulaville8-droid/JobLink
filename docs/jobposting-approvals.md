@@ -228,9 +228,9 @@ is removed from the sitemap, browse/category results, the homepage and company
 pages.
 
 - Top Bun — Cook (`e03a2b8c-f69b-42bb-bc43-13a5d0917291`): closed now (after October 3).
-- Street Blends — Barista Prep Assistants (`03aeffa0-f680-46b2-b5eb-ea3891d0ce44`): closes after October 15, 2026.
+- Street Blends — Barista Prep Assistants: no longer auto-closes. The closure entry was removed in PR #59; jobs close only with Julian's approval.
 
-Setting either listing's stored status to `closed` from the admin tools makes
+Setting a listing's stored status to `closed` from the admin tools makes
 the page a real 404; the entry can then be removed.
 
 ## October 14, 2026 vacancy-scoped employer approvals (Seagull Inflatables, Antigua's Donkey Sanctuary)
@@ -248,8 +248,9 @@ claimed. No email content is copied here.
 
 Seagull Inflatables keeps the October 18 date-only deadline from its public
 Youth On The Move Facebook posting, recorded in `public-job-deadlines.ts` and
-emitted as `validThrough`; markup retires after that date in Antigua, matching
-the `job-closures.ts` entry from PR #54. The Donkey Sanctuary posting published
+emitted as `validThrough`; markup retires after that date in Antigua. The
+`job-closures.ts` entry from PR #54 was removed in PR #59, so the page stays
+open until Julian approves closing it. The Donkey Sanctuary posting published
 no deadline, so no `validThrough` is emitted. Stored listing content, status and
 the application route are unchanged; no database writes.
 
