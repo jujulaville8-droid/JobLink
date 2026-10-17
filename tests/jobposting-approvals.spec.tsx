@@ -671,3 +671,45 @@ describe('e080f894-4e7f-48b7-b39a-1a274f52fd97 October 16 Super Service Center v
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
+
+describe("cead1cc1-636b-438b-9c8a-bd39fd02c045 October 16 The Tailor's Daughter vacancy-scoped approval", () => {
+  const jobId = 'cead1cc1-636b-438b-9c8a-bd39fd02c045';
+  const companyId = 'bda01a15-de79-41fc-b10e-5c4126115860';
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-17T03:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = "The Tailor's Daughter Inc.";
+    db.job!.title = 'Part-Time Retail Sales Associate';
+    db.job!.job_type = 'part_time';
+  });
+  it('emits JobPosting for only the recorded vacancy with PART_TIME and no deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn: '2026-10-16', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/71',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema.employmentType).toBe('PART_TIME');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
