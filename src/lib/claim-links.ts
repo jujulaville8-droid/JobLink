@@ -1,3 +1,5 @@
+import { getApplicationReturnTo, getSafeReturnTo } from '@/lib/return-to'
+
 // 32 random bytes encoded with base64url, without padding.
 export const CLAIM_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/
 export const CLAIM_REQUIRED_MESSAGE = 'This company already has a listing on JobLink. Use your claim link or contact employers@joblinkantigua.com.'
@@ -8,7 +10,12 @@ export function claimReturnTo(value: unknown): string | null {
 
 /** Only these onboarding destinations may survive authentication. */
 export function onboardingReturnTo(value: unknown): string | null {
-  return value === '/members' ? value : claimReturnTo(value)
+  if (typeof value !== 'string') return null
+  const safe = getSafeReturnTo(value)
+  if (!safe) return null
+  return safe === '/members' || safe.split(/[?#]/, 1)[0] === '/jobs'
+    ? safe
+    : claimReturnTo(safe) ?? getApplicationReturnTo(safe)
 }
 
 export function withReturnTo(path: string, destination: unknown): string {

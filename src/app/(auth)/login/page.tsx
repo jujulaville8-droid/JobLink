@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getSafeReturnTo } from '@/lib/return-to'
+import { getApplicationReturnTo, getSafeReturnTo } from '@/lib/return-to'
+import { withReturnTo } from '@/lib/claim-links'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
@@ -99,7 +100,7 @@ export default function LoginPage() {
       console.log('[login] Unverified user, redirecting to verify-email')
       setLoading(false)
       // Full page nav to avoid AuthRedirect race
-      window.location.href = returnTo === '/members' ? '/verify-email?returnTo=%2Fmembers' : '/verify-email'
+      window.location.assign(withReturnTo('/verify-email', returnTo))
       return
     }
 
@@ -112,7 +113,7 @@ export default function LoginPage() {
     } else if (userRole === 'admin') {
       dest = '/dashboard'
     }
-    window.location.href = dest
+    window.location.assign(dest)
   }
 
   async function handleResendVerification() {
@@ -124,7 +125,9 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient()
-      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email })
+      const { error: resendError } = await supabase.auth.resend({ type: 'signup', email,
+        options: { emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', returnTo)}` },
+      })
 
       if (resendError) {
         console.error('[login] Resend failed', { email, error: resendError.message })
@@ -153,6 +156,8 @@ export default function LoginPage() {
       <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-8">
         Welcome back
       </h1>
+
+      {getApplicationReturnTo(returnTo) && <p className="mb-6 text-center text-sm text-text-light">Sign in or create an account to continue your job application.</p>}
 
       {verified && (
         <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-[--radius-input] px-4 py-3 text-center">
@@ -294,7 +299,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
-          href={returnTo === '/members' ? '/signup?role=employer&returnTo=%2Fmembers' : '/signup'}
+          href={withReturnTo(returnTo === '/members' ? '/signup?role=employer' : getApplicationReturnTo(returnTo) ? '/signup?role=seeker' : '/signup', returnTo)}
           className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one

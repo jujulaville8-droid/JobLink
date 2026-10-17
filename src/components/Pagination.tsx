@@ -36,14 +36,15 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
   for (let i = start; i <= end; i++) pages.push(i);
 
   const baseBtn =
-    "inline-flex items-center justify-center rounded-xl text-sm font-medium transition-colors h-9 min-w-[36px] px-3";
+    "inline-flex items-center justify-center rounded-xl text-sm font-medium transition-colors h-11 min-w-11 px-2";
 
   return (
-    <nav className="flex items-center justify-center gap-1.5 mt-8" aria-label="Pagination">
+    <nav className="flex items-center justify-center gap-0.5 sm:gap-1.5 mt-8 flex-wrap" aria-label="Job results pages">
       {/* Previous */}
       {currentPage > 1 ? (
         <Link
           href={buildHref(currentPage - 1)}
+          aria-label="Previous page"
           className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,7 +52,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
           </svg>
         </Link>
       ) : (
-        <span className={`${baseBtn} border border-border bg-white text-text-muted/40 cursor-not-allowed`}>
+        <span aria-hidden="true" className={`${baseBtn} border border-border bg-white text-text-muted/40 cursor-not-allowed`}>
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
@@ -61,7 +62,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {/* First page + ellipsis */}
       {start > 1 && (
         <>
-          <Link href={buildHref(1)} className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}>
+          <Link href={buildHref(1)} aria-label="Page 1" className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}>
             1
           </Link>
           {start > 2 && <span className="text-text-muted px-1">...</span>}
@@ -73,6 +74,8 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
         <Link
           key={p}
           href={buildHref(p)}
+          aria-label={`Page ${p}`}
+          aria-current={p === currentPage ? "page" : undefined}
           className={`${baseBtn} ${
             p === currentPage
               ? "bg-primary text-white border border-primary shadow-sm"
@@ -87,7 +90,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {end < totalPages && (
         <>
           {end < totalPages - 1 && <span className="text-text-muted px-1">...</span>}
-          <Link href={buildHref(totalPages)} className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}>
+          <Link href={buildHref(totalPages)} aria-label={`Page ${totalPages}`} className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}>
             {totalPages}
           </Link>
         </>
@@ -97,6 +100,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
       {currentPage < totalPages ? (
         <Link
           href={buildHref(currentPage + 1)}
+          aria-label="Next page"
           className={`${baseBtn} border border-border bg-white text-text-light hover:text-primary hover:border-primary/30`}
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -104,7 +108,7 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
           </svg>
         </Link>
       ) : (
-        <span className={`${baseBtn} border border-border bg-white text-text-muted/40 cursor-not-allowed`}>
+        <span aria-hidden="true" className={`${baseBtn} border border-border bg-white text-text-muted/40 cursor-not-allowed`}>
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>

@@ -83,13 +83,16 @@ export default async function JobResults({
           No {searchLabel} jobs right now
         </h3>
         <p className="mt-2 text-sm text-text-light max-w-md mx-auto">
-          Be the first to know when one posts. We&apos;ll email you the moment a matching job goes live in Antigua.
+          {searchParams.location
+            ? "No jobs match the recorded location and selected filters. Some listings do not provide a work location. Try another area or clear the location."
+            : "Set up an email alert for new jobs using keywords, industry, or one job type."}
         </p>
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <AlertToggle
             query={searchParams.q}
             category={searchParams.category}
             jobType={searchParams.job_type}
+            location={searchParams.location}
             loggedIn={!!user}
             emphasis
           />
@@ -150,6 +153,7 @@ export default async function JobResults({
           query={searchParams.q}
           category={searchParams.category}
           jobType={searchParams.job_type}
+          location={searchParams.location}
           loggedIn={!!user}
         />
       </div>
