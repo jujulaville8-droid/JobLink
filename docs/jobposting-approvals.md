@@ -307,3 +307,19 @@ claimed. No email content beyond the approval is copied here.
 The posting published no deadline, so no `validThrough` is emitted and no
 closure entry is added (no automatic job closing). Stored listing content,
 status and the application route are unchanged; no database writes.
+
+## October 16, 2026 vacancy-scoped owner attestation (The Tailor's Daughter Inc.)
+
+[PR #71](https://github.com/jujulaville8-droid/JobLink/pull/71) records an October 16, 2026 (10:57 PM ET) attestation from site
+owner Julian Laville that he obtained the business's permission directly for
+JobLink to post this vacancy, which was posted at his request. The permission
+covers one vacancy only and lives in `EMPLOYER_APPROVED_JOBS`, bound to both
+IDs. No company-wide permission is claimed. No contact details are recorded.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| The Tailor's Daughter Inc. — Part-Time Retail Sales Associate (V.C. Bird International Airport) | `cead1cc1-636b-438b-9c8a-bd39fd02c045` | `bda01a15-de79-41fc-b10e-5c4126115860` | 2026-10-16 | Part Time, as stated in the employer's post |
+
+The posting published no deadline, so no `validThrough` is emitted and no
+closure entry is added (no automatic job closing). Stored listing content,
+status and the application route are unchanged; no database writes.

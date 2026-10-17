@@ -45,6 +45,15 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Julian Laville (site owner) obtained The Tailor's Daughter Inc.'s permission directly and
+  // attested it on 2026-10-16 (ET) for this Part-Time Retail Sales Associate vacancy, posted
+  // at his request. Part Time per the employer's own post.
+  "cead1cc1-636b-438b-9c8a-bd39fd02c045": {
+    companyId: "bda01a15-de79-41fc-b10e-5c4126115860",
+    companyName: "The Tailor's Daughter Inc.",
+    attestedOn: "2026-10-16",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/71",
+  },
   // Super Service Center replied yes on 2026-10-16 (ET) by email reply to
   // jobs@joblinkantigua.com to posting this Tire Technician vacancy. Full Time is an
   // unconfirmed placeholder.
