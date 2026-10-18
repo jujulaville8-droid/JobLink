@@ -32,7 +32,7 @@ export default function ResumeWritingAdmin(){
 function DocumentReview({order,busy,refresh,publish}:{order:ResumeWritingOrder;busy:boolean;refresh:()=>void;publish:(body:unknown)=>Promise<void>}){
   const files=(order.files??[]).filter(f=>f.revision_number===order.revision_count&&!f.published_at);
   const [pdf,setPdf]=useState(files.find(f=>f.kind==='pdf')?.id??''),[editable,setEditable]=useState(files.find(f=>f.kind==='editable')?.id??''),[reviewed,setReviewed]=useState(false);
-  return <section className="space-y-4" aria-label="Human document review"><h3 className="font-semibold">Prepare and review documents</h3><p>PDF and DOCX only, up to 5 MB each. Files stay private until this pair is published. Never invent experience or qualifications.</p>
+  return <section className="space-y-4" aria-label="Human document review"><h3 className="font-semibold">Prepare and review documents</h3><p>PDF and DOCX only, up to 3 MB each. Files stay private until this pair is published. Never invent experience or qualifications.</p>
     <Upload order={order} kind="pdf" refresh={refresh}/><Upload order={order} kind="editable" refresh={refresh}/>
     <FileChoice label="Reviewed PDF" files={files.filter(f=>f.kind==='pdf')} value={pdf} choose={value=>{setPdf(value);setReviewed(false);}} orderId={order.id}/>
     <FileChoice label="Reviewed editable DOCX" files={files.filter(f=>f.kind==='editable')} value={editable} choose={value=>{setEditable(value);setReviewed(false);}} orderId={order.id}/>

@@ -7,7 +7,7 @@ vi.mock('server-only',()=>({}));vi.mock('@/lib/api-auth',()=>({requireVerifiedUs
 vi.mock('@/lib/supabase/admin',()=>({createAdminClient:()=>({from:m.from,rpc:m.rpc,storage:{getBucket:m.bucket,from:()=>({upload:m.upload,download:m.download})}})}));
 vi.mock('@/lib/resume-writing-stripe',async()=>({...await vi.importActual<typeof import('@/lib/resume-writing-stripe')>('@/lib/resume-writing-stripe'),getResumeWritingStripe:()=>({})}));
 vi.mock('@/lib/resume-writing-payment',()=>({reconcileResumeWritingSession:m.reconcile,resumeWritingPayment:{accountId:'fixture'}}));
-import {validateWritingFile,writingHash,writingMime,writingMultipart} from '@/lib/resume-writing-files';
+import {validateWritingFile,writingFileLimit,writingHash,writingMime,writingMultipart} from '@/lib/resume-writing-files';
 import {POST as upload} from '@/app/api/admin/resume-writing/[id]/files/route';
 import {GET as download} from '@/app/api/resume-writing/orders/[id]/files/[fileId]/route';
 import {PATCH as publish} from '@/app/api/admin/resume-writing/[id]/route';
@@ -24,8 +24,14 @@ beforeEach(()=>{
 });
 afterEach(()=>vi.unstubAllEnvs());
 describe('bounded actual document formats',()=>{
-  it('accepts synthetic PDF and actual DOCX structure, rejects renamed bytes and malformed ZIP',()=>{expect(()=>validateWritingFile(syntheticPdf,'pdf')).not.toThrow();expect(()=>validateWritingFile(syntheticDocx(),'editable')).not.toThrow();expect(()=>validateWritingFile(Buffer.from('not pdf'),'pdf')).toThrow();expect(()=>validateWritingFile(syntheticPdf,'editable')).toThrow();const zip=syntheticDocx();zip.writeUInt16LE(2000,zip.length-12);expect(()=>validateWritingFile(zip,'editable')).toThrow();expect(()=>validateWritingFile(Buffer.alloc(5242881),'pdf')).toThrow();});
-  it('rejects cross-origin and oversized streaming multipart bodies',async()=>{await expect(writingMultipart(multipart(syntheticPdf,'pdf','https://evil.test'))).rejects.toThrow();const request=new Request('https://joblink.test/upload',{method:'POST',headers:{origin:'https://joblink.test','content-type':'multipart/form-data; boundary=fixture'},body:new Uint8Array(5*1024*1024+128*1024+1)});await expect(writingMultipart(request)).rejects.toThrow('5 MB');});
+  it('keeps multipart requests and authenticated downloads below the hosting payload cap',()=>{
+    expect(writingFileLimit+128*1024).toBeLessThan(4_500_000);
+    const max=Buffer.alloc(writingFileLimit,32);syntheticPdf.copy(max);Buffer.from('%%EOF').copy(max,max.length-5);
+    expect(()=>validateWritingFile(max,'pdf')).not.toThrow();
+    expect(()=>validateWritingFile(Buffer.concat([max,Buffer.from(' ')]),'pdf')).toThrow('3 MB');
+  });
+  it('accepts synthetic PDF and actual DOCX structure, rejects renamed bytes and malformed ZIP',()=>{expect(()=>validateWritingFile(syntheticPdf,'pdf')).not.toThrow();expect(()=>validateWritingFile(syntheticDocx(),'editable')).not.toThrow();expect(()=>validateWritingFile(Buffer.from('not pdf'),'pdf')).toThrow();expect(()=>validateWritingFile(syntheticPdf,'editable')).toThrow();const zip=syntheticDocx();zip.writeUInt16LE(2000,zip.length-12);expect(()=>validateWritingFile(zip,'editable')).toThrow();expect(()=>validateWritingFile(Buffer.alloc(3145729),'pdf')).toThrow();});
+  it('rejects cross-origin and oversized streaming multipart bodies',async()=>{await expect(writingMultipart(multipart(syntheticPdf,'pdf','https://evil.test'))).rejects.toThrow();const request=new Request('https://joblink.test/upload',{method:'POST',headers:{origin:'https://joblink.test','content-type':'multipart/form-data; boundary=fixture'},body:new Uint8Array(3*1024*1024+128*1024+1)});await expect(writingMultipart(request)).rejects.toThrow('3 MB');});
 });
 describe('private document lifecycle HTTP boundaries',()=>{
   it('requires admin before reading upload bytes and never exposes storage publicly',async()=>{m.admin.mockResolvedValue({error:Response.json({error:'Forbidden'},{status:403})});expect((await upload(multipart(),params)).status).toBe(403);expect(m.upload).not.toHaveBeenCalled();});

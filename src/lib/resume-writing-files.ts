@@ -5,13 +5,13 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { writingSameOrigin } from './resume-writing-server';
 
 export const writingBucket = 'resume-writing-private';
-export const writingFileLimit = 5 * 1024 * 1024;
+export const writingFileLimit = 3 * 1024 * 1024;
 export const writingMime = { pdf:'application/pdf',editable:'application/vnd.openxmlformats-officedocument.wordprocessingml.document' } as const;
 export const writingHash = (bytes:Uint8Array)=>createHash('sha256').update(bytes).digest('hex');
 
 // Inspect bounded actual bytes; a renamed arbitrary ZIP is not an editable résumé.
 export function validateWritingFile(bytes:Buffer,kind:'pdf'|'editable') {
-  if (!bytes.length || bytes.length>writingFileLimit) throw new Error('Choose a file up to 5 MB.');
+  if (!bytes.length || bytes.length>writingFileLimit) throw new Error('Choose a file up to 3 MB.');
   if (kind==='pdf') {
     if (!/^%PDF-1\.[0-9]/.test(bytes.subarray(0,12).toString('ascii')) || !bytes.subarray(-1024).includes(Buffer.from('%%EOF'))) throw new Error('Choose a valid PDF.');
     return;
@@ -41,10 +41,10 @@ export function validateWritingFile(bytes:Buffer,kind:'pdf'|'editable') {
 export async function writingMultipart(request:Request) {
   if(!writingSameOrigin(request) || !request.headers.get('content-type')?.startsWith('multipart/form-data;'))throw new Error('Use the upload form.');
   const limit=writingFileLimit+128*1024;
-  if(Number(request.headers.get('content-length'))>limit)throw new Error('Choose a file up to 5 MB.');
+  if(Number(request.headers.get('content-length'))>limit)throw new Error('Choose a file up to 3 MB.');
   const reader=request.body?.getReader();if(!reader)throw new Error('Choose a file.');
   const chunks:Uint8Array[]=[];let size=0;
-  try { while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>limit){await reader.cancel();throw new Error('Choose a file up to 5 MB.');}chunks.push(part.value);} }
+  try { while(true){const part=await reader.read();if(part.done)break;size+=part.value.length;if(size>limit){await reader.cancel();throw new Error('Choose a file up to 3 MB.');}chunks.push(part.value);} }
   finally{reader.releaseLock();}
   return new Response(Buffer.concat(chunks),{headers:{'content-type':request.headers.get('content-type')!}}).formData();
 }

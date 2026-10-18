@@ -34,5 +34,5 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
     const saved=await db.rpc('register_resume_writing_file',{p_id:metadata.data.id,p_order_id:id,p_actor_id:auth.user.id,p_version:version,p_kind:kind,p_sha256:hash,p_size:bytes.length,p_mime:writingMime[kind]});
     if(saved.error || !saved.data)return writingJson({error:'Private upload was not registered. Refresh before retrying; nothing was published.'},409);
     return writingJson({file:saved.data},201);
-  } catch{return writingJson({error:'Upload unavailable. Use a valid PDF or DOCX up to 5 MB; nothing was published.'},400);}
+  } catch{return writingJson({error:'Upload unavailable. Use a valid PDF or DOCX up to 3 MB; nothing was published.'},400);}
 }

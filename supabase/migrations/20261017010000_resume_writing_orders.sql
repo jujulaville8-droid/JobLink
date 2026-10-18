@@ -213,7 +213,7 @@ CREATE TABLE public.resume_writing_files (
   revision_number integer NOT NULL CHECK(revision_number BETWEEN 0 AND 1),
   object_path text NOT NULL UNIQUE,
   sha256 text NOT NULL CHECK(sha256 ~ '^[a-f0-9]{64}$'),
-  size integer NOT NULL CHECK(size BETWEEN 1 AND 5242880),
+  size integer NOT NULL CHECK(size BETWEEN 1 AND 3145728),
   mime text NOT NULL,
   published_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -225,7 +225,7 @@ REVOKE ALL ON public.resume_writing_files FROM PUBLIC,anon,authenticated;
 GRANT ALL ON public.resume_writing_files TO service_role;
 CREATE INDEX resume_writing_files_order ON public.resume_writing_files(order_id,revision_number);
 INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
-VALUES('resume-writing-private','resume-writing-private',false,5242880,ARRAY['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+VALUES('resume-writing-private','resume-writing-private',false,3145728,ARRAY['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
 ON CONFLICT(id) DO NOTHING;
 DO $$ BEGIN
   IF EXISTS(SELECT 1 FROM storage.buckets WHERE id='resume-writing-private' AND public) THEN RAISE EXCEPTION 'resume_bucket_must_be_private'; END IF;
