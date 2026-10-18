@@ -11,6 +11,7 @@ beforeEach(() => {
   sessionStorage.clear();
   stored = structuredClone(resumeFixture); failSave = false; failLoad = false;
   vi.stubGlobal('fetch', vi.fn(async (_url: string, init?: RequestInit) => {
+    if (_url==='/api/resume-writing/orders') return Response.json({config:{intakeEnabled:false,checkoutEnabled:false,terms:null},orders:[]});
     if (!init?.method) return Response.json(failLoad ? { error: 'Could not load your resume.' } : stored, { status: failLoad ? 503 : 200 });
     if (failSave) return Response.json({ error: 'Save failed. Your draft is still here.' }, { status: 503 });
     const body = JSON.parse(String(init.body));
@@ -22,24 +23,26 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('premium resume workspace', () => {
-  it('offers an optional paid writing service through a free consultation without saving or losing the draft', async () => {
+  it('opens and closes the purchase intake without saving or losing the free builder draft', async () => {
     const user = userEvent.setup();
     render(<ResumeStudio />);
     const summary = await screen.findByLabelText('Professional summary');
-    fireEvent.change(summary, { target: { value: 'Keep my unsaved consultation draft' } });
-    const link = screen.getByRole('link', { name: 'Book a free résumé consultation (opens in a new tab)' });
-    expect(link.getAttribute('href')).toBe('https://calendly.com/qqwebsitesolutions/qq-solutions-consultation');
-    expect(link.getAttribute('target')).toBe('_blank');
-    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(screen.getByText(/Résumé writing is an optional paid service/)).toBeTruthy();
+    fireEvent.change(summary, { target: { value: 'Keep my unsaved builder draft' } });
     expect(screen.getByText(/The builder and job applications remain free/)).toBeTruthy();
-    // Browser verification covers the new tab; keep this unit test offline.
-    link.addEventListener('click', event => event.preventDefault(), { once: true });
-    await user.click(link);
-    expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved consultation draft');
+    expect(screen.queryByRole('link', { name: /consultation/ })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Buy a résumé · EC$50' }));
+    expect(screen.getByRole('form', { name: 'Résumé writing intake' }).closest('form')?.parentElement?.closest('form')).toBeNull();
+    await user.type(screen.getByRole('textbox', { name: /Name for your résumé/ }), 'Synthetic Seeker');
+    await user.click(screen.getByRole('button', { name: 'Keep using the free builder' }));
+    expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
     expect(screen.getByRole('status').textContent).toContain('Unsaved changes');
     expect((screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement).disabled).toBe(false);
     expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
+    await user.click(screen.getByRole('button', { name: /^Work experience/ }));
+    await user.click(screen.getByRole('button', { name: /^Summary/ }));
+    await user.click(screen.getByRole('button', { name: 'Buy a résumé · EC$50' }));
+    expect((screen.getByRole('textbox', { name: /Name for your résumé/ }) as HTMLInputElement).value).toBe('Synthetic Seeker');
+    expect((screen.getByLabelText('Professional summary') as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
   });
   it('keeps the application destination on explicit profile links from the resume builder', async () => {
     const applicationPath = '/jobs/123e4567-e89b-42d3-a456-426614174000/apply';

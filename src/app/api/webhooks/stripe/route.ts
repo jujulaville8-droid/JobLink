@@ -3,6 +3,8 @@ import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+import { handleResumeWritingStripeEvent } from '@/lib/resume-writing-payment'
+import { getResumeWritingStripe, getResumeWritingWebhookSecret, resumeWritingPolicy } from '@/lib/resume-writing-stripe'
 
 /** Helper: get current_period_end from the first subscription item */
 function getSubscriptionPeriodEnd(sub: Stripe.Subscription): string {
@@ -71,8 +73,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
   }
 
+  // Independently signed résumé events use the selected sandbox/live client.
+  // They can never grant employer entitlements, even for an unrelated event.
+  let resumeEvent: Stripe.Event | undefined
+  let resumeConfigured = false
+  if (process.env.RESUME_WRITING_ENABLED === 'true') {
+    try {
+      const secret = getResumeWritingWebhookSecret()
+      resumeConfigured = true
+      resumeEvent = Stripe.webhooks.constructEvent(body, signature, secret)
+    } catch { /* An employer signature is verified separately below. */ }
+  }
+  if (resumeEvent) {
+    if (resumeEvent.livemode !== resumeWritingPolicy().livemode) return NextResponse.json({ error: 'Payment mode mismatch' }, { status: 400 })
+    try {
+      const handled = await handleResumeWritingStripeEvent(() => getResumeWritingStripe(), createAdminClient(), resumeEvent)
+      return NextResponse.json({ received: true, ignored: !handled })
+    } catch { return NextResponse.json({ error: 'Resume payment reconciliation unavailable' }, { status: 503 }) }
+  }
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
   if (!webhookSecret) {
+    if (resumeConfigured) return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     // Previously this was `process.env.STRIPE_WEBHOOK_SECRET!`, so a missing
     // secret surfaced as an opaque signature failure on every delivery.
     console.error('[stripe-webhook] STRIPE_WEBHOOK_SECRET is not configured')
@@ -92,6 +114,16 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createAdminClient()
+
+  // Resume orders have their own atomic event/receipt/order transaction. Never
+  // enter the employer entitlement flow or claim the legacy event first.
+  try {
+    if (await handleResumeWritingStripeEvent(() => getResumeWritingStripe(), supabase, event)) {
+      return NextResponse.json({ received: true })
+    }
+  } catch {
+    return NextResponse.json({ error: 'Resume payment reconciliation unavailable' }, { status: 503 })
+  }
 
   try {
     const isNewEvent = await claimEvent(supabase, event)
