@@ -31,3 +31,14 @@ describe('internal return destinations', () => {
     }
   });
 });
+
+describe('purchase return destinations',()=>{
+  it('keeps opaque order and application context while removing arbitrary or personal query fields',async()=>{
+    const {getResumeWritingReturnTo}=await import('@/lib/return-to');
+    const order='20000000-0000-4000-8000-000000000001';
+    expect(getResumeWritingReturnTo(`/resume-writing?order=${order}&email=private@example.com&application=${encodeURIComponent(applicationPath)}`)).toBe(`/resume-writing?order=${order}&application=${encodeURIComponent(applicationPath)}`);
+    expect(getResumeWritingReturnTo('/resume-writing?order=invalid&application=https://evil.example')).toBe('/resume-writing');
+    expect(getResumeWritingReturnTo('//evil.example/resume-writing')).toBeNull();
+    expect(getResumeWritingReturnTo('/resume-writing/extra')).toBeNull();
+  });
+});

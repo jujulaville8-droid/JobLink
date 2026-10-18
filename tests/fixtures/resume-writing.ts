@@ -6,8 +6,8 @@ export const writingOther = '10000000-0000-4000-8000-000000000002';
 export const writingAdmin = '10000000-0000-4000-8000-000000000003';
 export const writingId = '20000000-0000-4000-8000-000000000001';
 export const writingTerms: WritingTerms = { version:'fixture-v1', delivery:'Fixture delivery terms; no production timing promise.',revision:'Fixture revision terms.',refund:'Fixture refund terms.',privacy:'Fixture privacy terms.' };
-export const writingIntake = { name:'Synthetic Seeker',email:'synthetic@example.com',role:'Shop assistant',education:'',skills:'Organising school projects',experience:'' };
-export const writingOrder: ResumeWritingOrder = { id:writingId,intake:writingIntake,terms:writingTerms,payment_status:'unpaid',checkout_status:'pending',fulfillment_status:'awaiting_payment',payment_review_required:false,revision_count:0,version:0,created_at:'2026-10-17T00:00:00Z' };
+export const writingIntake = { name:'Synthetic Seeker',email:'synthetic@example.com',role:'Shop assistant',education:'',skills:'Organising school projects',experience:'',experienceType:'none' as const };
+export const writingOrder: ResumeWritingOrder = { id:writingId,intake:writingIntake,intake_status:'draft',revision_note:null,terms:writingTerms,payment_status:'unpaid',checkout_status:'pending',fulfillment_status:'awaiting_payment',payment_review_required:false,revision_count:0,version:0,created_at:'2026-10-17T00:00:00Z' };
 export function writingSession(reference = writingId, suffix='Example', p:WritingPaymentPolicy|typeof policy=policy) {
   return {
     id:`cs_${p.livemode?'live':'test'}_${suffix}`, mode:'payment',status:'complete',payment_status:'paid',livemode:p.livemode,

@@ -12,6 +12,7 @@ vi.mock('@/lib/resume-writing-payment',()=>({verifiedResumeCheckoutUrl:b.checkou
 import { GET, POST } from '@/app/api/resume-writing/orders/route';
 import { POST as checkout } from '@/app/api/resume-writing/orders/[id]/checkout/route';
 import { GET as adminGET, POST as adminReconcile } from '@/app/api/admin/resume-writing/route';
+import { PATCH as ownerPATCH,GET as ownerGET } from '@/app/api/resume-writing/orders/[id]/route';
 import { PATCH } from '@/app/api/admin/resume-writing/[id]/route';
 const params={params:Promise.resolve({id:writingId})};
 const request=(body:unknown,method='POST',origin='https://joblink.test')=>new Request('https://joblink.test/api/resume-writing/orders',{method,headers:{'Content-Type':'application/json',origin},body:JSON.stringify(body)});
@@ -23,7 +24,7 @@ beforeEach(()=>{
   const role={from:()=>({select:()=>({eq:()=>({single:async()=>({data:{role:'seeker'},error:null})})})})};
   b.owner.mockResolvedValue({user:{id:writingUser},supabase:role});b.admin.mockResolvedValue({user:{id:writingAdmin},supabase:role,isAdmin:true});
   b.rpc.mockImplementation(async(name:string)=>name==='consume_rate_limit'?{data:{allowed:true},error:null}:{data:writingOrder,error:null});
-  b.from.mockImplementation(()=>{const q={select:()=>q,eq:(key:string,value:unknown)=>{b.filters.push([key,value]);return q;},neq:()=>q,order:()=>q,limit:()=>q,range:()=>q,maybeSingle:async()=>({data:b.row,error:b.queryError}),then:(resolve:(v:unknown)=>unknown)=>Promise.resolve({data:[],error:b.queryError,count:0}).then(resolve)};return q;});
+  b.from.mockImplementation(()=>{const q={select:()=>q,eq:(key:string,value:unknown)=>{b.filters.push([key,value]);return q;},neq:()=>q,in:()=>q,not:()=>q,order:()=>q,limit:()=>q,range:()=>q,maybeSingle:async()=>({data:b.row,error:b.queryError}),then:(resolve:(v:unknown)=>unknown)=>Promise.resolve({data:[],error:b.queryError,count:0}).then(resolve)};return q;});
   b.checkout.mockResolvedValue('https://buy.stripe.com/4gM00igUY0m7eWKdyecV200?client_reference_id=opaque');b.reconcile.mockResolvedValue({outcome:'applied'});
 });
 afterEach(()=>vi.unstubAllEnvs());
@@ -62,12 +63,12 @@ describe('owner/admin order boundaries',()=>{
     b.admin.mockResolvedValue({error:Response.json({error:'Forbidden'},{status:403})});
     expect((await adminGET(new Request('https://joblink.test/api/admin/resume-writing'))).status).toBe(403);
     expect((await adminReconcile(request({sessionId:'cs_live_Example'}))).status).toBe(403);
-    expect((await PATCH(request({version:1,status:'writing',delivered:false},'PATCH'),params)).status).toBe(403);expect(b.reconcile).not.toHaveBeenCalled();
+    expect((await PATCH(request({version:1,status:'writing'},'PATCH'),params)).status).toBe(403);expect(b.reconcile).not.toHaveBeenCalled();
   });
   it('rechecks current Stripe state before a versioned admin transition and stops on failure',async()=>{
     b.row={paid_session_id:'cs_live_Example'};b.reconcile.mockRejectedValueOnce(new Error('unavailable'));
-    expect((await PATCH(request({version:1,status:'writing',delivered:false},'PATCH'),params)).status).toBe(503);expect(b.rpc).not.toHaveBeenCalled();
-    expect((await PATCH(request({version:1,status:'writing',delivered:false},'PATCH'),params)).status).toBe(200);
+    expect((await PATCH(request({version:1,status:'writing'},'PATCH'),params)).status).toBe(503);expect(b.rpc).not.toHaveBeenCalled();
+    expect((await PATCH(request({version:1,status:'writing'},'PATCH'),params)).status).toBe(200);
     expect(b.rpc).toHaveBeenCalledWith('update_resume_writing_fulfillment',{p_id:writingId,p_actor_id:writingAdmin,p_version:1,p_status:'writing',p_delivered:false});
   });
   it('selects sandbox sessions and order filters on the server and rejects client mode overrides',async()=>{
@@ -77,5 +78,25 @@ describe('owner/admin order boundaries',()=>{
     expect((await adminReconcile(request({sessionId:'cs_test_Sandbox',mode:'live'}))).status).toBe(400);
     await adminGET(new Request('https://joblink.test/api/admin/resume-writing'));expect(b.filters).toContainEqual(['payment_policy',resumeWritingPolicy().key]);
     b.row={...writingOrder,checkout_reference:writingId};const response=await checkout(request({}),params);expect((await response.json()).mode).toBe('sandbox');
+  });
+});
+
+describe('resumable owner mutations',()=>{
+  it('saves bounded unfinished details, validates only explicit submit, and binds owner/policy/version server-side',async()=>{
+    const intake={...writingIntake,email:'a@',role:''};
+    expect((await ownerPATCH(request({action:'save',version:2,intake},'PATCH'),params)).status).toBe(200);
+    expect(b.rpc).toHaveBeenCalledWith('update_resume_writing_intake',expect.objectContaining({p_user_id:writingUser,p_version:2,p_intake:intake,p_submit:false,p_policy:resumeWritingPolicy().key}));
+    expect((await ownerPATCH(request({action:'submit',version:2,intake},'PATCH'),params)).status).toBe(400);
+    expect((await ownerPATCH(request({action:'save',version:2,intake,payment_status:'paid'},'PATCH'),params)).status).toBe(400);
+  });
+  it('serves an old saved order only with owner and policy filters, never a raw object path',async()=>{
+    expect((await ownerGET(new Request('https://joblink.test/order'),params)).status).toBe(200);expect(b.filters).toContainEqual(['user_id',writingUser]);expect(b.filters).toContainEqual(['payment_policy',resumeWritingPolicy().key]);
+    b.row=null;expect((await ownerGET(new Request('https://joblink.test/order'),params)).status).toBe(404);
+  });
+  it('requires a note and opaque idempotency ID for revision, and accepts no fulfillment/count override',async()=>{
+    const body={action:'revision',version:2,note:'Correct my school project',requestId:writingId};
+    expect((await ownerPATCH(request(body,'PATCH'),params)).status).toBe(200);expect(b.rpc).toHaveBeenCalledWith('respond_resume_writing_draft',expect.objectContaining({p_user_id:writingUser,p_action:'revision',p_request_id:writingId}));
+    expect((await ownerPATCH(request({...body,revision_count:0},'PATCH'),params)).status).toBe(400);
+    expect((await ownerPATCH(request({...body,note:''},'PATCH'),params)).status).toBe(400);
   });
 });

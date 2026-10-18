@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import type Stripe from 'stripe';
@@ -14,6 +15,13 @@ const migration='supabase/migrations/20261017010000_resume_writing_orders.sql';
 beforeAll(async()=>{
   db=new PGlite();
   await db.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;
+    CREATE SCHEMA storage;
+    CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit integer,allowed_mime_types text[]);
+    CREATE TABLE storage.objects(id uuid DEFAULT gen_random_uuid(),bucket_id text,name text);
+    ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+    GRANT USAGE ON SCHEMA storage TO anon,authenticated;
+    GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO anon,authenticated;
+    CREATE POLICY fixture_broad_storage_policy ON storage.objects FOR ALL TO anon,authenticated USING(true) WITH CHECK(true);
     CREATE SCHEMA auth; GRANT USAGE ON SCHEMA auth TO authenticated;
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT current_setting('test.uid',true)::uuid $$;
     CREATE TABLE users(id uuid PRIMARY KEY,is_admin boolean DEFAULT false,is_banned boolean DEFAULT false);
@@ -25,14 +33,15 @@ afterAll(async()=>{await db.close();});
 afterEach(()=>vi.unstubAllEnvs());
 beforeEach(async()=>{
   vi.stubEnv('RESUME_WRITING_PAYMENT_MODE','live');
-  await db.exec('RESET ROLE; TRUNCATE resume_writing_actions,resume_writing_events,resume_writing_receipts,resume_writing_orders CASCADE');
+  await db.exec('RESET ROLE; TRUNCATE resume_writing_counts,resume_writing_actions,resume_writing_events,resume_writing_receipts,resume_writing_orders CASCADE');
   await createOrder(writingId,writingUser);
+  await db.query('SELECT update_resume_writing_intake($1,$2,0,$3,true,$4)',[writingId,writingUser,JSON.stringify(writingIntake),resumeWritingPolicy().key]);
   reference=String((await db.query<{checkout_reference:string}>('SELECT checkout_reference FROM resume_writing_orders WHERE id=$1',[writingId])).rows[0].checkout_reference);
 });
 async function createOrder(id=writingId,user=writingUser,intake=writingIntake) {
   return db.query('SELECT create_resume_writing_order($1,$2,$3,$4,$5)',[id,user,JSON.stringify(intake),JSON.stringify(writingTerms),resumeWritingPolicy().key]);
 }
-const state=async()=> (await db.query<{payment_status:string;fulfillment_status:string;payment_review_required:boolean;revision_count:number;version:number}>('SELECT payment_status,fulfillment_status,payment_review_required,revision_count,version FROM resume_writing_orders WHERE id=$1',[writingId])).rows[0];
+const state=async()=> (await db.query<{payment_status:string;fulfillment_status:string;payment_review_required:boolean;revision_count:number;version:number}>('SELECT payment_status,fulfillment_status,payment_review_required,revision_count,version,intake_status FROM resume_writing_orders WHERE id=$1',[writingId])).rows[0];
 const rpc=vi.fn(async(name:string,args:Record<string,unknown>)=>{
   const allowed:Record<string,string[]>={reconcile_resume_writing_payment:['p_event_id','p_event_type','p_session_id','p_reference','p_state','p_payment_intent_id','p_charge_id','p_payment_policy']};
   try{const keys=allowed[name];if(!keys)throw new Error('Unexpected RPC');const result=await db.query<{result:unknown}>(`SELECT ${name}(${keys.map((_,i)=>`$${i+1}`).join(',')}) AS result`,keys.map(k=>args[k]));return {data:result.rows[0].result,error:null};}
@@ -50,7 +59,15 @@ function provider(session=writingSession(reference)) {
 }
 const apply=async(session=writingSession(reference),event='evt_Example')=>reconcileResumeWritingSession(provider(session).client,storage,{id:event,type:'checkout.session.completed'},session.id);
 async function status(next:string,delivered=false,actor=writingAdmin,version?:number) {
-  const current=await state();return db.query('SELECT update_resume_writing_fulfillment($1,$2,$3,$4,$5)',[writingId,actor,version??current.version,next,delivered]);
+  const current=await state();
+  if(next==='draft_ready'){
+    const pdf=randomUUID(),editable=randomUUID();
+    for(const [id,kind,mime] of [[pdf,'pdf','application/pdf'],[editable,'editable','application/vnd.openxmlformats-officedocument.wordprocessingml.document']])
+      await db.query('SELECT register_resume_writing_file($1,$2,$3,$4,$5,$6,1,$7)',[id,writingId,actor,current.version,kind,'a'.repeat(64),mime]);
+    return db.query('SELECT publish_resume_writing_draft($1,$2,$3,$4,$5,true)',[writingId,actor,version??current.version,pdf,editable]);
+  }
+  if(next==='revision_requested'||next==='complete')return db.query('SELECT respond_resume_writing_draft($1,$2,$3,$4,$5,$6,$7)',[writingId,writingUser,version??current.version,next==='complete'?'approve':'revision',next==='complete'?null:'Correct my school project wording',randomUUID(),resumeWritingPolicy().key]);
+  return db.query('SELECT update_resume_writing_fulfillment($1,$2,$3,$4,$5)',[writingId,actor,version??current.version,next,delivered]);
 }
 describe('private order schema and payment reconciliation',()=>{
   it('stores an immutable consented intake with idempotent request creation',async()=>{
@@ -85,7 +102,7 @@ describe('private order schema and payment reconciliation',()=>{
     const result=await Promise.all([apply(undefined,'evt_a'),apply(undefined,'evt_b'),apply(undefined,'evt_a')]);
     expect(result.some(r=>r.duplicate)).toBe(true);expect((await db.query('SELECT * FROM resume_writing_receipts')).rows).toHaveLength(1);
     expect((await db.query('SELECT * FROM resume_writing_events')).rows).toHaveLength(2);
-    expect(await state()).toMatchObject({payment_status:'paid',version:1});
+    expect(await state()).toMatchObject({payment_status:'paid',version:2});
   });
   it('queues an unknown reference without assigning intake or granting payment',async()=>{
     const result=await apply(writingSession(writingOther));expect(result.outcome).toBe('unmatched');
@@ -124,7 +141,7 @@ describe('private order schema and payment reconciliation',()=>{
     if(kind==='refund')session.payment_intent.latest_charge.amount_refunded=100;else session.payment_intent.latest_charge.disputed=true;
     await apply(session,`evt_${kind}`);await apply(undefined,'evt_stale_paid');
     expect(await state()).toMatchObject({payment_status:kind==='refund'?'refunded':'disputed',payment_review_required:true,fulfillment_status:'writing'});
-    await expect(status('draft_ready')).rejects.toThrow('payment_not_clear');
+    await expect(status('draft_ready')).rejects.toThrow('work_unavailable');
   });
   it('keeps asynchronous unpaid sessions pending until server-verified success',async()=>{
     const session=writingSession(reference);session.payment_status='unpaid';session.payment_intent.status='processing';
@@ -141,12 +158,12 @@ describe('private order schema and payment reconciliation',()=>{
     expect((await db.query('SELECT * FROM resume_writing_receipts')).rows).toHaveLength(0);
     await apply(undefined,'evt_paid_after');await apply(session,'evt_old_expired');expect((await state()).payment_status).toBe('paid');
   });
-  it('requires an admin, optimistic version, legal steps, one revision, and explicit manual delivery',async()=>{
+  it('requires an admin, optimistic version, reviewed pair, and one customer revision',async()=>{
     await expect(status('writing')).rejects.toThrow('payment_not_clear');await apply();
     await expect(status('writing',false,writingUser)).rejects.toThrow('admin_required');
     await expect(status('writing',false,writingAdmin,0)).rejects.toThrow('version_conflict');
     await status('writing');await status('draft_ready');await status('revision_requested');await status('writing');await status('draft_ready');
-    await expect(status('revision_requested')).rejects.toThrow('invalid_transition');await expect(status('complete')).rejects.toThrow('invalid_transition');
+    await expect(status('revision_requested')).rejects.toThrow('invalid_response');
     await status('complete',true);expect(await state()).toMatchObject({fulfillment_status:'complete',revision_count:1});
   });
   it.each(['writing','draft_ready','revision_requested'])('preserves %s progress and revision count during a payment hold',async(progress)=>{
@@ -160,13 +177,60 @@ describe('private order schema and payment reconciliation',()=>{
     const stripe=provider(session);stripe.account.mockResolvedValue({id:p.accountId});
     await expect(reconcileResumeWritingSession(stripe.client,storage,{id:'evt_cross_policy',type:'checkout.session.completed'},session.id)).rejects.toThrow('storage_unavailable');
     expect((await state()).payment_status).toBe('unpaid');expect((await db.query('SELECT * FROM resume_writing_events')).rows).toHaveLength(0);
-    await db.exec('TRUNCATE resume_writing_actions,resume_writing_events,resume_writing_receipts,resume_writing_orders CASCADE');await createOrder();
+    await db.exec('TRUNCATE resume_writing_counts,resume_writing_actions,resume_writing_events,resume_writing_receipts,resume_writing_orders CASCADE');await createOrder();
+    await db.query('SELECT update_resume_writing_intake($1,$2,0,$3,true,$4)',[writingId,writingUser,JSON.stringify(writingIntake),resumeWritingPolicy().key]);
     reference=String((await db.query<{checkout_reference:string}>('SELECT checkout_reference FROM resume_writing_orders')).rows[0].checkout_reference);
     session=writingSession(reference,'Sandbox',p);stripe.retrieve.mockResolvedValue(session);
     await reconcileResumeWritingSession(stripe.client,storage,{id:'evt_sandbox_paid',type:'checkout.session.completed'},session.id);
     expect(await state()).toMatchObject({payment_status:'paid',fulfillment_status:'ready'});
     stripe.link.mockResolvedValue({active:true,livemode:false,url:p.paymentLinkUrl,line_items:session.line_items});
     expect(await verifiedResumeCheckoutUrl(stripe.client,reference)).toBe(`${p.paymentLinkUrl}?client_reference_id=${reference}`);
+  });
+});
+describe('resumable intake and private human delivery',()=>{
+  it('runs partial intake → verified payment → completion → reviewed pair → one revision → approval',async()=>{
+    await db.exec('TRUNCATE resume_writing_counts,resume_writing_actions,resume_writing_events,resume_writing_receipts,resume_writing_orders CASCADE');
+    const partial={...writingIntake,name:'',email:'a@',role:'',skills:''};await createOrder(writingId,writingUser,partial);
+    reference=String((await db.query<{checkout_reference:string}>('SELECT checkout_reference FROM resume_writing_orders')).rows[0].checkout_reference);
+    await apply();await apply(undefined,'evt_retry');expect(await state()).toMatchObject({payment_status:'paid',fulfillment_status:'awaiting_intake',intake_status:'draft'});
+    await expect(status('writing')).rejects.toThrow('invalid_transition');
+    const current=await state();
+    await expect(db.query('SELECT update_resume_writing_intake($1,$2,$3,$4,true,$5)',[writingId,writingUser,current.version,JSON.stringify(partial),resumeWritingPolicy().key])).rejects.toThrow('intake_incomplete');
+    await db.query('SELECT update_resume_writing_intake($1,$2,$3,$4,false,$5)',[writingId,writingUser,current.version,JSON.stringify({...partial,name:'Synthetic Seeker'}),resumeWritingPolicy().key]);
+    await expect(db.query('SELECT update_resume_writing_intake($1,$2,$3,$4,true,$5)',[writingId,writingUser,current.version,JSON.stringify(writingIntake),resumeWritingPolicy().key])).rejects.toThrow('version_conflict');
+    await db.query('SELECT update_resume_writing_intake($1,$2,$3,$4,true,$5)',[writingId,writingUser,(await state()).version,JSON.stringify(writingIntake),resumeWritingPolicy().key]);
+    expect(await state()).toMatchObject({fulfillment_status:'ready',intake_status:'complete'});
+    await expect(db.query('SELECT update_resume_writing_intake($1,$2,$3,$4,false,$5)',[writingId,writingUser,(await state()).version,JSON.stringify(partial),resumeWritingPolicy().key])).rejects.toThrow('version_conflict');
+    await status('writing');
+    const version=(await state()).version,pdf=randomUUID(),editable=randomUUID();
+    const register=(id:string,kind:string)=>db.query('SELECT register_resume_writing_file($1,$2,$3,$4,$5,$6,8,$7)',[id,writingId,writingAdmin,version,kind,'a'.repeat(64),kind==='pdf'?'application/pdf':'application/vnd.openxmlformats-officedocument.wordprocessingml.document']);
+    await register(pdf,'pdf');await register(pdf,'pdf');
+    await expect(db.query('SELECT publish_resume_writing_draft($1,$2,$3,$4,$5,true)',[writingId,writingAdmin,version,pdf,editable])).rejects.toThrow('reviewed_pair_required');
+    await register(editable,'editable');
+    await expect(db.query('SELECT publish_resume_writing_draft($1,$2,$3,$4,$5,NULL)',[writingId,writingAdmin,version,pdf,editable])).rejects.toThrow('publication_unavailable');
+    await expect(db.query('SELECT publish_resume_writing_draft($1,$2,$3,$4,$5,true)',[writingId,writingUser,version,pdf,editable])).rejects.toThrow('admin_required');
+    await db.query('SELECT publish_resume_writing_draft($1,$2,$3,$4,$5,true)',[writingId,writingAdmin,version,pdf,editable]);
+    expect((await db.query('SELECT id FROM resume_writing_files WHERE published_at IS NOT NULL')).rows).toHaveLength(2);
+    const requestId=randomUUID(),v=(await state()).version;
+    const respond=(actor=writingUser,note='Correct my school project wording',rid=requestId)=>db.query('SELECT respond_resume_writing_draft($1,$2,$3,$4,$5,$6,$7)',[writingId,actor,v,'revision',note,rid,resumeWritingPolicy().key]);
+    await expect(respond(writingOther)).rejects.toThrow();
+    await respond();await respond();expect(await state()).toMatchObject({revision_count:1,fulfillment_status:'revision_requested'});
+    await expect(respond(writingUser,'Second revision',randomUUID())).rejects.toThrow();
+    await status('writing');await status('draft_ready');await status('complete');
+    expect(await state()).toMatchObject({fulfillment_status:'complete',revision_count:1});
+    await expect(status('revision_requested')).rejects.toThrow('invalid_response');
+    const counts=(await db.query<{event:string;count:number}>('SELECT event,count FROM resume_writing_counts ORDER BY event')).rows;
+    expect(Object.fromEntries(counts.map(c=>[c.event,Number(c.count)]))).toEqual({approved:1,draft_published:2,intake_completed:1,payment_verified:1,request_saved:1,revision_requested:1});
+    expect((await db.query('SELECT column_name FROM information_schema.columns WHERE table_name=\'resume_writing_counts\'')).rows).toHaveLength(4);
+  });
+  it('denies raw browser files and counts, even when an unrelated storage policy allows every object',async()=>{
+    await db.exec("INSERT INTO storage.objects(bucket_id,name) VALUES('resume-writing-private','private-test'),('other','other-test')");
+    await db.exec(`SET ROLE authenticated; SET test.uid='${writingUser}'`);
+    await expect(db.exec('SELECT * FROM resume_writing_files')).rejects.toThrow('permission denied');
+    await expect(db.exec('SELECT * FROM resume_writing_counts')).rejects.toThrow('permission denied');
+    expect((await db.query('SELECT name FROM storage.objects')).rows).toEqual([{name:'other-test'}]);
+    await expect(db.exec("INSERT INTO storage.objects(bucket_id,name) VALUES('resume-writing-private','forged')")).rejects.toThrow('row-level security');
+    await db.exec('RESET ROLE; DELETE FROM storage.objects');
   });
 });
 describe('Stripe validation and routing',()=>{

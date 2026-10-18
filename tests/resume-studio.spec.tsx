@@ -29,7 +29,7 @@ describe('premium resume workspace', () => {
     const summary = await screen.findByLabelText('Professional summary');
     fireEvent.change(summary, { target: { value: 'Keep my unsaved builder draft' } });
     expect(screen.getByText(/The builder and job applications remain free/)).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /consultation/ })).toBeNull();
+    expect(screen.getByRole('link', { name: /consultation/ }).getAttribute('target')).toBe('_blank');
     await user.click(screen.getByRole('button', { name: 'Buy a résumé · EC$50' }));
     expect(screen.getByRole('form', { name: 'Résumé writing intake' }).closest('form')?.parentElement?.closest('form')).toBeNull();
     await user.type(screen.getByRole('textbox', { name: /Name for your résumé/ }), 'Synthetic Seeker');

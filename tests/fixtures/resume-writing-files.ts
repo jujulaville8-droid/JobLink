@@ -1,0 +1,9 @@
+// Synthetic, minimal bounded fixtures only; never candidate documents.
+import { deflateRawSync } from 'node:zlib';
+export const syntheticPdf=Buffer.from('%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF\n');
+export function syntheticDocx(){
+  const files=[['[Content_Types].xml','<Types><Override ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'],['_rels/.rels','<Relationships><Relationship Type="officeDocument" Target="word/document.xml"/></Relationships>'],['word/document.xml','<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Fictional résumé</w:t></w:r></w:p></w:body></w:document>']];
+  const local:Buffer[]=[],central:Buffer[]=[];let offset=0;
+  for(const [name,value]of files){const filename=Buffer.from(name),source=Buffer.from(value),data=deflateRawSync(source);const header=Buffer.alloc(30);header.writeUInt32LE(0x04034b50);header.writeUInt16LE(20,4);header.writeUInt16LE(8,8);header.writeUInt32LE(data.length,18);header.writeUInt32LE(source.length,22);header.writeUInt16LE(filename.length,26);const entry=Buffer.concat([header,filename,data]);local.push(entry);const directory=Buffer.alloc(46);directory.writeUInt32LE(0x02014b50);directory.writeUInt16LE(20,6);directory.writeUInt16LE(8,10);directory.writeUInt32LE(data.length,20);directory.writeUInt32LE(source.length,24);directory.writeUInt16LE(filename.length,28);directory.writeUInt32LE(offset,42);central.push(Buffer.concat([directory,filename]));offset+=entry.length;}
+  const directory=Buffer.concat(central),end=Buffer.alloc(22);end.writeUInt32LE(0x06054b50);end.writeUInt16LE(files.length,8);end.writeUInt16LE(files.length,10);end.writeUInt32LE(directory.length,12);end.writeUInt32LE(offset,16);return Buffer.concat([...local,directory,end]);
+}

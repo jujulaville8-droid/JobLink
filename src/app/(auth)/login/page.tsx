@@ -4,7 +4,8 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getSafeReturnTo } from '@/lib/return-to'
+import { getSafeReturnTo,getResumeWritingReturnTo } from '@/lib/return-to'
+import { withReturnTo } from '@/lib/claim-links'
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
@@ -99,7 +100,7 @@ export default function LoginPage() {
       console.log('[login] Unverified user, redirecting to verify-email')
       setLoading(false)
       // Full page nav to avoid AuthRedirect race
-      window.location.href = returnTo === '/members' ? '/verify-email?returnTo=%2Fmembers' : '/verify-email'
+      window.location.href = withReturnTo('/verify-email',returnTo)
       return
     }
 
@@ -294,7 +295,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
-          href={returnTo === '/members' ? '/signup?role=employer&returnTo=%2Fmembers' : '/signup'}
+          href={withReturnTo(returnTo === '/members' ? '/signup?role=employer' : getResumeWritingReturnTo(returnTo) ? '/signup?role=seeker' : '/signup',returnTo)}
           className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one

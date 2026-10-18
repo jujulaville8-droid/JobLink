@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin';
-import { createResumeOrderSchema, writingOrderFields } from '@/lib/resume-writing';
+import { createResumeOrderSchema, writingOrderFields, writingFileFields } from '@/lib/resume-writing';
 import { writingBody, writingConfig, writingJson, writingLimit, writingOwner } from '@/lib/resume-writing-server';
 import { resumeWritingPolicy } from '@/lib/resume-writing-stripe';
 
@@ -11,7 +11,11 @@ export async function GET() {
     const result = await createAdminClient().from('resume_writing_orders').select(writingOrderFields)
       .eq('user_id', auth.user.id).eq('payment_policy',resumeWritingPolicy().key).order('created_at', { ascending: false }).limit(10);
     if (result.error) return writingJson({ error: 'Could not load saved requests.' }, 503);
-    return writingJson({ config, orders: result.data });
+    const orders = result.data ?? [];
+    if (!orders.length) return writingJson({ config, orders });
+    const files = await createAdminClient().from('resume_writing_files').select(`${writingFileFields},order_id`).in('order_id',orders.map(o=>o.id)).not('published_at','is',null);
+    if (files.error) return writingJson({ error:'Could not load your documents.' },503);
+    return writingJson({ config, orders:orders.map(o=>({...o,files:(files.data??[]).filter(f=>f.order_id===o.id&&f.revision_number===o.revision_count).map(f=>({id:f.id,kind:f.kind,revision_number:f.revision_number,published_at:f.published_at}))})) });
   } catch { return writingJson({ error: 'Could not load saved requests.' }, 503); }
 }
 export async function POST(request: Request) {

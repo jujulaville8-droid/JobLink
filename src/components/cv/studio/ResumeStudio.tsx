@@ -114,7 +114,7 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
             <p className={styles.saveHint}>Save each entry when you’re ready. Your preview updates as you type.</p>
           </form> : <div className={styles.emptyEditor}><FileText size={32} /><h2>Add your first {definition!.singular}</h2><p>You don’t need to fill every section. Include what supports your next role.</p><button className={styles.primary} onClick={() => editor.add(definition!.key)}><Plus size={16} />Add {definition!.singular}</button></div>}
         </>}
-        <ResumeWritingOffer />
+        <ResumeWritingOffer applicationReturnTo={returnTo} />
       </section>
 
       <section className={styles.preview} role="region" aria-label="Live resume preview">

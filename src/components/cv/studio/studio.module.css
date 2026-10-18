@@ -171,3 +171,15 @@
   .error { padding: 13px 17px; font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .primary { transition: none; } }
+.purchaseSample { margin: 18px 0; font-size: 13px; }
+.purchaseSample summary { cursor: pointer; color: var(--teal, #276b62); font-weight: 650; }
+.purchaseSample article { max-width: 520px; margin: 16px 0; padding: 22px; border: 1px solid var(--line, #d9e3df); border-radius: 6px; background: #fff; color: #17372f; }
+.purchaseSample h4 { margin: 16px 0 8px; font-size: 12px; }
+.purchase select { width: 100%; padding: 10px; border: 1px solid var(--line, #d9e3df); border-radius: 6px; background: white; color: #17372f; }
+.purchase { --line: #d9e3df; --muted: #526961; --teal: #276b62; }
+
+.purchase { --ink: #202727; color: var(--ink); }
+.purchase button:disabled { opacity: .45; cursor: not-allowed; }
+.purchase a { text-decoration: underline; text-underline-offset: 3px; }
+.purchase a.primary { text-decoration: none; white-space: normal; }
+.purchase a:focus-visible, .purchase button:focus-visible, .purchase select:focus-visible { outline: 3px solid #3c969b; outline-offset: 3px; }
