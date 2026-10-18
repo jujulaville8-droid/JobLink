@@ -86,7 +86,7 @@
 .purchaseCall p:first-child { margin-bottom: 7px; color: var(--ink); font-weight: 550; }
 .purchaseCall a { display: inline-block; min-height: 32px; padding-top: 4px; color: #09595d; font-weight: 650; }
 .purchaseCall p:last-child { margin: 0; font-size: 12px; }
-.purchaseProcess { display: grid; gap: 16px; margin: 22px 0; padding: 0 0 0 21px; color: #0d7377; }
+.purchaseProcess { display: grid; gap: 16px; margin: 22px 0; padding: 0 0 0 21px; color: #0d7377; list-style: decimal; }
 .purchaseProcess li { padding-left: 4px; font-size: 13px; }
 .purchaseProcess strong, .purchaseProcess span { display: block; color: #254b41; }
 .purchaseProcess span { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.6; }
