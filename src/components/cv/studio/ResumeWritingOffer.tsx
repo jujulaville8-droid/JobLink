@@ -57,15 +57,34 @@ export default function ResumeWritingOffer({initialData,initialConfig,initialOrd
   async function respond(action:'approve'|'revision'){if(!order||busy)return;revisionId.current||=crypto.randomUUID();setBusy(true);setError('');try{const response=await fetch(`/api/resume-writing/orders/${order.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,version:order.version,...(action==='revision'?{requestId:revisionId.current,note:revision}:{})})});const body=await response.json();if(!response.ok||!body.order)throw new Error(body.error||'Response was not confirmed.');saved(body.order);setNotice(action==='revision'?'Revision requested. Your original details remain unchanged.':'Thank you. Your résumé is marked complete.');}catch(failure){setError(failure instanceof Error?failure.message:'Could not confirm your response.');}finally{setBusy(false);}}
   const terms=order?.terms??data.config.terms;const editable=!order||order.intake_status==='draft';const clear=order?.payment_status==='paid'&&!order.payment_review_required;
   return <aside className={styles.purchase} aria-label="Optional résumé writing service">
-    <h2>Want a hand with your first résumé?</h2><p>Get a basic one-page résumé written from the details you provide. Résumé writing is an optional paid service.</p>
-    <p className={styles.purchasePrice}>EC$50 · one-time</p>
-    <ul className={styles.purchaseIncludes}><li>PDF and an editable DOCX copy</li><li>One revision</li><li>Planned first draft by the next day after payment and a complete questionnaire; delivery details must be confirmed in the service terms</li></ul>
-    <p>The builder and job applications remain free. No existing CV or paid work experience is needed.</p>
-    <details className={styles.purchaseSample}><summary>See a fictional example</summary><p>Fictional example only. These details are invented to show the format and will never be added to your résumé.</p><article aria-label="Fictional résumé sample"><h3>Alex Example</h3><p>alex@example.com · Antigua and Barbuda</p><h4>Seeking a first shop assistant role</h4><p>School leaver with experience organising a school project and helping at a community event.</p><h4>Skills</h4><p>Teamwork · Organisation · Clear communication</p><h4>Education and activities</h4><p>Example Secondary School · Completed a group presentation and helped arrange a fictional community event.</p></article></details>
-    <p>Need help getting started? <a href={writingConsultationUrl} target="_blank" rel="noopener noreferrer">Book a free résumé consultation</a>. The consultation is free; résumé writing is optional and paid.</p>
+    <div className={styles.purchaseOffer}>
+      <div className={styles.purchasePitch}>
+        <h2>Your next opportunity starts with a stronger résumé.</h2>
+        <p className={styles.purchaseLead}>Let us help you show what you bring, for just EC$50. Starting from scratch? Bring your skills, school projects or informal experience. We’ll shape your real story into a clear, one-page résumé.</p>
+        <div className={styles.purchaseValue}>
+          <p className={styles.purchasePrice}>EC$50 <span>one-time</span></p>
+          <p className={styles.purchasePriceNote}>Optional résumé-writing service. A person prepares and reviews your documents.</p>
+        </div>
+        <ul className={styles.purchaseIncludes} aria-label="Résumé package">
+          <li>A clear, one-page résumé</li><li>PDF and an editable DOCX copy</li><li>One revision</li>
+        </ul>
+        <button ref={trigger} type="button" className={`${styles.primary} ${styles.purchaseCta}`} aria-expanded={open} aria-controls={`${id}-intake`} onClick={()=>setOpen(!open)}>Get my résumé · EC$50</button>
+        <p className={styles.purchaseStartNote}>No existing CV or paid work experience needed. Save your starting point and finish at your pace.</p>
+        <div className={styles.purchaseCall}>
+          <p>Questions about our résumé-writing service? <a href={writingConsultationUrl} target="_blank" rel="noopener noreferrer">Book a free call</a></p>
+          <p>An optional call for questions before you buy. You can order directly.</p>
+        </div>
+      </div>
+    </div>
+    <ol className={styles.purchaseProcess} aria-label="How résumé writing works">
+      <li><strong>Share your starting point</strong><span>School, skills and informal experience count.</span></li>
+      <li><strong>Confirm your order</strong><span>Review the terms and pay securely on Stripe.</span></li>
+      <li><strong>Review your résumé</strong><span>Download your files and request your included revision.</span></li>
+    </ol>
+    {!data.config.intakeEnabled&&<p className={styles.purchaseTiming}>Proposed first-draft timing: the next day after payment and a completed questionnaire. Delivery cutoffs, weekends and final terms will be confirmed before purchasing opens.</p>}
+    <p className={styles.purchaseFree}>The builder and job applications remain free.</p>
     {data.config.paymentMode==='sandbox'&&<p role="status">Sandbox test checkout · no real payment. Use synthetic details only.</p>}
     {!data.config.checkoutEnabled&&<p className={styles.purchaseNotice}>Purchasing is not available yet. Delivery, revision, refund and privacy terms must be approved before requests and checkout open.</p>}
-    <button ref={trigger} type="button" className={styles.secondary} aria-expanded={open} aria-controls={`${id}-intake`} onClick={()=>setOpen(!open)}>Buy a résumé · EC$50</button>
     <div id={`${id}-intake`} className={styles.purchasePanel} hidden={!open}>
       {needsAuth?<p><a className={styles.primary} href={loginHref}>Sign in to save your progress</a> <a href={`/signup?role=seeker&returnTo=${encodeURIComponent(returnTo)}`}>Create a free account</a>. Verify your email before saving or paying.</p>:<>
         {data.orders.length>0&&<section aria-label="Saved résumé requests"><h3>Your recent saved requests</h3>{data.orders.map(o=><button key={o.id} type="button" className={styles.secondary} disabled={busy} onClick={()=>choose(o)}>{o.intake.role||'Unfinished questionnaire'} · {writingStatusLabels[o.fulfillment_status]}</button>)}</section>}

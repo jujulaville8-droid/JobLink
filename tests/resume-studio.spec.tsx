@@ -29,10 +29,15 @@ describe('premium resume workspace', () => {
     const summary = await screen.findByLabelText('Professional summary');
     fireEvent.change(summary, { target: { value: 'Keep my unsaved builder draft' } });
     expect(screen.getByText(/The builder and job applications remain free/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: /consultation/ }).getAttribute('target')).toBe('_blank');
-    await user.click(screen.getByRole('button', { name: 'Buy a résumé · EC$50' }));
+    expect(screen.getByRole('link', { name: 'Book a free call' }).getAttribute('target')).toBe('_blank');
+    await user.click(screen.getByRole('button', { name: 'Get my résumé · EC$50' }));
     expect(screen.getByRole('form', { name: 'Résumé writing intake' }).closest('form')?.parentElement?.closest('form')).toBeNull();
     await user.type(screen.getByRole('textbox', { name: /Name for your résumé/ }), 'Synthetic Seeker');
+    const call = screen.getByRole('link', { name: 'Book a free call' });
+    call.addEventListener('click', event => event.preventDefault(), { once: true });
+    await user.click(call);
+    expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
+    expect((screen.getByRole('textbox', { name: /Name for your résumé/ }) as HTMLInputElement).value).toBe('Synthetic Seeker');
     await user.click(screen.getByRole('button', { name: 'Keep using the free builder' }));
     expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
     expect(screen.getByRole('status').textContent).toContain('Unsaved changes');
@@ -40,7 +45,7 @@ describe('premium resume workspace', () => {
     expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
     await user.click(screen.getByRole('button', { name: /^Work experience/ }));
     await user.click(screen.getByRole('button', { name: /^Summary/ }));
-    await user.click(screen.getByRole('button', { name: 'Buy a résumé · EC$50' }));
+    await user.click(screen.getByRole('button', { name: 'Get my résumé · EC$50' }));
     expect((screen.getByRole('textbox', { name: /Name for your résumé/ }) as HTMLInputElement).value).toBe('Synthetic Seeker');
     expect((screen.getByLabelText('Professional summary') as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
   });
