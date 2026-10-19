@@ -1,3 +1,4 @@
+import { resumeFilename, resumeContentDisposition } from '@/lib/resume-filename'
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchFullCv } from '@/lib/cv-helpers'
 import { renderToBuffer } from '@react-pdf/renderer'
@@ -83,15 +84,12 @@ export async function GET(request: NextRequest) {
     const buffer = await renderToBuffer(createCvDocument(cv, theme) as any)
     const bytes = new Uint8Array(buffer)
 
-    const fullName =
-      [cv.contact.first_name, cv.contact.last_name].filter(Boolean).join('_') ||
-      'Resume'
-    const fileName = `${fullName}_Resume.pdf`
+    const fileName = resumeFilename(cv.contact.first_name, cv.contact.last_name)
 
     return new Response(bytes, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Disposition': resumeContentDisposition(fileName),
       },
     })
   } catch (err) {

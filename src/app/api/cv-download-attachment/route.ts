@@ -1,3 +1,4 @@
+import { resumeFilename } from '@/lib/resume-filename';
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 
@@ -94,10 +95,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Resolve the name only after the existing attachment authorization succeeds.
+  // Old chat attachments may no longer match a current profile: use Resume then.
+  const { data: namedProfile } = await adminClient
+    .from("seeker_profiles")
+    .select("first_name, last_name")
+    .eq("cv_url", path)
+    .maybeSingle();
+  const downloadName = resumeFilename(namedProfile?.first_name, namedProfile?.last_name, /\.docx$/i.test(path) ? 'docx' : 'pdf');
+
   // Generate signed download URL
   const { data: signedUrlData, error: signError } = await adminClient.storage
     .from("cvs")
-    .createSignedUrl(path, 3600, { download: true });
+    .createSignedUrl(path, 3600, { download: downloadName });
 
   if (signError || !signedUrlData?.signedUrl) {
     return NextResponse.json(

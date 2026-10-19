@@ -50,7 +50,7 @@ it('binds saved application to applicant and company; sends private bytes only t
   const params = mocks.send.mock.calls[0][0]
   expect(params).toMatchObject({ to: 'emanousou@nobuhotels.com', replyTo: 'applicant@example.test', idempotencyKey: 'application/saved-app/employer', data: { applicant_name: 'Applicant <Name>', applicant_phone: '+1 268 555 0100', cv_attached: true, review_path: null } })
   expect(params.data.cover_letter_excerpt).toHaveLength(1500)
-  expect(params.attachments).toEqual([{ filename: 'Applicant-CV.pdf', content: Buffer.from('%PDF-1.7\nfixture'), contentType: 'application/pdf' }])
+  expect(params.attachments).toEqual([{ filename: 'Applicant Name Resume.pdf', content: Buffer.from('%PDF-1.7\nfixture'), contentType: 'application/pdf' }])
   expect(JSON.stringify(params)).not.toMatch(/storage\/v1|signedUrl|token=/)
 })
 
