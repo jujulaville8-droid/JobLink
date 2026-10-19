@@ -116,6 +116,7 @@ export default async function JobResults({
       company_name: string;
       logo_url: string | null;
       is_pro: boolean;
+      location?: string | null;
     } | null;
 
     return {
@@ -124,6 +125,7 @@ export default async function JobResults({
       company_name: company?.company_name || "Company",
       company_logo: company?.logo_url || null,
       location: job.location,
+      company_location: company?.location ?? null,
       job_type: job.job_type,
       salary_min: job.salary_min,
       salary_max: job.salary_max,

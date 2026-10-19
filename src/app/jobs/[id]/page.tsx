@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
 import ReportListingButton from "@/components/ReportListingButton";
-import { normalizeJobLocation } from "@/lib/job-location";
+import { displayJobLocation, normalizeJobLocation } from "@/lib/job-location";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -263,8 +263,7 @@ export default async function JobDetailPage({ params }: PageProps) {
   // would be false location data under Google's job posting policies.
   // A job without its own location falls back to the company's address,
   // unless that address only says "remote", which is not a place.
-  const companyLocality = normalizeJobLocation(company?.location);
-  const rawLocality = normalizeJobLocation(job.location) || (/remote/i.test(companyLocality) ? "" : companyLocality);
+  const rawLocality = displayJobLocation(job.location, company?.location);
   const addressLocality = rawLocality
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")

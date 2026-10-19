@@ -29,7 +29,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         `
         id, title, job_type, salary_min, salary_max, salary_visible,
         location, is_featured, created_at,
-        company:companies ( company_name, logo_url, is_pro )
+        company:companies ( company_name, logo_url, is_pro, location )
       `
       )
       .eq("status", "active")
@@ -46,6 +46,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         company_name: string;
         logo_url: string | null;
         is_pro: boolean;
+        location?: string | null;
       } | null;
 
       return {
@@ -54,6 +55,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         company_name: company?.company_name || "Company",
         company_logo: company?.logo_url || null,
         location: job.location,
+        company_location: company?.location ?? null,
         job_type: JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type,
         salary_min: job.salary_min,
         salary_max: job.salary_max,

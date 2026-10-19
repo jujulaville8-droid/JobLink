@@ -86,6 +86,7 @@ export default async function CompanyPage({ params }: PageProps) {
       company_name: company.company_name,
       company_logo: company.logo_url || null,
       location: job.location,
+      company_location: company.location ?? null,
       job_type: jobTypeLabel,
       salary_min: job.salary_min,
       salary_max: job.salary_max,

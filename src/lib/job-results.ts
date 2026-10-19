@@ -61,7 +61,8 @@ const loadJobResults = cache(async (
         id,
         company_name,
         logo_url,
-        is_pro
+        is_pro,
+        location
       )
     `,
       { count: "exact" }
