@@ -35,3 +35,7 @@ it.each(facts.slice(1))('never treats a preserved deadline as employer approval:
 it.each(['constructor', '__proto__', 'toString'])('ignores inherited record keys: %s', jobId => {
   expect(getPublicJobDeadline(jobId, 'company')).toBeUndefined();
 });
+
+it('records no public deadline for the North Sound Brewery Brewmaster after the owner removed it', () => {
+  expect(getPublicJobDeadline('7bd1f5b0-4da5-4177-b4c5-3cacc65b904b', '07533d6c-77cc-4e6e-bdde-14d4fd3923a9')).toBeUndefined();
+});

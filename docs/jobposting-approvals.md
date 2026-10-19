@@ -228,9 +228,9 @@ is removed from the sitemap, browse/category results, the homepage and company
 pages.
 
 - Top Bun — Cook (`e03a2b8c-f69b-42bb-bc43-13a5d0917291`): closed now (after October 3).
-- Street Blends — Barista Prep Assistants (`03aeffa0-f680-46b2-b5eb-ea3891d0ce44`): closes after October 15, 2026.
+- Street Blends — Barista Prep Assistants: no longer auto-closes. The closure entry was removed in PR #59; jobs close only with Julian's approval.
 
-Setting either listing's stored status to `closed` from the admin tools makes
+Setting a listing's stored status to `closed` from the admin tools makes
 the page a real 404; the entry can then be removed.
 
 ## October 14, 2026 vacancy-scoped employer approvals (Seagull Inflatables, Antigua's Donkey Sanctuary)
@@ -248,7 +248,78 @@ claimed. No email content is copied here.
 
 Seagull Inflatables keeps the October 18 date-only deadline from its public
 Youth On The Move Facebook posting, recorded in `public-job-deadlines.ts` and
-emitted as `validThrough`; markup retires after that date in Antigua, matching
-the `job-closures.ts` entry from PR #54. The Donkey Sanctuary posting published
+emitted as `validThrough`; markup retires after that date in Antigua. The
+`job-closures.ts` entry from PR #54 was removed in PR #59, so the page stays
+open until Julian approves closing it. The Donkey Sanctuary posting published
 no deadline, so no `validThrough` is emitted. Stored listing content, status and
 the application route are unchanged; no database writes.
+
+## October 15, 2026 vacancy-scoped employer approvals (Trappas Restaurant and Bar)
+
+[PR #65](https://github.com/jujulaville8-droid/JobLink/pull/65) records an October 15, 2026 reply from the
+JobLink outreach CRM in which the employer said yes to JobLink posting these
+two vacancies. Each permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Trappas Restaurant and Bar — Experienced Chef (Nights) | `c38baf47-a23c-4908-b2ed-c80163d6b06d` | `a528f079-6706-4e64-a351-eabcc47359f4` | 2026-10-15 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Trappas Restaurant and Bar — Kitchen Staff (Nights) | `ab781b7c-5c68-404f-bb7c-479a8b58264f` | `a528f079-6706-4e64-a351-eabcc47359f4` | 2026-10-15 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+Neither public posting published a deadline, so no `validThrough` is emitted
+and no closure entry is added (no automatic job closing). Stored listing
+content, status and the application route are unchanged; no database writes.
+
+## October 16, 2026 vacancy-scoped employer approval (North Sound Brewery / Antigua Distillery)
+
+[PR #67](https://github.com/jujulaville8-droid/JobLink/pull/67) records an October 16, 2026 reply from the
+JobLink outreach CRM in which the employer's HR said yes to JobLink posting this
+vacancy. The permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| North Sound Brewery (Antigua Distillery) — Brewmaster | `7bd1f5b0-4da5-4177-b4c5-3cacc65b904b` | `07533d6c-77cc-4e6e-bdde-14d4fd3923a9` | 2026-10-16 | Full Time, as stated on the employer's public Dadli Jobs posting |
+
+The public Dadli Jobs posting (https://dadlijobs.com/job/brewmaster/) listed an
+October 16 date-only deadline, which PR #67 recorded in `public-job-deadlines.ts`.
+On October 16, 2026 Julian removed that deadline, and
+[PR #68](https://github.com/jujulaville8-droid/JobLink/pull/68) deleted the entry,
+so no `validThrough` is emitted and the markup is treated like other no-deadline
+jobs. No closure entry is added (no automatic job closing), so the page stays
+open until Julian approves closing it. Stored listing content, status and the
+application route are unchanged; no database writes.
+
+## October 16, 2026 vacancy-scoped employer approval (Super Service Center)
+
+[PR #70](https://github.com/jujulaville8-droid/JobLink/pull/70) records an October 16, 2026 (12:59 PM ET) email reply to
+jobs@joblinkantigua.com in which the employer said yes to JobLink posting this
+vacancy. The permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No email content beyond the approval is copied here.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Super Service Center — Tire Technician (Pares Village) | `e080f894-4e7f-48b7-b39a-1a274f52fd97` | `4b3ecdcd-01cc-4b67-8756-dc0247a04473` | 2026-10-16 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+The posting published no deadline, so no `validThrough` is emitted and no
+closure entry is added (no automatic job closing). Stored listing content,
+status and the application route are unchanged; no database writes.
+
+## October 16, 2026 vacancy-scoped owner attestation (The Tailor's Daughter Inc.)
+
+[PR #71](https://github.com/jujulaville8-droid/JobLink/pull/71) records an October 16, 2026 (10:57 PM ET) attestation from site
+owner Julian Laville that he obtained the business's permission directly for
+JobLink to post this vacancy, which was posted at his request. The permission
+covers one vacancy only and lives in `EMPLOYER_APPROVED_JOBS`, bound to both
+IDs. No company-wide permission is claimed. No contact details are recorded.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| The Tailor's Daughter Inc. — Part-Time Retail Sales Associate (V.C. Bird International Airport) | `cead1cc1-636b-438b-9c8a-bd39fd02c045` | `bda01a15-de79-41fc-b10e-5c4126115860` | 2026-10-16 | Part Time, as stated in the employer's post |
+
+The posting published no deadline, so no `validThrough` is emitted and no
+closure entry is added (no automatic job closing). Stored listing content,
+status and the application route are unchanged; no database writes.

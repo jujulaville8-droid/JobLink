@@ -1,4 +1,4 @@
-import { getApplicationReturnTo, getSafeReturnTo } from '@/lib/return-to'
+import { getApplicationReturnTo, getResumeWritingReturnTo, getSafeReturnTo } from '@/lib/return-to'
 
 // 32 random bytes encoded with base64url, without padding.
 export const CLAIM_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/
@@ -15,7 +15,7 @@ export function onboardingReturnTo(value: unknown): string | null {
   if (!safe) return null
   return safe === '/members' || safe.split(/[?#]/, 1)[0] === '/jobs'
     ? safe
-    : claimReturnTo(safe) ?? getApplicationReturnTo(safe)
+    : claimReturnTo(safe) ?? getApplicationReturnTo(safe) ?? getResumeWritingReturnTo(safe)
 }
 
 export function withReturnTo(path: string, destination: unknown): string {

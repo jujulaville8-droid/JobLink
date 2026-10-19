@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { getApplicationReturnTo, getSafeReturnTo } from '@/lib/return-to'
+import { getApplicationReturnTo, getResumeWritingReturnTo, getSafeReturnTo } from '@/lib/return-to'
 import { withReturnTo } from '@/lib/claim-links'
 
 export default function LoginPage() {
@@ -299,7 +299,7 @@ export default function LoginPage() {
       <p className="mt-6 text-center text-sm text-text-light">
         Don&apos;t have an account?{' '}
         <Link
-          href={withReturnTo(returnTo === '/members' ? '/signup?role=employer' : getApplicationReturnTo(returnTo) ? '/signup?role=seeker' : '/signup', returnTo)}
+          href={withReturnTo(returnTo === '/members' ? '/signup?role=employer' : getApplicationReturnTo(returnTo) || getResumeWritingReturnTo(returnTo) ? '/signup?role=seeker' : '/signup', returnTo)}
           className="font-medium text-primary hover:text-primary-dark transition"
         >
           Create one

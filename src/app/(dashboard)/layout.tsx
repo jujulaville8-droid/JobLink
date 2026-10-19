@@ -43,6 +43,7 @@ const adminLinks = [
   { href: "/admin/emails", label: "Emails", icon: "send" },
   { href: "/admin/testimonials", label: "Hiring Stories", icon: "star" },
   { href: "/admin/employer-enquiries", label: "Employer Requests", icon: "mail" },
+  { href: "/admin/resume-writing", label: "Résumé Orders", icon: "file-text" },
 ];
 
 export default async function DashboardLayout({

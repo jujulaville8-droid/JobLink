@@ -212,3 +212,10 @@ describe('application context at account creation', () => {
     expect(response.headers.get('location')).toBe(`${origin}/login?error=auth&returnTo=${encodeURIComponent(applicationPath)}`);
   });
 });
+
+describe('résumé purchase auth return',()=>{
+  const purchase='/resume-writing?order=20000000-0000-4000-8000-000000000001';
+  it('preserves the saved request through login and callback',async()=>{openAuthPage(purchase);await submitPassword();await waitFor(()=>expect(window.location.href).toBe(`${origin}${purchase}`));expect(await callbackDestination(purchase)).toBe(`${origin}${purchase}`);});
+  it('preserves verification and seeker signup for this flow only',async()=>{openAuthPage(purchase);api.userRow.mockResolvedValue({data:{role:'seeker',email_verified:false},error:null});await submitPassword();await waitFor(()=>expect(window.location.href).toBe(`${origin}/verify-email?returnTo=${encodeURIComponent(purchase)}`));expect(screen.getByRole('link',{name:'Create one'}).getAttribute('href')).toBe(`/signup?role=seeker&returnTo=${encodeURIComponent(purchase)}`);});
+  it('keeps generic signup role choice unchanged',()=>{openAuthPage();render(<LoginPage/>);expect(screen.getByRole('link',{name:'Create one'}).getAttribute('href')).toBe('/signup');});
+});
