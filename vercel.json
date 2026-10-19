@@ -16,5 +16,10 @@
       "path": "/api/cron/signup-reminder",
       "schedule": "0 11 * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "codex/resume-purchase-foundation": false
+    }
+  }
 }
