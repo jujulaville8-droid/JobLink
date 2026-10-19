@@ -1,0 +1,11 @@
+> joblink@0.1.0 test:unit
+> vitest run
+
+
+ RUN  v4.1.11 /Users/julianlaville/Documents/Codex/2026-10-16/task/JobLink-audit
+
+
+ Test Files  93 passed | 1 skipped (94)
+      Tests  1547 passed | 1 skipped (1548)
+   Start at  03:20:16
+   Duration  18.80s (transform 4.94s, setup 0ms, import 24.33s, tests 67.84s, environment 23.61s)

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 
-const fixture = vi.hoisted(() => ({ industry: 'Non-Profit & NGO' as string | null }));
+const fixture = vi.hoisted(() => ({ industry: 'Non-Profit & NGO' as string | null, location: 'Bethesda, Antigua' as string | null }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }), notFound: () => { throw new Error('Not found'); } }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
@@ -9,14 +9,14 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
   from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ error: null, data: {
     id: 'industry-job', title: 'Animal Care Assistant', description: 'Care for the donkeys.',
     status: 'active', posted_by_admin: false, expires_at: null, created_at: '2026-10-01',
-    job_type: 'full_time', location: 'Bethesda, Antigua', salary_visible: false, category: 'Tourism & Hospitality',
+    job_type: 'full_time', location: fixture.location, salary_visible: false, category: 'Tourism & Hospitality',
     company: { id: 'industry-company', company_name: 'Sanctuary', logo_url: null, description: null, industry: fixture.industry, location: 'Antigua', website: null, is_verified: false },
   } }) }) }) }),
 }) }));
 
 import JobDetailPage from '@/app/jobs/[id]/page';
 
-beforeEach(() => { fixture.industry = 'Non-Profit & NGO'; });
+beforeEach(() => { fixture.industry = 'Non-Profit & NGO'; fixture.location = 'Bethesda, Antigua'; });
 afterEach(cleanup);
 
 async function renderPage() {
@@ -40,4 +40,15 @@ it.each([null, '', '   '])('omits industry when the page shows none (%j)', async
   const { posting } = await renderPage();
   expect(posting).toBeDefined();
   expect(Object.hasOwn(posting, 'industry')).toBe(false);
+});
+
+it.each([null, '', '   '])('falls back to the company address when the job has no location (%j)', async location => {
+  fixture.location = location;
+  const { container, posting } = await renderPage();
+  // The company address here is the bare country, so the page shows it and
+  // JobPosting keeps only addressCountry rather than a false town.
+  expect(container.textContent).not.toContain('Location not provided');
+  expect(posting.jobLocation.address.addressLocality).toBeUndefined();
+  const bar = container.querySelector('[data-mobile-apply]')!;
+  expect(bar.closest('.animate-fade-up')).toBeNull();
 });

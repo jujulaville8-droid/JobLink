@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { displayJobLocation } from "@/lib/job-location";
 
 export interface Job {
   id: string;
   title: string;
   company_name: string;
   company_logo?: string | null;
-  location: string;
+  location: string | null;
+  company_location?: string | null;
   job_type: string;
   salary_min?: number | null;
   salary_max?: number | null;
@@ -149,7 +151,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                   <circle cx="12" cy="10" r="3" />
                 </svg>
-                {job.location}
+                {displayJobLocation(job.location, job.company_location) || "Location not provided"}
               </span>
               <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${getJobType(job.job_type).color}`}>
                 {getJobType(job.job_type).label}

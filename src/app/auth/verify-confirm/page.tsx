@@ -145,10 +145,11 @@ function VerifyConfirmContent() {
     }
     console.log('[verify-confirm] Redirecting', { dest, role: userRole })
     setStatus('Verification complete! Redirecting...')
-    const returnTo = onboardingReturnTo(searchParams.get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to)
+    const returnTo = onboardingReturnTo(searchParams.get('returnTo')) ?? claimReturnTo(user.user_metadata?.claim_return_to) ?? onboardingReturnTo(user.user_metadata?.onboarding_return_to)
     if (user.user_metadata?.claim_return_to) {
       await createClient().auth.updateUser({ data: { claim_return_to: null } })
     }
+    if (user.user_metadata?.onboarding_return_to) await createClient().auth.updateUser({ data: { onboarding_return_to: null } })
     window.location.href = returnTo ?? dest
   }
 

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { jobCategoryFilter } from "@/lib/job-category";
 import { ilikePattern } from "@/lib/safe-sql";
+import { jobLocationPattern, normalizeJobLocation } from "@/lib/job-location";
 
 export const JOBS_PER_PAGE = 12;
 
@@ -60,7 +61,8 @@ const loadJobResults = cache(async (
         id,
         company_name,
         logo_url,
-        is_pro
+        is_pro,
+        location
       )
     `,
       { count: "exact" }
@@ -81,7 +83,8 @@ const loadJobResults = cache(async (
   }
 
   if (searchParams.location) {
-    query = query.ilike("location", `%${searchParams.location.replace(/[\\%_]/g, "")}%`);
+    const pattern = jobLocationPattern(searchParams.location);
+    if (pattern) query = query.ilike("location", pattern);
   }
 
   if (searchParams.category) {
@@ -104,7 +107,7 @@ const loadJobResults = cache(async (
 export function getJobResults(searchParams: JobSearchParams, currentPage: number) {
   return loadJobResults(
     searchParams.q,
-    searchParams.location,
+    normalizeJobLocation(searchParams.location) || undefined,
     jobCategoryFilter(searchParams.category),
     JSON.stringify(searchParams.job_type ?? null),
     currentPage,

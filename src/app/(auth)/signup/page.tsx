@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 import { claimReturnTo, onboardingReturnTo, withReturnTo } from '@/lib/claim-links'
+import { getApplicationReturnTo } from '@/lib/return-to'
 
 type Role = 'seeker' | 'employer'
 type Step = 'role-selection' | 'signup-form'
@@ -159,7 +160,8 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
       options: {
         // A routing hint only; the claim RPC always verifies the actual bearer link.
         // Survives custom email templates that omit RedirectTo and cross-device verification.
-        data: { role, ...(claimReturnTo(returnTo) ? { claim_return_to: returnTo } : {}) },
+        data: { role, ...(claimReturnTo(returnTo) ? { claim_return_to: returnTo } : {}),
+          ...(returnTo && returnTo !== '/members' && !claimReturnTo(returnTo) ? { onboarding_return_to: returnTo } : {}) },
         emailRedirectTo: `${window.location.origin}/auth/verify-confirm?type=signup${returnQuery}`,
       },
     })
@@ -309,7 +311,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
 
         <p className="mt-8 text-center text-sm text-text-light">
           Already have an account?{' '}
-          <a href="/login" className="font-medium text-primary hover:text-primary-dark transition">
+          <a href={signInHref} className="font-medium text-primary hover:text-primary-dark transition">
             Sign in
           </a>
         </p>
@@ -343,6 +345,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
         </div>
       </div>
 
+      {getApplicationReturnTo(returnTo) && <p className="mb-5 text-center text-sm text-text-light">After verification, continue your job application. Complete your profile and CV before submitting.</p>}
       <form onSubmit={handleSubmit} className="onboarding-form space-y-5" aria-busy={loading || googleLoading}>
         {error && error !== 'duplicate_email' && (
           <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">

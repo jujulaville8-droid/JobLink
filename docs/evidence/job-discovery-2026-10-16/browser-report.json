@@ -1,0 +1,777 @@
+{
+  "passed": true,
+  "scope": "Actual production components in local Vite fixture; synthetic anonymous auth/job; system font; no live session, OAuth provider, email, database write or delivery.",
+  "results": [
+    {
+      "width": 320,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 314,
+          "viewportWidth": 320
+        },
+        {
+          "scrollY": 2555,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 314,
+          "viewportWidth": 320
+        },
+        {
+          "scrollY": 5109,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 314,
+          "viewportWidth": 320
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 314,
+          "viewportWidth": 320
+        },
+        {
+          "scrollY": 2555,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 314,
+          "viewportWidth": 320
+        },
+        {
+          "scrollY": 5109,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 314,
+          "viewportWidth": 320
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 375,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 369,
+          "viewportWidth": 375
+        },
+        {
+          "scrollY": 2168,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 369,
+          "viewportWidth": 375
+        },
+        {
+          "scrollY": 4335,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 369,
+          "viewportWidth": 375
+        }
+      ]
+    },
+    {
+      "width": 375,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 369,
+          "viewportWidth": 375
+        },
+        {
+          "scrollY": 2168,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 369,
+          "viewportWidth": 375
+        },
+        {
+          "scrollY": 4335,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 369,
+          "viewportWidth": 375
+        }
+      ]
+    },
+    {
+      "width": 375,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 390,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 384,
+          "viewportWidth": 390
+        },
+        {
+          "scrollY": 2168,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 384,
+          "viewportWidth": 390
+        },
+        {
+          "scrollY": 4335,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 384,
+          "viewportWidth": 390
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 384,
+          "viewportWidth": 390
+        },
+        {
+          "scrollY": 2168,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 384,
+          "viewportWidth": 390
+        },
+        {
+          "scrollY": 4335,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 384,
+          "viewportWidth": 390
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 414,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 408,
+          "viewportWidth": 414
+        },
+        {
+          "scrollY": 2160,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 408,
+          "viewportWidth": 414
+        },
+        {
+          "scrollY": 4319,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 408,
+          "viewportWidth": 414
+        }
+      ]
+    },
+    {
+      "width": 414,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 408,
+          "viewportWidth": 414
+        },
+        {
+          "scrollY": 2160,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 408,
+          "viewportWidth": 414
+        },
+        {
+          "scrollY": 4319,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 408,
+          "viewportWidth": 414
+        }
+      ]
+    },
+    {
+      "width": 414,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 430,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 424,
+          "viewportWidth": 430
+        },
+        {
+          "scrollY": 1836,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 424,
+          "viewportWidth": 430
+        },
+        {
+          "scrollY": 3671,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 424,
+          "viewportWidth": 430
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 424,
+          "viewportWidth": 430
+        },
+        {
+          "scrollY": 1836,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 424,
+          "viewportWidth": 430
+        },
+        {
+          "scrollY": 3671,
+          "barTop": 700.5,
+          "barBottom": 772,
+          "barHeight": 71.5,
+          "navTop": 778.5,
+          "supportBottom": 688,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 424,
+          "viewportWidth": 430
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 768,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 772.5,
+          "barBottom": 844,
+          "barHeight": 71.5,
+          "navTop": 0,
+          "supportBottom": 760,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 762,
+          "viewportWidth": 768
+        },
+        {
+          "scrollY": 1297,
+          "barTop": 772.5,
+          "barBottom": 844,
+          "barHeight": 71.5,
+          "navTop": 0,
+          "supportBottom": 760,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 762,
+          "viewportWidth": 768
+        },
+        {
+          "scrollY": 2594,
+          "barTop": 772.5,
+          "barBottom": 844,
+          "barHeight": 71.5,
+          "navTop": 0,
+          "supportBottom": 760,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 762,
+          "viewportWidth": 768
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 772.5,
+          "barBottom": 844,
+          "barHeight": 71.5,
+          "navTop": 0,
+          "supportBottom": 760,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 762,
+          "viewportWidth": 768
+        },
+        {
+          "scrollY": 1297,
+          "barTop": 772.5,
+          "barBottom": 844,
+          "barHeight": 71.5,
+          "navTop": 0,
+          "supportBottom": 760,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 762,
+          "viewportWidth": 768
+        },
+        {
+          "scrollY": 2594,
+          "barTop": 772.5,
+          "barBottom": 844,
+          "barHeight": 71.5,
+          "navTop": 0,
+          "supportBottom": 760,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 762,
+          "viewportWidth": 768
+        }
+      ]
+    },
+    {
+      "width": 768,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 1024,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 1018,
+          "viewportWidth": 1024
+        },
+        {
+          "scrollY": 1166,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 1018,
+          "viewportWidth": 1024
+        },
+        {
+          "scrollY": 2332,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 1018,
+          "viewportWidth": 1024
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 1018,
+          "viewportWidth": 1024
+        },
+        {
+          "scrollY": 1166,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 1018,
+          "viewportWidth": 1024
+        },
+        {
+          "scrollY": 2332,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 1018,
+          "viewportWidth": 1024
+        }
+      ]
+    },
+    {
+      "width": 1024,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "reducedMotion": "no-preference",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 1434,
+          "viewportWidth": 1440
+        },
+        {
+          "scrollY": 842,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 1434,
+          "viewportWidth": 1440
+        },
+        {
+          "scrollY": 1684,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "fade-up",
+          "scrollWidth": 1434,
+          "viewportWidth": 1440
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "reducedMotion": "reduce",
+      "checks": "scroll top/middle/end, no transformed ancestor, viewport anchoring, nav/support clearance, reduced motion, support open/close, application login/signup/OAuth",
+      "samples": [
+        {
+          "scrollY": 0,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 1434,
+          "viewportWidth": 1440
+        },
+        {
+          "scrollY": 842,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 1434,
+          "viewportWidth": 1440
+        },
+        {
+          "scrollY": 1684,
+          "barTop": 0,
+          "barBottom": 0,
+          "barHeight": 0,
+          "navTop": 0,
+          "supportBottom": 828,
+          "transformedAncestors": [],
+          "entranceAnimation": "none",
+          "scrollWidth": 1434,
+          "viewportWidth": 1440
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "checks": "search editing/clearing, URL preservation, industry label/select, named pagination, alert limitations, skip-link keyboard focus",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "writes": [],
+  "externalRequests": [],
+  "contrast": [
+    {
+      "token": "--color-text-light",
+      "foreground": "#62626c",
+      "background": "#ffffff",
+      "ratio": 6.029373394873939
+    },
+    {
+      "token": "--color-text-light",
+      "foreground": "#62626c",
+      "background": "#faf8f5",
+      "ratio": 5.687787517219861
+    },
+    {
+      "token": "--color-text-light",
+      "foreground": "#62626c",
+      "background": "#f5f0ea",
+      "ratio": 5.321534539217872
+    },
+    {
+      "token": "--color-text-muted",
+      "foreground": "#666670",
+      "background": "#ffffff",
+      "ratio": 5.676481132792902
+    },
+    {
+      "token": "--color-text-muted",
+      "foreground": "#666670",
+      "background": "#faf8f5",
+      "ratio": 5.3548878820945145
+    },
+    {
+      "token": "--color-text-muted",
+      "foreground": "#666670",
+      "background": "#f5f0ea",
+      "ratio": 5.01007126794601
+    }
+  ],
+  "sourceCommit": "9e225272a575d165abfa894dea7a8fbe49109692",
+  "deviceLimitations": "Chromium desktop emulated viewports, default safe-area env values, system font. No physical iOS notch/keyboard, WebKit or real OAuth/Supabase integration claim."
+}

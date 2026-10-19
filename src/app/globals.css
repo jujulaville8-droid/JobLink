@@ -30,8 +30,8 @@
   --color-bg-alt: #f5f0ea;
   --color-bg-dark: #0a2e2f;
   --color-text: #1a1a1a;
-  --color-text-light: #71717a;
-  --color-text-muted: #a1a1aa;
+  --color-text-light: #62626c;
+  --color-text-muted: #666670;
   --color-border: #e8e3db;
   --color-surface: #ffffff;
   --shadow-xs: 0 1px 2px rgba(13, 115, 119, 0.04);
@@ -578,4 +578,11 @@ body {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Keep the bypass link above navigation and fixed controls when focused. */
+.skip-link { position: fixed; top: .5rem; left: .5rem; z-index: 100; padding: .75rem 1rem; border-radius: .5rem; background: #fff; color: #095355; transform: translateY(-200%); }
+.skip-link:focus { transform: none; outline: 3px solid #0d7377; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .animate-fade-in, .animate-slide-in-left, .animate-scale-in { animation: none; transform: none; opacity: 1; }
 }

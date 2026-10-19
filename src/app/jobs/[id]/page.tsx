@@ -13,6 +13,7 @@ import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
 import ReportListingButton from "@/components/ReportListingButton";
+import { displayJobLocation, normalizeJobLocation } from "@/lib/job-location";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -260,12 +261,15 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Only send a locality we actually have. A bare "Antigua" / "Antigua and
   // Barbuda" is the country, not a town, and a hardcoded default town/parish
   // would be false location data under Google's job posting policies.
-  const rawLocality = (job.location || company?.location || "").trim();
+  // A job without its own location falls back to the company's address,
+  // unless that address only says "remote", which is not a place.
+  const rawLocality = displayJobLocation(job.location, company?.location);
   const addressLocality = rawLocality
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")
     .trim();
-  const isRemoteJob = rawLocality.toLowerCase().includes("remote");
+  // Remote status comes only from the listing itself, never the company address.
+  const isRemoteJob = normalizeJobLocation(job.location).toLowerCase().includes("remote");
 
   // salary_min/max are only meaningful with a pay period. The forms collect a
   // salary_type but it is not stored yet, so only send unitText once it is.
@@ -499,7 +503,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
-                  {job.location}
+                  {rawLocality || "Location not provided"}
                 </span>
 
                 {/* Employment type */}
@@ -716,10 +720,10 @@ export default async function JobDetailPage({ params }: PageProps) {
         {/* Spacer for mobile sticky bar + bottom nav */}
         <div className="h-36 md:h-20 lg:hidden" />
 
-        {/* Mobile sticky apply button — sits above bottom nav on mobile */}
-        <div data-support-obstruction className="fixed bottom-16 md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
-          <ApplyButton jobId={job.id} state={applyState} />
-        </div>
+      </div>
+      {/* Keep fixed UI outside the transformed entrance animation. */}
+      <div data-support-obstruction data-mobile-apply className="fixed bottom-[max(4.5rem,calc(4rem+env(safe-area-inset-bottom)))] md:bottom-0 left-0 right-0 z-40 border-t border-border bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-2px_8px_rgba(0,0,0,0.08)] lg:hidden">
+        <ApplyButton jobId={job.id} state={applyState} />
       </div>
     </div>
   );

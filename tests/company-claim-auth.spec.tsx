@@ -89,3 +89,38 @@ it('excludes bearer URLs from analytics while retaining ordinary pages', () => {
   expect(containsClaimCredential(withReturnTo('/signup?role=employer', destination))).toBe(true)
   expect(containsClaimCredential('/jobs/example')).toBe(false)
 })
+
+const applyDestination = '/jobs/123e4567-e89b-42d3-a456-426614174000/apply'
+it('preserves seeker application context through email signup, resend and Google signup', async () => {
+  api.params = `role=seeker&returnTo=${encodeURIComponent(applyDestination)}`
+  const { container } = render(<SignupPage />)
+  expect(screen.getByRole('link', { name: /^sign in$/i }).getAttribute('href')).toBe(withReturnTo('/login', applyDestination))
+  fireEvent.click(screen.getByRole('button', { name: /google/i }))
+  await waitFor(() => expect(api.signInWithOAuth).toHaveBeenCalledWith(expect.objectContaining({ options: { redirectTo: `${window.location.origin}${withReturnTo('/auth/callback?role=seeker', applyDestination)}` } })))
+  cleanup()
+  const form = render(<SignupPage />)
+  fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'seeker@example.test' } })
+  fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'Test-only-password' } })
+  fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Test-only-password' } })
+  fireEvent.submit(form.container.querySelector('form')!)
+  await waitFor(() => expect(api.signUp).toHaveBeenCalledWith(expect.objectContaining({ options: { data: { role: 'seeker', onboarding_return_to: applyDestination }, emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', applyDestination)}` } })))
+  await screen.findByText('Your account has been created')
+  fireEvent.click(screen.getByRole('button', { name: /resend verification email/i }))
+  await waitFor(() => expect(api.resend).toHaveBeenCalledWith(expect.objectContaining({ options: { emailRedirectTo: `${window.location.origin}${withReturnTo('/auth/verify-confirm?type=signup', applyDestination)}` } })))
+  expect(container).toBeDefined()
+})
+it.each([true, false])('returns to application after verification with URL context=%s and no profile yet', async inUrl => {
+  api.params = inUrl ? `returnTo=${encodeURIComponent(applyDestination)}` : ''
+  api.getUser.mockResolvedValue({ data: { user: { id: 'seeker', email_confirmed_at: 'verified', user_metadata: { role: 'seeker', ...(inUrl ? {} : { onboarding_return_to: applyDestination }) } } } })
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ role: 'seeker', hasProfile: false }) }))
+  render(<VerifyConfirmPage />)
+  await waitFor(() => expect(window.location.pathname).toBe(applyDestination))
+  if (!inUrl) expect(api.updateUser).toHaveBeenCalledWith({ data: { onboarding_return_to: null } })
+})
+it('does not trust hostile onboarding metadata during verification', async () => {
+  api.params = ''
+  api.getUser.mockResolvedValue({ data: { user: { id: 'seeker', email_confirmed_at: 'verified', user_metadata: { role: 'seeker', onboarding_return_to: '/%252fevil.example' } } } })
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ role: 'seeker', hasProfile: false }) }))
+  render(<VerifyConfirmPage />)
+  await waitFor(() => expect(window.location.pathname).toBe('/profile'))
+})

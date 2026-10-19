@@ -1,0 +1,83 @@
+{
+  "scope": "Read-only production browser observation; existing code, no sign-in, signup or submissions",
+  "samples": [
+    {
+      "scrollY": 0,
+      "bar": {
+        "x": 0,
+        "y": 1262.5,
+        "width": 384,
+        "height": 71.5,
+        "top": 1262.5,
+        "right": 384,
+        "bottom": 1334,
+        "left": 0
+      },
+      "transforms": [
+        {
+          "className": "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-fade-up",
+          "transform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ],
+      "locationPill": [
+        "",
+        "Full Time",
+        "New"
+      ]
+    },
+    {
+      "scrollY": 1369,
+      "bar": {
+        "x": 0,
+        "y": -106.5,
+        "width": 384,
+        "height": 71.5,
+        "top": -106.5,
+        "right": 384,
+        "bottom": -35,
+        "left": 0
+      },
+      "transforms": [
+        {
+          "className": "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-fade-up",
+          "transform": "matrix(1, 0, 0, 1, 0, 0)"
+        }
+      ],
+      "locationPill": [
+        "",
+        "Full Time",
+        "New"
+      ]
+    }
+  ],
+  "createOneHref": "/signup",
+  "observedOn": "2026-10-16",
+  "searchObservations": [
+    {
+      "url": "https://joblinkantigua.com/jobs?location=English+Harbour",
+      "result": "No matching jobs right now",
+      "alertHref": "/signup?role=seeker",
+      "locationControl": "Static Location: English Harbour text; no editable location field"
+    },
+    {
+      "url": "https://joblinkantigua.com/jobs?q=chef",
+      "count": 4,
+      "titles": [
+        "Experienced Chef (Nights)",
+        "Jr. Sous Chef",
+        "Chef de Partie",
+        "Executive Chef (Japanese & Peruvian cuisine)"
+      ],
+      "companyIncluded": "Trappas Restaurant and Bar"
+    },
+    {
+      "url": "https://joblinkantigua.com/jobs/ab781b7c-5c68-404f-bb7c-479a8b58264f",
+      "title": "Kitchen Staff (Nights)",
+      "locationPill": "blank",
+      "descriptionMentions": "Dockyard Drive, English Harbour",
+      "companyLocation": "English Harbour, Antigua",
+      "jobPostingPresent": false
+    }
+  ],
+  "databaseScope": "No database connection or credentials used. Public DOM cannot distinguish null, empty, or whitespace location values."
+}

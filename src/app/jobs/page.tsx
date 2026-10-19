@@ -137,11 +137,9 @@ export default async function JobsPage({ searchParams }: PageProps) {
 
         {/* Search bar */}
         <div className="mt-4">
-          <JobSearchBar defaultValue={params.q} />
+          <JobSearchBar defaultValue={params.q} defaultLocation={params.location} />
         </div>
       </div>
-
-      {params.location && <p className="mb-4 text-sm text-text-light">Location: <strong>{params.location}</strong></p>}
 
       {!params.q && !params.category && !params.location && !params.job_type && (
         <Suspense fallback={null}><JobIndustryShortcuts /></Suspense>
