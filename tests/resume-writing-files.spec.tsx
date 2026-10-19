@@ -17,7 +17,7 @@ const patch=(body:unknown)=>new Request('https://joblink.test/api/admin/resume-w
 beforeEach(()=>{
   vi.clearAllMocks();vi.stubEnv('RESUME_WRITING_ENABLED','true');vi.stubEnv('RESUME_WRITING_PAYMENT_MODE','live');m.filters=[];
   m.auth.mockResolvedValue({user:{id:writingUser},supabase:{from:()=>({select:()=>({eq:()=>({single:async()=>({data:{role:'seeker'}})})})})}});m.admin.mockResolvedValue({user:{id:writingAdmin}});
-  m.order={paid_session_id:'cs_live_Synthetic',version:4,fulfillment_status:'writing',intake_status:'complete',revision_count:0,payment_status:'paid',payment_review_required:false};
+  m.order={intake:{name:'Jane Smith'},paid_session_id:'cs_live_Synthetic',version:4,fulfillment_status:'writing',intake_status:'complete',revision_count:0,payment_status:'paid',payment_review_required:false};
   m.file={id:fileId,kind:'pdf',object_path:`${writingId}/0/${fileId}.pdf`,sha256:writingHash(syntheticPdf),size:syntheticPdf.length,published_at:'2026-10-18'};
   m.from.mockImplementation((table:string)=>{const q={select:()=>q,eq:(key:string,value:unknown)=>{m.filters.push([key,value]);return q;},not:(...args:unknown[])=>{m.filters.push(['not',args]);return q;},in:()=>q,maybeSingle:async()=>({data:table==='resume_writing_orders'?m.order:m.file,error:null}),then:(resolve:(v:unknown)=>unknown)=>Promise.resolve({data:[m.file,{...(m.file as object),id:otherFile,kind:'editable'}],error:null}).then(resolve)};return q;});
   m.bucket.mockResolvedValue({data:{public:false},error:null});m.upload.mockResolvedValue({data:{},error:null});m.download.mockResolvedValue({data:new Blob([new Uint8Array(syntheticPdf)]),error:null});m.rpc.mockResolvedValue({data:{id:fileId},error:null});m.reconcile.mockResolvedValue({outcome:'applied'});
@@ -46,7 +46,29 @@ describe('private document lifecycle HTTP boundaries',()=>{
   it.each([{intake_status:'draft'},{payment_status:'refunded'},{payment_review_required:true},{version:3}])('blocks unavailable upload %j',async(extra)=>{m.order={...(m.order as object),...extra};expect((await upload(multipart(),params)).status).toBe(409);expect(m.upload).not.toHaveBeenCalled();});
   it('rejects a public bucket or an unverified format, and does not register or publish',async()=>{m.bucket.mockResolvedValue({data:{public:true},error:null});expect((await upload(multipart(),params)).status).toBe(400);expect(m.upload).not.toHaveBeenCalled();expect((await upload(multipart(Buffer.from('renamed'),'editable'),params)).status).toBe(400);expect(m.rpc).not.toHaveBeenCalled();});
   it('requires human review and verifies both stored byte hashes before publication',async()=>{const body={version:4,status:'draft_ready',reviewed:true,pdfId:fileId,editableId:otherFile};expect((await publish(patch({...body,reviewed:false}),params)).status).toBe(400);expect((await publish(patch(body),params)).status).toBe(200);expect(m.download).toHaveBeenCalledTimes(2);expect(m.rpc).toHaveBeenCalledWith('publish_resume_writing_draft',expect.objectContaining({p_reviewed:true,p_actor_id:writingAdmin}));m.download.mockResolvedValue({data:new Blob(['changed']),error:null});expect((await publish(patch(body),params)).status).toBe(503);});
-  it('downloads only an owned published current-round file, with private attachment headers and intact bytes',async()=>{const response=await download(new Request('https://joblink.test/download'),params);expect(response.status).toBe(200);expect(m.filters).toContainEqual(['user_id',writingUser]);expect(m.filters).toContainEqual(['revision_number',0]);expect(m.filters).toContainEqual(['not',['published_at','is',null]]);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(response.headers.get('content-disposition')).toBe('attachment; filename="JobLink-resume.pdf"');expect(Buffer.from(await response.arrayBuffer())).toEqual(syntheticPdf);});
+  it('downloads only an owned published current-round file, with private attachment headers and intact bytes',async()=>{const response=await download(new Request('https://joblink.test/download'),params);expect(response.status).toBe(200);expect(m.filters).toContainEqual(['user_id',writingUser]);expect(m.filters).toContainEqual(['revision_number',0]);expect(m.filters).toContainEqual(['not',['published_at','is',null]]);expect(response.headers.get('cache-control')).toBe('private, no-store');expect(response.headers.get('content-disposition')).toContain('filename="Jane Smith Resume.pdf"');expect(Buffer.from(await response.arrayBuffer())).toEqual(syntheticPdf);});
+  it('names editable downloads from the order intake and preserves DOCX bytes and MIME',async()=>{
+    const bytes=syntheticDocx();
+    m.file={...(m.file as object),kind:'editable',object_path:`${writingId}/0/${fileId}.docx`,sha256:writingHash(bytes),size:bytes.length};
+    m.download.mockResolvedValue({data:new Blob([new Uint8Array(bytes)]),error:null});
+    const response=await download(new Request('https://joblink.test/download'),params);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-disposition')).toContain('filename="Jane Smith Resume.docx"');
+    expect(response.headers.get('content-type')).toBe(writingMime.editable);
+    expect(Buffer.from(await response.arrayBuffer())).toEqual(bytes);
+  });
+  it('preserves Unicode intake names in the encoded attachment filename',async()=>{
+    m.order={...(m.order as object),intake:{name:'José 李'}};
+    const response=await download(new Request('https://joblink.test/download'),params);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-disposition')).toContain(`filename*=UTF-8''${encodeURIComponent('José 李 Resume.pdf')}`);
+  });
+  it.each([undefined,null,{}, {name:''}, {name:'   '}, {name:42}])('uses a neutral fallback for missing or invalid intake names: %j',async(intake)=>{
+    m.order={...(m.order as object),intake};
+    const response=await download(new Request('https://joblink.test/download'),params);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-disposition')).toContain('filename="Resume.pdf"');
+  });
   it('refuses another owner before provider/storage lookup, holds, and private byte corruption',async()=>{m.order=null;expect((await download(new Request('https://joblink.test/download'),params)).status).toBe(404);expect(m.download).not.toHaveBeenCalled();m.order={paid_session_id:'cs_live_Synthetic',payment_status:'paid',payment_review_required:true,revision_count:0};expect((await download(new Request('https://joblink.test/download'),params)).status).toBe(409);m.order={...(m.order as object),payment_review_required:false};m.download.mockResolvedValue({data:new Blob(['changed']),error:null});expect((await download(new Request('https://joblink.test/download'),params)).status).toBe(503);});
   it('allows staged review downloads only through verified admin auth',async()=>{m.admin.mockResolvedValue({error:Response.json({error:'Forbidden'},{status:403})});expect((await download(new Request('https://joblink.test/download?review=true'),params)).status).toBe(403);expect(m.download).not.toHaveBeenCalled();});
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { resumeFilename } from '@/lib/resume-filename';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowDownToLine, Undo2, Redo2, Check, FileText, UserRound, BriefcaseBusiness, GraduationCap, Sparkles, Plus, Trash2, Eye, PencilLine, LoaderCircle, ChevronRight } from 'lucide-react';
 import { profileFields, resumeSectionDefinitions, type EditorSection } from '@/lib/resume-sections';
@@ -37,7 +38,7 @@ export default function ResumeStudio({ applicationReturnTo, writingConfig }: { a
       if (previewOnly) setPdfUrl(url);
       else {
         const link = document.createElement('a'); link.href = url;
-        link.download = `${[cv.contact.first_name, cv.contact.last_name].filter(Boolean).join('-').replace(/[^\p{L}\p{N}-]/gu, '') || 'My'}-Resume.pdf`;
+        link.download = resumeFilename(cv.contact.first_name, cv.contact.last_name);
         document.body.append(link); link.click(); link.remove();
         window.setTimeout(() => URL.revokeObjectURL(url), 30000);
       }
@@ -126,7 +127,7 @@ export default function ResumeStudio({ applicationReturnTo, writingConfig }: { a
     </div>
     <dialog ref={pdfDialog} className={styles.pdfDialog} onClose={() => setPdfUrl('')}>
       <div className={styles.pdfDialogHeader}><strong>Your resume PDF</strong><button onClick={() => pdfDialog.current?.close()}>Close preview</button></div>
-      {pdfUrl && <><iframe title="Resume PDF preview" src={pdfUrl} /><p>If your browser cannot display the PDF, <a href={pdfUrl} download="Resume.pdf">download it here</a>.</p></>}
+      {pdfUrl && <><iframe title="Resume PDF preview" src={pdfUrl} /><p>If your browser cannot display the PDF, <a href={pdfUrl} download={resumeFilename(cv.contact.first_name, cv.contact.last_name)}>download it here</a>.</p></>}
     </dialog>
   </div>;
 }

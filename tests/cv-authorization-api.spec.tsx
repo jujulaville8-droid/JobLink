@@ -19,12 +19,13 @@ vi.mock('@/lib/cv-pdf', () => ({
   THEME_LIST: [{ id: 'classic' }, { id: 'studio' }],
 }))
 vi.mock('@react-pdf/renderer', () => ({ renderToBuffer: mocks.render }))
+import { resumeContentDisposition } from '@/lib/resume-filename'
 import { GET as download } from '@/app/api/cv-download/route'
 import { GET as exportCv } from '@/app/api/cv/export/route'
 
 const callerId = 'caller-user'
 const targetId = 'candidate-user'
-const profile = { id: 'candidate-profile', user_id: targetId, cv_url: 'candidate/resume.pdf' }
+const profile = { id: 'candidate-profile', user_id: targetId, cv_url: 'candidate/resume.pdf', first_name: 'Jane', last_name: 'Smith' }
 const company = { id: 'caller-company', is_pro: false, pro_expires_at: null }
 const cv = { contact: { first_name: 'Example', last_name: 'Candidate' } }
 const diagnostic = { message: 'Internal lookup failure' }
@@ -234,7 +235,7 @@ describe('download behavior', () => {
     expect(response.headers.get('location')).toBe('https://storage.example/resume')
     expect(queries.get('seeker_profiles')?.eq).toHaveBeenCalledWith('id', profile.id)
     expect(mocks.storageFrom).toHaveBeenCalledWith('cvs')
-    expect(mocks.sign).toHaveBeenCalledWith(profile.cv_url, 3600, { download: true })
+    expect(mocks.sign).toHaveBeenCalledWith(profile.cv_url, 3600, { download: 'Jane Smith Resume.pdf' })
     expect(mocks.from).not.toHaveBeenCalledWith('companies')
   })
 
@@ -275,7 +276,7 @@ describe('export behavior', () => {
     expect(mocks.createAdmin).not.toHaveBeenCalled()
     expect(mocks.fetchCv).toHaveBeenCalledWith(callerId, false)
     expect(response.headers.get('content-type')).toBe('application/pdf')
-    expect(response.headers.get('content-disposition')).toBe('attachment; filename="Example_Candidate_Resume.pdf"')
+    expect(response.headers.get('content-disposition')).toBe(resumeContentDisposition('Example Candidate Resume.pdf'))
     expect(await response.text()).toBe('%PDF-synthetic-test')
   })
 
@@ -302,4 +303,16 @@ describe('export behavior', () => {
     expect(response.status).toBe(500)
     expect(await response.json()).toEqual({ error: 'Failed to generate PDF' })
   })
+})
+
+it('names uploaded downloads without changing storage paths', async () => {
+  results.users.data = { role: 'seeker', is_admin: true }
+  expect((await routes[0].request()).status).toBe(307)
+  expect(mocks.sign).toHaveBeenCalledWith(profile.cv_url, 3600, { download: 'Jane Smith Resume.pdf' })
+})
+it('exports Unicode names using UTF-8 Content-Disposition', async () => {
+  mocks.fetchCv.mockResolvedValue({ contact: { first_name: '李', last_name: '小龍' } })
+  const response = await exportCv(new NextRequest('https://app.example/api/cv/export'))
+  expect(response.status).toBe(200)
+  expect(response.headers.get('content-disposition')).toBe(resumeContentDisposition('李 小龍 Resume.pdf'))
 })

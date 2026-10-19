@@ -1,3 +1,4 @@
+import { resumeFilename } from '@/lib/resume-filename'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { parseCompanyContactEmail } from '@/lib/company-contact-email'
@@ -94,7 +95,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
         if (!downloadError && file && file.size > 0 && file.size <= MAX_CV_BYTES) {
           const bytes = Buffer.from(await file.arrayBuffer())
           if (bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
-            attachments.push({ filename: 'Applicant-CV.pdf', content: bytes, contentType: 'application/pdf' })
+            attachments.push({ filename: resumeFilename(seeker.first_name, seeker.last_name), content: bytes, contentType: 'application/pdf' })
           }
         }
       } catch { /* Send contact details even when storage is unavailable. */ }
@@ -109,7 +110,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
           const { renderToBuffer } = await import('@react-pdf/renderer')
           const bytes = await renderToBuffer(createResumeDocument(cv))
           if (bytes.length > 0 && bytes.length <= MAX_CV_BYTES) {
-            attachments.push({ filename: 'Applicant-CV.pdf', content: bytes, contentType: 'application/pdf' })
+            attachments.push({ filename: resumeFilename(cv.contact.first_name, cv.contact.last_name), content: bytes, contentType: 'application/pdf' })
           }
         }
       } catch { /* An unavailable built resume must not block the application. */ }

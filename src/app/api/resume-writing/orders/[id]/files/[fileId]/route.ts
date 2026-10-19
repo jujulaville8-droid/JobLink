@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { resumeContentDisposition,resumeFilename } from '@/lib/resume-filename';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/api-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -13,7 +14,7 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string;fi
     const auth=preview?await requireAdmin():await writingOwner();if('error' in auth)return auth.error;
     if(process.env.RESUME_WRITING_ENABLED!=='true')return writingJson({error:'Documents unavailable.'},503);
     const {id,fileId}=await params;if(!z.uuid().safeParse(id).success || !z.uuid().safeParse(fileId).success)return writingJson({error:'Document not found.'},404);
-    const db=createAdminClient();let query=db.from('resume_writing_orders').select('paid_session_id,payment_status,payment_review_required,revision_count,fulfillment_status').eq('id',id).eq('payment_policy',resumeWritingPolicy().key);
+    const db=createAdminClient();let query=db.from('resume_writing_orders').select('intake,paid_session_id,payment_status,payment_review_required,revision_count,fulfillment_status').eq('id',id).eq('payment_policy',resumeWritingPolicy().key);
     if(!preview)query=query.eq('user_id',auth.user.id);
     const order=await query.maybeSingle();
     if(order.error)throw new Error();if(!order.data?.paid_session_id)return writingJson({error:'Document not found.'},404);
@@ -24,6 +25,8 @@ export async function GET(request:Request,{params}:{params:Promise<{id:string;fi
     if(!preview)files=files.not('published_at','is',null);
     const file=await files.maybeSingle();if(file.error)throw new Error();if(!file.data)return writingJson({error:'Document not found.'},404);
     const kind=file.data.kind as 'pdf'|'editable';const bytes=await verifiedWritingBytes(db,file.data);
-    return new Response(new Uint8Array(bytes),{headers:{'Content-Type':writingMime[kind],'Content-Disposition':`attachment; filename="JobLink-resume.${kind==='pdf'?'pdf':'docx'}"`,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"sandbox; default-src 'none'"}});
+    const name=typeof order.data.intake?.name==='string'?order.data.intake.name:undefined;
+    const filename=resumeFilename(name,undefined,kind==='pdf'?'pdf':'docx');
+    return new Response(new Uint8Array(bytes),{headers:{'Content-Type':writingMime[kind],'Content-Disposition':resumeContentDisposition(filename),'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"sandbox; default-src 'none'"}});
   } catch{return writingJson({error:'Document unavailable. Please retry later.'},503);}
 }
