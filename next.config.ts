@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Explicitly scoped to the isolated HTTP test stack; production keeps HTTPS.
+const localE2E = process.env.NODE_ENV === "development"
+  && process.env.JOBLINK_LOCAL_E2E === "true"
+  && process.env.NEXT_PUBLIC_SUPABASE_URL === "http://127.0.0.1:54321";
+
 /**
  * Content Security Policy.
  *
@@ -19,13 +24,13 @@ const CONTENT_SECURITY_POLICY = [
   // Company logos and avatars are user-supplied remote URLs.
   "img-src 'self' data: blob: https:",
   // Supabase REST, auth, storage and realtime; Stripe; Vercel Analytics.
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://va.vercel-scripts.com",
+  `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://va.vercel-scripts.com${localE2E ? " http://127.0.0.1:54321 ws://127.0.0.1:54321 ws://127.0.0.1:4300" : ""}`,
   "frame-src https://js.stripe.com https://hooks.stripe.com https://calendly.com",
   "frame-ancestors 'none'",
   "form-action 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "upgrade-insecure-requests",
+  ...(localE2E ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig: NextConfig = {

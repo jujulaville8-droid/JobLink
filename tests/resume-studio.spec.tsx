@@ -3,6 +3,7 @@ import { cleanup, render, screen, within, waitFor, fireEvent } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import ResumeStudio from '@/components/cv/studio/ResumeStudio';
 import { resumeFixture } from './fixtures/resume';
+import { writingTerms } from './fixtures/resume-writing';
 
 let stored = structuredClone(resumeFixture);
 let failSave = false;
@@ -23,6 +24,15 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('premium resume workspace', () => {
+  it('shows server-provided service availability before the purchase intake is opened', async () => {
+    render(<ResumeStudio writingConfig={{intakeEnabled:true,checkoutEnabled:true,terms:writingTerms,paymentMode:'sandbox'}} />);
+    await screen.findByLabelText('Professional summary');
+    expect(screen.getByText('Sandbox test checkout · no real payment. Use synthetic details only.')).toBeTruthy();
+    expect(screen.queryByText(/Purchasing is not available yet/)).toBeNull();
+    expect(screen.queryByText(/Delivery timing, revision and refund terms will be confirmed/)).toBeNull();
+    expect(screen.getByRole('button', {name:'Get my résumé · EC$50'}).getAttribute('aria-expanded')).toBe('false');
+    expect(vi.mocked(fetch).mock.calls.some(([url])=>url==='/api/resume-writing/orders')).toBe(false);
+  });
   it('opens and closes the purchase intake without saving or losing the free builder draft', async () => {
     const user = userEvent.setup();
     render(<ResumeStudio />);

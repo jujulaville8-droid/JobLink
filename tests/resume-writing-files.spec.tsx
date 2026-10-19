@@ -34,6 +34,12 @@ describe('bounded actual document formats',()=>{
   it('rejects cross-origin and oversized streaming multipart bodies',async()=>{await expect(writingMultipart(multipart(syntheticPdf,'pdf','https://evil.test'))).rejects.toThrow();const request=new Request('https://joblink.test/upload',{method:'POST',headers:{origin:'https://joblink.test','content-type':'multipart/form-data; boundary=fixture'},body:new Uint8Array(3*1024*1024+128*1024+1)});await expect(writingMultipart(request)).rejects.toThrow('3 MB');});
 });
 describe('private document lifecycle HTTP boundaries',()=>{
+  it('touches no new tables, storage or Stripe when the service is disabled',async()=>{
+    vi.stubEnv('RESUME_WRITING_ENABLED','false');
+    expect((await upload(multipart(),params)).status).toBe(503);expect((await download(new Request('https://joblink.test/download'),params)).status).toBe(503);
+    expect((await publish(patch({action:'publish',version:4,fileIds:[fileId,otherFile],humanReviewed:true}),params)).status).toBe(503);
+    expect(m.from).not.toHaveBeenCalled();expect(m.rpc).not.toHaveBeenCalled();expect(m.bucket).not.toHaveBeenCalled();expect(m.upload).not.toHaveBeenCalled();expect(m.download).not.toHaveBeenCalled();expect(m.reconcile).not.toHaveBeenCalled();
+  });
   it('requires admin before reading upload bytes and never exposes storage publicly',async()=>{m.admin.mockResolvedValue({error:Response.json({error:'Forbidden'},{status:403})});expect((await upload(multipart(),params)).status).toBe(403);expect(m.upload).not.toHaveBeenCalled();});
   it('stages under an exact order/round/id path after fresh payment, registers a hash and never upserts',async()=>{expect((await upload(multipart(),params)).status).toBe(201);expect(m.reconcile).toHaveBeenCalledTimes(1);expect(m.upload).toHaveBeenCalledWith(`${writingId}/0/${fileId}.pdf`,syntheticPdf,{contentType:'application/pdf',upsert:false});expect(m.rpc).toHaveBeenCalledWith('register_resume_writing_file',expect.objectContaining({p_actor_id:writingAdmin,p_order_id:writingId,p_version:4,p_sha256:writingHash(syntheticPdf)}));});
   it('recovers an uncertain identical upload but refuses replacing different bytes',async()=>{m.upload.mockResolvedValue({error:{message:'already exists'}});expect((await upload(multipart(),params)).status).toBe(201);m.download.mockResolvedValue({data:new Blob(['other']),error:null});expect((await upload(multipart(),params)).status).toBe(503);expect(m.rpc).toHaveBeenCalledTimes(1);});

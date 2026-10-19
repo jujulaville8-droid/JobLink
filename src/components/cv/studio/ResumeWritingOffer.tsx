@@ -52,9 +52,22 @@ export default function ResumeWritingOffer({initialData,initialConfig,initialOrd
       setNotice(action==='submit'?'Questionnaire submitted. Writing starts after verified payment.':'Progress saved. You can return to finish your questionnaire.');if(action==='submit')setReviewing(true);
     }catch(failure){setError(failure instanceof Error?failure.message:'Could not save. Your changes are still on this page.');}finally{setBusy(false);}
   }
-  async function refresh(){setBusy(true);setError('');try{const response=await fetch('/api/resume-writing/orders',{cache:'no-store'});const body=await response.json();if(!response.ok||!body.config||!Array.isArray(body.orders))throw new Error();setData(body);if(order){const next=body.orders.find((o:ResumeWritingOrder)=>o.id===order.id);if(next)setOrder(next);}setCheckoutUrl('');setNotice('Saved status refreshed.');}catch{setError('Could not refresh saved status. A return from Stripe does not confirm payment.');}finally{setBusy(false);}}
+  async function refresh(){
+    setBusy(true);setError('');setNotice('');
+    try{
+      const response=await fetch('/api/resume-writing/orders',{cache:'no-store'});const body=await response.json();
+      if(!response.ok||!body.config||!Array.isArray(body.orders))throw new Error();
+      let next=order?body.orders.find((o:ResumeWritingOrder)=>o.id===order.id):null;
+      if(order&&!next){
+        const selected=await fetch(`/api/resume-writing/orders/${order.id}`,{cache:'no-store'});const detail=await selected.json();
+        if(!selected.ok||detail.order?.id!==order.id)throw new Error();
+        next=detail.order;
+      }
+      setData(body);if(next)setOrder(next);setCheckoutUrl('');setNotice('Saved status refreshed.');
+    }catch{setError('Could not refresh saved status. A return from Stripe does not confirm payment.');}finally{setBusy(false);}
+  }
   async function checkout(){if(!order||busy||!data.config.checkoutEnabled||order.payment_status!=='unpaid')return;setBusy(true);setError('');try{const response=await fetch(`/api/resume-writing/orders/${order.id}/checkout`,{method:'POST'});const body=await response.json();if(!response.ok)throw new Error(body.error||'Checkout is unavailable.');const url=new URL(body.url);const test=body.mode==='sandbox';if((body.mode!=='sandbox'&&body.mode!=='live')||url.origin!=='https://buy.stripe.com'||url.username||url.password||!(test?/^\/test_[A-Za-z0-9]+$/:/^\/(?!test_)[A-Za-z0-9]+$/).test(url.pathname)||url.hash||url.searchParams.size!==1||!/^[0-9a-f-]{36}$/i.test(url.searchParams.get('client_reference_id')??''))throw new Error('Checkout is unavailable.');setCheckoutUrl(url.toString());}catch(failure){setError(failure instanceof Error?failure.message:'Checkout is unavailable.');}finally{setBusy(false);}}
-  async function respond(action:'approve'|'revision'){if(!order||busy)return;revisionId.current||=crypto.randomUUID();setBusy(true);setError('');try{const response=await fetch(`/api/resume-writing/orders/${order.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,version:order.version,...(action==='revision'?{requestId:revisionId.current,note:revision}:{})})});const body=await response.json();if(!response.ok||!body.order)throw new Error(body.error||'Response was not confirmed.');saved(body.order);setNotice(action==='revision'?'Revision requested. Your original details remain unchanged.':'Thank you. Your résumé is marked complete.');}catch(failure){setError(failure instanceof Error?failure.message:'Could not confirm your response.');}finally{setBusy(false);}}
+  async function respond(action:'approve'|'revision'){if(!order||busy)return;revisionId.current||=crypto.randomUUID();setBusy(true);setError('');try{const response=await fetch(`/api/resume-writing/orders/${order.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,version:order.version,...(action==='revision'?{requestId:revisionId.current,note:revision}:{})})});const body=await response.json();if(!response.ok||!body.order)throw new Error(body.error||'Response was not confirmed.');saved(action==='approve'&&body.order.id===order.id&&body.order.revision_count===order.revision_count?{...body.order,files:body.order.files??order.files}:body.order);setNotice(action==='revision'?'Revision requested. Your original details remain unchanged.':'Thank you. Your résumé is marked complete.');}catch(failure){setError(failure instanceof Error?failure.message:'Could not confirm your response.');}finally{setBusy(false);}}
   const terms=order?.terms??data.config.terms;const editable=!order||order.intake_status==='draft';const clear=order?.payment_status==='paid'&&!order.payment_review_required;
   return <aside className={styles.purchase} aria-label="Optional résumé writing service">
     <div className={styles.purchaseOffer}>
@@ -71,7 +84,7 @@ export default function ResumeWritingOffer({initialData,initialConfig,initialOrd
         <button ref={trigger} type="button" className={`${styles.primary} ${styles.purchaseCta}`} aria-expanded={open} aria-controls={`${id}-intake`} onClick={()=>setOpen(!open)}>Get my résumé · EC$50</button>
         <p className={styles.purchaseStartNote}>No existing CV or paid work experience needed. Save your starting point and finish at your pace.</p>
         <div className={styles.purchaseCall}>
-          <p>Questions about our résumé-writing service? <a href={writingConsultationUrl} target="_blank" rel="noopener noreferrer">Book a free call</a></p>
+          <p>Questions before you buy? <a href={writingConsultationUrl} target="_blank" rel="noopener noreferrer">Book a free call</a></p>
           <p>An optional call for questions before you buy. You can order directly.</p>
         </div>
       </div>
@@ -81,8 +94,9 @@ export default function ResumeWritingOffer({initialData,initialConfig,initialOrd
       <li><strong>Confirm your order</strong><span>Review the terms and pay securely on Stripe.</span></li>
       <li><strong>Review your résumé</strong><span>Download your files and request your included revision.</span></li>
     </ol>
-    {!data.config.intakeEnabled&&<p className={styles.purchaseTiming}>Proposed first-draft timing: the next day after payment and a completed questionnaire. Delivery cutoffs, weekends and final terms will be confirmed before purchasing opens.</p>}
+    {!data.config.intakeEnabled&&<p className={styles.purchaseTiming}>Delivery timing, revision and refund terms will be confirmed before purchasing opens.</p>}
     <p className={styles.purchaseFree}>The builder and job applications remain free.</p>
+    <p className={styles.purchaseTiming}>After your résumé is delivered, payments are non-refundable except where required by law. Your included revision remains available.</p>
     {data.config.paymentMode==='sandbox'&&<p role="status">Sandbox test checkout · no real payment. Use synthetic details only.</p>}
     {!data.config.checkoutEnabled&&<p className={styles.purchaseNotice}>Purchasing is not available yet. Delivery, revision, refund and privacy terms must be approved before requests and checkout open.</p>}
     <div id={`${id}-intake`} className={styles.purchasePanel} hidden={!open}>

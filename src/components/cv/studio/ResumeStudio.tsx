@@ -7,9 +7,10 @@ import { getApplicationReturnTo } from '@/lib/return-to';
 import { useResumeEditor } from './useResumeEditor';
 import ResumePreview from './ResumePreview';
 import ResumeWritingOffer from './ResumeWritingOffer';
+import type { WritingConfig } from '@/lib/resume-writing';
 import styles from './studio.module.css';
 
-export default function ResumeStudio({ applicationReturnTo }: { applicationReturnTo?: string | null }) {
+export default function ResumeStudio({ applicationReturnTo, writingConfig }: { applicationReturnTo?: string | null; writingConfig?: WritingConfig }) {
   const returnTo = getApplicationReturnTo(applicationReturnTo);
   const profileHref = returnTo ? `/profile?returnTo=${encodeURIComponent(returnTo)}` : '/profile';
   const editor = useResumeEditor();
@@ -114,7 +115,7 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
             <p className={styles.saveHint}>Save each entry when you’re ready. Your preview updates as you type.</p>
           </form> : <div className={styles.emptyEditor}><FileText size={32} /><h2>Add your first {definition!.singular}</h2><p>You don’t need to fill every section. Include what supports your next role.</p><button className={styles.primary} onClick={() => editor.add(definition!.key)}><Plus size={16} />Add {definition!.singular}</button></div>}
         </>}
-        <ResumeWritingOffer applicationReturnTo={returnTo} />
+        <ResumeWritingOffer applicationReturnTo={returnTo} initialConfig={writingConfig} />
       </section>
 
       <section className={styles.preview} role="region" aria-label="Live resume preview">

@@ -36,6 +36,12 @@ describe('owner/admin order boundaries',()=>{
   it('stays disabled by default and does not query missing order tables',async()=>{
     vi.stubEnv('RESUME_WRITING_ENABLED','');expect(await (await GET()).json()).toMatchObject({config:{intakeEnabled:false,checkoutEnabled:false},orders:[]});
     expect((await POST(request(valid()))).status).toBe(503);expect((await checkout(request({}),params)).status).toBe(503);expect(b.from).not.toHaveBeenCalled();expect(b.checkout).not.toHaveBeenCalled();
+    expect(await (await adminGET(new Request('https://joblink.test/api/admin/resume-writing'))).json()).toMatchObject({orders:[],unmatched:[],disabled:true});
+    expect((await ownerGET(new Request('https://joblink.test/order'),params)).status).toBe(503);
+    expect((await ownerPATCH(request({action:'save',version:2,intake:writingIntake},'PATCH'),params)).status).toBe(503);
+    expect((await adminReconcile(request({sessionId:'cs_live_Example'}))).status).toBe(503);
+    expect((await PATCH(request({version:1,status:'writing'},'PATCH'),params)).status).toBe(503);
+    expect(b.from).not.toHaveBeenCalled();expect(b.rpc).not.toHaveBeenCalled();expect(b.reconcile).not.toHaveBeenCalled();
   });
   it('requires configured terms before collecting intake or opening payment',async()=>{
     vi.stubEnv('RESUME_WRITING_DELIVERY_TERMS','');expect((await POST(request(valid()))).status).toBe(503);expect((await checkout(request({}),params)).status).toBe(503);
