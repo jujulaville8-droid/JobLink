@@ -197,7 +197,8 @@ future jobs at either company stay excluded. No email content is copied here.
 
 Street Blends keeps the original October 15 date-only deadline from its public
 Dadli Jobs posting, recorded in `public-job-deadlines.ts` and emitted as
-`validThrough`; markup retires after that date in Antigua. Hermitage Bay has no
+`validThrough`; markup retired after that date in Antigua until [PR #74](https://github.com/jujulaville8-droid/JobLink/pull/74)
+removed the entry (see October 19 below). Hermitage Bay has no
 published deadline, so no `validThrough` is emitted. Stored listing content,
 status and the application route are unchanged, and there are no database writes.
 
@@ -248,7 +249,8 @@ claimed. No email content is copied here.
 
 Seagull Inflatables keeps the October 18 date-only deadline from its public
 Youth On The Move Facebook posting, recorded in `public-job-deadlines.ts` and
-emitted as `validThrough`; markup retires after that date in Antigua. The
+emitted as `validThrough`; markup retired after that date in Antigua until
+[PR #74](https://github.com/jujulaville8-droid/JobLink/pull/74) removed the entry (see October 19 below). The
 `job-closures.ts` entry from PR #54 was removed in PR #59, so the page stays
 open until Julian approves closing it. The Donkey Sanctuary posting published
 no deadline, so no `validThrough` is emitted. Stored listing content, status and
@@ -323,3 +325,19 @@ IDs. No company-wide permission is claimed. No contact details are recorded.
 The posting published no deadline, so no `validThrough` is emitted and no
 closure entry is added (no automatic job closing). Stored listing content,
 status and the application route are unchanged; no database writes.
+
+## October 19, 2026 public deadlines removed (Street Blends, Seagull Inflatables)
+
+Julian turned off automatic job closing, so these two employer-approved
+vacancies stay open with no deadline. Their `public-job-deadlines.ts` entries
+(October 15 and October 18) had silently retired the JobPosting markup after
+those dates while the pages stayed live. [PR #74](https://github.com/jujulaville8-droid/JobLink/pull/74) removes both entries,
+so no `validThrough` is emitted and the markup is treated like other
+no-deadline jobs. The vacancy-scoped approvals from PR #41 and PR #55 are
+unchanged, and no closure entry is added.
+
+The stored descriptions still contain the original "Application deadline"
+lines, but `publicJobDescription` hides that labelled line on the page, in the
+meta description and in the JSON-LD description, so nothing visible states a
+past deadline. Stored listing content, status and the application route are
+unchanged; no database writes.
