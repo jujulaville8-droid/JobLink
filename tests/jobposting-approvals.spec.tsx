@@ -436,7 +436,7 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
 });
 
 describe.each([
-  ['03aeffa0-f680-46b2-b5eb-ea3891d0ce44', '6b354ee5-ff32-44b3-a5c8-29f73650b51a', 'Street Blends', 'Barista Prep Assistants', '2026-10-15'],
+  ['03aeffa0-f680-46b2-b5eb-ea3891d0ce44', '6b354ee5-ff32-44b3-a5c8-29f73650b51a', 'Street Blends', 'Barista Prep Assistants', undefined],
   ['40b28447-7653-4646-bc21-b8f0653d9409', '22a1fd24-ef01-4b55-8043-1cdca65bc25c', 'Hermitage Bay', 'Line Cook', undefined],
 ])('%s October 12 vacancy-scoped approval', (jobId, companyId, companyName, title, validThrough) => {
   beforeEach(() => {
@@ -521,7 +521,7 @@ describe.each([
 });
 
 describe.each([
-  ['7181a600-df8e-45dd-b8d1-a0e910c1f494', '8b95a031-0ce5-4e2d-9087-fda18d2ccc7c', 'Seagull Inflatables', 'Operations & Admin Coordinator', '2026-10-18', false],
+  ['7181a600-df8e-45dd-b8d1-a0e910c1f494', '8b95a031-0ce5-4e2d-9087-fda18d2ccc7c', 'Seagull Inflatables', 'Operations & Admin Coordinator', undefined, false],
   ['66737b60-cf1a-4fd0-980c-14f1c9412923', 'ea87a75a-dece-4fd6-afa7-64efbd51a88d', "Antigua's Donkey Sanctuary", 'Team Member (Visitor Services & Gift Shop)', undefined, true],
 ])('%s October 14 vacancy-scoped approval', (jobId, companyId, companyName, title, validThrough, unconfirmed) => {
   beforeEach(() => {
@@ -736,5 +736,25 @@ describe("cead1cc1-636b-438b-9c8a-bd39fd02c045 October 16 The Tailor's Daughter 
   it('stays live well into the future because no closure or deadline is recorded', async () => {
     vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+describe.each([
+  ['03aeffa0-f680-46b2-b5eb-ea3891d0ce44', '6b354ee5-ff32-44b3-a5c8-29f73650b51a', 'Street Blends', 'Barista Prep Assistants'],
+  ['7181a600-df8e-45dd-b8d1-a0e910c1f494', '8b95a031-0ce5-4e2d-9087-fda18d2ccc7c', 'Seagull Inflatables', 'Operations & Admin Coordinator'],
+])('%s keeps JobPosting after its old public deadline (no automatic closing)', (jobId, companyId, companyName, title) => {
+  beforeEach(() => {
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it.each(['2026-10-19T13:00:00Z', '2027-03-01T14:00:00Z'])('emits JobPosting without validThrough at %s', async now => {
+    vi.setSystemTime(new Date(now));
+    const schema = (await schemas()).find(entry => entry['@type'] === 'JobPosting');
+    expect(schema).toMatchObject({ identifier: { value: jobId } });
+    expect(schema).not.toHaveProperty('validThrough');
   });
 });
