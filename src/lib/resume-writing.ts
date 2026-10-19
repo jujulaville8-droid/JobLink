@@ -26,8 +26,9 @@ export type ResumeWritingOrder = {
   id: string; intake: ResumeWritingIntake; terms: WritingTerms; payment_status: string; checkout_status: string;
   fulfillment_status: WritingStatus; payment_review_required: boolean; revision_count: number; version: number; created_at: string;
   intake_status: 'draft'|'complete'; revision_note: string|null; files?: WritingFile[];
+  first_draft_due_at?:string|null; revision_expires_at?:string|null; completed_at?:string|null;
 };
 export type WritingFile = { id:string; kind:'pdf'|'editable'; revision_number:number; published_at:string|null };
 export const writingFileFields = 'id,kind,revision_number,published_at';
-export const writingOrderFields = 'id,intake,intake_status,terms,payment_status,checkout_status,fulfillment_status,payment_review_required,revision_count,revision_note,version,created_at';
+export const writingOrderFields = 'id,intake,intake_status,terms,payment_status,checkout_status,fulfillment_status,payment_review_required,revision_count,revision_note,version,created_at,first_draft_due_at,revision_expires_at,completed_at';
 export const writingConsultationUrl = 'https://calendly.com/qqwebsitesolutions/qq-solutions-consultation';

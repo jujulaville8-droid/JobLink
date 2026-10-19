@@ -9,6 +9,7 @@ import { handleResumeWritingStripeEvent, inspectResumeWritingSession, reconcileR
 import { writingAdmin, writingId, writingIntake, writingOther, writingSession, writingTerms, writingUser } from './fixtures/resume-writing';
 import { resumeWritingPolicy } from '@/lib/resume-writing-stripe';
 import { sandboxEnv } from './fixtures/resume-writing-sandbox';
+import { approvedWritingTerms } from '@/lib/resume-writing-terms';
 vi.mock('server-only',()=>({}));
 let db:PGlite; let reference:string;
 const migration='supabase/migrations/20261017010000_resume_writing_orders.sql';
@@ -28,6 +29,7 @@ beforeAll(async()=>{
     GRANT SELECT ON users TO authenticated;
     INSERT INTO users(id,is_admin) VALUES ('${writingUser}',false),('${writingOther}',false),('${writingAdmin}',true);`);
   await db.exec(readFileSync(migration,'utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261019054046_resume_writing_launch_terms.sql','utf8'));
 },20000);
 afterAll(async()=>{await db.close();});
 afterEach(()=>vi.unstubAllEnvs());
@@ -43,7 +45,7 @@ async function createOrder(id=writingId,user=writingUser,intake=writingIntake) {
 }
 const state=async()=> (await db.query<{payment_status:string;fulfillment_status:string;payment_review_required:boolean;revision_count:number;version:number}>('SELECT payment_status,fulfillment_status,payment_review_required,revision_count,version,intake_status FROM resume_writing_orders WHERE id=$1',[writingId])).rows[0];
 const rpc=vi.fn(async(name:string,args:Record<string,unknown>)=>{
-  const allowed:Record<string,string[]>={reconcile_resume_writing_payment:['p_event_id','p_event_type','p_session_id','p_reference','p_state','p_payment_intent_id','p_charge_id','p_payment_policy']};
+  const allowed:Record<string,string[]>={reconcile_resume_writing_payment:['p_event_id','p_event_type','p_session_id','p_reference','p_state','p_payment_intent_id','p_charge_id','p_payment_policy','p_paid_at']};
   try{const keys=allowed[name];if(!keys)throw new Error('Unexpected RPC');const result=await db.query<{result:unknown}>(`SELECT ${name}(${keys.map((_,i)=>`$${i+1}`).join(',')}) AS result`,keys.map(k=>args[k]));return {data:result.rows[0].result,error:null};}
   catch{return {data:null,error:{message:'Fixture database rejected operation'}};}
 });
@@ -57,7 +59,7 @@ function provider(session=writingSession(reference)) {
   const list=vi.fn().mockResolvedValue({data:[session]});
   return {retrieve,account,link,list,client:{accounts:{retrieve:account},checkout:{sessions:{retrieve,list}},paymentLinks:{retrieve:link}} as unknown as Parameters<typeof inspectResumeWritingSession>[0]};
 }
-const apply=async(session=writingSession(reference),event='evt_Example')=>reconcileResumeWritingSession(provider(session).client,storage,{id:event,type:'checkout.session.completed'},session.id);
+const apply=async(session=writingSession(reference),event='evt_Example',created=Math.floor(Date.now()/1000))=>reconcileResumeWritingSession(provider(session).client,storage,{id:event,type:'checkout.session.completed',created,data:{object:{id:session.id,payment_status:'paid'}}},session.id);
 async function status(next:string,delivered=false,actor=writingAdmin,version?:number) {
   const current=await state();
   if(next==='draft_ready'){
@@ -70,6 +72,49 @@ async function status(next:string,delivered=false,actor=writingAdmin,version?:nu
   return db.query('SELECT update_resume_writing_fulfillment($1,$2,$3,$4,$5)',[writingId,actor,version??current.version,next,delivered]);
 }
 describe('private order schema and payment reconciliation',()=>{
+  it('anchors the 24-hour deadline to the later payment/intake time and preserves it through refreshes',async()=>{
+    await db.query('UPDATE resume_writing_orders SET terms=$1,intake_completed_at=clock_timestamp()-interval \'3 hours\' WHERE id=$2',[JSON.stringify(approvedWritingTerms),writingId]);
+    const session=writingSession(reference),paidTime=Math.floor(Date.now()/1000)-3600;await apply(session,'evt_terms_paid',paidTime);
+    const first=(await db.query<{paid_at:Date;first_draft_due_at:Date}>('SELECT paid_at,first_draft_due_at FROM resume_writing_orders WHERE id=$1',[writingId])).rows[0];
+    expect(new Date(first.first_draft_due_at).getTime()-new Date(first.paid_at).getTime()).toBe(24*60*60*1000);
+    await apply(session,'evt_terms_refresh',paidTime+1200);
+    expect((await db.query<{first_draft_due_at:Date|null}>('SELECT first_draft_due_at FROM resume_writing_orders WHERE id=$1',[writingId])).rows[0].first_draft_due_at).toEqual(first.first_draft_due_at);
+  });
+  it('starts no delivery clock until payment and complete intake are both present',async()=>{
+    await db.query('UPDATE resume_writing_orders SET terms=$1,intake_status=\'draft\',intake_completed_at=NULL WHERE id=$2',[JSON.stringify(approvedWritingTerms),writingId]);
+    await apply(undefined,'evt_before_intake');expect((await db.query<{first_draft_due_at:Date|null}>('SELECT first_draft_due_at FROM resume_writing_orders')).rows[0].first_draft_due_at).toBeNull();
+    await db.query('SELECT update_resume_writing_intake($1,$2,$3,$4,true,$5)',[writingId,writingUser,(await state()).version,JSON.stringify(writingIntake),resumeWritingPolicy().key]);
+    const row=(await db.query<{hours:number}>('SELECT extract(epoch from(first_draft_due_at-intake_completed_at))/3600 as hours FROM resume_writing_orders')).rows[0];expect(Number(row.hours)).toBe(24);
+  });
+  it('uses an async success event time, not old charge creation or delayed receipt of an unpaid completion',async()=>{
+    await db.query('UPDATE resume_writing_orders SET terms=$1,intake_completed_at=clock_timestamp()-interval \'3 hours\' WHERE id=$2',[JSON.stringify(approvedWritingTerms),writingId]);
+    const session=writingSession(reference),created=Math.floor(Date.now()/1000)-3600;
+    await expect(reconcileResumeWritingSession(provider(session).client,storage,{id:'evt_stale_completed',type:'checkout.session.completed',created:created-86400,data:{object:{id:session.id,payment_status:'unpaid'}}},session.id)).rejects.toThrow('storage_unavailable');
+    expect((await state()).payment_status).toBe('unpaid');
+    await reconcileResumeWritingSession(provider(session).client,storage,{id:'evt_async_success',type:'checkout.session.async_payment_succeeded',created,data:{object:{id:session.id,payment_status:'paid'}}},session.id);
+    const row=(await db.query<{paid_at:Date;first_draft_due_at:Date}>('SELECT paid_at,first_draft_due_at FROM resume_writing_orders')).rows[0];
+    expect(new Date(row.paid_at).getTime()).toBe(created*1000);expect(new Date(row.first_draft_due_at).getTime()).toBe(created*1000+86400000);
+  });
+  it('enforces the 7-day window in the locked RPC, preserves an accepted retry and pauses retention on reopening',async()=>{
+    await db.query('UPDATE resume_writing_orders SET terms=$1 WHERE id=$2',[JSON.stringify(approvedWritingTerms),writingId]);await apply();await status('writing');await status('draft_ready');
+    const published=(await db.query<{first_delivered_at:Date;revision_expires_at:Date}>('SELECT first_delivered_at,revision_expires_at FROM resume_writing_orders')).rows[0];
+    expect(new Date(published.revision_expires_at).getTime()-new Date(published.first_delivered_at).getTime()).toBe(168*3600000);
+    await status('complete');expect((await db.query<{completed_at:Date|null}>('SELECT completed_at FROM resume_writing_orders')).rows[0].completed_at).not.toBeNull();
+    expect((await db.query<{revision_expires_at:Date|null}>('SELECT revision_expires_at FROM resume_writing_orders')).rows[0].revision_expires_at).toEqual(published.revision_expires_at);
+    const request=randomUUID(),note='Correct my school project';const version=(await state()).version;
+    await db.exec("ALTER TABLE resume_writing_orders DISABLE TRIGGER resume_writing_term_dates; UPDATE resume_writing_orders SET revision_expires_at=clock_timestamp()-interval '1 second'; ALTER TABLE resume_writing_orders ENABLE TRIGGER resume_writing_term_dates");
+    await expect(db.query('SELECT respond_resume_writing_draft($1,$2,$3,\'revision\',$4,$5,$6)',[writingId,writingUser,version,note,request,resumeWritingPolicy().key])).rejects.toThrow('revision_window_closed');
+    expect((await state()).revision_count).toBe(0);
+    await db.exec('ALTER TABLE resume_writing_orders DISABLE TRIGGER resume_writing_term_dates');
+    await db.query('UPDATE resume_writing_orders SET revision_expires_at=$1',[published.revision_expires_at]);
+    await db.exec('ALTER TABLE resume_writing_orders ENABLE TRIGGER resume_writing_term_dates');
+    await db.query('SELECT respond_resume_writing_draft($1,$2,$3,\'revision\',$4,$5,$6)',[writingId,writingUser,version,note,request,resumeWritingPolicy().key]);
+    expect((await db.query<{completed_at:Date|null}>('SELECT completed_at FROM resume_writing_orders')).rows[0].completed_at).toBeNull();
+    await db.exec("ALTER TABLE resume_writing_orders DISABLE TRIGGER resume_writing_term_dates; UPDATE resume_writing_orders SET revision_expires_at=clock_timestamp()-interval '1 second'; ALTER TABLE resume_writing_orders ENABLE TRIGGER resume_writing_term_dates");
+    await expect(db.query('SELECT respond_resume_writing_draft($1,$2,$3,\'revision\',$4,$5,$6)',[writingId,writingUser,version,note,request,resumeWritingPolicy().key])).resolves.toBeTruthy();
+    await expect(db.query('SELECT respond_resume_writing_draft($1,$2,$3,\'revision\',$4,$5,$6)',[writingId,writingUser,(await state()).version,'Another request',randomUUID(),resumeWritingPolicy().key])).rejects.toThrow();
+    expect((await state()).revision_count).toBe(1);
+  });
   it('stores an immutable consented intake with idempotent request creation',async()=>{
     await createOrder();expect((await db.query('SELECT id FROM resume_writing_orders')).rows).toHaveLength(1);
     await expect(createOrder(writingId,writingOther)).rejects.toThrow('request_conflict');

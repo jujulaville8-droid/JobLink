@@ -19,7 +19,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "codex/resume-purchase-foundation": false
+      "codex/resume-purchase-foundation": false,
+      "codex/resume-approved-launch": false
     }
   }
 }

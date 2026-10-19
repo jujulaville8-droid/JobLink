@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   // They can never grant employer entitlements, even for an unrelated event.
   let resumeEvent: Stripe.Event | undefined
   let resumeConfigured = false
-  if (process.env.RESUME_WRITING_ENABLED === 'true') {
+  if (process.env.RESUME_WRITING_ENABLED === 'true' || process.env.RESUME_WRITING_LIVE_WEBHOOK_SECRET || process.env.RESUME_WRITING_SANDBOX_WEBHOOK_SECRET) {
     try {
       const secret = getResumeWritingWebhookSecret()
       resumeConfigured = true
@@ -86,6 +86,9 @@ export async function POST(req: NextRequest) {
   }
   if (resumeEvent) {
     if (resumeEvent.livemode !== resumeWritingPolicy().livemode) return NextResponse.json({ error: 'Payment mode mismatch' }, { status: 400 })
+    // A staged endpoint can prove its genuine Stripe signature while all
+    // fulfillment remains paused. A 503 preserves provider retries.
+    if (process.env.RESUME_WRITING_ENABLED !== 'true') return NextResponse.json({ error: 'Resume service disabled', resumeSignatureVerified: true }, { status: 503 })
     try {
       const handled = await handleResumeWritingStripeEvent(() => getResumeWritingStripe(), createAdminClient(), resumeEvent)
       return NextResponse.json({ received: true, ignored: !handled })

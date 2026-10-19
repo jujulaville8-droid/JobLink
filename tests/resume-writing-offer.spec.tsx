@@ -1,15 +1,16 @@
 import { afterEach,beforeEach,describe,expect,it,vi } from 'vitest';
-import { cleanup,render,screen,waitFor } from '@testing-library/react';
+import { cleanup,render,screen,waitFor,within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ResumeWritingOffer from '@/components/cv/studio/ResumeWritingOffer';
 import { writingOrder,writingTerms } from './fixtures/resume-writing';
+import { approvedWritingTerms } from '@/lib/resume-writing-terms';
 const config={intakeEnabled:true,checkoutEnabled:true,terms:writingTerms,paymentMode:'sandbox' as const};
 const disabled={config:{intakeEnabled:false,checkoutEnabled:false,terms:null},orders:[]};
 beforeEach(()=>vi.stubGlobal('fetch',vi.fn()));afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 describe('optional résumé service',()=>{
   it('shows one-time price, free builder and an optional pre-purchase questions call with checkout disabled',()=>{
     render(<ResumeWritingOffer initialData={disabled}/>);expect(screen.getByText(/^EC\$50$/)).toBeTruthy();expect(screen.getByText(/builder and job applications remain free/)).toBeTruthy();expect(screen.getByText(/Purchasing is not available yet/)).toBeTruthy();
-    expect(screen.getByText('After your résumé is delivered, payments are non-refundable except where required by law. Your included revision remains available.')).toBeTruthy();expect(screen.queryByText(/the next day after payment/)).toBeNull();
+    for(const [key,value] of Object.entries(approvedWritingTerms))if(key!=='version')expect(within(screen.getByRole('region',{name:'Résumé service terms'})).getByText(value)).toBeTruthy();expect(screen.queryByText(/terms must be approved/)).toBeNull();
     const link=screen.getByRole('link',{name:'Book a free call'});expect(screen.getByText('Questions before you buy?')).toBeTruthy();expect(link.getAttribute('href')).toBe('https://calendly.com/qqwebsitesolutions/qq-solutions-consultation');expect(link.getAttribute('rel')).toBe('noopener noreferrer');expect(link.getAttribute('target')).toBe('_blank');expect(screen.getByText('An optional call for questions before you buy. You can order directly.')).toBeTruthy();expect(screen.queryByRole('article',{name:'Fictional résumé sample'})).toBeNull();expect(screen.queryByRole('form')).toBeNull();expect(fetch).not.toHaveBeenCalled();
   });
   it('keeps unsaved intake when closed and reopened, without sending it or persisting it on unmount',async()=>{
