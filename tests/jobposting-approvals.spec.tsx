@@ -758,3 +758,47 @@ describe.each([
     expect(schema).not.toHaveProperty('validThrough');
   });
 });
+
+describe.each([
+  ['d00f5ff5-29cf-4110-9828-a2f84e49245f', '5d2c7dd8-7ff7-4dea-a3c7-22f81cf04eb3', 'The Massage Goddess', 'Nail Technician', '2026-10-19', true],
+  ['e81d3a56-c9fe-42dd-99ab-a35398398582', 'd3c66ca7-9066-4f4a-a87c-a307b9d63ab5', 'ELand Courier Services', 'Driver/Office Assistant', '2026-10-17', false],
+])('%s October 17–19 vacancy-scoped approval', (jobId, companyId, companyName, title, attestedOn, unconfirmed) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-10-19T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy with the right employment type and no deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn, evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/76',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
+    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(await pageHtml()).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other current and future vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
