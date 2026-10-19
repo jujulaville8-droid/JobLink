@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { updateResumeOrderSchema,writingOrderFields,writingFileFields } from '@/lib/resume-writing';
 import { writingBody,writingConfig,writingJson,writingLimit,writingOwner } from '@/lib/resume-writing-server';
 import { resumeWritingPolicy } from '@/lib/resume-writing-stripe';
+import { writingRevisionAvailable } from '@/lib/resume-writing-terms';
 
 export async function GET(_request:Request,{params}:{params:Promise<{id:string}>}){
   try{
@@ -24,6 +25,14 @@ export async function PATCH(request:Request,{params}:{params:Promise<{id:string}
     if(!z.uuid().safeParse(id).success || !body.success)return writingJson({error:'Check your questionnaire or request.'},400);
     const limited=await writingLimit(auth.user.id);if(limited)return limited;
     const data=body.data,db=createAdminClient(),policy=resumeWritingPolicy();
+    if(data.action==='revision'){
+      const existing=await db.from('resume_writing_orders').select('terms,revision_count,revision_request_id,revision_note,revision_expires_at').eq('id',id).eq('user_id',auth.user.id).eq('payment_policy',policy.key).maybeSingle();
+      if(existing.error)throw new Error();if(!existing.data)return writingJson({error:'Request not found.'},404);
+      const retry=existing.data.revision_request_id===data.requestId&&existing.data.revision_note===data.note;
+      if(!retry){
+        if(!writingRevisionAvailable(existing.data))return writingJson({error:'The revision request window has ended or its delivery date could not be confirmed.'},409);
+      }
+    }
     const result=data.action==='save'||data.action==='submit'
       ?await db.rpc('update_resume_writing_intake',{p_id:id,p_user_id:auth.user.id,p_version:data.version,p_intake:data.intake,p_submit:data.action==='submit',p_policy:policy.key})
       :await db.rpc('respond_resume_writing_draft',{p_id:id,p_user_id:auth.user.id,p_version:data.version,p_action:data.action,p_note:data.action==='revision'?data.note:null,p_request_id:data.action==='revision'?data.requestId:null,p_policy:policy.key});

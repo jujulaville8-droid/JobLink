@@ -54,12 +54,20 @@ export async function inspectResumeWritingSession(stripe: Reader, sessionId: str
 }
 
 /** One DB transaction binds a known private reference, receipt and event to its order. */
-export async function reconcileResumeWritingSession(stripe: Reader, db: SupabaseClient, event: { id: string; type: string }, sessionId: string) {
+export async function reconcileResumeWritingSession(stripe: Reader, db: SupabaseClient, event: { id: string; type: string; created?:number; data?:{object?:unknown} }, sessionId: string) {
   const snapshot = await inspectResumeWritingSession(stripe, sessionId, event.type);
+  // Only the original, signature-verified success event anchors payment time.
+  // Charge creation, a late delivery/replay, and manual reads cannot restart it.
+  const eventSession=event.data?.object as {id?:unknown;payment_status?:unknown}|undefined;
+  const successEvent=['checkout.session.completed','checkout.session.async_payment_succeeded'].includes(event.type)
+    && eventSession?.id===sessionId && eventSession.payment_status==='paid';
+  const created=event.created;
+  const paidAt=snapshot.state==='paid'&&successEvent&&typeof created==='number'&&Number.isSafeInteger(created)&&created>0&&created*1000<=Date.now()+300000
+    ?new Date(created*1000).toISOString():null;
   const { data, error } = await db.rpc('reconcile_resume_writing_payment', {
     p_event_id: event.id, p_event_type: event.type, p_session_id: snapshot.sessionId, p_reference: snapshot.reference,
     p_state: snapshot.state, p_payment_intent_id: snapshot.paymentIntentId, p_charge_id: snapshot.chargeId,
-    p_payment_policy:resumeWritingPolicy().key,
+    p_payment_policy:resumeWritingPolicy().key,p_paid_at:paidAt,
   });
   if (error || !data) throw new ResumeWritingPaymentError('storage_unavailable');
   return data as { outcome: string; duplicate: boolean; orderId?: string };

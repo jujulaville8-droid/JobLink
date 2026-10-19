@@ -3,6 +3,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { writingAdmin, writingId, writingIntake, writingOrder, writingTerms, writingUser } from './fixtures/resume-writing';
 import { resumeWritingPolicy } from '@/lib/resume-writing-stripe';
 import { sandboxEnv } from './fixtures/resume-writing-sandbox';
+import { approvedWritingTerms } from '@/lib/resume-writing-terms';
 const b=vi.hoisted(()=>({owner:vi.fn(),admin:vi.fn(),rpc:vi.fn(),from:vi.fn(),checkout:vi.fn(),reconcile:vi.fn(),filters:[] as [string,unknown][],row:null as unknown,queryError:null as unknown}));
 vi.mock('server-only',()=>({}));
 vi.mock('@/lib/api-auth',()=>({requireVerifiedUser:b.owner,requireAdmin:b.admin}));
@@ -88,6 +89,13 @@ describe('owner/admin order boundaries',()=>{
 });
 
 describe('resumable owner mutations',()=>{
+  it('refuses a new late revision before the mutation while preserving an identical accepted retry',async()=>{
+    const body={action:'revision',version:2,note:'Correct my school project',requestId:writingId};
+    b.row={...writingOrder,terms:approvedWritingTerms,revision_expires_at:'2000-01-01T00:00:00Z'};
+    expect((await ownerPATCH(request(body,'PATCH'),params)).status).toBe(409);expect(b.rpc).not.toHaveBeenCalledWith('respond_resume_writing_draft',expect.anything());
+    b.row={...b.row as object,revision_request_id:writingId,revision_note:body.note};
+    expect((await ownerPATCH(request(body,'PATCH'),params)).status).toBe(200);expect(b.rpc).toHaveBeenCalledWith('respond_resume_writing_draft',expect.objectContaining({p_request_id:writingId}));
+  });
   it('saves bounded unfinished details, validates only explicit submit, and binds owner/policy/version server-side',async()=>{
     const intake={...writingIntake,email:'a@',role:''};
     expect((await ownerPATCH(request({action:'save',version:2,intake},'PATCH'),params)).status).toBe(200);

@@ -22,6 +22,14 @@ function sandboxRequest(livemode=false,secret='whsec_SyntheticSandbox') {
   return new NextRequest('https://joblink.test/api/webhooks/stripe',{method:'POST',body,headers:{'stripe-signature':Stripe.webhooks.generateTestHeaderString({payload:body,secret})}});
 }
 it('verifies the independent sandbox signature without employer credentials or claims',async()=>{expect((await POST(sandboxRequest())).status).toBe(200);expect(b.construct).not.toHaveBeenCalled();expect(b.handle).toHaveBeenCalledOnce();expect(b.from).not.toHaveBeenCalled();});
+it('can prove a staged signature while paused without reconciling, claiming or dropping provider retries',async()=>{
+  const req=sandboxRequest();vi.stubEnv('RESUME_WRITING_ENABLED','false');const response=await POST(req);
+  expect(response.status).toBe(503);expect(await response.json()).toMatchObject({resumeSignatureVerified:true});expect(b.handle).not.toHaveBeenCalled();expect(b.from).not.toHaveBeenCalled();expect(b.construct).not.toHaveBeenCalled();
+});
+it('never grants the paused signature marker for a mismatched payment mode',async()=>{
+  const req=sandboxRequest(true);vi.stubEnv('RESUME_WRITING_ENABLED','false');const response=await POST(req);
+  expect(response.status).toBe(400);expect(await response.json()).not.toHaveProperty('resumeSignatureVerified');expect(b.handle).not.toHaveBeenCalled();
+});
 it('rejects cross-mode or wrong-secret résumé signatures without granting employer entitlements',async()=>{
   expect((await POST(sandboxRequest(true))).status).toBe(400);expect(b.handle).not.toHaveBeenCalled();
   expect((await POST(sandboxRequest(false,'whsec_SyntheticWrong'))).status).toBe(400);expect(b.from).not.toHaveBeenCalled();

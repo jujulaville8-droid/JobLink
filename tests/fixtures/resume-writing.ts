@@ -15,6 +15,6 @@ export function writingSession(reference = writingId, suffix='Example', p:Writin
     total_details:{amount_discount:0,amount_shipping:0,amount_tax:0},
     line_items:{has_more:false,data:[{quantity:1,price:{id:String(p.priceId),product:String(p.productId),currency:'xcd',unit_amount:5000}}]},
     payment_intent:{id:`pi_${suffix}`,status:'succeeded',currency:'xcd',amount_received:5000,
-      latest_charge:{id:`ch_${suffix}`,status:'succeeded',currency:'xcd',paid:true,captured:true,amount_captured:5000,amount_refunded:0,refunded:false,disputed:false}},
+      latest_charge:{id:`ch_${suffix}`,created:Math.floor(Date.parse('2026-10-18T12:00:00Z')/1000),status:'succeeded',currency:'xcd',paid:true,captured:true,amount_captured:5000,amount_refunded:0,refunded:false,disputed:false}},
   };
 }
