@@ -45,6 +45,23 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // The Massage Goddess replied yes on 2026-10-19 (ET) by email reply to the JobLink
+  // inbox to posting this Nail Technician vacancy. Full Time is an unconfirmed placeholder.
+  "d00f5ff5-29cf-4110-9828-a2f84e49245f": {
+    companyId: "5d2c7dd8-7ff7-4dea-a3c7-22f81cf04eb3",
+    companyName: "The Massage Goddess",
+    attestedOn: "2026-10-19",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/76",
+    employmentTypeUnconfirmed: true,
+  },
+  // ELand Courier Services replied yes on 2026-10-17 (ET) by email reply to the JobLink
+  // inbox to posting this Driver/Office Assistant vacancy, confirmed Full Time.
+  "e81d3a56-c9fe-42dd-99ab-a35398398582": {
+    companyId: "d3c66ca7-9066-4f4a-a87c-a307b9d63ab5",
+    companyName: "ELand Courier Services",
+    attestedOn: "2026-10-17",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/76",
+  },
   // Julian Laville (site owner) obtained The Tailor's Daughter Inc.'s permission directly and
   // attested it on 2026-10-16 (ET) for this Part-Time Retail Sales Associate vacancy, posted
   // at his request. Part Time per the employer's own post.

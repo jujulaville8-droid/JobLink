@@ -341,3 +341,21 @@ lines, but `publicJobDescription` hides that labelled line on the page, in the
 meta description and in the JSON-LD description, so nothing visible states a
 past deadline. Stored listing content, status and the application route are
 unchanged; no database writes.
+
+## October 17–19, 2026 vacancy-scoped employer approvals (The Massage Goddess, ELand Courier Services)
+
+[PR #76](https://github.com/jujulaville8-droid/JobLink/pull/76) records two email replies to the JobLink inbox in which each
+employer said yes to JobLink posting the vacancy: The Massage Goddess on
+October 19, 2026 (about 10:34 AM ET) and ELand Courier Services on October 17,
+2026 (1:21 PM ET). Each permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No contact details or email content beyond the approval are recorded.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| The Massage Goddess — Nail Technician (Coolidge) | `d00f5ff5-29cf-4110-9828-a2f84e49245f` | `5d2c7dd8-7ff7-4dea-a3c7-22f81cf04eb3` | 2026-10-19 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| ELand Courier Services — Driver/Office Assistant (St. John's) | `e81d3a56-c9fe-42dd-99ab-a35398398582` | `d3c66ca7-9066-4f4a-a87c-a307b9d63ab5` | 2026-10-17 | Full Time, confirmed |
+
+Neither live listing shows a deadline, so no `validThrough` is emitted and no
+closure entry is added (no automatic job closing). Stored listing content,
+status and the application route are unchanged; no database writes.
