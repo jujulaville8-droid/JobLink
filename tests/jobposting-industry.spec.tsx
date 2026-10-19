@@ -42,10 +42,12 @@ it.each([null, '', '   '])('omits industry when the page shows none (%j)', async
   expect(Object.hasOwn(posting, 'industry')).toBe(false);
 });
 
-it.each([null, '', '   '])('displays an honest missing location and never substitutes company HQ in JobPosting (%j)', async location => {
+it.each([null, '', '   '])('falls back to the company address when the job has no location (%j)', async location => {
   fixture.location = location;
   const { container, posting } = await renderPage();
-  expect(container.textContent).toContain('Location not provided');
+  // The company address here is the bare country, so the page shows it and
+  // JobPosting keeps only addressCountry rather than a false town.
+  expect(container.textContent).not.toContain('Location not provided');
   expect(posting.jobLocation.address.addressLocality).toBeUndefined();
   const bar = container.querySelector('[data-mobile-apply]')!;
   expect(bar.closest('.animate-fade-up')).toBeNull();

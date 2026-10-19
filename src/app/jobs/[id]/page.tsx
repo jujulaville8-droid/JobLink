@@ -261,12 +261,16 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Only send a locality we actually have. A bare "Antigua" / "Antigua and
   // Barbuda" is the country, not a town, and a hardcoded default town/parish
   // would be false location data under Google's job posting policies.
-  const rawLocality = normalizeJobLocation(job.location);
+  // A job without its own location falls back to the company's address,
+  // unless that address only says "remote", which is not a place.
+  const companyLocality = normalizeJobLocation(company?.location);
+  const rawLocality = normalizeJobLocation(job.location) || (/remote/i.test(companyLocality) ? "" : companyLocality);
   const addressLocality = rawLocality
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")
     .trim();
-  const isRemoteJob = rawLocality.toLowerCase().includes("remote");
+  // Remote status comes only from the listing itself, never the company address.
+  const isRemoteJob = normalizeJobLocation(job.location).toLowerCase().includes("remote");
 
   // salary_min/max are only meaningful with a pay period. The forms collect a
   // salary_type but it is not stored yet, so only send unitText once it is.

@@ -65,6 +65,31 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('job location fallback', () => {
+  it('uses the company address in JobPosting and on the page when the job has no location', async () => {
+    const job = makeJob(candidates[1]);
+    db.job = { ...job, location: null, company: { ...job.company, location: 'English Harbour, Antigua' } };
+    const data = await schemas();
+    expect(data[0].jobLocation.address).toEqual({ '@type': 'PostalAddress', addressLocality: 'English Harbour', addressCountry: 'AG' });
+    const html = await pageHtml();
+    expect(html).toContain('English Harbour, Antigua');
+    expect(html).not.toContain('Location not provided');
+  });
+
+  it('prefers the job location over the company address', async () => {
+    const job = makeJob(candidates[1]);
+    db.job = { ...job, location: "Crabb's Peninsula, Antigua" as unknown as null, company: { ...job.company, location: 'English Harbour, Antigua' } };
+    expect((await schemas())[0].jobLocation.address.addressLocality).toBe("Crabb's Peninsula");
+  });
+
+  it('omits the locality and says so when neither is recorded', async () => {
+    const job = makeJob(candidates[1]);
+    db.job = { ...job, location: null, company: { ...job.company, location: '' } };
+    expect((await schemas())[0].jobLocation.address).not.toHaveProperty('addressLocality');
+    expect(await pageHtml()).toContain('Location not provided');
+  });
+});
+
 describe.each(candidates)('$companyName owner-attested approval', (candidate) => {
   it('removes JobPosting when both vacancy and company approval are revoked', async () => {
     db.job = makeJob(candidate);
@@ -87,10 +112,9 @@ describe.each(candidates)('$companyName owner-attested approval', (candidate) =>
       employmentType: 'FULL_TIME',
       jobLocation: { address: {
         addressCountry: 'AG',
-        ...(String(candidate.job.location || '').trim() ? { addressLocality: String(candidate.job.location || '').trim().replace(', Antigua', '') } : {}),
+        addressLocality: candidate.job.company.location.replace(', Antigua', ''),
       } },
     });
-    if (!String(candidate.job.location || '').trim()) expect(data[0].jobLocation.address).not.toHaveProperty('addressLocality');
     const description = document.createElement('div');
     description.innerHTML = data[0].description;
     const expectedDescription = publicVacancyDescription(candidate.job);
