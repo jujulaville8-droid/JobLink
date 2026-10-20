@@ -1,4 +1,5 @@
 import { closedJobIdFilter } from "@/lib/job-closures";
+import { publicJobType } from "@/lib/seo/job-type-display";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import JobCard, { Job } from "@/components/JobCard";
@@ -78,8 +79,8 @@ export default async function CompanyPage({ params }: PageProps) {
     .order("created_at", { ascending: false });
 
   const mappedJobs: Job[] = (jobs || []).map((job) => {
-    const jobTypeLabel =
-      JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type;
+    const type = publicJobType(job);
+    const jobTypeLabel = type ? JOB_TYPE_LABELS[type as JobType] || type : "";
     return {
       id: job.id,
       title: job.title,

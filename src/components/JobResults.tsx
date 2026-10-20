@@ -3,6 +3,7 @@ import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
 import AlertToggle from "@/components/AlertToggle";
 import Link from "next/link";
+import { publicJobType } from "@/lib/seo/job-type-display";
 import { getJobResults, JOBS_PER_PAGE, type JobResultsData, type JobSearchParams } from "@/lib/job-results";
 
 interface JobResultsProps {
@@ -126,7 +127,7 @@ export default async function JobResults({
       company_logo: company?.logo_url || null,
       location: job.location,
       company_location: company?.location ?? null,
-      job_type: job.job_type,
+      job_type: publicJobType({ ...job, company_id: company?.id ?? job.company_id }) ?? "",
       salary_min: job.salary_min,
       salary_max: job.salary_max,
       salary_visible: job.salary_visible,
