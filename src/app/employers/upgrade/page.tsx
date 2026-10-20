@@ -71,14 +71,8 @@ export default function UpgradePage() {
     load();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
-
+  // The heading, plans and prices render on the server (and for crawlers);
+  // only the account-specific call to action waits for the session check.
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#e8f5f5]">
 
@@ -192,7 +186,11 @@ export default function UpgradePage() {
           <div className="my-8 border-t border-primary/15" />
 
           {/* CTA */}
-          {isPro ? (
+          {loading ? (
+            <div className="flex justify-center py-4" aria-busy="true">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : isPro ? (
             <div className="rounded-xl bg-emerald-50 px-6 py-4 text-center">
               <p className="text-sm font-semibold text-emerald-700">
                 You&apos;re already a Pro member
@@ -224,7 +222,7 @@ export default function UpgradePage() {
       </section>
 
       {/* ─── Featured Badge Preview ─── */}
-      {!isPro && (
+      {!(isPro && !loading) && (
         <section className="mx-auto max-w-lg px-4 pb-20">
           <p className="mb-4 text-center text-sm font-medium text-text-muted">
             This is how your listings will appear to job seekers
