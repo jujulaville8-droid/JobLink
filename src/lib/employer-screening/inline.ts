@@ -12,6 +12,7 @@ import { extractPdfResume, PDF_EXTRACTION_LIMITS, type PdfExtractionOptions, typ
 import { validateMinimizedExtraction } from './privacy'
 import { createOpenAIProcessor, type ScreeningBudgetReservation, type ScreeningBudgetStore, type ScreeningUsage } from './provider'
 import { assessResumeDocumentQuality, validateResumeDocumentQuality, type ResumeDocumentQuality } from './quality'
+import { inlineDiagnostic, type InlineDiagnosticEvent } from './inline-diagnostics'
 
 /** Leaves the ordinary send its existing execution time. Parsing gets at most 3s. */
 export const INLINE_SCREENING_BUDGET_MS = 25_000
@@ -118,23 +119,33 @@ const jobSchema = z.object({ id: z.string(), company_id: z.string(), title: z.st
  */
 export async function inlineEmployerScreening(input: InlineScreeningInput, deps: InlineScreeningDependencies): Promise<InlineScreeningFields> {
   const env = deps.env ?? process.env
-  if (!inlineScreeningEnabled(input.noticeVersion, env) || !(input.resumeBytes instanceof Uint8Array) ||
-      !input.resumeBytes.byteLength || input.resumeBytes.byteLength > PDF_EXTRACTION_LIMITS.bytes) return {}
+  const diagnostic = (event: InlineDiagnosticEvent) => inlineDiagnostic(event, input.applicationId)
+  if (!inlineScreeningEnabled(input.noticeVersion, env)) {
+    diagnostic(hasCurrentScreeningNotice(input.noticeVersion) ? 'entry_gates_disabled' : 'entry_notice_missing')
+    return {}
+  }
+  if (!(input.resumeBytes instanceof Uint8Array) || !input.resumeBytes.byteLength || input.resumeBytes.byteLength > PDF_EXTRACTION_LIMITS.bytes) {
+    diagnostic('attachment_invalid'); return {}
+  }
   const now = deps.now ?? Date.now
   const startedAt = now(), deadline = startedAt + INLINE_SCREENING_BUDGET_MS
   const controller = new AbortController()
   let timer: ReturnType<typeof setTimeout> | undefined
   let quality: ResumeDocumentQuality | undefined
+  let failureEvent: InlineDiagnosticEvent = 'parse_failed'
   const localOnly = (): InlineScreeningFields => quality ? { employer_resume_quality: quality } : {}
   const live = () => { if (controller.signal.aborted || now() >= deadline) throw new Error('Inline screening deadline') }
   const work = async (): Promise<InlineScreeningFields> => {
     live()
     const digest = createHash('sha256').update(input.resumeBytes).digest('hex')
+    diagnostic('parse_started')
     const parsed = await (deps.extract ?? extractPdfResume)(input.resumeBytes, {
       signal: controller.signal, budgetMs: Math.max(1, Math.min(PDF_EXTRACTION_LIMITS.budgetMs, deadline - now())),
+      onDiagnostic: diagnostic,
     })
     live()
-    if (!parsed || parsed.sourceSha256 !== digest) return {}
+    if (!parsed || parsed.sourceSha256 !== digest) { diagnostic('parse_unavailable'); return {} }
+    failureEvent = 'quality_failed'
     const assessed = assessResumeDocumentQuality({ sourceSha256: parsed.sourceSha256, localPages: parsed.localPages }, digest)
     live()
     if (assessed.status === 'assessed') {
@@ -143,17 +154,21 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
       quality = validated
     }
     if (env.EMPLOYER_SCREENING_BUDGET_APPROVED !== 'true' || env.EMPLOYER_SCREENING_PAID_PROVIDER_ENABLED !== 'true' ||
-        !env.EMPLOYER_SCREENING_BUDGET_CONFIG_ID || !env.OPENAI_API_KEY) return localOnly()
+        !env.EMPLOYER_SCREENING_BUDGET_CONFIG_ID || !env.OPENAI_API_KEY) { diagnostic('paid_gate_disabled'); return localOnly() }
+    failureEvent = 'evidence_invalid'
     const extraction = validateMinimizedExtraction({ sourceSha256: parsed.sourceSha256, evidence: parsed.evidence,
       ...(parsed.context ? { context: parsed.context } : {}),
       ...(parsed.omittedContext !== undefined ? { omittedContext: parsed.omittedContext } : {}),
     }, digest)
-    if (!extraction.evidence.length) return localOnly()
+    if (!extraction.evidence.length) { diagnostic('evidence_empty'); return localOnly() }
+    failureEvent = 'job_load_failed'
     const job = jobSchema.parse(await deps.loadJob(input.jobId, controller.signal))
     live()
-    if (job.id !== input.jobId || job.company_id !== input.companyId || job.title !== input.jobTitle) return localOnly()
+    if (job.id !== input.jobId || job.company_id !== input.companyId || job.title !== input.jobTitle) { diagnostic('job_binding_mismatch'); return localOnly() }
+    failureEvent = 'job_mapping_unavailable'
     const derived = derivePublishedJobCriteria(job)
-    if (derived.status !== 'available') return localOnly()
+    if (derived.status !== 'available') { diagnostic('job_mapping_unavailable'); return localOnly() }
+    failureEvent = 'snapshot_invalid'
     const frozen = captureSnapshot({
       applicationId: input.applicationId, jobId: input.jobId, companyId: input.companyId, createdAt: startedAt,
       resume: { versionId: `inline-${digest}`, sha256: digest, evidence: extraction.evidence,
@@ -168,10 +183,21 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
     live()
     const budget = deps.budget({ applicantUserId: input.applicantUserId, deadline, signal: controller.signal })
     let settlementConfirmed = false
+    failureEvent = 'provider_preflight_failed'
     const processor = createOpenAIProcessor({ enabled: true, lease: randomUUID(),
       configId: env.EMPLOYER_SCREENING_BUDGET_CONFIG_ID, apiKey: env.OPENAI_API_KEY,
       budget: {
-        reserve: request => budget.reserve(request), start: (id, lease) => budget.start(id, lease),
+        reserve: async request => {
+          failureEvent = 'budget_rpc_failed'; diagnostic('budget_requested')
+          const reservation = await budget.reserve(request)
+          failureEvent = reservation ? 'provider_preflight_failed' : 'budget_rejected'
+          if (reservation) diagnostic('budget_granted')
+          return reservation
+        },
+        start: async (id, lease) => {
+          failureEvent = 'dispatch_not_authorized'
+          return budget.start(id, lease)
+        },
         ...(budget.dispatchAllowed ? { dispatchAllowed: () => budget.dispatchAllowed!() } : {}),
         release: (id, lease) => budget.release(id, lease),
         settle: async (id, usage) => {
@@ -180,22 +206,31 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
           return settled
         },
       },
-      fetch: deps.fetch, now, timeoutMs: Math.max(1, deadline - now()), maxOutputTokens: 1024,
+      fetch: (url, init) => {
+        failureEvent = 'provider_failed'
+        // Keep the final synchronous dispatch fence adjacent to the native call;
+        // logging happens only after invoking it, never between fence and fetch.
+        const pending = (deps.fetch ?? globalThis.fetch)(url, init)
+        diagnostic('provider_request_started')
+        return pending
+      }, now, timeoutMs: Math.max(1, deadline - now()), maxOutputTokens: 1024,
     })
     const raw = await processor(readSnapshot(frozen), controller.signal)
     live()
-    if (!settlementConfirmed) return localOnly()
+    if (!settlementConfirmed) { diagnostic('settlement_unconfirmed'); return localOnly() }
+    failureEvent = 'assessment_invalid'
     const report = validateAssessment(frozen, raw)
     live()
+    diagnostic('scored')
     return { ...localOnly(), employer_screening: report }
   }
   try {
     const expired = new Promise<InlineScreeningFields>(resolve => {
-      timer = setTimeout(() => { controller.abort(); resolve(localOnly()) }, Math.max(0, deadline - now()))
+      timer = setTimeout(() => { diagnostic('deadline_expired'); controller.abort(); resolve(localOnly()) }, Math.max(0, deadline - now()))
     })
     const result = await Promise.race([work(), expired])
     return controller.signal.aborted || now() >= deadline ? localOnly() : result
-  } catch { return localOnly() }
+  } catch { diagnostic(controller.signal.aborted || now() >= deadline ? 'deadline_expired' : failureEvent); return localOnly() }
   finally { if (timer) clearTimeout(timer); controller.abort() }
 }
 

@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import type { Readable } from 'node:stream'
 import type { Worker, WorkerOptions } from 'node:worker_threads'
 import { describe, expect, it, vi } from 'vitest'
-import { extractPdfSkills, PDF_EXTRACTION_LIMITS } from '../src/lib/employer-screening/pdf-extraction'
+import { extractPdfResume, extractPdfSkills, PDF_DIAGNOSTIC_EVENTS, PDF_EXTRACTION_LIMITS } from '../src/lib/employer-screening/pdf-extraction'
 import { validateMinimizedExtraction } from '../src/lib/employer-screening/privacy'
 
 // Test-only replacement of the next worker's trusted bootstrap exercises real
@@ -57,6 +57,36 @@ async function pdf(pages: string[], options: Record<string, unknown> = {}, unico
 }
 
 describe('bounded uploaded text-PDF extraction', () => {
+  it('reports only fixed parser diagnostic codes, including empty text and framing failures', async () => {
+    const onDiagnostic = vi.fn()
+    expect(await extractPdfResume(Buffer.from('%PDF-1.7 private@example.test without EOF'), { onDiagnostic })).toBeNull()
+    expect(onDiagnostic).toHaveBeenLastCalledWith('pdf_framing_invalid')
+    expect(await extractPdfResume(await pdf(['']), { onDiagnostic })).toBeNull()
+    expect(onDiagnostic).toHaveBeenLastCalledWith('pdf_empty')
+    expect(await extractPdfResume(Buffer.from('%PDF-1.7 invalid private@example.test\n%%EOF'), { onDiagnostic })).toBeNull()
+    expect(onDiagnostic).toHaveBeenLastCalledWith('pdf_parse_failed')
+    for (const args of onDiagnostic.mock.calls) {
+      expect(args).toHaveLength(1)
+      expect(PDF_DIAGNOSTIC_EVENTS).toContain(args[0])
+    }
+    expect(JSON.stringify(onDiagnostic.mock.calls)).not.toContain('private@example.test')
+  })
+  it('allowlists worker reason messages, contains callback failures, and preserves worker timeout', async () => {
+    const bytes = await pdf(['Skills\nMicrosoft Excel']), onDiagnostic = vi.fn()
+    workerHarness.nextScript = "require('node:worker_threads').parentPort.postMessage({diagnostic:'pdf_module_failed'})"
+    expect(await extractPdfResume(bytes, { onDiagnostic })).toBeNull()
+    expect(onDiagnostic).toHaveBeenLastCalledWith('pdf_module_failed')
+    onDiagnostic.mockClear()
+    workerHarness.nextScript = "require('node:worker_threads').parentPort.postMessage({diagnostic:'secret arbitrary error'})"
+    expect(await extractPdfResume(bytes, { onDiagnostic })).toBeNull()
+    expect(onDiagnostic).not.toHaveBeenCalled()
+    workerHarness.nextScript = 'for (;;) {}'
+    expect(await extractPdfResume(bytes, { budgetMs: 50, onDiagnostic })).toBeNull()
+    expect(onDiagnostic).toHaveBeenLastCalledWith('pdf_timeout')
+    onDiagnostic.mockImplementation(() => { throw new Error('synthetic diagnostic error') })
+    await expect(extractPdfResume(Buffer.from('not a pdf'), { onDiagnostic })).resolves.toBeNull()
+    expect((await extractPdfResume(bytes, { onDiagnostic }))?.evidence).toHaveLength(1)
+  })
   it('extracts whole skills under a heading, with exact page offsets and immutable byte hash', async () => {
     const page = 'Synthetic Applicant\nSkills\nMicrosoft Excel\nCustomer service\nWork history\nsynthetic@example.invalid'
     const bytes = await pdf([page])

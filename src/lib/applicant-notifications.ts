@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { parseCompanyContactEmail } from '@/lib/company-contact-email'
 import { inlineEmployerScreening, inlineScreeningDependencies, inlineScreeningEnabled, type InlineScreeningFields } from '@/lib/employer-screening/inline'
+import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
 
 const MAX_CV_BYTES = 5 * 1024 * 1024
 
@@ -119,12 +120,16 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
     // Enrich only these exact in-memory attachment bytes. The original send,
     // recipient and duplicate-prevention key remain the sole delivery path.
     let screening: InlineScreeningFields = {}
+    if (process.env.EMPLOYER_SCREENING_INLINE_ENABLED === 'true') {
+      inlineDiagnostic(attachments[0] ? 'attachment_ready' : 'attachment_missing', applicationId)
+      if (!inlineScreeningEnabled(noticeVersion)) inlineDiagnostic('entry_gates_disabled', applicationId)
+    }
     if (attachments[0] && inlineScreeningEnabled(noticeVersion)) {
       try {
         screening = await inlineEmployerScreening({ applicationId: application.id, applicantUserId,
           jobId: job.id, companyId: job.company_id, jobTitle: job.title,
           noticeVersion, resumeBytes: attachments[0].content }, inlineScreeningDependencies(db))
-      } catch { /* Optional enrichment must never prevent the original email. */ }
+      } catch { inlineDiagnostic('enrichment_failed', applicationId) /* Original email still proceeds. */ }
     }
     const result = await sendEmail({
       to: recipient,

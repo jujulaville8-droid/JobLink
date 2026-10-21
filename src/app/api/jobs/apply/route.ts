@@ -6,6 +6,7 @@ import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 import { applicantCvPath, notifyNewApplicant } from '@/lib/applicant-notifications'
 import { applicationDependencies, screeningApplicationEnabled, ScreeningSubmissionError, submitScreeningApplication } from '@/lib/employer-screening/application'
 import { hasCurrentScreeningNotice } from '@/lib/employer-screening/notice'
+import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
 
 // Deployment must support after() and this timeout before any readiness gates are enabled.
 export const maxDuration = 180
@@ -246,6 +247,8 @@ export async function POST(request: NextRequest) {
       const noticeVersion = process.env.EMPLOYER_SCREENING_INLINE_ENABLED === 'true' &&
         hasCurrentScreeningNotice(body.screening_notice_version) ? body.screening_notice_version : undefined
       const applicationId = application.id
+      inlineDiagnostic(process.env.EMPLOYER_SCREENING_INLINE_ENABLED !== 'true' ? 'route_inline_disabled' :
+        noticeVersion === undefined ? 'route_notice_missing' : 'route_notice_current', applicationId)
       const applicantUserId = user.id
       let forwardingStarted = false
       const forwardEmployer = async () => {

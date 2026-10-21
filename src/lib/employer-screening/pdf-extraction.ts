@@ -21,13 +21,22 @@ export const PDF_EXTRACTION_LIMITS = Object.freeze({
   bytes: 5 * 1024 * 1024, pages: 20, pageCharacters: 30_000, totalCharacters: 120_000,
   textItems: 20_000, budgetMs: 3_000, concurrent: 2,
 })
+export const PDF_DIAGNOSTIC_EVENTS = ['pdf_input_rejected', 'pdf_capacity_unavailable', 'pdf_aborted',
+  'pdf_framing_invalid', 'pdf_resolve_failed', 'pdf_module_failed', 'pdf_worker_failed',
+  'pdf_timeout', 'pdf_unsupported', 'pdf_parse_failed', 'pdf_empty'] as const
+export type PdfDiagnosticEvent = typeof PDF_DIAGNOSTIC_EVENTS[number]
 export type PdfExtractionOptions = Readonly<{
   signal?: AbortSignal; budgetMs?: number
+  /** Request-local, fixed-code diagnostics only. No input/error details. */
+  onDiagnostic?: (event: PdfDiagnosticEvent) => void
   /** Trusted capture only: exact inert metadata fields from the SAME detached
    * structured CV rendered to these bytes. Never accept these hints from a
    * request body/upload or include descriptions, skill/certificate names/status. */
   trustedBuilderMetadata?: Readonly<{ sourceSha256: string; lines: readonly string[] }>
 }>
+function pdfDiagnostic(options: PdfExtractionOptions, event: PdfDiagnosticEvent): void {
+  try { options.onDiagnostic?.(event) } catch { /* Diagnostics are nonessential. */ }
+}
 
 // A constant, trusted bootstrap, never interpolated PDF text. In Node, PDF.js's
 // in-process fallback stays INSIDE this separate, terminable worker.
@@ -48,8 +57,10 @@ class NoResources { async fetch() { return deny(); } }
 class NoCanvas { create() { return deny(); } reset() { return deny(); } destroy() {} }
 (async () => {
   let task;
+  let failureCode = 'pdf_module_failed';
   try {
     const { getDocument } = await import(workerData.parserUrl);
+    failureCode = 'pdf_parse_failed';
     const sourceSha256 = createHash('sha256').update(workerData.bytes).digest('hex');
     task = getDocument({
       data: workerData.bytes, verbosity: 0, stopAtErrors: true,
@@ -64,7 +75,7 @@ class NoCanvas { create() { return deny(); } reset() { return deny(); } destroy(
     // which permit opening with an empty user password.
     const pdf = await task.promise;
     if (pdf.isPureXfa || pdf.numPages < 1 || pdf.numPages > workerData.limits.pages ||
-        await pdf.getPermissions() !== null) throw new Error('Unsupported PDF');
+        await pdf.getPermissions() !== null) { failureCode = 'pdf_unsupported'; throw new Error('Unsupported PDF'); }
     const pages = [];
     let totalCharacters = 0;
     let textItems = 0;
@@ -98,7 +109,7 @@ class NoCanvas { create() { return deny(); } reset() { return deny(); } destroy(
   } catch {
     // Never log PDF text, metadata, exceptions containing input, or source IDs.
     if (task) await task.destroy().catch(() => {});
-    parentPort.postMessage(null);
+    parentPort.postMessage({ diagnostic: failureCode });
   }
 })();
 `
@@ -156,18 +167,23 @@ function minimizeSkillPages(pages: readonly string[], sourceSha256: string): Min
 async function parseBoundedPdf(input: Uint8Array, options: PdfExtractionOptions = {}): Promise<z.infer<typeof parsedPdfSchema> | null> {
   const budgetMs = options.budgetMs ?? PDF_EXTRACTION_LIMITS.budgetMs
   if (!(input instanceof Uint8Array) || input.byteLength < 8 || input.byteLength > PDF_EXTRACTION_LIMITS.bytes ||
-      !Number.isSafeInteger(budgetMs) || budgetMs <= 0 || budgetMs > PDF_EXTRACTION_LIMITS.budgetMs ||
-      options.signal?.aborted || activeParsers >= PDF_EXTRACTION_LIMITS.concurrent) return null
+      !Number.isSafeInteger(budgetMs) || budgetMs <= 0 || budgetMs > PDF_EXTRACTION_LIMITS.budgetMs) {
+    pdfDiagnostic(options, 'pdf_input_rejected'); return null
+  }
+  if (options.signal?.aborted) { pdfDiagnostic(options, 'pdf_aborted'); return null }
+  if (activeParsers >= PDF_EXTRACTION_LIMITS.concurrent) { pdfDiagnostic(options, 'pdf_capacity_unavailable'); return null }
   const bytes = Uint8Array.from(input)
-  if (Buffer.from(bytes.subarray(0, 5)).toString('ascii') !== '%PDF-') return null
+  if (Buffer.from(bytes.subarray(0, 5)).toString('ascii') !== '%PDF-') { pdfDiagnostic(options, 'pdf_framing_invalid'); return null }
   // Do not let PDF.js's recovery mode turn a visibly truncated upload into
   // seemingly complete evidence. This is a framing check, not a PDF parser.
-  if (!/%%EOF[\x00\t\n\f\r ]*$/.test(Buffer.from(bytes.subarray(-1024)).toString('latin1'))) return null
+  if (!/%%EOF[\x00\t\n\f\r ]*$/.test(Buffer.from(bytes.subarray(-1024)).toString('latin1'))) { pdfDiagnostic(options, 'pdf_framing_invalid'); return null }
   const sourceSha256 = createHash('sha256').update(bytes).digest('hex')
   activeParsers++
+  let failureCode: PdfDiagnosticEvent = 'pdf_resolve_failed'
   try {
     const runtimeRequire = createRequire(join(process.cwd(), 'package.json'))
     const parserUrl = pathToFileURL(runtimeRequire.resolve('pdfjs-dist/legacy/build/pdf.mjs')).href
+    failureCode = 'pdf_worker_failed'
     const result = await new Promise<unknown>(resolve => {
       let worker: Worker | undefined
       let settled = false
@@ -181,8 +197,8 @@ async function parseBoundedPdf(input: Uint8Array, options: PdfExtractionOptions 
         if (worker) void worker.terminate().then(() => resolve(value), () => resolve(null))
         else resolve(value)
       }
-      const abort = () => finish(null)
-      const timer = setTimeout(abort, budgetMs)
+      const abort = () => { if (!settled) pdfDiagnostic(options, 'pdf_aborted'); finish(null) }
+      const timer = setTimeout(() => { if (!settled) pdfDiagnostic(options, 'pdf_timeout'); finish(null) }, budgetMs)
       options.signal?.addEventListener('abort', abort, { once: true })
       try {
         worker = new Worker(PARSER_WORKER, {
@@ -192,17 +208,26 @@ async function parseBoundedPdf(input: Uint8Array, options: PdfExtractionOptions 
         })
         // Drain without logging, even dependency warnings cannot disclose input.
         worker.stdout.resume(); worker.stderr.resume()
-        worker.once('message', finish)
-        worker.once('error', abort)
-        worker.once('exit', abort)
+        worker.once('message', value => {
+          if (settled) return
+          if (value && typeof value === 'object' && Object.hasOwn(value, 'diagnostic')) {
+            const code: unknown = value.diagnostic
+            if ((PDF_DIAGNOSTIC_EVENTS as readonly unknown[]).includes(code)) pdfDiagnostic(options, code as PdfDiagnosticEvent)
+            finish(null)
+          } else finish(value)
+        })
+        const failed = () => { if (!settled) pdfDiagnostic(options, 'pdf_worker_failed'); finish(null) }
+        worker.once('error', failed)
+        worker.once('exit', failed)
         if (options.signal?.aborted) abort()
-      } catch { finish(null) }
+      } catch { pdfDiagnostic(options, 'pdf_worker_failed'); finish(null) }
     })
     if (options.signal?.aborted || result === null) return null
+    failureCode = 'pdf_parse_failed'
     const parsed = parsedPdfSchema.parse(result)
     if (parsed.sourceSha256 !== sourceSha256) return null
     return parsed
-  } catch { return null }
+  } catch { pdfDiagnostic(options, failureCode); return null }
   finally { activeParsers-- }
 }
 
@@ -455,7 +480,8 @@ export async function extractPdfSkills(input: Uint8Array, options: PdfExtraction
  * All claims are applicant-reported and unverified; no OCR or generic NLP fallback. */
 export async function extractPdfResume(input: Uint8Array, options: PdfExtractionOptions = {}): Promise<PdfResumeExtraction | null> {
   const parsed = await parseBoundedPdf(input, options)
-  if (!parsed || options.signal?.aborted || !parsed.pages.some(page => page.trim())) return null
+  if (!parsed || options.signal?.aborted) return null
+  if (!parsed.pages.some(page => page.trim())) { pdfDiagnostic(options, 'pdf_empty'); return null }
   let metadata: z.infer<typeof trustedMetadataSchema> | null
   try {
     metadata = options.trustedBuilderMetadata ? trustedMetadataSchema.parse(options.trustedBuilderMetadata) : null

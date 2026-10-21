@@ -156,6 +156,7 @@ beforeEach(() => {
   state.notify.mockImplementation(async () => { state.events.push('notify'); return true })
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
+  vi.spyOn(console, 'info').mockImplementation(() => {})
 })
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs() })
 
@@ -166,12 +167,14 @@ it('passes only the current request notice to optional inline screening without 
   expect(state.notify).toHaveBeenCalledExactlyOnceWith(APPLICATION_ID, USER_ID, SCREENING_NOTICE_VERSION)
   expect(state.inserts).toEqual([{ job_id: JOB_ID, seeker_id: SEEKER_ID, cover_letter_text: 'I would like to apply.', status: 'applied' }])
   expect(await response.json()).not.toHaveProperty('screening')
+  expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('route_notice_current'))).toBe(true)
 })
 
 it.each([undefined, 'old-notice', true])('never invents inline disclosure for stale/missing request attestation %s', async screening_notice_version => {
   vi.stubEnv('EMPLOYER_SCREENING_INLINE_ENABLED', 'true')
   expect((await apply({ screening_notice_version })).status).toBe(201)
   expect(state.notify).toHaveBeenCalledExactlyOnceWith(APPLICATION_ID, USER_ID)
+  expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('route_notice_missing'))).toBe(true)
 })
 
 it('notifies only after saving the authenticated seeker’s application', async () => {
