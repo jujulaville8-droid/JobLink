@@ -31,6 +31,11 @@ const skills: readonly Concept[] = [
   { label: 'Communication', category: 'skill', aliases: [] },
   { label: 'Teamwork', category: 'skill', aliases: [] },
   { label: 'Time management', category: 'skill', aliases: [] },
+  { label: 'Customer relations', category: 'skill', aliases: [] },
+  { label: 'Sales', category: 'skill', aliases: [] },
+  { label: 'Organisation', category: 'skill', aliases: ['organization'] },
+  { label: 'Digital proficiency', category: 'skill', aliases: [] },
+  { label: 'Problem solving', category: 'skill', aliases: [] },
   ...[
     'Guest reception', 'Reservations', 'Restaurant service', 'Bartending', 'Cleaning and sanitation',
     'Accounts payable', 'Accounts receivable', 'Payroll', 'Office administration', 'Document filing',
@@ -407,6 +412,7 @@ summary profile notes objective objectives context example examples copied vacan
 first aid cpr pos hvac microsoft excel google sheets word office point system systems software technology
 computer computers digital electronic manual online equipment tools
 changes close readiness multimeter documented documenting read reads reading drawing drawings lockout tagout opera pms
+outgoing exceed exceeds exceeded exceeding target targets relations organisation organization solving
 `.split(/\s+/)) if (word) professionalWords.add(word)
 const safeInitialWords = new Set(`i we my our this these the a an during before after throughout while as at in on for with
 provided assisted answered resolved handled responded managed maintained tracked monitored conducted performed replenished
@@ -417,11 +423,16 @@ built constructed measured laid plastered poured painted applied sanded serviced
 experience professional currently certified earned completed hold current first food cpr electrical plumbing bookkeeping
 summary profile notes this these duties tasks responsibilities employment work customer guest inventory office restaurant
 cash payroll account accounts data spreadsheet microsoft google requirements expected would did never no not my our
+consistently exceeded communication sales organisation organization digital problem
 `.split(/\s+/))
 const allowedCapitalTokens = new Set(['I', 'CPR', 'POS', 'HVAC', 'Excel'])
 for (const word of ['he', 'she', 'his', 'her']) professionalWords.delete(word)
-export function isSafeProfessionalRecord(value: string): boolean {
-  if (value.length < 1 || value.length > 400 || value !== value.trim() || !/^[A-Za-z ,.;:'()\-/]+$/.test(value) || /\//.test(value.replace(/\blockout\/tagout\b/gi, '')) ||
+function safeProfessionalText(original: string, maximumCharacters: number): boolean {
+  // Only PDF.js LF boundaries are treated as spaces during validation. The
+  // original excerpt and its UTF-16 span remain unchanged, including every LF.
+  if (original.length > maximumCharacters || original !== original.trim()) return false
+  const value = original.replace(/\n/g, ' ')
+  if (value.length < 1 || value !== value.trim() || !/^[A-Za-z ,.;:'()\-/]+$/.test(value) || /\//.test(value.replace(/\blockout\/tagout\b/gi, '')) ||
       /(?:https?|www|mailto|email address|e-mail address|phone number|telephone number|contact details|social security|date of birth)/i.test(value) ||
       /\b(?:i (?:have|had)|my)\b.*\b(?:credit|wages?|financial accounts?|accounts?)\b|\b(?:i use|my profile|my pronouns)\b.*\b(?:they|them|their)\b/i.test(value) ||
       /\b(?:work|worked|working|employed|employment)\b.*\b(?:at|for|by) +(?:microsoft|google|opera|excel)\b/i.test(value) ||
@@ -438,6 +449,31 @@ export function isSafeProfessionalRecord(value: string): boolean {
     }
   }
   return true
+}
+export function isSafeProfessionalRecord(value: string): boolean {
+  return safeProfessionalText(value, 400)
+}
+/** Local-only complete paragraph check before sentence projection. Never emit
+ * this wider bound as evidence: each transmitted exact span is still <=400. */
+export function isSafeProfessionalParagraph(value: string): boolean {
+  return safeProfessionalText(value, 1600)
+}
+/** Whole-list admission precedes selective skill extraction. Unknown fragments
+ * must themselves pass the closed professional vocabulary gate; qualifiers or
+ * private/instruction content invalidate the entire list, not just one part. */
+const skillFragmentWords = new Set(`electronic digital proficiency paper records record document documents filing office administration administrative
+computer computers software spreadsheets data entry customer customers relations service sales inventory management
+communication teamwork organisation organization problem solving time bookkeeping payroll accounts payable receivable`.split(/\s+/))
+export function isSafeSkillListRecord(value: string): boolean {
+  if (value.length < 1 || value.length > 1600 || value !== value.trim() ||
+      !/^[A-Za-z \n,;|\u2022\u00b7.\-]+$/.test(value) ||
+      /\b(?:i|my|we|our|they|their|he|she|his|her|not|no|never|without|lack|lacks|lacking|trained|training|would|could|should|required|requirements?|expected|only|supervisors?|colleagues?|managers?|belongs?|copied|future|planned|pending|expired|cancelled|canceled|revoked|suspended|pursuing|enrolled|incomplete|samples?|examples?|hypothetical|practice|attendance|yet|rather|instead)\b/i.test(value)) return false
+  const parts = value.split(/[,;|\u2022\u00b7]/).map(part => part.trim().replace(/\.$/, ''))
+  return parts.length > 0 && parts.every(part => Boolean(lookupEvidence(part, 'skill')) ||
+    // Unknown declarative noun fragments may be omitted independently, but
+    // arbitrary professional sentences/imperatives are NOT a skills grammar.
+    (/^[A-Za-z \n-]+$/.test(part) && part.split(/[ \n-]+/).every(word => skillFragmentWords.has(word.toLowerCase())) &&
+      safeProfessionalText(part, 400)))
 }
 export const SCREENING_DERIVED_CONTEXT = Object.freeze({
   other: 'The source attributes some statements to another person.',

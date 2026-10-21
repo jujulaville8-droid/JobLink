@@ -15,7 +15,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import { z } from 'zod'
-import { SCREENING_SKILL_ALIASES, canonicalScreeningEvidence, screeningEvidenceQualifiers, validateMinimizedExtraction, type MinimizedExtraction, type ScreeningEvidenceQualifiers, isSafeProfessionalRecord, SCREENING_DERIVED_CONTEXT, type ScreeningContext } from './privacy'
+import { SCREENING_SKILL_ALIASES, canonicalScreeningEvidence, screeningEvidenceQualifiers, validateMinimizedExtraction, type MinimizedExtraction, type ScreeningEvidenceQualifiers, isSafeProfessionalRecord, isSafeProfessionalParagraph, isSafeSkillListRecord, SCREENING_DERIVED_CONTEXT, type ScreeningContext } from './privacy'
 
 export const PDF_EXTRACTION_LIMITS = Object.freeze({
   bytes: 5 * 1024 * 1024, pages: 20, pageCharacters: 30_000, totalCharacters: 120_000,
@@ -342,7 +342,11 @@ const boundedOrganization = (value: string) => properNameWords(value) &&
   /(?:Hotel|Resort|Restaurant|Services|Supply|Supplies|Construction|Electrical|Plumbing|Market|Supermarket|Ltd|Limited|Inc|Company|Co|Associates|Agency|School|College|University|Institute|Academy|Authority|Board|Council|Centre|Center|Foundation|Association|Project|Cross)\.?$/.test(value)
 function inertProfessionalMetadata(text: string): boolean {
   if (reviewedRoles.has(text.toLowerCase()) || dateLine.test(text)) return true
-  const labeled = /^(?:Employer|Company|Issuer|Project): (.+)$/.exec(text)
+  const role = /^Role: (.+)$/.exec(text)
+  if (role) return reviewedRoles.has(role[1].toLowerCase())
+  const location = /^Location: (.+)$/.exec(text)
+  if (location) return properNameWords(location[1])
+  const labeled = /^(?:Employer|Company|Org|Issuer|Project): (.+)$/.exec(text)
   if (labeled) return boundedOrganization(labeled[1])
   const parts = text.split(/ +\| +/)
   return (parts.length === 2 || parts.length === 3) && reviewedRoles.has(parts[0].toLowerCase()) &&
@@ -352,14 +356,36 @@ function inertProfessionalMetadata(text: string): boolean {
 /** Strong, bounded scope cues are only conservative qualifiers. General safe
 // professional language is retained for model interpretation, never asserted to
 // have been semantically proven by these local patterns. */
-function explicitScope(value: string): Scope {
+function explicitScope(source: string): Scope {
+  // LF is a source-preserved visual wrap, not a semantic scope boundary.
+  const value = source.replace(/[ \n]+/g, ' ')
   let scope: Scope = knownScope.get(value.toLowerCase()) ?? {}
-  if (/\b(?:belongs? to|held by|performed by|done by|work of|employment of)\b.*\b(?:my|our|the|another|other|his|her|their)\b/i.test(value)) scope = mergeScope(scope, { attribution: 'other' })
-  if (/\b(?:did not|didn't|do not|don't|cannot|can't|have not|never performed|not my experience|not my work|not mine|no work experience|no relevant experience)\b/i.test(value)) scope = mergeScope(scope, { assertion: 'negated' })
+  if (/\b(?:belongs? to|held by|performed by|done by|work of|employment of)\b.*\b(?:my|our|the|another|other|his|her|their)\b|\b(?:my|our) (?:supervisor|colleague|manager|coworker)\b/i.test(value)) scope = mergeScope(scope, { attribution: 'other' })
+  if (/\b(?:did not|didn't|do not|don't|cannot|can't|have not|never performed|not my experience|not my work|not my duties|not my tasks|not mine|no work experience|no relevant experience)\b/i.test(value)) scope = mergeScope(scope, { assertion: 'negated' })
   if (/\b(?:training only|course attendance only|training rather than|practice only)\b/i.test(value)) scope = mergeScope(scope, { context: 'training' })
   if (/\b(?:yet to perform|future duties|job requirements|would perform|expected to)\b|copied from.*vacancy/i.test(value)) scope = mergeScope(scope, { context: 'requirement', assertion: 'uncertain' })
   if (/\b(?:expired|cancelled|canceled)\b/i.test(value)) scope = mergeScope(scope, { credentialStatus: /\bexpired\b/i.test(value) ? 'expired' : 'cancelled' })
   if (/\b(?:in progress|currently pursuing)\b/i.test(value)) scope = mergeScope(scope, { credentialStatus: 'in_progress', context: 'training' })
+  return scope
+}
+/** Splitting is not permission to lose an unresolved qualifying sentence.
+ * This small scope vocabulary only makes claims uncertain; it never admits text
+ * through the closed privacy gate or converts a cue into positive evidence. */
+function unresolvedParagraphScope(source: string, resolved: Scope): Scope {
+  const value = source.replace(/[ \n]+/g, ' ')
+  let scope = resolved
+  if (/\b(?:not|no|never|cannot|without)\b/i.test(value) && !scope.assertion) {
+    scope = mergeScope(scope, { assertion: 'uncertain' })
+  }
+  if (/\b(?:supervisors?|colleagues?|coworkers?|managers?|another|others?)\b/i.test(value) && !scope.attribution) {
+    scope = mergeScope(scope, { attribution: 'unknown', assertion: 'uncertain' })
+  }
+  if (/\b(?:training|trained|practice|practised|practiced|attendance|learning|examples?|samples?|hypothetical|requirements?|required|expected|future|planned|pending|pursuing|enrolled|incomplete)\b/i.test(value) && !scope.context) {
+    scope = mergeScope(scope, { context: 'unknown', assertion: 'uncertain' })
+  }
+  if (/\b(?:expired|expires|expiry|expiration|cancelled|canceled|revoked|suspended|renewal|renewing)\b/i.test(value) && !scope.credentialStatus) {
+    scope = mergeScope(scope, { credentialStatus: 'unknown', assertion: 'uncertain' })
+  }
   return scope
 }
 function derivedContext(scope: Scope): string | null {
@@ -369,6 +395,60 @@ function derivedContext(scope: Scope): string | null {
   if (scope.context === 'requirement') return SCREENING_DERIVED_CONTEXT.requirement
   if (scope.credentialStatus === 'expired' || scope.credentialStatus === 'cancelled') return SCREENING_DERIVED_CONTEXT.credential
   return null
+}
+type SourceRecord = Readonly<{ text: string; start: number; end: number; section: Section; resetContext?: boolean }>
+// These fields are only structural boundaries. They never authorize disclosure
+// or suppress explicit scope; their full text still passes the omission path.
+const metadataRow = /^(?:Role|Employer|Company|Org|Issuer|Project|Location): /i
+function* sourceRecords(page: string, trustedMetadata: ReadonlySet<string>): Generator<SourceRecord> {
+  let section: Section = 'context'
+  let offset = 0
+  let pending: SourceRecord | null = null
+  let resetContext = false
+  for (const raw of page.split('\n')) {
+    const leading = raw.match(/^ */)?.[0].length ?? 0
+    const line = raw.slice(leading).replace(/ +$/, '')
+    const lineStart = offset + leading
+    offset += raw.length + 1
+    const heading = sectionOf(line)
+    const padding = line.match(/^(?:[-\u2022] +)/)?.[0].length ?? 0
+    const text = line.slice(padding)
+    const start = lineStart + padding
+    const end = start + text.length
+    const structural = heading || !line || padding || metadataRow.test(text) ||
+      trustedMetadata.has(text) || inertProfessionalMetadata(text) || knownScope.has(text.toLowerCase())
+    // PDF.js gives visual line ends, not paragraphs. Join clear continuations,
+    // including a sentence whose first word ended the preceding visual line.
+    // Otherwise retain independent statement rows, rather than manufacturing a
+    // relationship between every unbulleted item in an experience section.
+    const continues = Boolean(pending && !structural && (
+      /^[a-z(]/.test(text) || (/\.$/.test(pending.text) && !metadataRow.test(pending.text) && !inertProfessionalMetadata(pending.text) && !trustedMetadata.has(pending.text)) || /(?:[:,;]|\b(?:and|or|but|because|while|although|than|by|for|from|to|with|without|not|never|only|my|our|the|a|an))$/i.test(pending.text) ||
+      /(?:^|[.!?] +)(?:I|My supervisor|My colleague|Managed|Maintained|Coordinated|Processed|Provided|Performed|Prepared|Consistently)$/i.test(pending.text)
+    ))
+    if (pending && !continues) { yield pending; pending = null }
+    if (heading) { section = heading; resetContext = true; continue }
+    if (!line) continue
+    if (continues && pending) pending = { start: pending.start, section: pending.section, resetContext: pending.resetContext, end, text: page.slice(pending.start, end) }
+    else { pending = { text, start, end, section, resetContext }; resetContext = false }
+    if (knownScope.has(text.toLowerCase())) { yield pending; pending = null }
+  }
+  if (pending) yield pending
+}
+function sentenceRecords(record: SourceRecord): SourceRecord[] {
+  // Split only AFTER the complete bounded paragraph passes the privacy gate.
+  // Every result is still one contiguous slice of the original decoded page.
+  const records: SourceRecord[] = []
+  let start = 0
+  for (const match of record.text.matchAll(/\.(?=[ \n]|$)|$/g)) {
+    const end = match.index! + match[0].length
+    const raw = record.text.slice(start, end)
+    const leading = raw.match(/^[ \n]*/)?.[0].length ?? 0
+    const text = raw.slice(leading).replace(/[ \n]+$/, '')
+    if (text) records.push({ ...record, text, start: record.start + start + leading,
+      end: record.start + start + leading + text.length })
+    start = end
+  }
+  return records
 }
 function minimizeResumePages(pages: readonly string[], sourceSha256: string, trustedMetadata: ReadonlySet<string> = new Set()): MinimizedExtraction | null {
   const evidence: MinimizedExtraction['evidence'] = []
@@ -388,50 +468,71 @@ function minimizeResumePages(pages: readonly string[], sourceSha256: string, tru
     context.push({ id: `context_${context.length + 1}`, kind, excerpt, location: `pdf.page[${page}].span[${start}:${end}]` })
   }
   for (const [pageIndex, page] of pages.entries()) {
-    let offset = 0
-    let section: Section = 'context'
-    for (const raw of page.split('\n')) {
-      const leading = raw.match(/^ */)?.[0].length ?? 0
-      const line = raw.slice(leading).replace(/ +$/, '')
-      const lineStart = offset + leading
-      offset += raw.length + 1
-      if (!line) continue
-      const heading = sectionOf(line)
-      if (heading) { section = heading; previousOmission = false; continue }
-      const padding = line.match(/^(?:[-\u2022] +)/)?.[0].length ?? 0
-      const text = line.slice(padding)
-      const start = lineStart + padding
-      const end = start + text.length
-      if (section === 'skill') {
+    let previousSection: Section = 'context'
+    for (const record of sourceRecords(page, trustedMetadata)) {
+      const { text, start, end, section } = record
+      if (record.resetContext || section !== previousSection) previousOmission = false
+      previousSection = section
+      let scope = explicitScope(text)
+      const metadata = trustedMetadata.has(text) || metadataRow.test(text) || inertProfessionalMetadata(text) || dateLine.test(text)
+      const isContext = section === 'context' || section === 'other' || metadata || knownScope.has(text.toLowerCase())
+      // The complete list must be safe before selecting any reviewed skills.
+      // A private/directive/negative suffix cannot be discarded to rescue Excel.
+      const safeSkillList = section === 'skill' && !isContext && isSafeSkillListRecord(text)
+      if (safeSkillList) {
         const parts = [...text.matchAll(/[^,;|\u2022\u00b7]+/g)].map(part => {
-          const spaces = part[0].match(/^ */)?.[0].length ?? 0
-          return { excerpt: part[0].slice(spaces).replace(/ +$/, ''), start: start + (part.index ?? 0) + spaces }
+          const spaces = part[0].match(/^[ \n]*/)?.[0].length ?? 0
+          const excerpt = part[0].slice(spaces).replace(/[ \n]+$/, '').replace(/\.$/, '')
+          return { excerpt, start: start + (part.index ?? 0) + spaces }
         })
-        if (parts.length && parts.every(part => canonicalScreeningEvidence(part.excerpt, 'skill'))) {
+        const accepted = parts.filter(part => canonicalScreeningEvidence(part.excerpt, 'skill'))
+        if (accepted.length) {
           previousOmission = false
-          for (const part of parts) {
+          for (const part of accepted) {
             if (evidence.length >= 50) return null
+            const partEnd = part.start + part.excerpt.length
+            if (page.slice(part.start, partEnd) !== part.excerpt) return null
             evidence.push({ id: `skill_${evidence.length + 1}`, category: 'skill', excerpt: part.excerpt,
-              location: `pdf.page[${pageIndex + 1}].span[${part.start}:${part.start + part.excerpt.length}]`,
-              qualifiers: screeningEvidenceQualifiers(part.excerpt, 'skill')!,
+              location: `pdf.page[${pageIndex + 1}].span[${part.start}:${partEnd}]`,
+              qualifiers: qualifyClaim(screeningEvidenceQualifiers(part.excerpt, 'skill')!, scope, 'skill'),
             })
+          }
+          if (accepted.length !== parts.length) {
+            omittedContext = true
+            addContext('omitted', SCREENING_DERIVED_CONTEXT.omitted, pageIndex + 1, start, end)
           }
           continue
         }
       }
-      const scope = explicitScope(text)
+      // Whole-paragraph validation precedes splitting. Unknown/private text in
+      // any sentence invalidates this paragraph, not just the offending prefix.
+      const rejectedSkillList = section === 'skill' && /[,;|\u2022\u00b7]/.test(text) && !safeSkillList
+      const safe = !rejectedSkillList && (isSafeProfessionalParagraph(text) || (section !== 'other' && section !== 'context' && Boolean(canonicalScreeningEvidence(text, section))))
+      const statements = safe ? sentenceRecords(record) : []
+      // A reviewed negative/third-party/training sentence also qualifies the
+      // paragraph. Splitting it must not turn later sentences affirmative.
+      if (section !== 'context' && section !== 'other') for (const statement of statements) {
+        const intrinsic = screeningEvidenceQualifiers(statement.text, section)
+        if (!intrinsic) continue
+        scope = mergeScope(scope, {
+          ...(intrinsic.attribution !== 'applicant' ? { attribution: intrinsic.attribution } : {}),
+          ...(!['performed', 'declaration'].includes(intrinsic.context) ? { context: intrinsic.context } : {}),
+          ...(intrinsic.assertion !== 'affirmed' ? { assertion: intrinsic.assertion } : {}),
+          ...(!['not_applicable', 'claimed_attainment', 'claimed_current'].includes(intrinsic.credentialStatus) ? { credentialStatus: intrinsic.credentialStatus } : {}),
+        })
+      }
+      if (statements.length > 1) scope = unresolvedParagraphScope(text, scope)
       const scopeText = derivedContext(scope)
-      const safe = isSafeProfessionalRecord(text) || (section !== 'other' && section !== 'context' && Boolean(canonicalScreeningEvidence(text, section)))
-      // Exact typed metadata is not permission to ignore applicant-written
-      // disclaimers. Derive any strong scope before omitting identity-bearing rows.
-      const metadata = trustedMetadata.has(text) || inertProfessionalMetadata(text) || dateLine.test(text)
-      const isContext = section === 'context' || section === 'other' || metadata || Boolean(knownScope.get(text.toLowerCase()))
-      if (isContext || !safe) {
+      const bounded = statements.length > 0 && statements.every(statement => isSafeProfessionalRecord(statement.text) ||
+        (section !== 'other' && section !== 'context' && Boolean(canonicalScreeningEvidence(statement.text, section))))
+      if (isContext || !bounded) {
         if (Object.keys(scope).length) {
           if (section === 'context' || section === 'other') globalScope = mergeScope(globalScope, scope)
           else sectionScopes[section] = mergeScope(sectionScopes[section], scope)
         }
-        if (safe && !metadata) addContext('professional_context', text, pageIndex + 1, start, end)
+        if (bounded && !metadata) for (const statement of statements) {
+          addContext('professional_context', statement.text, pageIndex + 1, statement.start, statement.end)
+        }
         else if (scopeText) addContext('derived_attribution', scopeText, pageIndex + 1, start, end)
         else {
           omittedContext = true
@@ -439,19 +540,21 @@ function minimizeResumePages(pages: readonly string[], sourceSha256: string, tru
         }
         continue
       }
-      if (section === 'other' || section === 'context') continue
-      if (evidence.length >= 50) return null
-      previousOmission = false
-      const intrinsic = screeningEvidenceQualifiers(text, section)
-      const statementScope = Object.keys(scope).length ? scope : null
-      evidence.push({ id: `${claimPrefix[section]}_${evidence.length + 1}`, category: section, excerpt: text,
-        location: `pdf.page[${pageIndex + 1}].span[${start}:${end}]`,
-        ...(intrinsic ? { qualifiers: statementScope ? qualifyClaim(intrinsic, statementScope, section) : intrinsic }
-          : { interpretation: 'ai_contextual' as const, ...(statementScope ? { qualifiers: {
-              attribution: 'unknown' as const, context: 'unknown' as const, assertion: 'uncertain' as const,
-              credentialStatus: section === 'job_certification' ? 'unknown' as const : 'not_applicable' as const, ...statementScope,
-            } } : {}) }),
-      })
+      for (const statement of statements) {
+        if (evidence.length >= 50) return null
+        if (page.slice(statement.start, statement.end) !== statement.text) return null
+        previousOmission = false
+        const intrinsic = screeningEvidenceQualifiers(statement.text, section)
+        const statementScope = Object.keys(scope).length ? scope : null
+        evidence.push({ id: `${claimPrefix[section]}_${evidence.length + 1}`, category: section, excerpt: statement.text,
+          location: `pdf.page[${pageIndex + 1}].span[${statement.start}:${statement.end}]`,
+          ...(intrinsic ? { qualifiers: statementScope ? qualifyClaim(intrinsic, statementScope, section) : intrinsic }
+            : { interpretation: 'ai_contextual' as const, ...(statementScope ? { qualifiers: {
+                attribution: 'unknown' as const, context: 'unknown' as const, assertion: 'uncertain' as const,
+                credentialStatus: section === 'job_certification' ? 'unknown' as const : 'not_applicable' as const, ...statementScope,
+              } } : {}) }),
+        })
+      }
     }
   }
   // Context remains visible and in source order. Only strong explicit qualifiers
