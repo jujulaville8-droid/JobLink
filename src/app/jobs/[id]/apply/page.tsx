@@ -901,11 +901,11 @@ function ApplicationForm({ jobId }: { jobId: string }) {
                 By submitting this application, you consent to sharing your
                 profile information with the employer for recruitment purposes
                 only.
+                <ApplicantScreeningNotice visible={process.env.NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED === "true"} />
               </p>
             </div>
 
             {/* Submit button */}
-            <ApplicantScreeningNotice visible={process.env.NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED === "true"} />
             <motion.button
               type="submit"
               disabled={state === "submitting"}
