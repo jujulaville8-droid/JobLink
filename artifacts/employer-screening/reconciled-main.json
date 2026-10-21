@@ -1,0 +1,29 @@
+{
+  "commit": "ff24fac00fb2c62f15c6d2e75f330ac1d563c82e",
+  "files": [
+    {
+      "path": "public/images/consultation-coast.svg",
+      "sha": "e58a6997908a7eac01d26d8fe13719a4d7f71cf8"
+    },
+    {
+      "path": "src/app/resume-writing/page.tsx",
+      "sha": "ce394d5b23d033ecc48bc93cc8fb369f81c0daf1"
+    },
+    {
+      "path": "src/components/cv/studio/ResumeStudio.tsx",
+      "sha": "e550ab55434409d189dfe4b716806f6ca5399334"
+    },
+    {
+      "path": "src/components/cv/studio/ResumeWritingOffer.tsx",
+      "sha": "e6a0ace5d4b4c271b363b16576936de518f2b80d"
+    },
+    {
+      "path": "src/components/cv/studio/consultation.module.css",
+      "sha": "c4dcc97ff61d11ac2c8a356e271274bcf5221135"
+    },
+    {
+      "path": "tests/resume-studio.spec.tsx",
+      "sha": "05dc091bd8dfd23e85423b09fc38d3eb4cd6c6cc"
+    }
+  ]
+}

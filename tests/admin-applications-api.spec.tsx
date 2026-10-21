@@ -129,6 +129,7 @@ async function expectGenericFailure(response: Response) {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', 'false')
   tableResults.clear()
   tableResults.set('applications', { data: storedApplication, error: null })
   tableResults.set('users', { data: { email: privateEmail }, error: null })
@@ -149,7 +150,8 @@ beforeEach(() => {
 
 afterEach(() => {
   for (const mutation of [mocks.insert, mocks.update, mocks.upsert, mocks.delete]) expect(mutation).not.toHaveBeenCalled()
-  expect(mocks.rpc).not.toHaveBeenCalled()
+  // The only RPC permitted in this read-only admin area is the bounded status lookup.
+  for (const call of mocks.rpc.mock.calls) expect(call).toEqual(['employer_outbox_status', { p_application_id: applicationId }])
   expect(mocks.sign).not.toHaveBeenCalled()
   const logged = [console.error, console.warn, console.log].flatMap(method => vi.mocked(method).mock.calls)
     .flatMap(args => args.map(value => value instanceof Error ? value.stack ?? value.message : JSON.stringify(value))).join('\n')
@@ -157,6 +159,7 @@ afterEach(() => {
     expect(logged).not.toContain(secret)
   }
   vi.restoreAllMocks()
+  vi.unstubAllEnvs()
 })
 
 describe.each(endpoints)('admin applications $name boundary', ({ send }) => {
@@ -356,6 +359,93 @@ describe('admin application detail', () => {
     }, error: null })
     await expectGenericFailure(await sendDetail())
     expect(mocks.from).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('admin-only employer outbox visibility', () => {
+  const outbox = {
+    state: 'pending', attempts: 0, first_send_at: null, accepted_at: null,
+    next_attempt_at: '2026-10-21T12:00:00+00:00', last_error_code: null,
+  }
+
+  it.each([undefined, 'false', 'TRUE', '1'])('does not access the optional RPC when schema readiness is %s', async ready => {
+    vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', ready)
+    const response = await sendDetail()
+    expect(response.status).toBe(200)
+    expect((await response.json()).application).not.toHaveProperty('employerOutboxStatus')
+    expect(mocks.rpc).not.toHaveBeenCalled()
+  })
+
+  it.each([401, 403])('does not read outbox status for unauthorized %s requests even with the schema ready', async status => {
+    vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', 'true')
+    mocks.auth.mockResolvedValue({ error: NextResponse.json({ error: 'Not allowed' }, { status }) })
+    expect((await sendDetail()).status).toBe(status)
+    expectNoDataAccess()
+  })
+
+  it.each(['pending', 'claimed', 'ready', 'sending', 'accepted', 'uncertain', 'blocked', 'cancelled'])
+    ('returns a bounded %s status after admin authorization, even while dispatch is rolled back', async state => {
+      vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', 'true')
+      vi.stubEnv('EMPLOYER_SCREENING_ENABLED', 'false')
+      vi.stubEnv('EMPLOYER_OUTBOX_WORKER_ENABLED', 'false')
+      mocks.rpc.mockResolvedValue({ data: {
+        ...outbox, state, attempts: 1, first_send_at: '2026-10-21T11:50:00+00:00',
+        accepted_at: state === 'accepted' ? '2026-10-21T11:50:01+00:00' : null,
+        last_error_code: state === 'uncertain' ? 'LEASE_EXPIRED_SENDING' : null,
+        recipient: 'hidden-employer@example.test', provider_id: 'hidden-provider-id',
+        baseline_json: 'hidden baseline', snapshot_json: 'hidden extraction', frozen_email_json: 'hidden email',
+        resume_url: 'https://private.example.test/cv.pdf', score: 99,
+      }, error: null })
+      const response = await sendDetail()
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.application.employerOutboxStatus).toEqual({
+        state, attempts: 1, firstSendAt: '2026-10-21T11:50:00.000Z',
+        acceptedAt: state === 'accepted' ? '2026-10-21T11:50:01.000Z' : null,
+        nextAttemptAt: '2026-10-21T12:00:00.000Z', lastErrorCode: state === 'uncertain' ? 'LEASE_EXPIRED_SENDING' : null,
+      })
+      expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith('employer_outbox_status', { p_application_id: applicationId })
+      expect(mocks.auth.mock.invocationCallOrder[0]).toBeLessThan(mocks.rpc.mock.invocationCallOrder[0])
+      expect(JSON.stringify(body)).not.toMatch(/hidden|private\.example|score|baseline_json|snapshot_json|frozen_email_json|provider_id|recipient/)
+    })
+
+  it.each(['missing-migration', 'throw', 'no-row', 'inactive', 'invalid-state', 'invalid-attempts'])
+    ('preserves legacy detail for an optional %s status read', async outcome => {
+      vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', 'true')
+      if (outcome === 'throw') mocks.rpc.mockRejectedValue(new Error(privateDiagnostic))
+      else mocks.rpc.mockResolvedValue({
+        data: outcome === 'no-row' || outcome === 'missing-migration' ? null : {
+          ...outbox, state: outcome === 'inactive' ? 'inactive' : outcome === 'invalid-state' ? 'private unexpected status' : 'pending',
+          attempts: outcome === 'invalid-attempts' ? 100 : 0,
+        },
+        error: outcome === 'missing-migration' ? { message: privateDiagnostic } : null,
+      })
+      const response = await sendDetail()
+      expect(response.status).toBe(200)
+      const application = (await response.json()).application
+      expect(application).not.toHaveProperty('employerOutboxStatus')
+      expect(application.notificationTracking).toBe('not_tracked')
+      expect(application.applicant.id).toBe(profileId)
+    })
+
+  it('sanitizes diagnostics and non-date strings without losing the uncertain outcome', async () => {
+    vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', 'true')
+    mocks.rpc.mockResolvedValue({ data: {
+      ...outbox, state: 'uncertain', last_error_code: privateDiagnostic,
+      accepted_at: privateEmail, next_attempt_at: privateCv, first_send_at: privatePhone,
+    }, error: null })
+    const response = await sendDetail()
+    expect((await response.json()).application.employerOutboxStatus).toEqual({
+      state: 'uncertain', attempts: 0, firstSendAt: null, acceptedAt: null, nextAttemptAt: null, lastErrorCode: null,
+    })
+  })
+
+  it('keeps the status out of admin list and search endpoints', async () => {
+    vi.stubEnv('EMPLOYER_SCREENING_SCHEMA_READY', 'true')
+    await sendOverview()
+    await sendApplicants()
+    await sendFilters()
+    expect(mocks.rpc).not.toHaveBeenCalled()
   })
 })
 

@@ -5,8 +5,8 @@ import SeekerDetailsSummary from '@/components/profile/SeekerDetailsSummary'
 import { EMPTY_SEEKER_DETAILS, EMPTY_SENSITIVE_DETAILS, seekerDetailRows, seekerDetailsFromRow, sensitiveDetailRows, sensitiveDetailsFromRow } from '@/lib/seeker-details'
 import { ArrowLeft, ArrowUpRight, FileText, X } from 'lucide-react'
 import {
-  APPLICATION_TIME_ZONE, UUID_PATTERN, applicantName, applicationStatusLabel,
-  type ApplicationDetail,
+  APPLICATION_TIME_ZONE, UUID_PATTERN, applicantName, applicationStatusLabel, readEmployerOutboxStatus,
+  type ApplicationDetail, type EmployerOutboxStatus,
 } from '@/lib/admin-applications'
 import styles from './ApplicationDetailDrawer.module.css'
 
@@ -48,6 +48,7 @@ function readApplication(value: unknown, applicationId: string, jobId: string): 
     } : null,
     resume: { label: 'Current résumé', uploadedHref: nullableText(resume?.uploadedHref), builtHref: nullableText(resume?.builtHref) },
     notificationTracking: forwardTracking(application.notificationTracking),
+    employerOutboxStatus: readEmployerOutboxStatus(application.employerOutboxStatus) ?? undefined,
     profileDetails: record(application.profileDetails) ? seekerDetailsFromRow(record(application.profileDetails)) : null,
     sensitiveDetails: record(application.sensitiveDetails) ? sensitiveDetailsFromRow(record(application.sensitiveDetails)) : null,
   }
@@ -78,6 +79,31 @@ function applicationDate(value: string): string {
     timeZone: APPLICATION_TIME_ZONE, day: 'numeric', month: 'short', year: 'numeric',
     hour: 'numeric', minute: '2-digit',
   }).format(date)
+}
+
+function OutboxStatus({ status }: { status: EmployerOutboxStatus }) {
+  const labels: Record<EmployerOutboxStatus['state'], string> = {
+    pending: 'Pending', claimed: 'Pending', ready: 'Pending', sending: 'Sending',
+    accepted: 'Accepted', uncertain: 'Needs review', blocked: 'Blocked', cancelled: 'Cancelled',
+  }
+  const descriptions: Record<EmployerOutboxStatus['state'], string> = {
+    pending: 'Queued for employer notification.', claimed: 'Preparing the employer notification.', ready: 'Prepared for employer notification.',
+    sending: 'A send attempt is in progress. Provider acceptance is not yet confirmed.',
+    accepted: 'Accepted by the email provider. Inbox delivery and read status are not confirmed.',
+    uncertain: 'Delivery outcome is uncertain. Do not resend until provider records are reconciled.',
+    blocked: 'Automatic sending is blocked. Review is required before any further attempt.',
+    cancelled: 'Further sending has been cancelled.',
+  }
+  return <>
+    <p className={styles.label}>{labels[status.state]}</p>
+    <p className={styles.small}>{descriptions[status.state]}</p>
+    <p className={styles.small}>Send attempts: {status.attempts}.
+      {status.state === 'accepted' && status.acceptedAt ? ` Accepted ${applicationDate(status.acceptedAt)} (Antigua time).`
+        : status.firstSendAt ? ` First attempt ${applicationDate(status.firstSendAt)} (Antigua time).` : ''}
+      {status.state === 'pending' && status.nextAttemptAt ? ` Next attempt no earlier than ${applicationDate(status.nextAttemptAt)} (Antigua time).` : ''}
+    </p>
+    {status.lastErrorCode && <p className={styles.small}>Status code: {status.lastErrorCode}</p>}
+  </>
 }
 
 // Remount on either identity change: private detail from a previous selection is
@@ -232,7 +258,7 @@ function OpenApplicationDetailDrawer({ applicationId, jobId, onClose, returnFocu
             </section>}
             <section className={styles.notification} aria-labelledby={`${titleId}-notification`}>
               <h3 id={`${titleId}-notification`} className={styles.sectionTitle}>Employer notification</h3>
-              {detail.notificationTracking === 'not_tracked' ? <>
+              {detail.employerOutboxStatus ? <OutboxStatus status={detail.employerOutboxStatus} /> : detail.notificationTracking === 'not_tracked' ? <>
                 <p className={styles.label}>Not tracked</p>
                 <p className={styles.small}>Delivery and read status are not recorded for this application.</p>
               </> : detail.notificationTracking.status === 'sent' ? <>
