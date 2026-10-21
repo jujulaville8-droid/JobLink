@@ -1,3 +1,5 @@
+> **Current integration direction:** [Inline enrichment of the original employer email](inline-email.md). The queue/capture rollout described below is historical and remains disabled; it is not a prerequisite for inline enrichment. Existing installed records must not be deleted or silently reset.
+
 # Employer screening integration (unpublished, default OFF)
 
 Source-only implementation, 2026-10-21. Base `67f977d2bb0e9e3508397944f2b2bae0537b8b34`, reconciled with all six exact files from current main `ff24fac00fb2c62f15c6d2e75f330ac1d563c82e`. The original 26-file handoff is preserved outside this checkout; earlier milestone documents are historical, not the current feature description.

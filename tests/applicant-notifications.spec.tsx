@@ -1,12 +1,15 @@
 // @vitest-environment node
-import { beforeEach, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ from: vi.fn(), storageFrom: vi.fn(), download: vi.fn(), send: vi.fn(), fetchCv: vi.fn() }))
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({ from: vi.fn(), storageFrom: vi.fn(), download: vi.fn(), send: vi.fn(), fetchCv: vi.fn(), screen: vi.fn() }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ from: mocks.from, storage: { from: mocks.storageFrom } }) }))
 vi.mock('@/lib/email', () => ({ sendEmail: mocks.send }))
 vi.mock('@/lib/cv-helpers', () => ({ fetchFullCv: mocks.fetchCv }))
+vi.mock('@/lib/employer-screening/inline', async importOriginal => ({ ...await importOriginal<object>(), inlineEmployerScreening: mocks.screen }))
 import { applicantCvPath, notifyNewApplicant } from '../src/lib/applicant-notifications'
 import { buildEmailHtml } from '../src/lib/email-templates'
 import { resumeFixture } from './fixtures/resume'
+import { INLINE_SCREENING_GATES } from '../src/lib/employer-screening/inline'
+import { SCREENING_NOTICE_VERSION } from '../src/lib/employer-screening/notice'
 
 const uid = '11111111-1111-4111-8111-111111111111'
 const jobId = '22222222-2222-4222-8222-222222222222'
@@ -17,6 +20,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.stubEnv('RESEND_API_KEY', 'test-only-no-delivery')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
+  vi.stubEnv('EMPLOYER_SCREENING_INLINE_ENABLED', 'false')
   queries.length = 0
   updates.length = 0
   rows = {
@@ -40,6 +44,53 @@ beforeEach(() => {
   mocks.download.mockResolvedValue({ data: new Blob(['%PDF-1.7\nfixture']), error: null })
   mocks.send.mockResolvedValue({ success: true, id: 'provider-id' })
   mocks.fetchCv.mockResolvedValue(null)
+  mocks.screen.mockResolvedValue({})
+})
+afterEach(() => vi.unstubAllEnvs())
+
+it('keeps the identical original email when inline screening is OFF, undisclosed, or fails', async () => {
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  const baseline = mocks.send.mock.calls[0][0]
+  expect(mocks.screen).not.toHaveBeenCalled()
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  await notifyNewApplicant('saved-app', uid)
+  await notifyNewApplicant('saved-app', uid, 'stale-notice')
+  expect(mocks.screen).not.toHaveBeenCalled()
+  mocks.screen.mockRejectedValue(new Error('private CV/secret failure'))
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  expect(mocks.screen).toHaveBeenCalledOnce()
+  expect(mocks.send).toHaveBeenCalledTimes(4)
+  for (const [message] of mocks.send.mock.calls) expect(message).toEqual(baseline)
+})
+
+it.each(['upload', 'builder'])('screens the exact %s attachment Buffer once, before the unchanged one-email send', async kind => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  if (kind === 'builder') {
+    rows.seeker_profiles!.cv_url = null
+    mocks.fetchCv.mockResolvedValue({ ...resumeFixture, profile: { ...resumeFixture.profile, user_id: uid } })
+  }
+  mocks.screen.mockResolvedValue({ employer_screening: { status: 'unavailable' } })
+  expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
+  expect(mocks.screen).toHaveBeenCalledOnce()
+  expect(mocks.send).toHaveBeenCalledOnce()
+  const input = mocks.screen.mock.calls[0][0], message = mocks.send.mock.calls[0][0]
+  expect(input.resumeBytes).toBe(message.attachments[0].content)
+  expect(input).toMatchObject({ applicationId: 'saved-app', applicantUserId: uid, jobId, companyId: 'company', noticeVersion: SCREENING_NOTICE_VERSION })
+  expect(input).not.toHaveProperty('coverLetter')
+  expect(input).not.toHaveProperty('applicantEmail')
+  expect(message).toMatchObject({ idempotencyKey: 'application/saved-app/employer', replyTo: 'applicant@example.test',
+    data: { employer_screening: { status: 'unavailable' }, cv_attached: true } })
+  expect(mocks.screen.mock.invocationCallOrder[0]).toBeLessThan(mocks.send.mock.invocationCallOrder[0])
+  expect(mocks.download).toHaveBeenCalledTimes(kind === 'upload' ? 1 : 0)
+  expect(mocks.fetchCv).toHaveBeenCalledTimes(kind === 'builder' ? 1 : 0)
+})
+
+it('does not run screening without an attachment, even with every inline gate enabled', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.download.mockResolvedValue({ data: null, error: null })
+  expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
+  expect(mocks.screen).not.toHaveBeenCalled()
+  expect(mocks.send).toHaveBeenCalledOnce()
 })
 
 it('binds saved application to applicant and company; sends private bytes only to saved real contact', async () => {

@@ -2,6 +2,7 @@ import { resumeFilename } from '@/lib/resume-filename'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
 import { parseCompanyContactEmail } from '@/lib/company-contact-email'
+import { inlineEmployerScreening, inlineScreeningDependencies, inlineScreeningEnabled, type InlineScreeningFields } from '@/lib/employer-screening/inline'
 
 const MAX_CV_BYTES = 5 * 1024 * 1024
 
@@ -29,10 +30,10 @@ export function applicantCvPath(value: unknown, userId: string): string | null {
 }
 
 /** Called only after a verified seeker successfully inserts an application. */
-export async function notifyNewApplicant(applicationId: string, applicantUserId: string): Promise<boolean> {
+export async function notifyNewApplicant(applicationId: string, applicantUserId: string, noticeVersion?: unknown): Promise<boolean> {
   // No provider key means no private-file reads or accidental delivery in local builds.
   if (!process.env.RESEND_API_KEY) return false
-  const sent = await forwardApplicationToEmployer(applicationId, applicantUserId)
+  const sent = await forwardApplicationToEmployer(applicationId, applicantUserId, noticeVersion)
   await recordEmployerForward(applicationId, sent)
   return sent
 }
@@ -56,7 +57,7 @@ async function recordEmployerForward(applicationId: string, sent: boolean): Prom
   }
 }
 
-async function forwardApplicationToEmployer(applicationId: string, applicantUserId: string): Promise<boolean> {
+async function forwardApplicationToEmployer(applicationId: string, applicantUserId: string, noticeVersion?: unknown): Promise<boolean> {
   try {
     const db = createAdminClient()
     const { data: application, error: applicationError } = await db.from('applications')
@@ -115,6 +116,16 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
         }
       } catch { /* An unavailable built resume must not block the application. */ }
     }
+    // Enrich only these exact in-memory attachment bytes. The original send,
+    // recipient and duplicate-prevention key remain the sole delivery path.
+    let screening: InlineScreeningFields = {}
+    if (attachments[0] && inlineScreeningEnabled(noticeVersion)) {
+      try {
+        screening = await inlineEmployerScreening({ applicationId: application.id, applicantUserId,
+          jobId: job.id, companyId: job.company_id, jobTitle: job.title,
+          noticeVersion, resumeBytes: attachments[0].content }, inlineScreeningDependencies(db))
+      } catch { /* Optional enrichment must never prevent the original email. */ }
+    }
     const result = await sendEmail({
       to: recipient,
       type: 'new_applicant',
@@ -122,6 +133,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
       replyTo: applicantEmail.valid ? applicantEmail.email || undefined : undefined,
       attachments,
       data: {
+        ...screening,
         applicant_name: name,
         applicant_email: applicantEmail.valid ? applicantEmail.email : null,
         applicant_phone: typeof seeker.phone === 'string' ? seeker.phone.trim().slice(0, 80) : null,

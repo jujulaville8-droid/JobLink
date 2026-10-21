@@ -16,6 +16,8 @@ const state = vi.hoisted(() => ({
   events: [] as string[],
   email: vi.fn(),
   notify: vi.fn(),
+  afterCallbacks: [] as (() => Promise<void>)[],
+  afterFailure: '' as '' | 'before' | 'after',
 }))
 
 const USER_ID = '11111111-1111-4111-8111-111111111111'
@@ -92,6 +94,15 @@ function messagingDb() {
   }
 }
 
+vi.mock('next/server', async importOriginal => ({
+  ...await importOriginal<typeof import('next/server')>(),
+  after: (callback: () => Promise<void>) => {
+    if (state.afterFailure === 'before') throw new Error('scheduler unavailable')
+    state.afterCallbacks.push(callback)
+    if (state.afterFailure === 'after') throw new Error('scheduler registration uncertain')
+  },
+}))
+
 vi.mock('@/lib/api-auth', () => ({
   requireVerifiedUser: async () => state.authStatus
     ? { error: NextResponse.json({ error: 'Unavailable' }, { status: state.authStatus }) }
@@ -109,11 +120,18 @@ vi.mock('@/lib/email', () => ({ BASE_URL: 'https://joblinkantigua.com', sendEmai
 vi.mock('@/lib/applicant-notifications', async importOriginal => ({ ...await importOriginal<object>(), notifyNewApplicant: state.notify }))
 
 import { POST } from '@/app/api/jobs/apply/route'
+import { SCREENING_NOTICE_VERSION } from '@/lib/employer-screening/notice'
 
-const apply = (extra: Record<string, unknown> = {}) => POST(new NextRequest('https://joblinkantigua.com/api/jobs/apply', {
-  method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ job_id: JOB_ID, cover_letter_text: 'I would like to apply.', ...extra }),
-}))
+const flushAfter = async () => { for (const callback of state.afterCallbacks.splice(0)) await callback() }
+const apply = async (extra: Record<string, unknown> = {}, runAfter = true) => {
+  const response = await POST(new NextRequest('https://joblinkantigua.com/api/jobs/apply', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_id: JOB_ID, cover_letter_text: 'I would like to apply.', ...extra }),
+  }))
+  // Model the real response boundary before running framework-managed callbacks.
+  if (runAfter) await flushAfter()
+  return response
+}
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -127,6 +145,8 @@ beforeEach(() => {
   state.inserts = []
   state.messagingInserts = []
   state.events = []
+  state.afterCallbacks = []
+  state.afterFailure = ''
   state.job = {
     id: JOB_ID, status: 'active', title: 'Test role', company_id: COMPANY_ID,
     posted_by_admin: true, expires_at: null,
@@ -135,8 +155,24 @@ beforeEach(() => {
   state.email.mockResolvedValue({ success: true, id: 'confirmation-id' })
   state.notify.mockImplementation(async () => { state.events.push('notify'); return true })
   vi.spyOn(console, 'error').mockImplementation(() => {})
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
 })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs() })
+
+it('passes only the current request notice to optional inline screening without changing the application insert', async () => {
+  vi.stubEnv('EMPLOYER_SCREENING_INLINE_ENABLED', 'true')
+  const response = await apply({ screening_notice_version: SCREENING_NOTICE_VERSION, screen: true })
+  expect(response.status).toBe(201)
+  expect(state.notify).toHaveBeenCalledExactlyOnceWith(APPLICATION_ID, USER_ID, SCREENING_NOTICE_VERSION)
+  expect(state.inserts).toEqual([{ job_id: JOB_ID, seeker_id: SEEKER_ID, cover_letter_text: 'I would like to apply.', status: 'applied' }])
+  expect(await response.json()).not.toHaveProperty('screening')
+})
+
+it.each([undefined, 'old-notice', true])('never invents inline disclosure for stale/missing request attestation %s', async screening_notice_version => {
+  vi.stubEnv('EMPLOYER_SCREENING_INLINE_ENABLED', 'true')
+  expect((await apply({ screening_notice_version })).status).toBe(201)
+  expect(state.notify).toHaveBeenCalledExactlyOnceWith(APPLICATION_ID, USER_ID)
+})
 
 it('notifies only after saving the authenticated seeker’s application', async () => {
   const response = await apply()
@@ -269,4 +305,59 @@ it('accepts an application for an active job with a past stored deadline without
   expect(state.inserts).toHaveLength(1)
   expect(state.inserts[0].job_id).toBe(JOB_ID)
   expect(state.job).toEqual(originalJob)
+})
+
+
+it('returns 201 with chat and applicant receipt complete before employer forwarding starts', async () => {
+  const response = await apply({}, false)
+  expect(response.status).toBe(201)
+  expect(await response.json()).toMatchObject({ conversation_id: 'conversation-id' })
+  expect(state.messagingInserts.map(row => row.table)).toEqual(['conversations', 'conversation_participants', 'messages'])
+  expect(state.email).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ type: 'application_confirmation' }))
+  expect(state.notify).not.toHaveBeenCalled()
+  expect(state.afterCallbacks).toHaveLength(1)
+  let release!: () => void
+  state.notify.mockImplementation(() => new Promise<boolean>(resolve => { release = () => resolve(true) }))
+  const queued = state.afterCallbacks[0]
+  const pending = queued()
+  expect(state.notify).toHaveBeenCalledExactlyOnceWith(APPLICATION_ID, USER_ID)
+  // A repeated callback cannot start a second employer send while one is pending.
+  await queued()
+  expect(state.notify).toHaveBeenCalledOnce()
+  release()
+  await pending
+})
+
+it('still awaits the original applicant receipt before scheduling employer forwarding', async () => {
+  let release!: () => void
+  state.email.mockImplementation(() => new Promise(resolve => { release = () => resolve({ success: true }) }))
+  let returned = false
+  const pending = apply({}, false).then(response => { returned = true; return response })
+  await vi.waitFor(() => expect(state.email).toHaveBeenCalledOnce())
+  expect(returned).toBe(false)
+  expect(state.afterCallbacks).toHaveLength(0)
+  expect(state.notify).not.toHaveBeenCalled()
+  release()
+  expect((await pending).status).toBe(201)
+  expect(state.afterCallbacks).toHaveLength(1)
+  await flushAfter()
+})
+
+it.each(['before', 'after'] as const)('falls back once when after registration fails %s registering', async failure => {
+  state.afterFailure = failure
+  const response = await apply({}, false)
+  expect(response.status).toBe(201)
+  expect(state.notify).toHaveBeenCalledExactlyOnceWith(APPLICATION_ID, USER_ID)
+  await flushAfter()
+  expect(state.notify).toHaveBeenCalledOnce()
+})
+
+it('contains deferred notifier errors without logging private details or retrying', async () => {
+  state.notify.mockRejectedValue(new Error('private-cv-folder/secret.pdf'))
+  expect((await apply({}, false)).status).toBe(201)
+  const queued = state.afterCallbacks[0]
+  await expect(queued()).resolves.toBeUndefined()
+  await queued()
+  expect(state.notify).toHaveBeenCalledOnce()
+  expect(vi.mocked(console.warn).mock.calls.flat().join(' ')).not.toContain('private-cv-folder')
 })
