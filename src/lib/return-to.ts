@@ -37,7 +37,9 @@ export function getResumeWritingReturnTo(value: unknown): string | null {
   if(!safe)return null;
   const url=new URL(safe,INTERNAL_ORIGIN);
   if(url.pathname!=='/resume-writing' || url.hash)return null;
-  const query=new URLSearchParams();const order=url.searchParams.get('order');
+  const query=new URLSearchParams();
+  if(url.searchParams.get('requests')==='1')query.set('requests','1');
+  const order=url.searchParams.get('order');
   if(order && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(order))query.set('order',order);
   const application=getApplicationReturnTo(url.searchParams.get('application'));
   if(application)query.set('application',application);
