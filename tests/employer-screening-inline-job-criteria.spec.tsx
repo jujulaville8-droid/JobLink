@@ -2,8 +2,9 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { derivePublishedJobCriteria, type PublishedJobCriteriaInput } from '../src/lib/employer-screening/inline-job-criteria'
-import { isSafePublishedJobClause, validatePublishedCriterionText } from '../src/lib/employer-screening/inline-job-context'
+import { isSafePublishedJobClause, MAX_PUBLISHED_JOB_CRITERIA, validatePublishedCriterionText } from '../src/lib/employer-screening/inline-job-context'
 import { publicVacancyDescription } from '../src/lib/public-vacancy-description'
+import creativeEngineSalesJob from './fixtures/creative-engine-sales-public-job.json'
 
 const job = (description: string): PublishedJobCriteriaInput => ({ id: 'public-job', company_id: 'company',
   title: 'Private title never sent', status: 'active', description })
@@ -135,9 +136,39 @@ describe('bounded published professional job context', () => {
     expect(result.criteria.every(c => isSafePublishedJobClause(c.label))).toBe(true)
   })
 
-  it('never truncates oversize clauses or cherry-picks a first twelve', () => {
+  it('admits all fourteen clauses of the exact Creative Engine public vacancy without truncation', () => {
+    const result = derivePublishedJobCriteria({ ...creativeEngineSalesJob, status: 'active' })
+    expect(result.status).toBe('available')
+    expect(result.criteria).toHaveLength(14)
+    expect(result.source.descriptionSha256).toBe('425a6b6e8da61be4094fbb9691bb005564ab96c930cb11f763b6910b43d766b2')
+    expect(result.criteria.map(c => c.label)).toEqual(creativeEngineSalesJob.description.split('\n')
+      .filter(line => line.startsWith('* ')).map(line => line.slice(2)))
+    expect(result.source.provenance).toHaveLength(14)
+    expect(result.source.omittedContext).toBe(false)
+    expect(result.criteria.reduce((sum, c) => sum + c.weight, 0)).toBe(100)
+    expect(result.criteria.map(c => c.weight)).toEqual([8, 8, ...Array(12).fill(7)])
+    expect(result.coverage).toMatchObject({ recognizedRequiredClauses: 5, recognizedDutyClauses: 8,
+      recognizedPreferredClauses: 1, unsupportedRequiredClauses: 0, unsupportedDutyClauses: 0, unsupportedPreferredClauses: 0 })
+    for (const provenance of result.source.provenance) {
+      const span = /^public_description\.span\[(\d+):(\d+)\]$/.exec(provenance.location)!
+      const quote = creativeEngineSalesJob.description.slice(Number(span[1]), Number(span[2]))
+      expect(provenance.requirementSha256).toBe(sha(quote))
+      if (provenance.kind !== 'context') expect(result.criteria.find(c => c.id === provenance.criterionId)!.label).toBe(quote)
+    }
+  })
+
+  it('admits the core maximum but never truncates oversize clauses or cherry-picks a first twenty', () => {
+    expect(MAX_PUBLISHED_JOB_CRITERIA).toBe(20)
+    const maximum = Array.from({ length: MAX_PUBLISHED_JOB_CRITERIA }, (_, n) => `Skill requirement ${n}`).join('\n')
+    const admitted = derive(`Requirements\n${maximum}`)
+    expect(admitted.status).toBe('available')
+    expect(admitted.criteria).toHaveLength(20)
+    expect(admitted.criteria.every(c => c.weight === 5)).toBe(true)
+    const rejected = derive(`Requirements\n${maximum}\nOne more requirement`)
+    expect(rejected.reason).toBe('too_many_criteria')
+    expect(rejected.criteria).toEqual([])
+    expect(rejected.coverage.recognizedRequiredClauses).toBe(21)
     expect(derive('Requirements\n' + 'x'.repeat(301)).reason).toBe('unsupported_format')
-    expect(derive('Requirements\n' + Array.from({ length: 13 }, (_, n) => `Skill requirement ${n}`).join('\n')).reason).toBe('too_many_criteria')
     for (const description of ['<h2>Requirements</h2><p>Excel</p>', 'Requirements\nExcel\0', 'x'.repeat(32_001), '\n'.repeat(201)]) {
       expect(derive(description).reason).toBe('unsupported_format')
     }
