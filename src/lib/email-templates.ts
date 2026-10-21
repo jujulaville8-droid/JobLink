@@ -1,3 +1,6 @@
+import type { Report } from './employer-screening'
+import { screeningEmailSection } from './employer-screening/email'
+
 type EmailType =
   | 'application_confirmation'
   | 'new_applicant'
@@ -18,6 +21,8 @@ type EmailType =
   | 'signup_reminder_3'
 
 interface EmailData {
+  /** Reserved for validated worker output; absent in the unchanged live forwarding path. */
+  employer_screening?: Report
   applicant_name?: string
   applicant_email?: string
   applicant_phone?: string
@@ -121,6 +126,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${d.applicant_phone ? `<p>Phone: ${esc(d.applicant_phone)}</p>` : ''}
           ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
           <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
+          ${d.employer_screening ? screeningEmailSection(d.employer_screening) : ''}
           ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>
         `),
