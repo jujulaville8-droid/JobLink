@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test:ui": "node --import tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
-    "test:node": "node --import tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs tests/company-claims.test.mjs tests/employer-outbox-store.test.mjs tests/employer-capture-storage.test.mjs",
+    "test:node": "node --import tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs tests/company-claims.test.mjs tests/employer-outbox-store.test.mjs tests/employer-capture-storage.test.mjs tests/employer-monthly-budget.test.mjs",
     "test:unit": "vitest run",
     "test:onboarding": "vitest run",
     "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:node",

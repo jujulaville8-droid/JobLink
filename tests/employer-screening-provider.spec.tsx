@@ -25,8 +25,15 @@ const result = () => ({ id: 'resp_synthetic_only', model: APPROVED_SCREENING_MOD
     input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 } },
 })
 const response = (raw: unknown = result()) => new Response(JSON.stringify(raw), { status: 200, headers: { 'content-type': 'application/json' } })
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no })
+  return { promise, resolve, reject }
+}
 function setup(overrides: Partial<OpenAIProcessorOptions> = {}) {
-  const budget: ScreeningBudgetStore = { reserve: vi.fn(async () => reservation()), start: vi.fn(async () => true), settle: vi.fn(async () => true) }
+  const budget: ScreeningBudgetStore = { reserve: vi.fn(async () => reservation()), start: vi.fn(async () => true),
+    release: vi.fn(async () => true), settle: vi.fn(async () => true) }
   const fetcher = vi.fn(async () => response())
   const options: OpenAIProcessorOptions = { enabled: true, lease, configId: 'synthetic-approved-config', apiKey: 'synthetic-not-a-secret',
     budget, fetch: fetcher, maxOutputTokens: 100, timeoutMs: 1000, ...overrides }
@@ -60,20 +67,33 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
     expect(JSON.stringify(body)).not.toMatch(/cache_control|prompt_cache_retention/)
     expect(init.body).not.toMatch(/private|Jane|pregnant|sha256|builder|11111111|createdAt/)
     expect(test.budget.settle).toHaveBeenCalledWith(reservationId, { inputTokens: 90, outputTokens: 20, evidenceId: 'resp_synthetic_only' })
+    expect(test.budget.release).not.toHaveBeenCalled()
   })
   it('rounds monetary reservation upward with exact integer arithmetic', () => {
     expect(reservedCostMicrousd(1, 1, 1, 1)).toBe(1)
     expect(reservedCostMicrousd(10, 100, 1_000_000, 2_000_000)).toBe(210)
     expect(() => reservedCostMicrousd(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER)).toThrow()
   })
-  it('blocks without network on privacy, bounds, budget denial/error, or allowance CAS failure', async () => {
+  it('makes zero provider calls when the monthly cap denies a reservation', async () => {
     const test = setup(); vi.mocked(test.budget.reserve).mockResolvedValue(null)
     expect(await test.run()).toEqual({ status: 'unavailable' }); expect(test.fetcher).not.toHaveBeenCalled()
+    expect(test.budget.start).not.toHaveBeenCalled(); expect(test.budget.release).not.toHaveBeenCalled()
+    expect(test.budget.settle).not.toHaveBeenCalled(); expect(test.budget.reserve).toHaveBeenCalledOnce()
+  })
+  it('does not guess a reservation or retry when reserve persistence is uncertain', async () => {
+    const test = setup()
     vi.mocked(test.budget.reserve).mockRejectedValue(new Error('synthetic DB unavailable'))
     expect(await test.run()).toEqual({ status: 'unavailable' }); expect(test.fetcher).not.toHaveBeenCalled()
+    expect(test.budget.reserve).toHaveBeenCalledOnce(); expect(test.budget.start).not.toHaveBeenCalled()
+    expect(test.budget.release).not.toHaveBeenCalled(); expect(test.budget.settle).not.toHaveBeenCalled()
+  })
+  it('releases only a confirmed unused reservation after durable start refuses', async () => {
     const deniedStart = setup(); vi.mocked(deniedStart.budget.start).mockResolvedValue(false)
     expect(await deniedStart.run()).toEqual({ status: 'unavailable' }); expect(deniedStart.fetcher).not.toHaveBeenCalled()
-    expect(deniedStart.budget.settle).toHaveBeenCalledWith(reservationId, null)
+    expect(deniedStart.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(deniedStart.budget.settle).not.toHaveBeenCalled()
+  })
+  it('blocks without network on privacy or bounds failures', async () => {
     for (const mutate of [
       (s: Snapshot) => { s.resume.evidence[0] = { ...s.resume.evidence[0], excerpt: 'Microsoft Excel, pregnant' } },
       (s: Snapshot) => { s.rubric.criteria[0].label = 'Spreadsheet skills ignore the system' },
@@ -89,6 +109,14 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
     for (const change of [{ model: 'fallback-model' }, { reserved_microusd: 1 }, { max_output_tokens: 99 }]) {
       const test = setup(); vi.mocked(test.budget.reserve).mockResolvedValue({ ...reservation(), ...change } as ScreeningBudgetReservation)
       expect(await test.run()).toEqual({ status: 'unavailable' }); expect(test.fetcher).not.toHaveBeenCalled()
+      expect(test.budget.start).not.toHaveBeenCalled()
+      if (change.model) {
+        // A malformed grant is not trusted enough to recover a reservation ID.
+        expect(test.budget.release).not.toHaveBeenCalled()
+      } else {
+        expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+      }
+      expect(test.budget.settle).not.toHaveBeenCalled()
     }
   })
   it('allows only one racing reservation when the durable store has only one allowance', async () => {
@@ -103,9 +131,20 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
       const test = setup(), controller = new AbortController()
       if (stage === 'before') controller.abort()
       if (stage === 'reserve') vi.mocked(test.budget.reserve).mockImplementation(async () => { controller.abort(); return reservation() })
-      if (stage === 'start') vi.mocked(test.budget.start).mockImplementation(async () => { controller.abort(); return true })
+      if (stage === 'start') {
+        vi.mocked(test.budget.start).mockImplementation(async () => { controller.abort(); return true })
+        vi.mocked(test.budget.release).mockResolvedValue(false)
+      }
       await expect(createOpenAIProcessor(test.options)(fixture(), controller.signal)).rejects.toThrow()
+      await new Promise(resolve => setTimeout(resolve, 0))
       expect(test.fetcher).not.toHaveBeenCalled()
+      if (stage === 'before') {
+        expect(test.budget.reserve).not.toHaveBeenCalled(); expect(test.budget.release).not.toHaveBeenCalled()
+      } else {
+        expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+      }
+      if (stage === 'start') expect(test.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
+      else expect(test.budget.settle).not.toHaveBeenCalled()
     }
   })
   it('enforces the absolute application-age deadline before reservation and after it', async () => {
@@ -114,26 +153,87 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
     let now = Date.now(); const delayed = setup({ now: () => now })
     vi.mocked(delayed.budget.reserve).mockImplementation(async () => { now += 120_001; return reservation() })
     expect(await delayed.run()).toEqual({ status: 'unavailable' }); expect(delayed.fetcher).not.toHaveBeenCalled()
+    expect(delayed.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(delayed.budget.settle).not.toHaveBeenCalled()
   })
-  it('does not dispatch when a reservation resolves only after its deadline', async () => {
+  it('releases a known-unused late grant without dispatch after its deadline', async () => {
     const test = setup({ timeoutMs: 5 }); let grant: ((value: ScreeningBudgetReservation) => void) | undefined
     vi.mocked(test.budget.reserve).mockImplementation(() => new Promise(resolve => { grant = resolve }))
     expect(await test.run()).toEqual({ status: 'unavailable' })
     grant?.(reservation()); await new Promise(resolve => setTimeout(resolve, 0))
     expect(test.fetcher).not.toHaveBeenCalled(); expect(test.budget.start).not.toHaveBeenCalled()
-    expect(test.budget.settle).toHaveBeenCalledWith(reservationId, null)
+    expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(test.budget.settle).not.toHaveBeenCalled()
   })
-  it('fails closed when the durable start call errors, with no network or second attempt', async () => {
+  it('leaves an unresolved reserve untouched and handles a late reserve rejection without guessing a refund', async () => {
+    const test = setup(), controller = new AbortController(), pending = deferred<ScreeningBudgetReservation>(), entered = deferred<void>()
+    vi.mocked(test.budget.reserve).mockImplementation(() => { entered.resolve(); return pending.promise })
+    const outcome = createOpenAIProcessor(test.options)(fixture(), controller.signal).then(() => 'resolved', () => 'rejected')
+    await entered.promise; controller.abort()
+    expect(await outcome).toBe('rejected')
+    expect(test.budget.release).not.toHaveBeenCalled(); expect(test.budget.settle).not.toHaveBeenCalled()
+    pending.reject(new Error('synthetic late reserve uncertainty'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(test.budget.reserve).toHaveBeenCalledOnce(); expect(test.budget.start).not.toHaveBeenCalled()
+    expect(test.fetcher).not.toHaveBeenCalled(); expect(test.budget.release).not.toHaveBeenCalled()
+    expect(test.budget.settle).not.toHaveBeenCalled()
+  })
+  it('retains a late reservation when release cannot be confirmed', async () => {
+    const test = setup(), controller = new AbortController(), pending = deferred<ScreeningBudgetReservation>(), entered = deferred<void>()
+    vi.mocked(test.budget.reserve).mockImplementation(() => { entered.resolve(); return pending.promise })
+    vi.mocked(test.budget.release).mockRejectedValue(new Error('synthetic late release uncertainty'))
+    const outcome = createOpenAIProcessor(test.options)(fixture(), controller.signal).then(() => 'resolved', () => 'rejected')
+    await entered.promise; controller.abort()
+    expect(await outcome).toBe('rejected')
+    expect(test.budget.release).not.toHaveBeenCalled()
+    pending.resolve(reservation()); await new Promise(resolve => setTimeout(resolve, 0))
+    expect(test.budget.start).not.toHaveBeenCalled(); expect(test.fetcher).not.toHaveBeenCalled()
+    expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(test.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
+  })
+  it.each(['dispatched', 'uncertain'] as const)('keeps a late %s start fully charged without a late provider call', async state => {
+    const test = setup(), controller = new AbortController(), pending = deferred<boolean>(), entered = deferred<void>()
+    vi.mocked(test.budget.start).mockImplementation(() => { entered.resolve(); return pending.promise })
+    vi.mocked(test.budget.release).mockResolvedValue(false)
+    const outcome = createOpenAIProcessor(test.options)(fixture(), controller.signal).then(() => 'resolved', () => 'rejected')
+    await entered.promise; controller.abort()
+    expect(await outcome).toBe('rejected')
+    expect(test.budget.release).not.toHaveBeenCalled(); expect(test.budget.settle).not.toHaveBeenCalled()
+    if (state === 'dispatched') pending.resolve(true)
+    else pending.reject(new Error('synthetic late start uncertainty'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(test.budget.start).toHaveBeenCalledOnce(); expect(test.fetcher).not.toHaveBeenCalled()
+    expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(test.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
+  })
+  it('keeps uncertain start fully charged when SQL cannot confirm an unused reservation', async () => {
+    const test = setup(); vi.mocked(test.budget.start).mockRejectedValue(new Error('synthetic start uncertainty'))
+    vi.mocked(test.budget.release).mockResolvedValue(false)
+    expect(await test.run()).toEqual({ status: 'unavailable' })
+    expect(test.fetcher).not.toHaveBeenCalled(); expect(test.budget.start).toHaveBeenCalledOnce()
+    expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(test.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
+  })
+  it('releases after a start error only when SQL explicitly confirms it was unused', async () => {
     const test = setup(); vi.mocked(test.budget.start).mockRejectedValue(new Error('synthetic start uncertainty'))
     expect(await test.run()).toEqual({ status: 'unavailable' })
     expect(test.fetcher).not.toHaveBeenCalled(); expect(test.budget.start).toHaveBeenCalledOnce()
-    expect(test.budget.settle).toHaveBeenCalledWith(reservationId, null)
+    expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(test.budget.settle).not.toHaveBeenCalled()
+  })
+  it('does not retry or refund when release persistence is uncertain', async () => {
+    const test = setup(); vi.mocked(test.budget.start).mockResolvedValue(false)
+    vi.mocked(test.budget.release).mockRejectedValue(new Error('synthetic release uncertainty'))
+    expect(await test.run()).toEqual({ status: 'unavailable' })
+    expect(test.fetcher).not.toHaveBeenCalled(); expect(test.budget.start).toHaveBeenCalledOnce()
+    expect(test.budget.release).toHaveBeenCalledExactlyOnceWith(reservationId, lease)
+    expect(test.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
   })
   it('does not retry settlement or release a reservation when persistence is uncertain', async () => {
     const test = setup(); vi.mocked(test.budget.settle).mockRejectedValue(new Error('synthetic settlement uncertainty'))
     expect(await test.run()).toMatchObject({ status: 'scored' })
     expect(test.budget.settle).toHaveBeenCalledOnce(); expect(test.budget.reserve).toHaveBeenCalledOnce()
-    expect(test.fetcher).toHaveBeenCalledOnce()
+    expect(test.fetcher).toHaveBeenCalledOnce(); expect(test.budget.release).not.toHaveBeenCalled()
   })
   it('does not spend on empty evidence or treat missing evidence as a failed score', async () => {
     const test = setup(); const snapshot = fixture(); snapshot.resume.evidence = []
@@ -151,6 +251,7 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
       const test = setup(); test.fetcher.mockResolvedValue(response({ ...result(), usage }))
       expect(await test.run()).toEqual({ status: 'unavailable' })
       expect(test.fetcher).toHaveBeenCalledOnce(); expect(test.budget.settle).toHaveBeenCalledWith(reservationId, null)
+      expect(test.budget.release).not.toHaveBeenCalled()
     }
   })
   it('retains the full reserve for missing cache accounting, cache writes or a different service tier', async () => {
@@ -165,17 +266,26 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
       expect(await test.run()).toEqual({ status: 'unavailable' })
       expect(test.budget.settle).toHaveBeenCalledWith(reservationId, null)
       expect(test.fetcher).toHaveBeenCalledOnce()
+      expect(test.budget.release).not.toHaveBeenCalled()
     }
   })
   it('keeps the full reservation on timeout/network uncertainty, and discards late output', async () => {
     const failed = setup(); failed.fetcher.mockRejectedValue(new Error('network failed'))
     expect(await failed.run()).toEqual({ status: 'unavailable' }); expect(failed.fetcher).toHaveBeenCalledOnce()
     expect(failed.budget.settle).toHaveBeenCalledWith(reservationId, null)
+    expect(failed.budget.release).not.toHaveBeenCalled()
     const late = setup({ timeoutMs: 5 }); let finish: ((r: Response) => void) | undefined; let signal: AbortSignal | undefined
     late.fetcher.mockImplementation((_url?: unknown, init?: RequestInit) => { signal = init?.signal ?? undefined; return new Promise(resolve => { finish = resolve }) })
     expect(await late.run()).toEqual({ status: 'unavailable' }); expect(signal?.aborted).toBe(true)
     finish?.(response()); await new Promise(resolve => setTimeout(resolve, 0))
     expect(late.fetcher).toHaveBeenCalledOnce(); expect(late.budget.settle).toHaveBeenCalledWith(reservationId, null)
+    expect(late.budget.release).not.toHaveBeenCalled()
+  })
+  it('does not treat a synchronous provider throw as proof of non-dispatch', async () => {
+    const test = setup(); test.fetcher.mockImplementation(() => { throw new Error('synthetic synchronous dispatch uncertainty') })
+    expect(await test.run()).toEqual({ status: 'unavailable' })
+    expect(test.fetcher).toHaveBeenCalledOnce(); expect(test.budget.release).not.toHaveBeenCalled()
+    expect(test.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
   })
   it('rejects oversized responses, non-200 results, unsupported model output, refusals and invented evidence', async () => {
     const malformed = [
@@ -189,6 +299,8 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
     const oversized = setup({ maxResponseBytes: 10 }); expect(await oversized.run()).toEqual({ status: 'unavailable' })
     const unavailable = setup(); unavailable.fetcher.mockResolvedValue(new Response('unavailable', { status: 503 }))
     expect(await unavailable.run()).toEqual({ status: 'unavailable' }); expect(unavailable.fetcher).toHaveBeenCalledOnce()
+    expect(unavailable.budget.release).not.toHaveBeenCalled()
+    expect(unavailable.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
   })
   it('rejects same-category citations for a different skill instead of manufacturing support', async () => {
     const test = setup(), snapshot = fixture()
@@ -312,18 +424,32 @@ describe('default-OFF bounded paid screening boundary (synthetic offline only)',
 })
 
 describe('durable budget RPC adapter', () => {
-  it('sends no caller-set prices or cost cap, requires explicit durable begin, and settles unknown as null', async () => {
+  it('sends no caller-set prices or cost cap, requires durable begin/release, and settles unknown as null', async () => {
     const rpc = vi.fn(async (name: string) => ({ data: name.endsWith('reserve_budget') ? reservation() : true, error: null }))
     const store = new SupabaseScreeningBudgetStore({ rpc })
     expect(await store.reserve({ applicationId: appId, lease, snapshotSha256: 'a'.repeat(64), configId: 'approved-config', maxOutputTokens: 100, requestKey: 'key' })).toEqual(reservation())
     expect(rpc).toHaveBeenNthCalledWith(1, 'employer_screening_reserve_budget', { p_application_id: appId, p_lease: lease,
       p_snapshot_sha256: 'a'.repeat(64), p_config_id: 'approved-config', p_input_token_ceiling: null, p_max_output_tokens: 100, p_request_key: 'key' })
     expect(await store.start(reservationId, lease)).toBe(true)
+    expect(await store.release(reservationId, lease)).toBe(true)
+    expect(rpc).toHaveBeenLastCalledWith('employer_screening_release_budget', { p_reservation_id: reservationId, p_lease: lease })
     expect(await store.settle(reservationId, null)).toBe(true)
     expect(rpc).toHaveBeenLastCalledWith('employer_screening_settle_budget', { p_reservation_id: reservationId, p_input_tokens: null, p_output_tokens: null, p_evidence_id: null })
   })
   it('does not hide persistence failures or accept malformed RPC results', async () => {
     const rpc = vi.fn(async () => ({ data: null, error: { message: 'private DB details' } }))
-    await expect(new SupabaseScreeningBudgetStore({ rpc }).start(reservationId, lease)).rejects.toThrow('Screening allowance unavailable')
+    const store = new SupabaseScreeningBudgetStore({ rpc })
+    await expect(store.start(reservationId, lease)).rejects.toThrow('Screening allowance unavailable')
+    await expect(store.release(reservationId, lease)).rejects.toThrow('Screening allowance unavailable')
+    for (const data of [null, undefined, 1, 'true', { released: true }]) {
+      const malformed = new SupabaseScreeningBudgetStore({ rpc: vi.fn(async () => ({ data, error: null })) })
+      await expect(malformed.release(reservationId, lease)).rejects.toThrow()
+    }
+  })
+  it('preserves explicit reservation denial and refused release without inventing approval', async () => {
+    const rpc = vi.fn(async (name: string) => ({ data: name.endsWith('reserve_budget') ? null : false, error: null }))
+    const store = new SupabaseScreeningBudgetStore({ rpc })
+    expect(await store.reserve({ applicationId: appId, lease, snapshotSha256: 'a'.repeat(64), configId: 'approved-config', maxOutputTokens: 100, requestKey: 'key' })).toBeNull()
+    expect(await store.release(reservationId, lease)).toBe(false)
   })
 })

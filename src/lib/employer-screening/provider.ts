@@ -22,6 +22,8 @@ export interface ScreeningBudgetStore {
   reserve(input: Readonly<{ applicationId: string; lease: string; snapshotSha256: string; configId: string;
     maxOutputTokens: number; requestKey: string }>): Promise<ScreeningBudgetReservation | null>
   start(reservationId: string, lease: string): Promise<boolean>
+  /** Refund only when SQL proves this lease still owns an undispatched reservation. */
+  release(reservationId: string, lease: string): Promise<boolean>
   /** null means fully charged/uncertain. Must never refund on missing evidence. */
   settle(reservationId: string, usage: ScreeningUsage | null): Promise<boolean>
 }
@@ -42,6 +44,9 @@ export class SupabaseScreeningBudgetStore implements ScreeningBudgetStore {
   }
   async start(reservationId: string, lease: string) {
     return z.boolean().parse(await this.call('employer_screening_start_request', { p_reservation_id: reservationId, p_lease: lease }))
+  }
+  async release(reservationId: string, lease: string) {
+    return z.boolean().parse(await this.call('employer_screening_release_budget', { p_reservation_id: reservationId, p_lease: lease }))
   }
   async settle(reservationId: string, usage: ScreeningUsage | null) {
     return z.boolean().parse(await this.call('employer_screening_settle_budget', {
@@ -179,6 +184,7 @@ export function createOpenAIProcessor(options: OpenAIProcessorOptions): Processo
     let timer: ReturnType<typeof setTimeout> | undefined
     let abort: (() => void) | undefined
     let reserved: ScreeningBudgetReservation | undefined
+    let dispatchAttempted = false
     let usage: ScreeningUsage | null = null
     const operation = async () => {
       live()
@@ -194,6 +200,9 @@ export function createOpenAIProcessor(options: OpenAIProcessorOptions): Processo
       live()
       if (!await options.budget.start(reserved.reservation_id, lease)) throw new Error('Screening allowance unavailable')
       live()
+      // Set before invoking fetch: even a synchronous throw cannot prove that the
+      // provider saw no request. Never release after any attempted dispatch.
+      dispatchAttempted = true
       const response = await (options.fetch ?? globalThis.fetch)(APPROVED_SCREENING_ENDPOINT, { method: 'POST', redirect: 'error', cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer',
         headers: { Authorization: `Bearer ${options.apiKey}`, 'Content-Type': 'application/json' }, body, signal: controller.signal })
       live()
@@ -240,10 +249,17 @@ export function createOpenAIProcessor(options: OpenAIProcessorOptions): Processo
       live()
       return findings
     }
-    // A continuation after cancellation cannot dispatch: every awaited boundary is
-    // followed by live(). A late grant stays fully reserved, never implicitly refunded.
+    // Cleanup follows the operation, not the cancellation race: a late grant can
+    // be released, but every awaited boundary still prevents a late dispatch.
     const work = Promise.resolve().then(operation).finally(async () => {
       if (reserved) {
+        if (!dispatchAttempted) {
+          try {
+            // SQL serializes against start and refuses dispatched/uncertain rows.
+            // Only a confirmed release proves the allowance was never consumed.
+            if (await options.budget.release(reserved.reservation_id, lease) === true) return
+          } catch { /* an unknown release/start outcome must remain fully charged */ }
+        }
         try { await options.budget.settle(reserved.reservation_id, usage) } catch { /* durable full reserve remains */ }
       }
     })

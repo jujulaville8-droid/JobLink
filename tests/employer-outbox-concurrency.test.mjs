@@ -23,6 +23,66 @@ const run=(name,fn)=>test(name,{skip:!enabled},fn);
 async function waitForLock(c){const until=Date.now()+5000;while(Date.now()<until){const {rows:[r]}=await db.query('SELECT wait_event_type FROM pg_stat_activity WHERE pid=$1',[c.processID]);if(r?.wait_event_type==='Lock')return;await new Promise(r=>setTimeout(r,15));}throw new Error('Competitor did not demonstrably overlap on a database lock');}
 async function claim(c,f){const r=await outboxStore(c).claim(0);assert.equal(r?.item.id,f.id);return r;}
 async function prepare(c,f){const r=await claim(c,f);assert.equal(await outboxStore(c).freeze(f.id,r.lease,f.email),true);return r;}
+const budgetScope='joblink-screening-api',monthlyCap=5000000;
+async function budgetMonth(month){
+ const {rows:[r]}=await db.query('SELECT reserved_microusd FROM employer_delivery.budget_months WHERE scope=$1 AND month=$2',[budgetScope,month]);
+ return Number(r?.reserved_microusd??0);
+}
+async function budgetDay(config,day){
+ const {rows:[r]}=await db.query('SELECT reserved_microusd FROM employer_delivery.budget_days WHERE config_id=$1 AND day=$2',[config,day]);
+ return Number(r?.reserved_microusd??0);
+}
+async function reservation(id){return (await db.query('SELECT *,day::text AS day,month::text AS month FROM employer_delivery.budget_reservations WHERE id=$1',[id])).rows[0];}
+const startArgs=(r,lease)=>({p_reservation_id:r.reservation_id,p_lease:lease});
+const usageArgs=(r,evidence)=>({p_reservation_id:r.reservation_id,p_input_tokens:80,p_output_tokens:20,p_evidence_id:evidence});
+// Inject only a synthetic existing monthly balance, then remove that injection.
+// Actual holds/settlements from this test remain accounted for in the shared DB.
+async function withMonthlyPrefill(amount,fn){
+ const {rows:[{month}]}=await db.query("SELECT date_trunc('month',clock_timestamp() AT TIME ZONE 'UTC')::date::text AS month");
+ await db.query('INSERT INTO employer_delivery.budget_months(scope,month) VALUES($1,$2) ON CONFLICT DO NOTHING',[budgetScope,month]);
+ const before=await budgetMonth(month),injected=amount-before;assert.ok(injected>=0);
+ await db.query('UPDATE employer_delivery.budget_months SET reserved_microusd=$3 WHERE scope=$1 AND month=$2',[budgetScope,month,amount]);
+ try{return await fn(month);}
+ finally{await db.query('UPDATE employer_delivery.budget_months SET reserved_microusd=reserved_microusd-$3 WHERE scope=$1 AND month=$2',[budgetScope,month,injected]);}
+}
+// Do not merely start promises together: the losing session must be observed
+// waiting on a real PostgreSQL lock before the winning transaction commits.
+async function lockedRace(first,firstAction,second,secondAction){
+ await second.query("SET statement_timeout='10000ms'");await first.query('BEGIN');let pending;
+ try{
+  const winner=await firstAction();
+  pending=secondAction().then(value=>({value}),error=>({error}));
+  await waitForLock(second);await first.query('COMMIT');
+  const loser=await pending;if(loser.error)throw loser.error;
+  return [winner,loser.value];
+ }finally{await first.query('ROLLBACK');if(pending)await pending;}
+}
+// Fixture-only deterministic month boundary. Replace the clock call in exact
+// copies of these two installed functions, never production SQL or RPC inputs.
+// All definitions are restored even on failure. The database guard above applies.
+async function withBudgetClock(fn){
+ const signatures=['public.employer_screening_reserve_budget(uuid,uuid,text,text,integer,integer,text)','public.employer_screening_start_request(uuid,uuid)'];
+ const definitions=[];
+ for(const signature of signatures){const {rows:[r]}=await db.query('SELECT pg_get_functiondef($1::regprocedure) AS definition',[signature]);definitions.push(r.definition);}
+ const {rows:[boundary]}=await db.query(`SELECT
+   (date_trunc('month',clock_timestamp() AT TIME ZONE 'UTC')-interval '1 second') AT TIME ZONE 'UTC' AS before,
+   (date_trunc('month',clock_timestamp() AT TIME ZONE 'UTC')+interval '1 second') AT TIME ZONE 'UTC' AS after,
+   (date_trunc('month',clock_timestamp() AT TIME ZONE 'UTC')-interval '1 month')::date::text AS previous_month,
+   (date_trunc('month',clock_timestamp() AT TIME ZONE 'UTC')-interval '1 day')::date::text AS previous_day,
+   date_trunc('month',clock_timestamp() AT TIME ZONE 'UTC')::date::text AS month`);
+ await db.exec(`CREATE SCHEMA outbox_budget_test;
+   CREATE TABLE outbox_budget_test.clock_value(singleton boolean PRIMARY KEY CHECK(singleton),stamp timestamptz NOT NULL);
+   CREATE FUNCTION outbox_budget_test.clock() RETURNS timestamptz LANGUAGE sql VOLATILE SET search_path='' AS $$
+     SELECT stamp FROM outbox_budget_test.clock_value WHERE singleton $$;`);
+ try{
+  await db.query('INSERT INTO outbox_budget_test.clock_value VALUES(true,$1)',[boundary.before]);
+  for(const definition of definitions){assert.match(definition,/clock_timestamp\(\)/);await db.exec(definition.replace(/(?:pg_catalog\.)?clock_timestamp\(\)/g,'outbox_budget_test.clock()'));}
+  await fn(boundary,async(c,at)=>c.query('UPDATE outbox_budget_test.clock_value SET stamp=$1 WHERE singleton',[at]));
+ }finally{
+  for(const definition of definitions)await db.exec(definition);
+  await db.exec('DROP FUNCTION outbox_budget_test.clock();DROP TABLE outbox_budget_test.clock_value;DROP SCHEMA outbox_budget_test;');
+ }
+}
 run('SKIP LOCKED claims a different application while the first lease transaction is open',async()=>{
  const a=await outboxFixture(db),b=await outboxFixture(db,{clear:false}),first=await connect(),second=await connect();
  await first.query('BEGIN');const ca=await claim(first,a);await second.query("SET statement_timeout='1000ms'");const cb=await claim(second,b);assert.notEqual(ca.lease,cb.lease);await first.query('COMMIT');
@@ -77,6 +137,117 @@ run('concurrent budget reservations serialize the shared daily cap before provid
  await first.query('BEGIN');const reserved=await call(first,'employer_screening_reserve_budget',reserveArgs(a,ca.lease,cfg));assert.ok(reserved);
  const competing=call(second,'employer_screening_reserve_budget',reserveArgs(b,cb.lease,cfg));await waitForLock(second);await first.query('COMMIT');assert.equal(await competing,null);
  const {rows:[day]}=await db.query('SELECT reserved_microusd FROM employer_delivery.budget_days WHERE config_id=$1',[cfg]);assert.equal(Number(day.reserved_microusd),200);
+});
+run('different configurations and employer accounts contend for one final shared monthly slot',async()=>{
+ const acfg=await installBudgetConfig(db,{id:'monthly-last-slot-a'}),bcfg=await installBudgetConfig(db,{id:'monthly-last-slot-b'});
+ const a=await outboxFixture(db),b=await outboxFixture(db,{clear:false}),ca=await claim(db,a),cb=await claim(db,b),first=await connect(),second=await connect();
+ assert.notEqual(a.employer,b.employer);assert.notEqual(acfg,bcfg);
+ await withMonthlyPrefill(monthlyCap-200,async month=>{
+  const [winner,loser]=await lockedRace(first,()=>call(first,'employer_screening_reserve_budget',reserveArgs(a,ca.lease,acfg)),
+   second,()=>call(second,'employer_screening_reserve_budget',reserveArgs(b,cb.lease,bcfg)));
+  assert.equal(winner.reserved_microusd,200);assert.equal(loser,null);assert.equal(await budgetMonth(month),monthlyCap);
+  const row=await reservation(winner.reservation_id);assert.equal(row.account_id,a.employer);assert.equal(row.budget_scope,budgetScope);assert.equal(row.month,month);
+  assert.equal(await budgetDay(acfg,row.day),200);assert.equal(await budgetDay(bcfg,row.day),0);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM employer_delivery.budget_reservations WHERE application_id=$1',[b.app])).rows[0].n,0);
+  assert.deepEqual(await call(db,'employer_screening_reserve_budget',reserveArgs(a,ca.lease,acfg)),winner);
+  assert.equal(await budgetMonth(month),monthlyCap);
+ });
+});
+for(const winningAction of ['dispatch','release'])run(`${winningAction} winning a concurrent dispatch/release race leaves exactly one accounting outcome`,async()=>{
+ const cfg=await installBudgetConfig(db,{id:`monthly-${winningAction}-wins`}),f=await outboxFixture(db),c=await claim(db,f);
+ const r=await call(db,'employer_screening_reserve_budget',reserveArgs(f,c.lease,cfg)),row=await reservation(r.reservation_id),before=await budgetMonth(row.month);
+ const first=await connect(),second=await connect(),args=startArgs(r,c.lease);
+ const dispatch=client=>call(client,'employer_screening_start_request',args),release=client=>call(client,'employer_screening_release_budget',args);
+ const [winner,loser]=await lockedRace(first,()=>winningAction==='dispatch'?dispatch(first):release(first),
+  second,()=>winningAction==='dispatch'?release(second):dispatch(second));
+ assert.equal(winner,true);assert.equal(loser,false);
+ let final=await reservation(r.reservation_id);
+ assert.equal(final.state,winningAction==='dispatch'?'dispatched':'released');assert.equal(Number(final.charged_microusd),winningAction==='dispatch'?200:0);
+ assert.equal(await budgetDay(cfg,row.day),winningAction==='dispatch'?200:0);assert.equal(await budgetMonth(row.month),winningAction==='dispatch'?before:before-200);
+ assert.equal(await call(db,'employer_screening_release_budget',{...args,p_lease:uuid()}),false);
+ assert.equal(await release(db),winningAction==='release');assert.equal(await dispatch(db),false);
+ if(winningAction==='dispatch'){
+  assert.equal(await call(db,'employer_screening_settle_budget',{p_reservation_id:r.reservation_id,p_input_tokens:null,p_output_tokens:null,p_evidence_id:null}),false);
+  assert.equal((await reservation(r.reservation_id)).state,'uncertain');assert.equal(await release(db),false);assert.equal(await budgetMonth(row.month),before);
+  assert.equal(await call(db,'employer_screening_settle_budget',usageArgs(r,'monthly-dispatch-winner-usage')),true);
+  assert.equal(await release(db),false);assert.equal(await budgetMonth(row.month),before-80);assert.equal(await budgetDay(cfg,row.day),120);
+ }else{
+  assert.equal(await call(db,'employer_screening_settle_budget',usageArgs(r,'monthly-release-winner-usage')),false);
+  final=await reservation(r.reservation_id);assert.equal(final.dispatched_at,null);assert.equal(Number(final.charged_microusd),0);
+  assert.equal(await budgetMonth(row.month),before-200);assert.equal(await budgetDay(cfg,row.day),0);
+ }
+});
+for(const winningAction of ['settlement','reservation'])run(`${winningAction} serializes with a competing monthly refund/reservation without overspend or duplicate refund`,async()=>{
+ const acfg=await installBudgetConfig(db,{id:`monthly-refund-${winningAction}-a`}),bcfg=await installBudgetConfig(db,{id:`monthly-refund-${winningAction}-b`});
+ const a=await outboxFixture(db),b=await outboxFixture(db,{clear:false}),ca=await claim(db,a),cb=await claim(db,b);
+ const r=await call(db,'employer_screening_reserve_budget',reserveArgs(a,ca.lease,acfg)),old=await reservation(r.reservation_id);
+ assert.equal(await call(db,'employer_screening_start_request',startArgs(r,ca.lease)),true);
+ const first=await connect(),second=await connect(),usage=usageArgs(r,`monthly-refund-${winningAction}-usage`),args=reserveArgs(b,cb.lease,bcfg);
+ // Settlement first: only 120 free until its verified 80 refund becomes visible.
+ // Reservation first: exactly one 200 slot is free before the refund occurs.
+ await withMonthlyPrefill(monthlyCap-(winningAction==='settlement'?120:200),async month=>{
+  const settle=client=>call(client,'employer_screening_settle_budget',usage),reserve=client=>call(client,'employer_screening_reserve_budget',args);
+  const [winner,loser]=await lockedRace(first,()=>winningAction==='settlement'?settle(first):reserve(first),
+   second,()=>winningAction==='settlement'?reserve(second):settle(second));
+  const fresh=winningAction==='settlement'?loser:winner;assert.equal(winningAction==='settlement'?winner:loser,true);assert.equal(fresh.reserved_microusd,200);
+  assert.equal(await budgetMonth(month),monthlyCap-(winningAction==='settlement'?0:80));assert.equal(await budgetDay(acfg,old.day),120);assert.equal(await budgetDay(bcfg,old.day),200);
+  assert.equal((await reservation(r.reservation_id)).state,'settled');assert.equal(Number((await reservation(r.reservation_id)).charged_microusd),120);
+  assert.equal(await settle(db),true);assert.deepEqual(await reserve(db),fresh);
+  assert.equal(await budgetMonth(month),monthlyCap-(winningAction==='settlement'?0:80));assert.equal(await budgetDay(acfg,old.day),120);assert.equal(await budgetDay(bcfg,old.day),200);
+ });
+});
+run('settlement of an earlier month does not block or refund an independent current-month reservation',async()=>{
+ const cfg=await installBudgetConfig(db,{id:'monthly-independent-ledgers',daily:200});
+ const a=await outboxFixture(db),b=await outboxFixture(db,{clear:false}),ca=await claim(db,a),cb=await claim(db,b),first=await connect(),second=await connect();
+ await withBudgetClock(async(boundary,setClock)=>{
+  const priorBalance=await budgetMonth(boundary.previous_month),currentBalance=await budgetMonth(boundary.month);
+  const old=await call(db,'employer_screening_reserve_budget',reserveArgs(a,ca.lease,cfg));assert.equal(old.reserved_microusd,200);
+  assert.equal(await call(db,'employer_screening_start_request',startArgs(old,ca.lease)),true);await setClock(db,boundary.after);
+  await first.query('BEGIN');await second.query("SET statement_timeout='1000ms'");
+  try{
+   assert.equal(await call(first,'employer_screening_settle_budget',usageArgs(old,'monthly-independent-usage')),true);
+   // This must finish BEFORE the transaction holding the old month/day commits.
+   const fresh=await call(second,'employer_screening_reserve_budget',reserveArgs(b,cb.lease,cfg));assert.equal(fresh.reserved_microusd,200);
+   assert.equal((await reservation(fresh.reservation_id)).month,boundary.month);assert.equal(await budgetMonth(boundary.month),currentBalance+200);
+   await first.query('COMMIT');
+   assert.equal(await budgetMonth(boundary.previous_month),priorBalance+120);assert.equal(await budgetMonth(boundary.month),currentBalance+200);
+   assert.equal(await budgetDay(cfg,boundary.previous_day),120);assert.equal(await budgetDay(cfg,boundary.month),200);
+   assert.equal(await call(db,'employer_screening_settle_budget',usageArgs(old,'monthly-independent-usage')),true);
+   assert.equal(await budgetMonth(boundary.previous_month),priorBalance+120);assert.equal(await budgetMonth(boundary.month),currentBalance+200);
+  }finally{await first.query('ROLLBACK');}
+ });
+});
+run('dispatch rechecks the UTC month after waiting on its original monthly ledger lock',async()=>{
+ const cfg=await installBudgetConfig(db,{id:'monthly-dispatch-rollover'}),f=await outboxFixture(db),c=await claim(db,f),first=await connect(),second=await connect();
+ await withBudgetClock(async(boundary,setClock)=>{
+  const r=await call(db,'employer_screening_reserve_budget',reserveArgs(f,c.lease,cfg)),before=await budgetMonth(boundary.previous_month),current=await budgetMonth(boundary.month);
+  const [,started]=await lockedRace(first,async()=>{
+   await first.query('SELECT month FROM employer_delivery.budget_months WHERE scope=$1 AND month=$2 FOR UPDATE',[budgetScope,boundary.previous_month]);
+   // The new month is not visible until this lock holder commits; the competing
+   // call enters during the old month and samples again after the lock releases.
+   await setClock(first,boundary.after);
+  },second,()=>call(second,'employer_screening_start_request',startArgs(r,c.lease)));
+  assert.equal(started,false);const held=await reservation(r.reservation_id);assert.equal(held.state,'reserved');assert.equal(held.dispatched_at,null);assert.equal(Number(held.charged_microusd),200);
+  assert.equal(await budgetMonth(boundary.previous_month),before);assert.equal(await budgetMonth(boundary.month),current);assert.equal(await budgetDay(cfg,boundary.previous_day),200);
+  assert.equal(await call(db,'employer_screening_release_budget',startArgs(r,c.lease)),true);
+  assert.equal(await budgetMonth(boundary.previous_month),before-200);assert.equal(await budgetMonth(boundary.month),current);assert.equal(await budgetDay(cfg,boundary.previous_day),0);
+ });
+});
+run('reservation rechecks UTC rollover after waiting on the final daily ledger lock without charging either month',async()=>{
+ const cfg=await installBudgetConfig(db,{id:'monthly-reserve-rollover'}),f=await outboxFixture(db),c=await claim(db,f),first=await connect(),second=await connect();
+ await withBudgetClock(async(boundary,setClock)=>{
+  const prior=await budgetMonth(boundary.previous_month),current=await budgetMonth(boundary.month);
+  await db.query('INSERT INTO employer_delivery.budget_days(config_id,day) VALUES($1,$2)',[cfg,boundary.previous_day]);
+  const [,result]=await lockedRace(first,async()=>{
+   await first.query('SELECT day FROM employer_delivery.budget_days WHERE config_id=$1 AND day=$2 FOR UPDATE',[cfg,boundary.previous_day]);
+   await setClock(first,boundary.after);
+  },second,()=>call(second,'employer_screening_reserve_budget',reserveArgs(f,c.lease,cfg)));
+  assert.equal(result,null);assert.equal(await budgetMonth(boundary.previous_month),prior);assert.equal(await budgetMonth(boundary.month),current);assert.equal(await budgetDay(cfg,boundary.previous_day),0);
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM employer_delivery.budget_reservations WHERE application_id=$1',[f.app])).rows[0].n,0);
+  const fresh=await call(db,'employer_screening_reserve_budget',reserveArgs(f,c.lease,cfg));assert.equal(fresh.reserved_microusd,200);
+  const row=await reservation(fresh.reservation_id);assert.equal(row.month,boundary.month);assert.equal(row.day,boundary.month);
+  assert.equal(await budgetMonth(boundary.previous_month),prior);assert.equal(await budgetMonth(boundary.month),current+200);assert.equal(await budgetDay(cfg,boundary.month),200);
+ });
 });
 run('concurrent rubric approval has one immutable version winner',async()=>{
  const f=await outboxFixture(db),first=await connect(),second=await connect(),args={p_job_id:f.job,p_owner_user_id:f.employer,p_expected_version:f.approved.versionId,p_criteria:JSON.stringify(f.approved.criteria)};
