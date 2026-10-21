@@ -32,11 +32,11 @@ afterEach(()=>vi.unstubAllEnvs());
 describe('owner/admin order boundaries',()=>{
   it('requires verified authentication for reads, intake and checkout',async()=>{
     b.owner.mockResolvedValue({error:Response.json({error:'Authentication required'},{status:401})});
-    expect((await GET()).status).toBe(401);expect((await POST(request(valid()))).status).toBe(401);expect((await checkout(request({}),params)).status).toBe(401);expect(b.from).not.toHaveBeenCalled();
+    expect((await GET()).status).toBe(401);expect((await POST(request(valid()))).status).toBe(401);expect((await checkout(request({}))).status).toBe(401);expect(b.from).not.toHaveBeenCalled();
   });
   it('stays disabled by default and does not query missing order tables',async()=>{
     vi.stubEnv('RESUME_WRITING_ENABLED','');expect(await (await GET()).json()).toMatchObject({config:{intakeEnabled:false,checkoutEnabled:false},orders:[]});
-    expect((await POST(request(valid()))).status).toBe(503);expect((await checkout(request({}),params)).status).toBe(503);expect(b.from).not.toHaveBeenCalled();expect(b.checkout).not.toHaveBeenCalled();
+    expect((await POST(request(valid()))).status).toBe(410);expect((await checkout(request({}))).status).toBe(410);expect(b.from).not.toHaveBeenCalled();expect(b.checkout).not.toHaveBeenCalled();
     expect(await (await adminGET(new Request('https://joblink.test/api/admin/resume-writing'))).json()).toMatchObject({orders:[],unmatched:[],disabled:true});
     expect((await ownerGET(new Request('https://joblink.test/order'),params)).status).toBe(503);
     expect((await ownerPATCH(request({action:'save',version:2,intake:writingIntake},'PATCH'),params)).status).toBe(503);
@@ -45,26 +45,19 @@ describe('owner/admin order boundaries',()=>{
     expect(b.from).not.toHaveBeenCalled();expect(b.rpc).not.toHaveBeenCalled();expect(b.reconcile).not.toHaveBeenCalled();
   });
   it('requires configured terms before collecting intake or opening payment',async()=>{
-    vi.stubEnv('RESUME_WRITING_DELIVERY_TERMS','');expect((await POST(request(valid()))).status).toBe(503);expect((await checkout(request({}),params)).status).toBe(503);
+    vi.stubEnv('RESUME_WRITING_DELIVERY_TERMS','');expect((await POST(request(valid()))).status).toBe(410);expect((await checkout(request({}))).status).toBe(410);
   });
-  it.each([{payment_status:'paid'},{user_id:'someone_else'},{amount:1},{consent:false}])('rejects spoofed/unconsented intake %j',async(extra)=>{
-    expect((await POST(request({...valid(),...extra}))).status).toBe(400);expect(b.rpc).not.toHaveBeenCalled();
+  it('retires new order intake regardless of legacy flags and never writes an order',async()=>{
+    expect((await POST(request(valid()))).status).toBe(410);
+    expect((await POST(request(valid(),'POST','https://evil.test'))).status).toBe(403);
+    expect(b.rpc).not.toHaveBeenCalled();expect(b.from).not.toHaveBeenCalled();
   });
-  it('rejects cross-origin requests and changed terms before a write',async()=>{
-    expect((await POST(request(valid(),'POST','https://evil.test'))).status).toBe(400);
-    expect((await POST(request({...valid(),termsVersion:'old'}))).status).toBe(409);expect(b.rpc).not.toHaveBeenCalled();
-  });
-  it('sets ownership and immutable terms on the server and returns no-store responses',async()=>{
-    const response=await POST(request(valid()));expect(response.status).toBe(201);expect(response.headers.get('cache-control')).toContain('no-store');
-    expect(b.rpc).toHaveBeenCalledWith('create_resume_writing_order',{p_id:writingId,p_user_id:writingUser,p_intake:writingIntake,p_terms:writingTerms,p_payment_policy:resumeWritingPolicy().key});
-    await GET();expect(b.filters).toContainEqual(['user_id',writingUser]);expect(b.filters).toContainEqual(['payment_policy',resumeWritingPolicy().key]);
-  });
-  it('fails closed when the shared rate limiter cannot confirm permission',async()=>{
-    b.rpc.mockResolvedValue({data:null,error:{message:'unavailable'}});expect((await POST(request(valid()))).status).toBe(503);expect(b.rpc).toHaveBeenCalledTimes(1);
-  });
-  it('checks owner filters before creating a checkout URL and refuses other owners',async()=>{
-    b.row=null;expect((await checkout(request({}),params)).status).toBe(404);expect(b.checkout).not.toHaveBeenCalled();expect(b.filters).toContainEqual(['user_id',writingUser]);
-    b.row={...writingOrder,checkout_reference:writingId};expect((await checkout(request({}),params)).status).toBe(200);expect(b.checkout).toHaveBeenCalledWith({},writingId);
+  it('retires checkout even with enabled legacy flags, without querying orders or Stripe',async()=>{
+    const response=await checkout(request({}));
+    expect(response.status).toBe(410);expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(await response.json()).toMatchObject({consultationUrl:'https://calendly.com/qqwebsitesolutions/qq-solutions-consultation'});
+    expect(b.from).not.toHaveBeenCalled();expect(b.checkout).not.toHaveBeenCalled();
+    expect((await (await GET()).json()).config.checkoutEnabled).toBe(false);
   });
   it('requires admin on lists, reconciliation and fulfillment writes',async()=>{
     b.admin.mockResolvedValue({error:Response.json({error:'Forbidden'},{status:403})});
@@ -84,7 +77,7 @@ describe('owner/admin order boundaries',()=>{
     expect((await adminReconcile(request({sessionId:'cs_live_Example'}))).status).toBe(400);
     expect((await adminReconcile(request({sessionId:'cs_test_Sandbox',mode:'live'}))).status).toBe(400);
     await adminGET(new Request('https://joblink.test/api/admin/resume-writing'));expect(b.filters).toContainEqual(['payment_policy',resumeWritingPolicy().key]);
-    b.row={...writingOrder,checkout_reference:writingId};const response=await checkout(request({}),params);expect((await response.json()).mode).toBe('sandbox');
+    b.row={...writingOrder,checkout_reference:writingId};const response=await checkout(request({}));expect(response.status).toBe(410);expect(b.checkout).not.toHaveBeenCalled();
   });
 });
 

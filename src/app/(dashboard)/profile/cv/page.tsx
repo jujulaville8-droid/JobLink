@@ -1,6 +1,5 @@
 import ResumeStudio from '@/components/cv/studio/ResumeStudio';
 import { getApplicationReturnTo } from '@/lib/return-to';
-import { writingConfig } from '@/lib/resume-writing-server';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Resume Builder', robots: { index: false, follow: false } };
@@ -8,5 +7,5 @@ export const metadata = { title: 'Resume Builder', robots: { index: false, follo
 export default async function ResumeBuilderPage({ searchParams }: { searchParams: Promise<{ returnTo?: string | string[] }> }) {
   const { returnTo } = await searchParams;
   const applicationReturnTo = getApplicationReturnTo(typeof returnTo === 'string' ? returnTo : null);
-  return <ResumeStudio applicationReturnTo={applicationReturnTo} writingConfig={writingConfig()} />;
+  return <ResumeStudio applicationReturnTo={applicationReturnTo} />;
 }

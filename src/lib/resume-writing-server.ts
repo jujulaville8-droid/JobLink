@@ -16,7 +16,7 @@ export function writingConfig(): WritingConfig {
   let paymentMode:'sandbox'|'live'|null=null;
   try { paymentMode=resumeWritingPolicy().mode; } catch { /* Missing policy fails closed. */ }
   const intakeEnabled = process.env.RESUME_WRITING_ENABLED === 'true' && parsed.success && paymentMode!==null;
-  return { intakeEnabled, checkoutEnabled: intakeEnabled && process.env.RESUME_WRITING_CHECKOUT_ENABLED === 'true', terms: parsed.success ? parsed.data : null, paymentMode };
+  return { intakeEnabled, checkoutEnabled: false, terms: parsed.success ? parsed.data : null, paymentMode };
 }
 export async function writingOwner() {
   const auth = await requireVerifiedUser();
