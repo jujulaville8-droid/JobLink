@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto'
 import { createRequire } from 'node:module'
 import type { Readable } from 'node:stream'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { INLINE_SCREENING_BUDGET_MS, INLINE_SCREENING_GATES, inlineEmployerScreening, inlineScreeningEnabled,
   SupabaseInlineScreeningBudgetStore, type InlineScreeningInput, type InlineScreeningDependencies } from '../src/lib/employer-screening/inline'
 import { SCREENING_NOTICE_VERSION } from '../src/lib/employer-screening/notice'
@@ -70,8 +70,40 @@ function setup() {
   return { budget, extract, loadJob, fetcher, deps, run: (value = input()) => inlineEmployerScreening(value, deps) }
 }
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+beforeEach(() => { vi.spyOn(console, 'info').mockImplementation(() => {}) })
+const diagnosticEvents = () => vi.mocked(console.info).mock.calls.map(call => JSON.parse(String(call[1])).event)
 
 describe('bounded inline advisory with an unchanged existing delivery', () => {
+  it.each(['notice', 'gate', 'attachment', 'parse', 'empty', 'paid', 'job', 'budget-null', 'budget-error', 'provider', 'success'])
+    ('identifies %s with request-local enum diagnostics without exposing private inputs', async scenario => {
+      const test = setup(), value = { ...input() }
+      const expected: Record<string, string> = { notice: 'entry_notice_missing', gate: 'entry_gates_disabled', attachment: 'attachment_invalid',
+        parse: 'parse_unavailable', empty: 'evidence_empty', paid: 'paid_gate_disabled', job: 'job_mapping_unavailable',
+        'budget-null': 'budget_rejected', 'budget-error': 'budget_rpc_failed', provider: 'provider_failed', success: 'scored' }
+      if (scenario === 'notice') value.noticeVersion = 'stale'
+      if (scenario === 'gate') test.deps.env!.EMPLOYER_SCREENING_INLINE_ENABLED = 'false'
+      if (scenario === 'attachment') value.resumeBytes = new Uint8Array()
+      if (scenario === 'parse') test.extract.mockResolvedValue(null)
+      if (scenario === 'empty') test.extract.mockResolvedValue({ ...parsed(), evidence: [] })
+      if (scenario === 'paid') test.deps.env!.EMPLOYER_SCREENING_PAID_PROVIDER_ENABLED = 'false'
+      if (scenario === 'job') test.loadJob.mockResolvedValue({ ...(await test.loadJob()), description: 'Join our team.' })
+      if (scenario === 'budget-null') vi.mocked(test.budget.reserve).mockResolvedValue(null)
+      if (scenario === 'budget-error') vi.mocked(test.budget.reserve).mockRejectedValue(new Error('private@example.invalid cv-path secret-token'))
+      if (scenario === 'provider') test.fetcher.mockRejectedValue(new Error('private@example.invalid provider-secret'))
+      const result = await test.run(value)
+      expect(diagnosticEvents()).toContain(expected[scenario])
+      expect(JSON.stringify(vi.mocked(console.info).mock.calls)).not.toMatch(/private@example|private-company|private-job|provider-secret|secret-token|cv-path|11111111-1111|Microsoft Excel/)
+      if (scenario === 'success') expect(result.employer_screening).toMatchObject({ status: 'scored' })
+      else expect(result.employer_screening).toBeUndefined()
+      expect(test.fetcher).toHaveBeenCalledTimes(['provider', 'success'].includes(scenario) ? 1 : 0)
+      if (scenario === 'budget-null') expect(diagnosticEvents()).toContain('budget_requested')
+    })
+  it('still scores once when the diagnostic sink throws', async () => {
+    vi.mocked(console.info).mockImplementation(() => { throw new Error('synthetic sink unavailable') })
+    const test = setup()
+    expect(await test.run()).toMatchObject({ employer_screening: { status: 'scored' } })
+    expect(test.fetcher).toHaveBeenCalledOnce()
+  })
   it.each(INLINE_SCREENING_GATES)('does zero parsing or paid work when %s is absent', async gate => {
     const test = setup(); delete test.deps.env![gate]
     expect(inlineScreeningEnabled(SCREENING_NOTICE_VERSION, test.deps.env)).toBe(false)
@@ -87,7 +119,7 @@ describe('bounded inline advisory with an unchanged existing delivery', () => {
     const test = setup()
     expect(await test.run()).toMatchObject({ employer_screening: { status: 'scored', supportedPoints: 100 },
       employer_resume_quality: { status: 'assessed', sourceSha256: digest } })
-    expect(test.extract).toHaveBeenCalledExactlyOnceWith(bytes, { signal: expect.any(AbortSignal), budgetMs: expect.any(Number) })
+    expect(test.extract).toHaveBeenCalledExactlyOnceWith(bytes, { signal: expect.any(AbortSignal), budgetMs: expect.any(Number), onDiagnostic: expect.any(Function) })
     expect(test.extract.mock.calls[0][0]).toBe(bytes)
     expect(test.budget.reserve).toHaveBeenCalledOnce(); expect(test.fetcher).toHaveBeenCalledOnce()
     const body = JSON.parse(test.fetcher.mock.calls[0][1]!.body as string)

@@ -18,6 +18,7 @@ const queries: { table: string; filters: [string, unknown][] }[] = []
 const updates: { table: string; value: Record<string, unknown> }[] = []
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.spyOn(console, 'info').mockImplementation(() => {})
   vi.stubEnv('RESEND_API_KEY', 'test-only-no-delivery')
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
   vi.stubEnv('EMPLOYER_SCREENING_INLINE_ENABLED', 'false')
@@ -46,7 +47,7 @@ beforeEach(() => {
   mocks.fetchCv.mockResolvedValue(null)
   mocks.screen.mockResolvedValue({})
 })
-afterEach(() => vi.unstubAllEnvs())
+afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks() })
 
 it('keeps the identical original email when inline screening is OFF, undisclosed, or fails', async () => {
   await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
@@ -83,6 +84,7 @@ it.each(['upload', 'builder'])('screens the exact %s attachment Buffer once, bef
   expect(mocks.screen.mock.invocationCallOrder[0]).toBeLessThan(mocks.send.mock.invocationCallOrder[0])
   expect(mocks.download).toHaveBeenCalledTimes(kind === 'upload' ? 1 : 0)
   expect(mocks.fetchCv).toHaveBeenCalledTimes(kind === 'builder' ? 1 : 0)
+  expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('attachment_ready'))).toBe(true)
 })
 
 it('does not run screening without an attachment, even with every inline gate enabled', async () => {
@@ -91,6 +93,7 @@ it('does not run screening without an attachment, even with every inline gate en
   expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
   expect(mocks.screen).not.toHaveBeenCalled()
   expect(mocks.send).toHaveBeenCalledOnce()
+  expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('attachment_missing'))).toBe(true)
 })
 
 it('binds saved application to applicant and company; sends private bytes only to saved real contact', async () => {
