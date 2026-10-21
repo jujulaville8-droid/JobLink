@@ -106,7 +106,7 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => {
   return messagingDb()
 } }))
 vi.mock('@/lib/email', () => ({ BASE_URL: 'https://joblinkantigua.com', sendEmail: state.email }))
-vi.mock('@/lib/applicant-notifications', () => ({ notifyNewApplicant: state.notify }))
+vi.mock('@/lib/applicant-notifications', async importOriginal => ({ ...await importOriginal<object>(), notifyNewApplicant: state.notify }))
 
 import { POST } from '@/app/api/jobs/apply/route'
 

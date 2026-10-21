@@ -8,15 +8,16 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:ui": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
-    "test:node": "tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs tests/company-claims.test.mjs",
+    "test:ui": "node --import tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx",
+    "test:node": "node --import tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs tests/company-claims.test.mjs tests/employer-outbox-store.test.mjs tests/employer-capture-storage.test.mjs",
     "test:unit": "vitest run",
     "test:onboarding": "vitest run",
     "test": "npm run typecheck && npm run lint && npm run test:unit && npm run test:node",
     "smoke": "node scripts/smoke-local.mjs",
     "discover": "npx tsx scripts/discover-businesses.ts",
     "test:claims:concurrency": "node --test tests/company-claims-concurrency.test.mjs",
-    "indexnow": "npx tsx scripts/indexnow-submit.ts"
+    "indexnow": "npx tsx scripts/indexnow-submit.ts",
+    "test:outbox:concurrency": "node --import tsx --test tests/employer-outbox-concurrency.test.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.0.0",
@@ -36,6 +37,7 @@
     "motion": "^12.43.0",
     "next": "16.3.6",
     "next-themes": "^0.4.6",
+    "pdfjs-dist": "6.4.299",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "recharts": "^3.8.0",

@@ -61,6 +61,8 @@ export interface ApplicationDetail {
   resume: { label: 'Current résumé'; uploadedHref: string | null; builtHref: string | null }
   /** Whether the application was emailed to the employer; 'not_tracked' before tracking existed. */
   notificationTracking: 'not_tracked' | EmployerForward
+  /** Admin-only operational status. This is not a screening result or inbox-delivery receipt. */
+  employerOutboxStatus?: EmployerOutboxStatus
   /** Optional practical profile details (also visible to the employer). */
   profileDetails?: SeekerDetails | null
   /** Optional sensitive details. Admin-only; never send to employer views. */
@@ -68,6 +70,40 @@ export interface ApplicationDetail {
 }
 export interface EmployerForward {
   status: 'sent' | 'not_sent'; attemptedAt: string; forwardedAt: string | null
+}
+const EMPLOYER_OUTBOX_STATES = ['pending', 'claimed', 'ready', 'sending', 'accepted', 'uncertain', 'blocked', 'cancelled'] as const
+const EMPLOYER_OUTBOX_ERROR_CODES = [
+  'APPLICATION_DELETED', 'LEASE_EXPIRED_SENDING', 'CLAIM_GATE_REJECTED', 'SEND_GATE_REJECTED',
+  'INVALID_PERSISTED_PAYLOAD', 'NOT_SENT', 'RATE_LIMITED', 'UNCERTAIN', 'CONCURRENT_CONFLICT',
+  'REJECTED', 'PAYLOAD_CONFLICT', 'INVALID_OUTCOME', 'RECONCILED_ACCEPTED', 'RECONCILED_NOT_SENT',
+] as const
+export interface EmployerOutboxStatus {
+  state: typeof EMPLOYER_OUTBOX_STATES[number]
+  attempts: number
+  firstSendAt: string | null
+  acceptedAt: string | null
+  nextAttemptAt: string | null
+  lastErrorCode: typeof EMPLOYER_OUTBOX_ERROR_CODES[number] | null
+}
+
+/** Allowlist every operational field; never reflect provider diagnostics or stored payloads. */
+export function readEmployerOutboxStatus(value: unknown): EmployerOutboxStatus | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const row = value as Record<string, unknown>
+  if (!EMPLOYER_OUTBOX_STATES.includes(row.state as EmployerOutboxStatus['state'])
+    || typeof row.attempts !== 'number' || !Number.isInteger(row.attempts) || row.attempts < 0 || row.attempts > 4) return null
+  const timestamp = (input: unknown): string | null => {
+    if (typeof input !== 'string' || input.length > 40
+      || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(input)) return null
+    const date = new Date(input)
+    return Number.isFinite(date.getTime()) ? date.toISOString() : null
+  }
+  return {
+    state: row.state as EmployerOutboxStatus['state'], attempts: row.attempts,
+    firstSendAt: timestamp(row.firstSendAt), acceptedAt: timestamp(row.acceptedAt), nextAttemptAt: timestamp(row.nextAttemptAt),
+    lastErrorCode: EMPLOYER_OUTBOX_ERROR_CODES.includes(row.lastErrorCode as NonNullable<EmployerOutboxStatus['lastErrorCode']>)
+      ? row.lastErrorCode as NonNullable<EmployerOutboxStatus['lastErrorCode']> : null,
+  }
 }
 export interface ApplicationFilterOptions { items: { id: string; name: string }[]; page: number; limit: number; totalCount: number }
 export type QueryResult<T> = { value: T; error?: never } | { error: string; value?: never }

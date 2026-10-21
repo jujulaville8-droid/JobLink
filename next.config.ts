@@ -34,6 +34,12 @@ const CONTENT_SECURITY_POLICY = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // PDF text extraction imports the exact-pinned parser in a Node worker. Keep
+  // those runtime modules available in Vercel's traced server function bundle.
+  serverExternalPackages: ["pdfjs-dist"],
+  outputFileTracingIncludes: {
+    "/*": ["./node_modules/pdfjs-dist/legacy/build/pdf.mjs", "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs", "./node_modules/pdfjs-dist/package.json"],
+  },
   images: {
     remotePatterns: [
       {
