@@ -240,7 +240,35 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    if (deliveryPath === 'legacy') await notifyNewApplicant(application.id, user.id)
+    if (deliveryPath === 'legacy') {
+      // Capture the actual request attestation before returning. Neither a stale
+      // client nor a later flag change may invent a notice for this application.
+      const noticeVersion = process.env.EMPLOYER_SCREENING_INLINE_ENABLED === 'true' &&
+        hasCurrentScreeningNotice(body.screening_notice_version) ? body.screening_notice_version : undefined
+      const applicationId = application.id
+      const applicantUserId = user.id
+      let forwardingStarted = false
+      const forwardEmployer = async () => {
+        // Also fences a scheduler that registers work before throwing. Never
+        // automatically replay an uncertain provider send or change its key.
+        if (forwardingStarted) return
+        forwardingStarted = true
+        try {
+          if (noticeVersion !== undefined) await notifyNewApplicant(applicationId, applicantUserId, noticeVersion)
+          else await notifyNewApplicant(applicationId, applicantUserId)
+        } catch { console.warn('[apply] Employer notification unavailable') }
+      }
+      try {
+        // Chat and applicant receipt above retain their original semantics.
+        // Only employer forwarding moves after the response; optional review
+        // remains bounded inside the notifier. This is not a durable queue.
+        after(forwardEmployer)
+      } catch {
+        // Unsupported scheduling falls back to the original awaited path once.
+        console.warn('[apply] Employer notification running inline')
+        await forwardEmployer()
+      }
+    }
 
     return NextResponse.json({
       success: true,

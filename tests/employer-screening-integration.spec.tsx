@@ -195,11 +195,15 @@ describe('apply route retains legacy OFF and never duplicates selected delivery'
     enable(); const response = await apply(null)
     expect(response.status).toBe(201)
     expect(routeState.inserts).toContain('applications'); expect(routeState.rpc).not.toHaveBeenCalled()
+    expect(routeState.notify).not.toHaveBeenCalled()
+    await routeState.after.mock.calls[0][0]()
     expect(routeState.notify).toHaveBeenCalledExactlyOnceWith(APP, USER)
   })
   it('default OFF uses the exact legacy insert and notifier with no screening RPC', async () => {
     expect((await apply()).status).toBe(201)
     expect(routeState.inserts).toContain('applications'); expect(routeState.rpc).not.toHaveBeenCalled()
+    expect(routeState.notify).not.toHaveBeenCalled()
+    await routeState.after.mock.calls[0][0]()
     expect(routeState.notify).toHaveBeenCalledExactlyOnceWith(APP, USER)
   })
   it('active path queues once, sends only applicant confirmation inline, exposes no report and remains applied', async () => {
@@ -222,7 +226,11 @@ describe('apply route retains legacy OFF and never duplicates selected delivery'
       // must not backfill that frozen email or cause a second employer send.
       expect(routeState.rpc.mock.calls.find(([name]) => name === 'employer_screening_register_materials')?.[1])
         .toMatchObject({ p_snapshot_json: null, p_snapshot_sha256: null })
-    } else expect(routeState.notify).toHaveBeenCalledOnce()
+    } else {
+      expect(routeState.notify).not.toHaveBeenCalled()
+      await routeState.after.mock.calls[0][0]()
+      expect(routeState.notify).toHaveBeenCalledOnce()
+    }
   })
   it.each([null, `${OWNER}/other-person.pdf`, `${USER}/${APP}/${VERSION}.pdf`,
     'https://foreign.example.invalid/private.pdf', `${USER}/../private.pdf`])(
@@ -235,7 +243,7 @@ describe('apply route retains legacy OFF and never duplicates selected delivery'
       expect(routeState.notify).not.toHaveBeenCalled()
     },
   )
-  it('schedules guarded background draining only for the durable screening path', async () => {
+  it('schedules only the selected delivery path and never runs the durable worker for legacy', async () => {
     enable(); vi.stubEnv('EMPLOYER_OUTBOX_WORKER_ENABLED', 'true')
     expect((await apply()).status).toBe(201)
     expect(routeState.after).toHaveBeenCalledOnce()
@@ -243,11 +251,15 @@ describe('apply route retains legacy OFF and never duplicates selected delivery'
     await routeState.after.mock.calls[0][0]()
     expect(routeState.worker).toHaveBeenCalledOnce()
     routeState.after.mockClear(); routeState.path = 'legacy'
-    expect((await apply()).status).toBe(201); expect(routeState.after).not.toHaveBeenCalled()
+    expect((await apply()).status).toBe(201); expect(routeState.after).toHaveBeenCalledOnce()
+    await routeState.after.mock.calls[0][0]()
+    expect(routeState.notify).toHaveBeenCalledOnce(); expect(routeState.worker).toHaveBeenCalledOnce()
   })
   it('may use legacy notification only when atomic RPC positively persisted legacy', async () => {
     enable(); routeState.path = 'legacy'
-    expect((await apply()).status).toBe(201); expect(routeState.notify).toHaveBeenCalledOnce()
+    expect((await apply()).status).toBe(201); expect(routeState.notify).not.toHaveBeenCalled()
+    await routeState.after.mock.calls[0][0]()
+    expect(routeState.notify).toHaveBeenCalledOnce()
     expect(routeState.inserts).not.toContain('applications')
   })
   it('an uncertain activated submit never invokes old insert, employer mail, or confirmation', async () => {

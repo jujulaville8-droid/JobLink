@@ -12,6 +12,9 @@ const criterion = z.object({
   id: z.string().regex(/^[a-z0-9_-]{1,60}$/), label: text,
   category: z.enum(['skill', 'relevant_experience', 'job_certification']),
   weight: z.number().int().min(1).max(100), verificationRequired: z.boolean(),
+  interpretation: z.literal('ai_contextual').optional(),
+  importance: z.enum(['required', 'preferred', 'duty']).optional(),
+  sourceOrder: z.number().int().nonnegative().max(32000).optional(),
 }).strict()
 export const evidenceQualifiersSchema = z.object({
   attribution: z.enum(['applicant', 'other', 'unknown']),
@@ -25,14 +28,26 @@ const sourceContextSchema = z.object({
   excerpt: z.string().min(1).max(400),
   location: z.string().max(80).regex(/^pdf\.page\[[1-9][0-9]{0,2}\]\.span\[(?:0|[1-9][0-9]{0,5}):[1-9][0-9]{0,5}\]$/),
 }).strict()
+const rubricFields = {
+  versionId: text, jobId: text, criteria: z.array(criterion).min(1).max(20),
+}
+// Published job text is a separate provenance basis, not fabricated approval.
+// Existing saved employer-approved rubrics retain their exact original shape.
+const rubricSchema = z.union([
+  z.object({ ...rubricFields, approved: z.literal(true) }).strict(),
+  z.object({ ...rubricFields, approved: z.literal(false), source: z.literal('published_job_requirements'),
+    descriptionSha256: z.string().regex(/^[a-f0-9]{64}$/),
+    mappingVersion: z.string().regex(/^[a-z0-9_-]{1,100}$/), omittedContext: z.boolean(),
+    jobContext: z.array(z.object({ text: z.string().min(1).max(300), sourceOrder: z.number().int().nonnegative().max(32000) }).strict()).max(8),
+  }).strict(),
+])
 const snapshotSchema = z.object({
   applicationId: text, jobId: text, companyId: text, createdAt: z.number().int().nonnegative(),
   resume: z.object({ versionId: text, sha256: z.string().regex(/^[a-f0-9]{64}$/),
     evidence: z.array(z.object({ id: text, category: criterion.shape.category,
       excerpt: text, location: text, interpretation: z.literal('ai_contextual').optional(), qualifiers: evidenceQualifiersSchema.optional() }).strict()).max(100), context: z.array(sourceContextSchema).max(20).optional(), omittedContext: z.boolean().optional() }).strict(),
   job: z.object({ title: text, versionId: text }).strict(),
-  rubric: z.object({ versionId: text, jobId: text, approved: z.literal(true),
-    criteria: z.array(criterion).min(1).max(20) }).strict(),
+  rubric: rubricSchema,
 }).strict()
 export type Snapshot = z.infer<typeof snapshotSchema>
 export type FrozenSnapshot = Readonly<{ json: string; sha256: string }>
@@ -53,7 +68,10 @@ function validateSnapshot(input: unknown): Snapshot {
   const criteria = snapshot.rubric.criteria
   if (snapshot.jobId !== snapshot.rubric.jobId || criteria.reduce((n, c) => n + c.weight, 0) !== 100 ||
       new Set(criteria.map(c => c.id)).size !== criteria.length ||
-      new Set(snapshot.resume.evidence.map(e => e.id)).size !== snapshot.resume.evidence.length) {
+      new Set(snapshot.resume.evidence.map(e => e.id)).size !== snapshot.resume.evidence.length ||
+      (snapshot.rubric.approved === false && (Math.max(...criteria.map(c => c.weight)) - Math.min(...criteria.map(c => c.weight)) > 1 ||
+        criteria.some(c => c.interpretation !== 'ai_contextual' || !c.importance || c.sourceOrder === undefined))) ||
+      (snapshot.rubric.approved === true && criteria.some(c => c.interpretation || c.importance || c.sourceOrder !== undefined))) {
     throw new Error('Invalid job-specific rubric or duplicate evidence')
   }
   return snapshot
@@ -74,6 +92,7 @@ export type Assessment = z.infer<typeof assessmentSchema>
 export type Report = { status: 'unavailable' } | {
   status: 'scored'; rubricVersion: string; supportedPoints: number; unresolvedPoints: number;
   evidenceCoverage: number;
+  criteriaSource?: 'published_job_requirements'; weighting?: 'equal'; jobContextOmitted?: boolean;
   criteria: { label: string; weight: number; finding: 'supported' | 'contradicted' | 'unknown';
     verificationRequired: boolean; evidence: { excerpt: string; location: string }[] }[];
 }
@@ -86,7 +105,8 @@ export function validateAssessment(frozen: FrozenSnapshot, raw: unknown): Report
     const f = findings.find(f => f.criterionId === c.id)!
     if ((f.finding === 'unknown') !== (f.evidenceIds.length === 0) || new Set(f.evidenceIds).size !== f.evidenceIds.length) throw new Error('Evidence required for established findings')
     const evidence = f.evidenceIds.map(id => {
-      const e = s.resume.evidence.find(e => e.id === id && e.category === c.category)
+      const e = s.resume.evidence.find(e => e.id === id &&
+        (e.category === c.category || (s.rubric.approved === false && c.interpretation === 'ai_contextual')))
       if (!e) throw new Error('Unknown or unrelated evidence source')
       return { excerpt: e.excerpt, location: e.location }
     })
@@ -95,7 +115,8 @@ export function validateAssessment(frozen: FrozenSnapshot, raw: unknown): Report
   const supportedPoints = criteria.reduce((n, c) => n + (c.finding === 'supported' ? c.weight : 0), 0)
   const unresolvedPoints = criteria.reduce((n, c) => n + (c.finding === 'unknown' ? c.weight : 0), 0)
   return { status: 'scored', rubricVersion: s.rubric.versionId, supportedPoints, unresolvedPoints,
-    evidenceCoverage: 100 - unresolvedPoints, criteria }
+    evidenceCoverage: 100 - unresolvedPoints, criteria,
+    ...(s.rubric.approved === false ? { criteriaSource: 'published_job_requirements' as const, weighting: 'equal' as const, jobContextOmitted: s.rubric.omittedContext } : {}) }
 }
 export type Processor = (snapshot: Snapshot, signal: AbortSignal) => Promise<unknown>
 /** Intentionally has no provider integration, credentials, network, or fallback model. */

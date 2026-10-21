@@ -6,12 +6,17 @@ const points = z.number().int().min(0).max(100)
 const reportSchema = z.object({
   status: z.literal('scored'), rubricVersion: boundedText, supportedPoints: points,
   unresolvedPoints: points, evidenceCoverage: points,
+  criteriaSource: z.literal('published_job_requirements').optional(), weighting: z.literal('equal').optional(),
+  jobContextOmitted: z.boolean().optional(),
   criteria: z.array(z.object({
     label: boundedText, weight: z.number().int().min(1).max(100),
     finding: z.enum(['supported', 'contradicted', 'unknown']), verificationRequired: z.boolean(),
     evidence: z.array(z.object({ excerpt: boundedText, location: boundedText }).strict()).max(10),
   }).strict()).min(1).max(20),
 }).strict().refine(r =>
+  (r.criteriaSource === 'published_job_requirements') === (r.weighting === 'equal') &&
+  (r.criteriaSource === 'published_job_requirements') === (r.jobContextOmitted !== undefined) &&
+  (r.weighting !== 'equal' || Math.max(...r.criteria.map(c => c.weight)) - Math.min(...r.criteria.map(c => c.weight)) <= 1) &&
   r.criteria.reduce((n, c) => n + c.weight, 0) === 100 &&
   r.supportedPoints === r.criteria.reduce((n, c) => n + (c.finding === 'supported' ? c.weight : 0), 0) &&
   r.unresolvedPoints === r.criteria.reduce((n, c) => n + (c.finding === 'unknown' ? c.weight : 0), 0) &&
@@ -44,7 +49,7 @@ export function screeningEmailSection(input: unknown): string {
 <p>${report.unresolvedPoints} points unresolved · Evidence coverage: ${report.evidenceCoverage}%</p>
 <p>${report.evidenceCoverage === 0 ? 'All requirements remain unresolved. No negative finding was established. ' : ''}Provisional evidence range: ${report.supportedPoints}–${report.supportedPoints + report.unresolvedPoints}/100. Missing evidence is unknown, not a failed requirement. This is not a probability of job success or a hiring recommendation.</p>
 ${report.criteria.map(c => `<div style="border-top:1px solid #c9e8e4;padding:12px 0"><strong>${esc(c.label)} (${c.weight} points)</strong><br>${c.finding === 'unknown' ? 'Not established in résumé' : c.finding === 'supported' ? 'Provisionally supported by AI-assessed, applicant-reported evidence' : 'Contradicted by applicant-reported evidence'}${c.verificationRequired ? '<br><strong>Employer verification required. This is a reported credential statement only; current validity, issuer and legal eligibility have not been established.</strong>' : ''}${c.evidence.map(e => `<p>“${esc(e.excerpt)}”<br><small>${esc(e.location)} · Applicant-reported; AI-assessed, not independently verified</small></p>`).join('')}${c.finding === 'unknown' ? '<p>Follow-up: ask the applicant for relevant evidence of this requirement.</p>' : ''}</div>`).join('')}
-<p style="font-size:12px">AI-assisted evidence findings; points are calculated deterministically from the employer-approved rubric ${esc(report.rubricVersion)}. Use alongside the full résumé and an interview. The employer makes all hiring decisions. No application was rejected or hidden by this report.</p></section>`
+<p style="font-size:12px">AI-assisted evidence findings; points are calculated deterministically ${report.criteriaSource === 'published_job_requirements' ? 'using equally weighted explicit published job criteria' : `from the employer-approved rubric ${esc(report.rubricVersion)}`}. Use alongside the full résumé and an interview. The employer makes all hiring decisions. No application was rejected or hidden by this report.</p></section>`
 }
 
 /** Compact production summary; the original application header, contact details
@@ -147,7 +152,7 @@ export function employerAdvisoryEmailSection(reportInput: unknown, qualityInput:
 <p style="margin:8px 0"><strong>Résumé presentation:</strong> ${qualitySummary}<br><small>${qualityCaption}</small></p>
 ${strengths.length ? `<p style="margin:12px 0 4px"><strong>Highlights</strong></p><ul style="margin:0;padding-left:20px">${strengths.map(text => `<li>${text}</li>`).join('')}</ul>` : ''}
 ${prompts.length ? `<p style="margin:12px 0 4px"><strong>To verify</strong></p><ul style="margin:0;padding-left:20px">${prompts.map(text => `<li>${text}</li>`).join('')}</ul>` : ''}
-<p style="margin:8px 0"><strong>Job match:</strong> ${jobSummary}${report ? '<br><small>Unverified résumé evidence</small>' : ''}</p>
+<p style="margin:8px 0"><strong>Job match:</strong> ${jobSummary}${report ? `<br><small>Unverified résumé evidence${report.criteriaSource === 'published_job_requirements' ? ` · Published job criteria, equal weights${report.jobContextOmitted ? ' · Partial scope' : ''}` : ''}</small>` : ''}</p>
 <p style="font-size:12px;margin:12px 0 0">Advisory only. Verify against the original résumé; you make the decision.</p>
 </section>`
 }

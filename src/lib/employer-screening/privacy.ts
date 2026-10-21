@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { captureSnapshot, readSnapshot, type Snapshot } from './index'
+import { validatePublishedCriterionText } from './inline-job-context'
 
 type Category = Snapshot['rubric']['criteria'][number]['category']
 type Concept = Readonly<{ label: string; category: Category; aliases: readonly string[] }>
@@ -529,10 +530,28 @@ export function minimizeBuilderSkills(input: unknown, sourceBytes: Uint8Array): 
   })) }, sourceSha256)
 }
 
+/** Published clauses are already public, but still revalidated before disclosure.
+ * This branch is not an employer-approved rubric or a general PII guarantee. */
+export function validatePublishedScreeningCriteria(input: unknown): Snapshot['rubric']['criteria'] {
+  const criteria = z.array(criterionSchema.extend({
+    label: z.string().min(1).max(300), interpretation: z.literal('ai_contextual'),
+    importance: z.enum(['required', 'preferred', 'duty']), sourceOrder: z.number().int().nonnegative().max(32000),
+  }).strict()).min(1).max(12).parse(input)
+  if (criteria.reduce((sum, c) => sum + c.weight, 0) !== 100 ||
+      Math.max(...criteria.map(c => c.weight)) - Math.min(...criteria.map(c => c.weight)) > 1 ||
+      criteria.reduce((sum, c) => sum + c.label.length, 0) > 4000 ||
+      new Set(criteria.map(c => c.id)).size !== criteria.length ||
+      criteria.some(c => !validatePublishedCriterionText(c.label))) throw new Error('Unsupported published criteria')
+  return criteria
+}
+
 type ProjectedEvidenceBase = Readonly<{ evidenceId: string; category: Category; sourceOrder: number;
   provenance: 'applicant_reported'; verification: 'unverified'; qualifiers?: ScreeningEvidenceQualifiers }>
 export type ScreeningProjection = Readonly<{
-  rubric: readonly Readonly<{ criterionId: string; category: Category; requirement: string }>[]
+  rubric: readonly Readonly<{ criterionId: string; category: Category | 'job_relevance'; requirement: string;
+    interpretation?: 'ai_contextual'; importance?: 'required' | 'preferred' | 'duty'; sourceOrder?: number }>[]
+  jobContextOmitted?: boolean
+  jobContext?: readonly Readonly<{ contextId: string; statement: string; sourceOrder: number }> []
   evidence: readonly (ProjectedEvidenceBase & (Readonly<{ concept: string }> | Readonly<{ interpretation: 'ai_contextual'; statement: string }>))[]
   context: readonly Readonly<{ contextId: string; kind: ScreeningContext['kind']; statement: string; sourceOrder: number }>[]
   omittedContext: boolean
@@ -541,7 +560,12 @@ export type ScreeningProjection = Readonly<{
  * Exact raw source IDs, spans, dates, digest, names and metadata stay local. */
 export function minimizeScreeningSnapshot(input: Snapshot): ScreeningProjection {
   const snapshot = readSnapshot(captureSnapshot(input))
-  const criteria = validateScreeningCriteria(snapshot.rubric.criteria)
+  const published = snapshot.rubric.approved === false
+  const criteria = published ? validatePublishedScreeningCriteria(snapshot.rubric.criteria) : validateScreeningCriteria(snapshot.rubric.criteria)
+  if (snapshot.rubric.approved === false && (snapshot.rubric.jobContext.some(c => !validatePublishedCriterionText(c.text)) ||
+      snapshot.rubric.jobContext.reduce((n, c) => n + c.text.length, 0) + criteria.reduce((n, c) => n + c.label.length, 0) > 4000)) {
+    throw new Error('Unsupported published context')
+  }
   const extraction = validateMinimizedExtraction({ sourceSha256: snapshot.resume.sha256, evidence: snapshot.resume.evidence,
     ...(snapshot.resume.context ? { context: snapshot.resume.context } : {}),
     ...(snapshot.resume.omittedContext !== undefined ? { omittedContext: snapshot.resume.omittedContext } : {}),
@@ -552,7 +576,12 @@ export function minimizeScreeningSnapshot(input: Snapshot): ScreeningProjection 
   }).sort((a, b) => a.page - b.page || a.start - b.start)
   const order = (item: { id: string }) => ordered.findIndex(row => row.item.id === item.id) + 1
   return Object.freeze({
-    rubric: Object.freeze(criteria.map((c, index) => Object.freeze({ criterionId: `c${index + 1}`, category: c.category, requirement: lookup(c.label, c.category)!.label }))),
+    rubric: Object.freeze(criteria.map((c, index) => Object.freeze(published
+      ? { criterionId: `c${index + 1}`, category: 'job_relevance' as const, requirement: c.label,
+        interpretation: 'ai_contextual' as const, importance: c.importance, sourceOrder: c.sourceOrder }
+      : { criterionId: `c${index + 1}`, category: c.category, requirement: lookup(c.label, c.category)!.label }))),
+    ...(snapshot.rubric.approved === false ? { jobContextOmitted: snapshot.rubric.omittedContext,
+      jobContext: Object.freeze(snapshot.rubric.jobContext.map((c, i) => Object.freeze({ contextId: `j${i + 1}`, statement: c.text, sourceOrder: c.sourceOrder }))) } : {}),
     evidence: Object.freeze(extraction.evidence.map((e, index) => Object.freeze({ evidenceId: `e${index + 1}`, category: e.category,
       ...(e.interpretation === 'ai_contextual' ? { interpretation: 'ai_contextual' as const, statement: e.excerpt } : { concept: lookupEvidence(e.excerpt, e.category)!.label }),
       provenance: 'applicant_reported' as const, verification: 'unverified' as const, sourceOrder: order(e),
