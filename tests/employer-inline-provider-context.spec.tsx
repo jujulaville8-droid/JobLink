@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import { captureSnapshot, screen, type Snapshot } from '../src/lib/employer-screening'
 import { minimizeBuilderSkills } from '../src/lib/employer-screening/privacy'
-import { createOpenAIProcessor, type ScreeningBudgetStore } from '../src/lib/employer-screening/provider'
+import { createOpenAIProcessor, MAX_PROVIDER_EVIDENCE_IDS_PER_CRITERION, type ScreeningBudgetStore } from '../src/lib/employer-screening/provider'
+import { derivePublishedJobCriteria } from '../src/lib/employer-screening/inline-job-criteria'
+import creativeEngineSalesJob from './fixtures/creative-engine-sales-public-job.json'
 const source = new TextEncoder().encode('Fictional skills PDF')
 const extracted = minimizeBuilderSkills(['Microsoft Excel'], source)
 const snapshot = (): Snapshot => ({ applicationId: '11111111-1111-4111-8111-111111111111', jobId: 'private-job', companyId: 'private-employer', createdAt: Date.now(),
@@ -20,6 +22,39 @@ function setup() {
   return { budget, fetcher, setFindings: (value: typeof findings) => { findings = value }, run: (value = snapshot()) => screen(captureSnapshot(value), createOpenAIProcessor({ enabled: true, lease: '22222222-2222-4222-8222-222222222222', configId: 'synthetic', apiKey: 'fictional-not-a-secret', budget, fetch: fetcher, timeoutMs: 1000 })) }
 }
 describe('single-call contextual published job comparison, mocked offline', () => {
+  it.each([14, 20])('accepts every one of %i criteria in a single compact bounded response, without dropping a tail', async count => {
+    const t = setup(), value = snapshot()
+    const job = count === 14 ? { ...creativeEngineSalesJob, status: 'active' as const } :
+      { ...creativeEngineSalesJob, status: 'active' as const, description: 'Requirements\n' + Array.from({ length: count }, (_, i) => `Skill requirement ${i}`).join('\n') }
+    const derived = derivePublishedJobCriteria(job)
+    expect(derived.status).toBe('available')
+    value.rubric.criteria = derived.criteria
+    value.resume.evidence = minimizeBuilderSkills(['Microsoft Excel', 'Microsoft Word'], source).evidence
+    const findings = derived.criteria.map((_, i) => ({ criterionId: `c${i + 1}`, finding: 'supported', evidenceIds: ['e1', 'e2'] }))
+    t.setFindings(findings)
+    const report = await t.run(value)
+    expect(report).toMatchObject({ status: 'scored', supportedPoints: 100, unresolvedPoints: 0 })
+    if (report.status !== 'scored') throw new Error('Expected synthetic report')
+    expect(report.criteria).toHaveLength(count)
+    expect(report.criteria.map(c => c.label)).toEqual(derived.criteria.map(c => c.label))
+    expect(t.fetcher).toHaveBeenCalledOnce()
+    const body = JSON.parse((t.fetcher.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    expect(body.max_output_tokens).toBe(1024)
+    expect(body.text.format.schema.properties.assessments).toMatchObject({ minItems: count, maxItems: count,
+      items: { properties: { evidenceIds: { maxItems: 2 } } } })
+    expect(body.instructions).toContain('If two citations cannot establish the whole clause, return unknown')
+    expect(MAX_PROVIDER_EVIDENCE_IDS_PER_CRITERION).toBe(2)
+    // A size regression guard, NOT a token estimator or guarantee that the model
+    // completes within its output/reasoning cap. Incomplete output fails closed.
+    expect(Buffer.byteLength(JSON.stringify({ assessments: findings }))).toBeLessThan(1700)
+  })
+  it('rejects a provider response that exceeds the two-citation output contract', async () => {
+    const t = setup(), value = snapshot()
+    value.resume.evidence = minimizeBuilderSkills(['Microsoft Excel', 'Microsoft Word', 'Customer service'], source).evidence
+    t.setFindings([{ criterionId: 'c1', finding: 'supported', evidenceIds: ['e1', 'e2', 'e3'] }])
+    expect(await t.run(value)).toEqual({ status: 'unavailable' })
+    expect(t.fetcher).toHaveBeenCalledOnce()
+  })
   it('sends only admitted clauses and minimized evidence with source distinctions and omission marker', async () => {
     const t = setup(); expect(await t.run()).toMatchObject({ status: 'scored', supportedPoints: 100, criteriaSource: 'published_job_requirements' })
     expect(t.fetcher).toHaveBeenCalledOnce(); const [,init] = t.fetcher.mock.calls[0] as unknown as [string, RequestInit]

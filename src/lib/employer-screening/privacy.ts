@@ -7,7 +7,7 @@
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { captureSnapshot, readSnapshot, type Snapshot } from './index'
-import { validatePublishedCriterionText } from './inline-job-context'
+import { MAX_PUBLISHED_JOB_CRITERIA, validatePublishedCriterionText } from './inline-job-context'
 
 type Category = Snapshot['rubric']['criteria'][number]['category']
 type Concept = Readonly<{ label: string; category: Category; aliases: readonly string[] }>
@@ -536,7 +536,7 @@ export function validatePublishedScreeningCriteria(input: unknown): Snapshot['ru
   const criteria = z.array(criterionSchema.extend({
     label: z.string().min(1).max(300), interpretation: z.literal('ai_contextual'),
     importance: z.enum(['required', 'preferred', 'duty']), sourceOrder: z.number().int().nonnegative().max(32000),
-  }).strict()).min(1).max(12).parse(input)
+  }).strict()).min(1).max(MAX_PUBLISHED_JOB_CRITERIA).parse(input)
   if (criteria.reduce((sum, c) => sum + c.weight, 0) !== 100 ||
       Math.max(...criteria.map(c => c.weight)) - Math.min(...criteria.map(c => c.weight)) > 1 ||
       criteria.reduce((sum, c) => sum + c.label.length, 0) > 4000 ||

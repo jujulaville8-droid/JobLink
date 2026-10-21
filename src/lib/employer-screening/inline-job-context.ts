@@ -5,7 +5,8 @@
  * Only independently classified professional clauses are eligible.
  */
 export const MAX_PUBLISHED_JOB_CLAUSE_CHARS = 300
-export const MAX_PUBLISHED_JOB_CRITERIA = 12
+// Match the core snapshot/assessment bound. Never discard a tail of job clauses.
+export const MAX_PUBLISHED_JOB_CRITERIA = 20
 export const MAX_PUBLISHED_JOB_CONTEXT_CHARS = 4000
 const contact = /(?:https?:\/\/|www\.|\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b|\b[a-z0-9-]+\.(?:com|org|net|co|io)\b|(?:\+?\d[\s().-]*){7,}|\b(?:e-?mail|telephone|phone|whatsapp)\s*[:=]|\b(?:street address|postal address|contact details|contact information)\b)/i
 const sensitive = /\b(?:age(?:d)?|birth(?:day|place)?|date of birth|gender|male|female|men|women|boys|girls|pregnan\w*|matern\w*|marital|married|single parent|religio\w*|christian|muslim|hindu|jewish|race|racial|ethnic\w*|nationality|nationals?|citizen\w*|citizenship|ancestry|sexual|orientation|transgender|disabil\w*|disabled|handicap\w*|medical|medication|diagnos\w*|health condition|healthy|mental health|hiv|aids|cancer|wheelchair|able[- ]bodied|deaf|blind|passport|social security|ssn|taxpayer|national id|bank account|credit score|criminal|conviction|work permit|immigration|residen\w*)\b/i
