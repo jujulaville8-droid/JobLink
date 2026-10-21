@@ -76,6 +76,7 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
     </div>
     {(editor.error || exportError) && <div className={styles.error} role="alert">{editor.error || exportError}</div>}
     {editor.draftNotice && editor.dirty && <p className={styles.draftNotice}>{editor.draftNotice}</p>}
+    <ResumeWritingOffer compact applicationReturnTo={returnTo} />
     <div className={styles.workspace} data-view={mobileView}>
       <nav className={styles.sections} aria-label="Resume sections">
         <p className={styles.navLabel}>Your resume</p>
@@ -115,7 +116,6 @@ export default function ResumeStudio({ applicationReturnTo }: { applicationRetur
             <p className={styles.saveHint}>Save each entry when you’re ready. Your preview updates as you type.</p>
           </form> : <div className={styles.emptyEditor}><FileText size={32} /><h2>Add your first {definition!.singular}</h2><p>You don’t need to fill every section. Include what supports your next role.</p><button className={styles.primary} onClick={() => editor.add(definition!.key)}><Plus size={16} />Add {definition!.singular}</button></div>}
         </>}
-        <ResumeWritingOffer applicationReturnTo={returnTo} />
       </section>
 
       <section className={styles.preview} role="region" aria-label="Live resume preview">

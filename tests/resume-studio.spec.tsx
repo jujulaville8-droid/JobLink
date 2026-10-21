@@ -28,6 +28,8 @@ describe('premium resume workspace', () => {
     const summary = await screen.findByLabelText('Professional summary');
     fireEvent.change(summary, { target: { value: 'Keep my unsaved builder draft' } });
     const call = screen.getByRole('link', { name: 'Book a consultation' });
+    expect(screen.getByRole('region', { name: 'Résumé consultation' }).compareDocumentPosition(screen.getByRole('region', { name: 'Resume editor' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'View existing résumé requests' })).toBeTruthy();
     expect(call.getAttribute('target')).toBe('_blank');
     call.addEventListener('click', event => event.preventDefault());
     await user.click(call); await user.click(call);
