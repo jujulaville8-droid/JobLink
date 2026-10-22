@@ -35,7 +35,7 @@ function setup() {
     extract: vi.fn(async b => ({ sourceSha256: hash(b), evidence: [], context: [], omittedContext: true, localPages: [SYNTHETIC_REVIEW_PAGE] })),
     env: { ...Object.fromEntries(INLINE_SCREENING_GATES.map(key => [key, 'true'])),
       EMPLOYER_SCREENING_REVIEW_V2_ENABLED: 'true', EMPLOYER_SCREENING_REVIEW_V2_PRIVACY_APPROVED: 'true',
-      EMPLOYER_SCREENING_REVIEW_V2_BUDGET_CONFIG_ID: 'synthetic-sol', EMPLOYER_SCREENING_PAID_PROVIDER_ENABLED: 'true',
+      EMPLOYER_SCREENING_REVIEW_V2_BUDGET_CONFIG_ID: 'gpt-6.1-sol-20261022-counted-v2', EMPLOYER_SCREENING_PAID_PROVIDER_ENABLED: 'true',
       EMPLOYER_SCREENING_BUDGET_APPROVED: 'true', OPENAI_API_KEY: 'synthetic-not-a-key' } }
   return { deps, reviewBudget, fetcher }
 }

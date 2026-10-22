@@ -16,6 +16,8 @@ vi.mock('../src/lib/employer-screening/review-v2', () => ({
 const applicationId = '11111111-1111-4111-8111-111111111111'
 const reservationId = '22222222-2222-4222-8222-222222222222'
 const sourceSha256 = 'a'.repeat(64)
+// Exact non-secret ID seeded by the reviewed production migration.
+const productionConfigId = 'gpt-6.1-sol-20261022-counted-v2'
 const context = {} as ReviewV2Context
 const raw = () => ({ id: 'resp_synthetic_review', model: SOL_REVIEW_MODEL, service_tier: 'default', status: 'completed', error: null, incomplete_details: null,
   output: [{ type: 'message', status: 'completed', role: 'assistant', content: [{ type: 'output_text', text: '{"synthetic":true}' }] }],
@@ -29,7 +31,7 @@ function setup() {
     input_token_ceiling: 1200, max_output_tokens: SOL_REVIEW_MAX_OUTPUT_TOKENS,
     input_microusd_per_million: 5_500_000, output_microusd_per_million: 16_500_000,
     reserved_microusd: reservedCostMicrousd(1200, SOL_REVIEW_MAX_OUTPUT_TOKENS, 5_500_000, 16_500_000),
-    request_sha256: requestSha256, config_id: 'synthetic-sol-config', reasoning_effort: 'low', service_tier: 'default',
+    request_sha256: requestSha256, config_id: productionConfigId, reasoning_effort: 'low', service_tier: 'default',
     token_count_source: 'responses_input_tokens', dispatch_not_after: new Date(now + 25_000).toISOString(),
   })
   const budget: SolReviewBudgetStore = {
@@ -39,14 +41,15 @@ function setup() {
   const fetcher = vi.fn<typeof fetch>(async url => new Response(JSON.stringify(String(url).endsWith('/input_tokens')
     ? { object: 'response.input_tokens', input_tokens: 1200 } : raw())))
   const onStage = vi.fn()
-  const options = { enabled: true, apiKey: 'synthetic-not-a-key', configId: 'synthetic-sol-config', applicationId,
+  const options = { enabled: true, apiKey: 'synthetic-not-a-key', configId: productionConfigId, applicationId,
     sourceSha256, deadline: now + 25_000, signal: controller.signal, budget, fetch: fetcher, now: () => now, onStage }
   return { budget, fetcher, options, controller, grant, advance: (ms: number) => { now += ms }, run: () => runSolResumeReview(context, options) }
 }
 describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
-  it('counts the same token-bearing request, reserves exact count, then sends one generation', async () => {
+  it('accepts the exact production config ID, counts the same request and sends one generation', async () => {
     const s = setup(); expect(await s.run()).toEqual({ version: 'synthetic-test' })
     expect(s.fetcher).toHaveBeenCalledTimes(2)
+    expect(s.budget.claim).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ configId: productionConfigId }))
     const [countCall, generateCall] = s.fetcher.mock.calls
     expect(countCall[0]).toBe('https://api.openai.com/v1/responses/input_tokens')
     expect(generateCall[0]).toBe('https://api.openai.com/v1/responses')
@@ -60,6 +63,11 @@ describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
     const requestSha = createHash('sha256').update(String(generateCall[1]!.body)).digest('hex')
     expect(s.budget.reserve).toHaveBeenCalledWith(expect.objectContaining({ inputTokenCount: 1200, requestSha256: requestSha }))
     expect(s.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, { inputTokens: 1200, outputTokens: 700, evidenceId: 'resp_synthetic_review' })
+  })
+  it.each(['', 'x'.repeat(101), 'config with space', 'config/other', 'config\nother', 'CONFIG', 'config:other'])('rejects invalid config ID %j before any claim or request', async configId => {
+    const s = setup(); s.options.configId = configId
+    await expect(s.run()).rejects.toThrow()
+    expect(s.budget.claim).not.toHaveBeenCalled(); expect(s.fetcher).not.toHaveBeenCalled()
   })
   it('does not count when admission rejects or is no longer live', async () => {
     const rejected = setup(); vi.mocked(rejected.budget.claim).mockResolvedValue(false)
@@ -80,9 +88,10 @@ describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
     const s = setup(); vi.mocked(s.budget.reserve).mockResolvedValue(null)
     await expect(s.run()).rejects.toThrow(); expect(s.fetcher).toHaveBeenCalledTimes(1)
   })
-  it.each(['hash', 'model', 'rate', 'count', 'output', 'amount'])('rejects mismatched %s grant without generation', async field => {
+  it.each(['hash', 'model', 'rate', 'count', 'output', 'amount', 'config'])('rejects mismatched %s grant without generation', async field => {
     const s = setup(); vi.mocked(s.budget.reserve).mockImplementation(async input => {
       const grant = { ...s.grant(input.requestSha256) } as Record<string, unknown>
+      if (field === 'config') grant.config_id = 'different-review-config'
       if (field === 'hash') grant.request_sha256 = 'b'.repeat(64)
       if (field === 'model') grant.model = 'gpt-6-luna'
       if (field === 'rate') grant.input_microusd_per_million = 1
@@ -134,7 +143,7 @@ describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
     const rpc = vi.fn((name: string) => ({ abortSignal: vi.fn(async () => ({ data: name === 'employer_screening_claim_review_v2'
       ? { preflight_nonce: nonce, dispatch_not_after: new Date(s.options.deadline).toISOString() } : s.grant(requestSha256), error: null })) }))
     const store = new SupabaseSolReviewBudgetStore({ rpc }, { applicantUserId: applicationId, deadline: s.options.deadline, signal: s.controller.signal, now: s.options.now })
-    const input = { applicationId, sourceSha256, configId: 'synthetic-sol-config', inputTokenCount: 1200, requestSha256, requestKey: 'synthetic' }
+    const input = { applicationId, sourceSha256, configId: productionConfigId, inputTokenCount: 1200, requestSha256, requestKey: 'synthetic' }
     await expect(store.reserve(input)).resolves.toBeNull(); expect(rpc).not.toHaveBeenCalled()
     await expect(store.claim(input)).resolves.toBe(true)
     await expect(store.claim(input)).resolves.toBe(false)

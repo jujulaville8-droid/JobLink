@@ -174,7 +174,8 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
   if (!options.enabled || !options.apiKey || /[\r\n]/.test(options.apiKey)) throw new Error('Review disabled')
   z.uuid().parse(options.applicationId)
   z.string().regex(/^[0-9a-f]{64}$/).parse(options.sourceSha256)
-  z.string().regex(/^[a-z0-9_-]{1,100}$/).parse(options.configId)
+  // Config IDs are opaque SQL keys; reviewed model-version IDs include periods.
+  z.string().regex(/^[a-z0-9_.-]{1,100}$/).parse(options.configId)
   const now = options.now ?? Date.now
   const live = () => { if (options.signal.aborted || !Number.isFinite(options.deadline) || now() >= options.deadline) throw new Error('Review deadline') }
   const stage = (event: SolReviewStage) => { try { options.onStage?.(event) } catch { /* diagnostics cannot alter flow */ } }
