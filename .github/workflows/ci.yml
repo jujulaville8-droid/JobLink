@@ -70,6 +70,14 @@ jobs:
           createdb -h 127.0.0.1 -U postgres joblink_inline_budget_test
           npm run test:inline-budget:concurrency
 
+      - name: Concurrent Sol and Luna shared budget (existing local PostgreSQL service)
+        env:
+          PGPASSWORD: local-test-only
+          SOL_REVIEW_BUDGET_TEST_DATABASE_URL: postgres://postgres:local-test-only@127.0.0.1:5432/joblink_sol_review_budget_test
+        run: |
+          createdb -h 127.0.0.1 -U postgres joblink_sol_review_budget_test
+          npm run test:sol-review:concurrency
+
       - name: Build
         # Placeholder values: the build must not require real credentials, and
         # every page that touches Supabase is rendered on demand.

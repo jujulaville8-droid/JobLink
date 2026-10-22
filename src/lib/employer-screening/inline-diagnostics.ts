@@ -13,7 +13,9 @@ export const INLINE_DIAGNOSTIC_EVENTS = [
   'provider_preflight_failed', 'budget_requested', 'budget_rpc_failed', 'budget_rejected',
   'budget_granted', 'dispatch_not_authorized', 'provider_request_started', 'provider_failed',
   'settlement_unconfirmed', 'assessment_invalid', 'scored', 'deadline_expired',
-  'enrichment_failed',
+  'enrichment_failed', 'review_v2_failed', 'review_v2_gates_disabled', 'review_v2_notice_missing', 'review_v2_projection_empty',
+  'review_v2_admission_requested', 'review_v2_admission_granted',
+  'review_v2_count_started', 'review_v2_count_validated', 'review_v2_completed',
   ...PDF_DIAGNOSTIC_EVENTS,
 ] as const
 export type InlineDiagnosticEvent = typeof INLINE_DIAGNOSTIC_EVENTS[number]

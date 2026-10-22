@@ -2,10 +2,18 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import TermsPage from '../src/app/terms/page'
 import ApplicantScreeningNotice from '../src/components/ApplicantScreeningNotice'
-import { hasCurrentScreeningNotice, SCREENING_NOTICE_VERSION, SCREENING_NOTICE_TEXT, SCREENING_TERMS_HREF } from '../src/lib/employer-screening/notice'
+import { hasCurrentScreeningNotice, hasNarrativeReviewNotice, SCREENING_NOTICE_VERSION, SCREENING_NOTICE_TEXT, SCREENING_TERMS_HREF } from '../src/lib/employer-screening/notice'
 
 afterEach(cleanup)
 describe('default-OFF applicant processing disclosure draft', () => {
+  it('requires the new truthful disclosure for broader narrative review, without rejecting old baseline forms', () => {
+    expect(hasNarrativeReviewNotice(SCREENING_NOTICE_VERSION)).toBe(true)
+    for (const prior of ['resume-advisory-terms-link-v2', 'resume-advisory-notice-v1']) {
+      expect(hasCurrentScreeningNotice(prior)).toBe(true)
+      expect(hasNarrativeReviewNotice(prior)).toBe(false)
+    }
+    expect(hasNarrativeReviewNotice(undefined)).toBe(false)
+  })
   it('does not publish the draft notice by default', () => {
     const { container } = render(<ApplicantScreeningNotice />)
     expect(container.textContent).toBe('')
@@ -26,7 +34,7 @@ describe('default-OFF applicant processing disclosure draft', () => {
     const section = screen.getByRole('region', { name: '3.1 Résumé Review and Automated Processing' })
     expect(`#${section.id}`).toBe(SCREENING_TERMS_HREF.split('/terms')[1])
     expect(section.textContent).toContain(SCREENING_NOTICE_TEXT)
-    for (const text of ['AI using OpenAI', 'minimized job-related evidence', 'separate text-based assessment', 'reports and scores are shared only with the employer', 'Missing or uncertain evidence is not a failed requirement', 'employer makes all hiring decisions', 'does not automatically reject or hide']) {
+    for (const text of ['AI using OpenAI', 'minimized job-related evidence', 'AI may also provide a separate text-based assessment', 'reports and scores are shared only with the employer', 'Missing or uncertain evidence is not a failed requirement', 'employer makes all hiring decisions', 'does not automatically reject or hide']) {
       expect(section.textContent).toContain(text)
     }
     expect(section.textContent).not.toMatch(/human review|\d+\/\d+|supported points|candidate quality/i)
