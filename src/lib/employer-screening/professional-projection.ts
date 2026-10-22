@@ -85,8 +85,10 @@ const excludedHeadings = new Set([
 ])
 const titleHeadings = new Set(['resume', 'résumé', 'curriculum vitae', 'cv'])
 const headingKey = (text: string) => text.trim().replace(/:$/, '').replace(/\s*&\s*/g, ' and ').replace(/\s+/gu, ' ').trim().toLowerCase()
+const isExtracurricularHeading = (text: string) => /^extra(?:\s*[-–—]\s*|\s*)curricular activities$/u.test(headingKey(text))
 function heading(text: string): Section | 'title' | undefined {
   const key = headingKey(text)
+  if (isExtracurricularHeading(text)) return 'achievements'
   if (Object.hasOwn(professionalHeadings, key)) return professionalHeadings[key]
   if (excludedHeadings.has(key)) return 'excluded'
   if (titleHeadings.has(key)) return 'title'
@@ -105,6 +107,34 @@ const identityLabels = /\b(?:name|full name|first name|last name|surname|maiden 
 const identityRisk = /(?:\b(?:full name|first name|last name|surname|maiden name|date of birth|birth ?date|dob|nationality|citizenship|marital status|religion|ethnicity|ethnic origin|race|gender|sex|pronouns|disability|medical condition|passport|national id|social security|ssn|taxpayer id|driver'?s? licen[cs]e|bank account|iban|credit card)\s*[:=]|\b[Mm]y name (?:is|:)\b|\b(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+\p{Lu}[\p{L}'’-]+\s+\p{Lu}[\p{L}'’-]+|\b(?:colleague|supervisor|manager|referee|reference|client|coworker|co-worker)\s+(?:named\s+)?\p{Lu}[\p{L}'’-]+\s+\p{Lu}[\p{L}'’-]+|\b(?:I am|I'm|I’m)\s+\p{Lu}[\p{L}'’-]+\s+\p{Lu}[\p{L}'’-]+|\b\d{3}-\d{2}-\d{4}\b)/u
 const protectedRisk = /(?:\b(?:born|birthplace)\s*(?:on|in|:)\s*\S|\b(?:age|aged)\s*[:=]?\s*\d{1,3}\b|\b\d{1,3}[ -]years?[ -]old\b|\b(?:I am|I'm|I’m)\s+\d{1,3}\b|\b(?:I am|I'm|I’m|I identify as|I consider myself)\s+(?:a\s+|an\s+)?(?:male|female|man|woman|nonbinary|non-binary|transgender|gay|lesbian|bisexual|Black|White|Asian|Christian|Muslim|Jewish|Hindu|Buddhist|disabled|pregnant|diabetic|epileptic|autistic|neurodivergent|dyslexic|deaf|blind|bipolar|HIV positive|HIV-positive|married|single|divorced|widowed|citizen|national)\b|\b(?:married|divorced|widowed)\b|\b(?:my|our)\s+(?:wife|husband|spouse|children|child|baby|son|daughter|religion|faith|nationality|ethnicity|disability|diagnosis|medication)\b|\b(?:I have|I suffer from|I live with|I was diagnosed with|I take|I use)\s+(?:a\s+|an\s+)?(?:disability|diabetes|epilepsy|bipolar disorder|PTSD|OCD|schizophrenia|dyslexia|arthritis|heart disease|chronic illness|hearing loss|visual impairment|cancer|HIV|AIDS|depression|anxiety|autism|ADHD|asthma|insulin|antidepressants|wheelchair)\b|\b(?:I|I've|I have)\s+(?:was\s+|been\s+|am\s+)?(?:diagnosed|hospitalized|hospitalised|medicated|treated)\b|\b(?:no|without)\s+(?:children|dependants|dependents|disabilities|medical conditions)\b|\b(?:citizen|national)\s+of\b|\b(?:I am|I'm|I’m)\s+(?:a\s+|an\s+)?[\p{L}-]+\s+(?:citizen|national)\b|\b(?:he\/him|she\/her|they\/them)\b)/iu
 const instructionRisk = /(?:<\/?(?:system|assistant|developer|instructions?|prompt)\b|\b(?:ignore|disregard|override|bypass)\b[\s\S]{0,90}\b(?:instructions?|rules?|policy|policies|prompt|previous|above|below|system|review)\b|\b(?:system|developer|assistant)\s*(?:message|prompt|instructions?|:)|\b(?:reviewer|evaluator|screening model|language model|chatgpt|AI assistant)\s*[:;,]|\b(?:return|output|respond|assign|give|set|mark|rate|score|rank)\b[\s\S]{0,80}\b(?:this candidate|this applicant|this resume|this résumé|me as|my resume|my résumé|perfect|maximum score|highest score|10\s*\/\s*10|positive recommendation|hire me|JSON)\b|\b(?:do not|don't|never)\s+(?:disclose|mention|report|reveal|penalize|penalise)\b|\b(?:follow these instructions|prompt injection|ignore all|recommend hiring me)\b)/iu
+// Extracurricular membership can reveal sensitive affiliations even without an
+// explicit "I am" declaration. Omit the whole scope; never infer a trait or
+// rescue leadership claims from a mixed sensitive section. This is lexical
+// defense in depth, not a general classifier of organizations or identities.
+const sensitiveActivityRisk = /\b(?:religio\w*|faith|church|mosque|synagogue|temple|christian|catholic|protestant|baptist|methodist|anglican|presbyterian|pentecostal|adventist|mormon|jehovah|muslim|islam\w*|jewish|hindu|buddhist|sikh|atheist|politic\w*|partisan|party|trade union|labo[u]?r union|ethnic\w*|racial|indigenous|asian|citizenship|nationality|refugee|immigrant|lgbt\w*|gay|lesbian|bisexual|transgender|non[ -]?binary|male|female|wom[ae]n|m[ae]n|disab\w*|deaf|blind|autis\w*|neurodivergen\w*|hiv|aids|cancer|diabet\w*|mental health|support group|recovery|(?:alcoholics|narcotics|gamblers) anonymous|survivors?)\b/iu
+// Color words alone also occur in ordinary place/product/organization names.
+// Require a direct people/identity descriptor rather than inferring affiliation
+// from a color anywhere in the title. Explicit personal declarations remain
+// covered independently by protectedRisk. Spaces and typographic hyphens must
+// not change the meaning of a direct descriptor, including across page wraps.
+const racialAffiliationRisk = /\b(?:black|white)[ \p{Pd}]+(?:people|persons?|youths?|alumni|alumnae?|alumnus|students?|professionals?|engineers?|lawyers?|doctors?|nurses?|teachers?|workers?|entrepreneurs?|business owners?|community|communities|caucus|association|network|union|identity|heritage|history|pride|power|lives matter|supremac\w*)\b/iu
+function hasSensitiveActivityText(raw: string): boolean {
+  const text = detectionText(raw)
+  return sensitiveActivityRisk.test(text) || racialAffiliationRisk.test(text)
+}
+function hasSensitiveActivityScope(raw: string): boolean {
+  let activities = false, scope = ''
+  for (const line of raw.split(/\r\n|\r|\n/u)) {
+    const boundary = heading(line)
+    if (boundary !== undefined && boundary !== 'achievements') {
+      if (activities && hasSensitiveActivityText(scope)) return true
+      activities = false; scope = ''
+    }
+    activities ||= isExtracurricularHeading(line)
+    scope += '\n' + line
+  }
+  return activities && hasSensitiveActivityText(scope)
+}
 function hasIdentityRisk(text: string): boolean {
   // A professional organization/product label is not an applicant-name field.
   // This changes only the detection view, never transmitted text or source spans.
@@ -171,6 +201,16 @@ function isCombinedLocationContactMetadata(text: string): boolean {
   // beside an email. This is a bounded place-header heuristic, not geocoding.
   return parts.every(part => part.length <= 60 &&
     /^\p{Lu}[\p{L}'’.-]*(?: (?:\p{Lu}[\p{L}'’.-]*|and|of|the)){0,5}$/u.test(part))
+}
+
+function isAntiguaLocalityPhoneMetadata(text: string): boolean {
+  // Perimeter only: an anchored locality suffix plus an entire 268 phone value.
+  // One locality name plus its suffix; only a compass prefix may precede it.
+  // Extra tokens may be job titles or claims, not more guessed place names.
+  if (text.length > 110) return false
+  const match = /^((?:(?:North|South|East|West|Central) )?\p{Lu}[\p{L}'’.-]* (?:Pasture|Village|Estate|Grove|Harbour|Harbor|Bay|Hill|Heights))\s+(?:\+?1[ -]?)?(?:\(268\)|268)[ .-]?\d{3}[ .-]?\d{4}$/u.exec(text)
+  return !!match && !excludedScopeRisk.test(match[1]) && !instructionRisk.test(match[1]) &&
+    !headerProfessionalRisk.test(match[1]) && !protectedRisk.test(match[1])
 }
 
 function isLabelledPhonePair(text: string): boolean {
@@ -357,7 +397,8 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       const scopeText = excludedQualifierText(substantiveLines, scope.section === 'excluded')
       if (excludedScopeRisk.test(scopeText)) unresolvedContext = true
       const intentional = scope.section === 'excluded' || substantiveLines.every(line => isIdentityMetadata(line.text) ||
-        (!professionalScopeSeen && isCombinedLocationContactMetadata(detectionText(line.text))))
+        (!professionalScopeSeen && (isCombinedLocationContactMetadata(detectionText(line.text)) ||
+          isAntiguaLocalityPhoneMetadata(detectionText(line.text)))))
       if (!intentional) omissions.unclassifiedContent = true
       localOmissions.push({ reason: intentional
         ? (scope.section === 'excluded' ? 'intentional_nonprofessional_exclusion' : 'intentional_identity_exclusion')
@@ -365,7 +406,7 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       continue
     }
     if (instruction || contactRisk.test(text) || phoneRisk.test(text) || hasIdentityRisk(text) || protectedRisk.test(text) ||
-        hasKnownIdentity(text, identities)) {
+        hasKnownIdentity(text, identities) || hasSensitiveActivityScope(raw)) {
       omissions.professionalContent = true
       if (excludedScopeRisk.test(text)) unresolvedContext = true
       localOmissions.push({ reason: 'unsafe_professional_scope', spans })
@@ -456,7 +497,8 @@ export function validateProfessionalProjectionData(input: unknown): Professional
   if (characters > PROFESSIONAL_PROJECTION_LIMITS.providerCharacters) return null
   const text = detectionText(records.map(record => record.text).join('\n'))
   if (instructionRisk.test(text) || unsafeCharacters.test(records.map(record => record.text).join('\n')) ||
-      contactRisk.test(text) || phoneRisk.test(text) || hasIdentityRisk(text) || protectedRisk.test(text)) return null
+      contactRisk.test(text) || phoneRisk.test(text) || hasIdentityRisk(text) || protectedRisk.test(text) ||
+      hasSensitiveActivityScope(records.map(record => record.text).join('\n'))) return null
   const anyOmissions = Object.values(input.omissions).some(Boolean)
   if ((records.length === 0) !== (input.coverage === 'none') ||
       (input.coverage === 'full' && anyOmissions) ||

@@ -46,7 +46,10 @@ function setup() {
       EMPLOYER_SCREENING_BUDGET_APPROVED: 'true', OPENAI_API_KEY: 'synthetic-not-a-key' } }
   return { deps, reviewBudget, fetcher }
 }
-beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => {}))
+beforeEach(() => {
+  Object.values(delivery).forEach(mock => mock.mockReset())
+  vi.spyOn(console, 'info').mockImplementation(() => {})
+})
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 describe('exclusive Sol v2 original-email enrichment, offline provider and ledger mocks', () => {
   it('uses broader professional text despite zero legacy evidence and renders a validated compact review', async () => {
@@ -125,18 +128,28 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(s.fetcher).toHaveBeenCalledTimes(2)
   }, 10_000)
 
-  it('forwards one enriched email after parsing a three-page variant-heading PDF and counting/generating once', async () => {
+  it.each(['three-page variant headings', 'two-page locality and extracurricular activities'])
+    ('forwards one enriched email after parsing a PDF with %s and counting/generating once', async format => {
     const require = createRequire(import.meta.url)
     const PDF = require('pdfkit') as new () => Readable & { text(text: string): void; addPage(): void; end(): void }
     const doc = new PDF(), chunks: Buffer[] = []
     const ready = new Promise<Buffer>((resolve, reject) => {
       doc.on('data', part => chunks.push(part)); doc.on('error', reject); doc.on('end', () => resolve(Buffer.concat(chunks)))
     })
-    doc.text(SYNTHETIC_REVIEW_PAGE.replace('Work Experience', 'Phone: 1(202) 555-0101 or 1 (202) 555-0102\nWork Experiences:').replace('Skills\n',
+    const localityActivities = format.startsWith('two-page')
+    const header = localityActivities
+      ? SYNTHETIC_REVIEW_PAGE.replace('jordan.ellis@example.invalid | +1 (268) 555-0148', 'Cedar Pasture (268)555-0123\njordan.ellis@example.invalid')
+      : SYNTHETIC_REVIEW_PAGE.replace('Work Experience', 'Phone: 1(202) 555-0101 or 1 (202) 555-0102\nWork Experience')
+    doc.text(header.replace('Work Experience', 'Work Experiences:').replace('Skills\n',
       'Processed returns when replacement stock was not needed.\nReconciled customer logs without errors and provided training to customers.\nSkills\n'))
     doc.addPage()
-    doc.text('Educational Background\nDiploma in business operations, completed 2021.\nCoursework included customer-service practice drills.\nInterests & Activities\nReading and hiking.')
-    doc.addPage()
+    doc.text('Educational Background\nDiploma in business operations, completed 2021.\nCoursework included customer-service practice drills.')
+    if (localityActivities) {
+      doc.text('Extra- Curricular Activities:\nMember of the Black Orchard Speaking Club.\nA leader in the Local Volunteer Association.\nA gold member of the Community Achievement Award.\nHobbies\nReading and hiking.')
+    } else {
+      doc.text('Interests & Activities\nReading and hiking.')
+      doc.addPage()
+    }
     doc.text('References\n(1) Alex Smith\nHead of Customer Service\nAcme\nalex@example.invalid\n+1 (202) 555-0199\n(2) Jamie Jones\nManager – Training and Development\nAcme Shipping Company\njamie@example.invalid\n+1 (202) 555-0198\nAvailable on request.')
     doc.end()
     const pdf = await ready, s = setup(); delete s.deps.extract
@@ -180,7 +193,13 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(request).toContain('Educational Background')
     expect(request).toContain('not needed')
     expect(request).toContain('Coursework included')
-    expect(request).not.toMatch(/Jordan Ellis|jordan.ellis@|Alex Smith|Jamie Jones|Acme|555-01|Manager – Training|hiking|localPages|%PDF|base64/)
+    if (localityActivities) {
+      expect(request).toContain('Extra- Curricular Activities:')
+      expect(request).toContain('Member of the Black Orchard Speaking Club.')
+      expect(request).toContain('A leader in the Local Volunteer Association.')
+      expect(request).toContain('A gold member of the Community Achievement Award.')
+    }
+    expect(request).not.toMatch(/Jordan Ellis|Cedar Pasture|jordan.ellis@|Alex Smith|Jamie Jones|Acme|555-01|Manager – Training|hiking|localPages|%PDF|base64/)
     expect(delivery.send).toHaveBeenCalledOnce()
     const message = delivery.send.mock.calls[0][0]
     expect(message.idempotencyKey).toBe(`application/${app}/employer`)
