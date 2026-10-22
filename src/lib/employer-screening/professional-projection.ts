@@ -84,7 +84,17 @@ const excludedHeadings = new Set([
   'hobbies and interests', 'interests and activities', 'personal background', 'medical information', 'health information',
 ])
 const titleHeadings = new Set(['resume', 'résumé', 'curriculum vitae', 'cv'])
-const headingKey = (text: string) => text.trim().replace(/:$/, '').replace(/\s*&\s*/g, ' and ').replace(/\s+/gu, ' ').trim().toLowerCase()
+const compactHeadings = new Map([...Object.keys(professionalHeadings), ...excludedHeadings, ...titleHeadings,
+  'extracurricular activities'].map(key => [key.replace(/ /gu, ''), key]))
+function headingKey(text: string): string {
+  const key = text.trim().replace(/:$/, '').replace(/\s*&\s*/g, ' and ').replace(/\s+/gu, ' ').trim().toLowerCase()
+  // PDF kerning may split a known heading into letters and short clusters
+  // (e.g. S U M M A RY). Match the ENTIRE line against reviewed headings only.
+  // Never compact body text, discard a suffix, or change transmitted spans.
+  const fragments = key.split(' ')
+  return fragments.length >= 3 && fragments.every(part => /^[a-z]{1,3}$/u.test(part))
+    ? compactHeadings.get(fragments.join('')) ?? key : key
+}
 const isExtracurricularHeading = (text: string) => /^extra(?:\s*[-–—]\s*|\s*)curricular activities$/u.test(headingKey(text))
 function heading(text: string): Section | 'title' | undefined {
   const key = headingKey(text)
@@ -186,12 +196,15 @@ const cityAnchors = new Set(Intl.supportedValuesOf('timeZone')
 const headerProfessionalRisk = /\b(?:work(?:ed|ing)?|employment|experience|skills?|qualifications?|certif\w*|diploma|degree|education|training|duties|responsibilities|role|projects?|achievements?|sales|retail|payroll|payments?|accounts?|invoices?|engineering|software|microsoft|excel|powerpoint|quickbooks|managed|handled|processed|maintained|coordinated|assisted|supported|developed|implemented|created|designed|delivered|built|led|sold|trained|increased|reduced|generated|improved|supervised|reconciled|organized|organised|wrote|performed|completed|qualified|proficient|expert|years?|applicant|candidate|score|rating|review|assistant|associate|manager|director|engineer|developer|designer|consultant|specialist|coordinator|administrator|officer|technician|analyst|supervisor|clerk|operator|accountant|nurse|teacher|chef|driver|worker|ltd|limited|inc|llc|company|corporation)\b/iu
 function isCombinedLocationContactMetadata(text: string): boolean {
   if (text.length > 180) return false
-  const fields = text.split(/\s*[|•]\s*/u)
+  const fields = text.split(/\s*[|•·]\s*/u)
   const directContact = (field: string) => isAtomicContactMetadata(field) && !/(?:https?:\/\/|www\.)/i.test(field)
   if (fields.length < 2 || fields.length > 3 || !fields.some(directContact)) return false
   const places = fields.filter(field => !directContact(field))
   if (places.length !== 1 || excludedScopeRisk.test(places[0]) || instructionRisk.test(places[0]) ||
       headerProfessionalRisk.test(places[0])) return false
+  // The builder separates location/contact fields with middle dots. Reuse the
+  // existing bounded locality + 268-phone form; extra job-title tokens still fail.
+  if (fields.some(field => isAntiguaLocalityPhoneMetadata(`${places[0]} ${field}`))) return true
   const parts = places[0].replace(/&/g, 'and').split(/\s*,\s*/u)
   if (parts.length < 2 || parts.length > 3 || !locationAnchors.has(parts.at(-1)!.toLowerCase())) return false
   if (!cityAnchors.has(placeKey(parts.at(-2)!))) return false
@@ -222,7 +235,7 @@ function isLabelledPhonePair(text: string): boolean {
 }
 function isAtomicContactMetadata(text: string): boolean {
   const value = detectionText(text)
-  const fields = value.split(/\s*[|•]\s*/u)
+  const fields = value.split(/\s*[|•·]\s*/u)
   if (fields.length > 1) return fields.every(field => isAtomicContactMetadata(field))
   // Skip only entire contact values for scope detection, not arbitrary lines
   // that happen to contain an email. An email domain such as example.invalid

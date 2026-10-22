@@ -9,6 +9,8 @@ import { SCREENING_NOTICE_VERSION } from '../src/lib/employer-screening/notice'
 import { reservedCostMicrousd } from '../src/lib/employer-screening/provider'
 import { buildEmailHtml } from '../src/lib/email-templates'
 import { SYNTHETIC_REVIEW_PAGE, syntheticReviewContext, syntheticReviewRaw } from './fixtures/resume-review-v2'
+import { builderScreeningFixture } from './fixtures/builder-screening'
+import { renderBuilderResume } from '../src/lib/employer-screening/builder-render'
 const delivery = vi.hoisted(() => ({ from: vi.fn(), download: vi.fn(), send: vi.fn(), dependencies: vi.fn() }))
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ from: delivery.from,
   storage: { from: () => ({ download: delivery.download }) } }) }))
@@ -24,7 +26,7 @@ const input = (resumeBytes: Uint8Array = bytes) => ({ applicationId: app, applic
   jobTitle: 'Outbound Sales Representative', noticeVersion: SCREENING_NOTICE_VERSION, resumeBytes })
 const job = { id: 'synthetic-job', company_id: 'synthetic-company', title: 'Outbound Sales Representative', status: 'active',
   description: `Responsibilities\n${syntheticReviewContext().rubric.map(row => `- ${row.requirement}`).join('\n')}` }
-function setup() {
+function setup(response = syntheticReviewRaw()) {
   const reviewBudget: SolReviewBudgetStore = { claim: vi.fn(async () => true), countAllowed: vi.fn(() => true),
     reserve: vi.fn(async request => ({ reservation_id: reservation, model: SOL_REVIEW_MODEL, input_token_ceiling: request.inputTokenCount,
       max_output_tokens: 2048, input_microusd_per_million: 5_500_000, output_microusd_per_million: 16_500_000,
@@ -34,7 +36,7 @@ function setup() {
     dispatchAllowed: vi.fn(() => true), settle: vi.fn(async () => true) }
   const fetcher = vi.fn<typeof fetch>(async url => new Response(JSON.stringify(String(url).endsWith('/input_tokens') ? { object: 'response.input_tokens', input_tokens: 1200 }
     : { id: 'resp_synthetic_v2', model: SOL_REVIEW_MODEL, service_tier: 'default', status: 'completed', error: null, incomplete_details: null,
-      output: [{ type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text: JSON.stringify(syntheticReviewRaw()) }] }],
+      output: [{ type: 'message', role: 'assistant', status: 'completed', content: [{ type: 'output_text', text: JSON.stringify(response) }] }],
       usage: { input_tokens: 1200, output_tokens: 900, total_tokens: 2100,
         input_tokens_details: { cached_tokens: 0, cache_write_tokens: 0 }, output_tokens_details: { reasoning_tokens: 100 } } })))
   const deps: { -readonly [K in keyof InlineScreeningDependencies]: InlineScreeningDependencies[K] } = { loadJob: vi.fn(async () => job), budget: vi.fn(() => { throw new Error('Luna must not run') }),
@@ -127,6 +129,36 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(fields.employer_resume_review_v2).toMatchObject({ qualityScore: { value: 8 }, roleFitScore: { value: 4 } })
     expect(s.fetcher).toHaveBeenCalledTimes(2)
   }, 10_000)
+
+  it('counts and generates once from the actual builder PDF with full coverage and both rating permissions', async () => {
+    // The builder emits summary/work/education/skills, so bind the existing
+    // synthetic review's work and skill references to their actual record IDs.
+    const response = syntheticReviewRaw()
+    for (const row of [response.overview, ...response.dimensions, ...response.highlights, ...response.gaps]) {
+      row.sourceIds = row.sourceIds.map(id => id === 'r1' ? 'r2' : id === 'r2' ? 'r4' : id)
+    }
+    const pdf = await renderBuilderResume(builderScreeningFixture())
+    expect(pdf).not.toBeNull()
+    const s = setup(response); delete s.deps.extract
+    const unexpectedFetch = vi.fn(() => { throw new Error('No live network allowed') })
+    vi.stubGlobal('fetch', unexpectedFetch)
+    const fields = await inlineEmployerScreening(input(pdf!), s.deps)
+    expect(fields.employer_resume_review_v2).toMatchObject({ qualityScore: { value: 8 }, roleFitScore: { value: 4 } })
+    expect(s.reviewBudget.claim).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.countAllowed).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.reserve).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.dispatchAllowed).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.settle).toHaveBeenCalledOnce()
+    expect(s.fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      'https://api.openai.com/v1/responses/input_tokens', 'https://api.openai.com/v1/responses',
+    ])
+    const request = String(s.fetcher.mock.calls[1][1]!.body)
+    expect(request).toContain('Aurora Supply')
+    expect(request).toContain('Harbour Stores')
+    expect(request).toContain('Microsoft Excel')
+    expect(request).not.toMatch(/Jordan|Ellis|jordan\.ellis@|555-0148|localPages|%PDF|base64/)
+    expect(unexpectedFetch).not.toHaveBeenCalled()
+  }, 15_000)
 
   it.each(['three-page variant headings', 'two-page locality and extracurricular activities'])
     ('forwards one enriched email after parsing a PDF with %s and counting/generating once', async format => {
