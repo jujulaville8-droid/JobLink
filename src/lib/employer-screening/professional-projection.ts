@@ -127,6 +127,47 @@ function isIdentityMetadata(text: string): boolean {
   return /^(?:\p{Lu}[\p{L}'’-]*|\p{Lu}\.)[ \t]+(?:\p{Lu}[\p{L}'’-]*|\p{Lu}\.)(?:[ \t]+\p{Lu}[\p{L}'’-]*){0,2}$/u.test(value)
 }
 
+// This recognizes an intentionally omitted perimeter header, not professional
+// evidence. A contact value alone does not make adjoining prose harmless.
+// Country names come from the runtime's English region data; Canadian province
+// names also cover the common city/province format without a written country.
+const locationAnchors = new Set([
+  'alberta', 'british columbia', 'manitoba', 'new brunswick', 'newfoundland and labrador',
+  'northwest territories', 'nova scotia', 'nunavut', 'ontario', 'prince edward island',
+  'quebec', 'saskatchewan', 'yukon', 'antigua', 'barbuda',
+])
+const regionNames = new Intl.DisplayNames(['en'], { type: 'region' })
+for (let first = 65; first <= 90; first++) for (let second = 65; second <= 90; second++) {
+  const code = String.fromCharCode(first, second), name = regionNames.of(code)
+  if (name && name !== code && code !== 'ZZ') locationAnchors.add(name.toLowerCase().replace(/&/g, 'and'))
+}
+const placeKey = (value: string) => value.toLowerCase().replace(/[.'’]/g, '').replace(/\s+/g, ' ')
+// Positive locality anchors, not a guess that every capitalized noun is a city.
+// This deliberately supports fewer headers than a geocoder. Unknown localities
+// retain the existing incomplete-coverage behavior rather than hiding claims.
+const cityAnchors = new Set(Intl.supportedValuesOf('timeZone')
+  .filter(zone => zone.includes('/') && !zone.startsWith('Etc/'))
+  .map(zone => placeKey(zone.split('/').at(-1)!.replace(/_/g, ' '))))
+const headerProfessionalRisk = /\b(?:work(?:ed|ing)?|employment|experience|skills?|qualifications?|certif\w*|diploma|degree|education|training|duties|responsibilities|role|projects?|achievements?|sales|retail|payroll|payments?|accounts?|invoices?|engineering|software|microsoft|excel|powerpoint|quickbooks|managed|handled|processed|maintained|coordinated|assisted|supported|developed|implemented|created|designed|delivered|built|led|sold|trained|increased|reduced|generated|improved|supervised|reconciled|organized|organised|wrote|performed|completed|qualified|proficient|expert|years?|applicant|candidate|score|rating|review|assistant|associate|manager|director|engineer|developer|designer|consultant|specialist|coordinator|administrator|officer|technician|analyst|supervisor|clerk|operator|accountant|nurse|teacher|chef|driver|worker|ltd|limited|inc|llc|company|corporation)\b/iu
+function isCombinedLocationContactMetadata(text: string): boolean {
+  if (text.length > 180) return false
+  const fields = text.split(/\s*[|•]\s*/u)
+  const directContact = (field: string) => isAtomicContactMetadata(field) && !/(?:https?:\/\/|www\.)/i.test(field)
+  if (fields.length < 2 || fields.length > 3 || !fields.some(directContact)) return false
+  const places = fields.filter(field => !directContact(field))
+  if (places.length !== 1 || excludedScopeRisk.test(places[0]) || instructionRisk.test(places[0]) ||
+      headerProfessionalRisk.test(places[0])) return false
+  const parts = places[0].replace(/&/g, 'and').split(/\s*,\s*/u)
+  if (parts.length < 2 || parts.length > 3 || !locationAnchors.has(parts.at(-1)!.toLowerCase())) return false
+  if (!cityAnchors.has(placeKey(parts.at(-2)!))) return false
+  if (parts.length === 3 && !cityAnchors.has(placeKey(parts[0])) &&
+      !/^(?:North|South|East|West|Central) \p{Lu}[\p{L}'’.-]*(?: \p{Lu}[\p{L}'’.-]*){0,2}$/u.test(parts[0])) return false
+  // No sentences, arbitrary labels, numbers, lists of skills, or single token
+  // beside an email. This is a bounded place-header heuristic, not geocoding.
+  return parts.every(part => part.length <= 60 &&
+    /^\p{Lu}[\p{L}'’.-]*(?: (?:\p{Lu}[\p{L}'’.-]*|and|of|the)){0,5}$/u.test(part))
+}
+
 function isAtomicContactMetadata(text: string): boolean {
   const value = detectionText(text)
   const fields = value.split(/\s*[|•]\s*/u)
@@ -247,7 +288,9 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
   let unresolvedContext = false
   let admittedCharacters = 0
   let admittedRecords = 0
+  let professionalScopeSeen = false
   for (const scope of scopes) {
+    if (PROFESSIONAL_SECTIONS.includes(scope.section as ProfessionalSection)) professionalScopeSeen = true
     const spans = spansOf(scope.lines, pages)
     if (!spans.length) {
       if (PROFESSIONAL_SECTIONS.includes(scope.section as ProfessionalSection)) {
@@ -274,7 +317,8 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       const scopeText = detectionText(substantiveLines.filter(line => !isAtomicContactMetadata(line.text) && !isAtomicPersonalMetadata(line.text)).map(line => line.text).join('\n'))
         .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ') // Detection only: a domain is not a scope qualifier.
       if (excludedScopeRisk.test(scopeText)) unresolvedContext = true
-      const intentional = scope.section === 'excluded' || substantiveLines.every(line => isIdentityMetadata(line.text))
+      const intentional = scope.section === 'excluded' || substantiveLines.every(line => isIdentityMetadata(line.text) ||
+        (!professionalScopeSeen && isCombinedLocationContactMetadata(detectionText(line.text))))
       if (!intentional) omissions.unclassifiedContent = true
       localOmissions.push({ reason: intentional
         ? (scope.section === 'excluded' ? 'intentional_nonprofessional_exclusion' : 'intentional_identity_exclusion')
