@@ -8,6 +8,7 @@ vi.mock('@/lib/employer-screening/inline', async importOriginal => ({ ...await i
 import { applicantCvPath, notifyNewApplicant } from '../src/lib/applicant-notifications'
 import { buildEmailHtml } from '../src/lib/email-templates'
 import { resumeFixture } from './fixtures/resume'
+import { syntheticReviewReport } from './fixtures/resume-review-v2'
 import { INLINE_SCREENING_GATES } from '../src/lib/employer-screening/inline'
 import { SCREENING_NOTICE_VERSION } from '../src/lib/employer-screening/notice'
 
@@ -236,4 +237,20 @@ it('records for admins whether the application was forwarded, without recipient 
   updates.length = 0
   expect(await notifyNewApplicant('saved-app', uid)).toBe(false)
   expect(updates).toEqual([{ table: 'applications', value: { employer_forward_status: 'not_sent', employer_forward_attempted_at: expect.any(String) } }])
+})
+
+// Offline response fixture only; the provider and transport are not called here.
+it('includes the validated v2 review in the original single email and unchanged attachment/idempotency key', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.screen.mockResolvedValue({ employer_resume_review_v2: syntheticReviewReport() })
+  expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
+  expect(mocks.screen).toHaveBeenCalledOnce(); expect(mocks.send).toHaveBeenCalledOnce()
+  const message = mocks.send.mock.calls[0][0]
+  expect(message.idempotencyKey).toBe('application/saved-app/employer')
+  expect(message.attachments[0].content).toBe(mocks.screen.mock.calls[0][0].resumeBytes)
+  expect(message.data.employer_resume_review_v2.roleFitScore.value).toBe(4)
+  expect(message.data).not.toHaveProperty('employer_screening')
+  expect(message.data).not.toHaveProperty('employer_resume_quality')
+  const html = buildEmailHtml('new_applicant', message.data).html
+  expect(html).toContain('Gaps for this role'); expect(html).not.toMatch(/unresolved|3\.125/)
 })

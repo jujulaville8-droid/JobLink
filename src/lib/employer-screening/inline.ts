@@ -13,6 +13,9 @@ import { validateMinimizedExtraction } from './privacy'
 import { createOpenAIProcessor, type ScreeningBudgetReservation, type ScreeningBudgetStore, type ScreeningUsage } from './provider'
 import { assessResumeDocumentQuality, validateResumeDocumentQuality, type ResumeDocumentQuality } from './quality'
 import { inlineDiagnostic, type InlineDiagnosticEvent } from './inline-diagnostics'
+import { inlineResumeReviewV2 } from './review-v2-inline'
+import { SupabaseSolReviewBudgetStore, type SolReviewBudgetStore } from './review-v2-provider'
+import type { ResumeReviewV2 } from './review-v2'
 
 /** Leaves the ordinary send its existing execution time. Parsing gets at most 3s. */
 export const INLINE_SCREENING_BUDGET_MS = 25_000
@@ -25,6 +28,7 @@ export function inlineScreeningEnabled(noticeVersion: unknown, env: Record<strin
   return hasCurrentScreeningNotice(noticeVersion) && INLINE_SCREENING_GATES.every(key => env[key] === 'true')
 }
 export type InlineScreeningFields = Readonly<{
+  employer_resume_review_v2?: ResumeReviewV2
   employer_screening?: Report
   employer_resume_quality?: ResumeDocumentQuality
 }>
@@ -37,6 +41,7 @@ export type InlineScreeningInput = Readonly<{
 export type InlineScreeningDependencies = Readonly<{
   loadJob(jobId: string, signal: AbortSignal): Promise<unknown>
   budget(input: { applicantUserId: string; deadline: number; signal: AbortSignal }): ScreeningBudgetStore
+  reviewBudget?: (input: { applicantUserId: string; deadline: number; signal: AbortSignal }) => SolReviewBudgetStore
   extract?: (bytes: Uint8Array, options: PdfExtractionOptions) => Promise<PdfResumeExtraction | null>
   fetch?: typeof fetch
   env?: Record<string, string | undefined>
@@ -145,6 +150,12 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
     })
     live()
     if (!parsed || parsed.sourceSha256 !== digest) { diagnostic('parse_unavailable'); return {} }
+    // Choosing v2 is exclusive, including failure. Never run a paid Luna fallback
+    // or relabel the old local presentation score as this narrative review.
+    if (env.EMPLOYER_SCREENING_REVIEW_V2_ENABLED === 'true') {
+      failureEvent = 'review_v2_failed'
+      return inlineResumeReviewV2(input, parsed, deps, deadline, controller.signal)
+    }
     failureEvent = 'quality_failed'
     const assessed = assessResumeDocumentQuality({ sourceSha256: parsed.sourceSha256, localPages: parsed.localPages }, digest)
     live()
@@ -243,5 +254,6 @@ export function inlineScreeningDependencies(db: SupabaseClient): InlineScreening
       return data
     },
     budget: options => new SupabaseInlineScreeningBudgetStore(db, options),
+    reviewBudget: options => new SupabaseSolReviewBudgetStore(db, options),
   }
 }
