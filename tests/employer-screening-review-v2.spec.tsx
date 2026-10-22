@@ -51,7 +51,7 @@ describe('resume narrative review v2, local only', () => {
     const request = buildResumeReviewV2Request(context())
     expect(request.schema.additionalProperties).toBe(false)
     expect(request.schema.required).toEqual(['overview', 'dimensions', 'highlights', 'gaps'])
-    expect(request.input.overallRatingsAllowed).toBe(true)
+    expect(request.input.qualityRatingAllowed).toBe(true)
     expect(JSON.stringify(request.input)).not.toContain('sourceSha256')
     expect(JSON.stringify(request.schema)).toContain('r1')
     expect(JSON.stringify(request.schema)).toContain('c2')
@@ -90,13 +90,13 @@ describe('resume narrative review v2, local only', () => {
       { id: 'r2', section: 'skills', order: 1, text: 'Microsoft Excel tables and formulas were used in classroom practice exercises.' },
     ]
     const request = buildResumeReviewV2Request(context({ records }))
-    expect(request.input.overallRatingsAllowed).toBe(true)
+    expect(request.input.qualityRatingAllowed).toBe(true)
   })
 
   it('allows one substantive professional record and never demands prescribed sections', () => {
     const records: ProfessionalProjectionData['records'] = [{ id: 'r1', section: 'work', order: 0,
       text: `${context().resume.records[0].text} Maintained account reconciliation logs, recorded invoice references, checked entries against supplier statements, and documented outstanding items for follow-up. Used spreadsheet tables to group unresolved entries and track corrections.` }]
-    expect(buildResumeReviewV2Request(context({ records })).input.overallRatingsAllowed).toBe(true)
+    expect(buildResumeReviewV2Request(context({ records })).input.qualityRatingAllowed).toBe(true)
     expect(validateResumeReviewV2(context({ records }), response()).qualityScore.status).toBe('scored')
   })
 
@@ -117,8 +117,46 @@ describe('resume narrative review v2, local only', () => {
     const short = context({ records: [{ id: 'r1', section: 'skills', text: 'Microsoft Excel', order: 0 }], overallQualityScoreAllowed: false })
     expect(validateResumeReviewV2(short, allUnknown()).roleFitScore).toEqual({ status: 'unavailable', reason: 'insufficient_professional_input' })
     const incomplete = context({}, { jobContextOmitted: true })
-    expect(validateResumeReviewV2(incomplete, response()).qualityScore).toEqual({ status: 'unavailable', reason: 'incomplete_job_context' })
+    expect(validateResumeReviewV2(incomplete, response()).qualityScore).toEqual({ status: 'scored', value: 8, outOf: 10 })
     expect(validateResumeReviewV2(incomplete, response()).roleFitScore).toEqual({ status: 'unavailable', reason: 'incomplete_job_context' })
+  })
+
+  it('separates quality and role-fit eligibility without inventing unknown dimensions', () => {
+    const input = context({}, { jobContextOmitted: true })
+    const request = buildResumeReviewV2Request(input)
+    expect(request.input.qualityRatingAllowed).toBe(true)
+    expect(request.input.roleFitRatingAllowed).toBe(false)
+    expect(request.input).not.toHaveProperty('overallRatingsAllowed')
+    expect(request.instructions).toContain('independently of job-context omissions')
+    const report = validateResumeReviewV2(input, response())
+    expect(report.qualityScore).toEqual({ status: 'scored', value: 8, outOf: 10 })
+    expect(report.roleFitScore).toEqual({ status: 'unavailable', reason: 'incomplete_job_context' })
+    expect(safeResumeReviewV2(report)).toEqual(report)
+    const unknown = response()
+    unknown.dimensions[0] = { ...unknown.dimensions[0], basis: 'unknown', level: null, sourceIds: [] }
+    expect(validateResumeReviewV2(input, unknown).qualityScore).toEqual({ status: 'unavailable', reason: 'unassessable_dimensions' })
+    const partial = buildResumeReviewV2Request(context({ coverage: 'partial', omissions: { professionalContent: true, unclassifiedContent: false, limitReached: false }, overallQualityScoreAllowed: false }))
+    expect(partial.input.qualityRatingAllowed).toBe(false)
+    expect(partial.input.roleFitRatingAllowed).toBe(false)
+    expect(buildResumeReviewV2Request(context()).input.roleFitRatingAllowed).toBe(true)
+    const noProfessionalCriteria = buildResumeReviewV2Request(context({}, { rubric: [
+      { criterionId: 'c1', category: 'job_relevance', requirement: 'A warm and welcoming personality' },
+    ] }))
+    expect(noProfessionalCriteria.input.qualityRatingAllowed).toBe(true)
+    expect(noProfessionalCriteria.input.roleFitRatingAllowed).toBe(false)
+  })
+
+  it('preserves historical incomplete-job-context rating semantics', () => {
+    const report = validateResumeReviewV2(context({}, { jobContextOmitted: true }), response())
+    const historical = { ...structuredClone(report), qualityScore: {
+      status: 'unavailable' as const, reason: 'incomplete_job_context' as const,
+    } }
+    delete historical.scope.independentQualityScope
+    expect(safeResumeReviewV2(historical)).toEqual(historical)
+    // Removing the policy marker cannot reinterpret an existing computed score.
+    const invalid = structuredClone(report)
+    delete invalid.scope.independentQualityScope
+    expect(safeResumeReviewV2(invalid)).toBeNull()
   })
 
   it('permits no-record input only as explicitly insufficient, not a zero-quality document', () => {
