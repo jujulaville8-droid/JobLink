@@ -9,6 +9,13 @@ import { SCREENING_NOTICE_VERSION } from '../src/lib/employer-screening/notice'
 import { reservedCostMicrousd } from '../src/lib/employer-screening/provider'
 import { buildEmailHtml } from '../src/lib/email-templates'
 import { SYNTHETIC_REVIEW_PAGE, syntheticReviewContext, syntheticReviewRaw } from './fixtures/resume-review-v2'
+const delivery = vi.hoisted(() => ({ from: vi.fn(), download: vi.fn(), send: vi.fn(), dependencies: vi.fn() }))
+vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ from: delivery.from,
+  storage: { from: () => ({ download: delivery.download }) } }) }))
+vi.mock('@/lib/email', () => ({ sendEmail: delivery.send }))
+vi.mock('@/lib/employer-screening/inline', async importOriginal => ({ ...await importOriginal<object>(),
+  inlineScreeningDependencies: delivery.dependencies }))
+import { notifyNewApplicant } from '../src/lib/applicant-notifications'
 const app = '11111111-1111-4111-8111-111111111111', user = '22222222-2222-4222-8222-222222222222'
 const reservation = '33333333-3333-4333-8333-333333333333'
 const bytes = Buffer.from('synthetic parser-injection fixture only')
@@ -40,7 +47,7 @@ function setup() {
   return { deps, reviewBudget, fetcher }
 }
 beforeEach(() => vi.spyOn(console, 'info').mockImplementation(() => {}))
-afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 describe('exclusive Sol v2 original-email enrichment, offline provider and ledger mocks', () => {
   it('uses broader professional text despite zero legacy evidence and renders a validated compact review', async () => {
     const s = setup(), fields = await inlineEmployerScreening(input(), s.deps)
@@ -116,5 +123,71 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     const fields = await inlineEmployerScreening(input(pdf), s.deps)
     expect(fields.employer_resume_review_v2).toMatchObject({ qualityScore: { value: 8 }, roleFitScore: { value: 4 } })
     expect(s.fetcher).toHaveBeenCalledTimes(2)
+  }, 10_000)
+
+  it('forwards one enriched email after parsing a three-page variant-heading PDF and counting/generating once', async () => {
+    const require = createRequire(import.meta.url)
+    const PDF = require('pdfkit') as new () => Readable & { text(text: string): void; addPage(): void; end(): void }
+    const doc = new PDF(), chunks: Buffer[] = []
+    const ready = new Promise<Buffer>((resolve, reject) => {
+      doc.on('data', part => chunks.push(part)); doc.on('error', reject); doc.on('end', () => resolve(Buffer.concat(chunks)))
+    })
+    doc.text(SYNTHETIC_REVIEW_PAGE.replace('Work Experience', 'Phone: 1(202) 555-0101 or 1 (202) 555-0102\nWork Experiences:').replace('Skills\n',
+      'Processed returns when replacement stock was not needed.\nReconciled customer logs without errors and provided training to customers.\nSkills\n'))
+    doc.addPage()
+    doc.text('Educational Background\nDiploma in business operations, completed 2021.\nCoursework included customer-service practice drills.\nInterests & Activities\nReading and hiking.')
+    doc.addPage()
+    doc.text('References\n(1) Alex Smith\nHead of Customer Service\nAcme\nalex@example.invalid\n+1 (202) 555-0199\n(2) Jamie Jones\nManager – Training and Development\nAcme Shipping Company\njamie@example.invalid\n+1 (202) 555-0198\nAvailable on request.')
+    doc.end()
+    const pdf = await ready, s = setup(); delete s.deps.extract
+    delivery.dependencies.mockReturnValue(s.deps)
+    delivery.download.mockResolvedValue({ data: new Blob([new Uint8Array(pdf)]), error: null })
+    delivery.send.mockResolvedValue({ success: true, id: 'synthetic-accepted' })
+    const rows: Record<string, Record<string, unknown>> = {
+      applications: { id: app, job_id: job.id, seeker_id: 'synthetic-profile', cover_letter_text: '' },
+      seeker_profiles: { id: 'synthetic-profile', user_id: user, first_name: 'Jordan', last_name: 'Ellis', cv_url: `${user}/synthetic.pdf` },
+      job_listings: job, companies: { id: job.company_id, user_id: 'synthetic-owner', company_name: 'Example Retail', contact_email: 'owner@example.invalid' },
+      owner: { id: 'synthetic-owner', email: 'owner@example.invalid', email_verified: true, is_banned: false },
+      applicant: { id: user, email: 'jordan.ellis@example.invalid', is_banned: false },
+    }
+    delivery.from.mockImplementation((table: string) => {
+      const filters: [string, unknown][] = []
+      const query = { select: () => query, update: () => query,
+        eq: (key: string, value: unknown) => { filters.push([key, value]); return query },
+        single: async () => {
+          const row = rows[table === 'users' ? (filters.some(([, value]) => value === user) ? 'applicant' : 'owner') : table]
+          return { data: row && filters.every(([key, value]) => row[key] === value) ? row : null, error: null }
+        }, then: (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve) }
+      return query
+    })
+    for (const [key, value] of Object.entries(s.deps.env!)) vi.stubEnv(key, value)
+    vi.stubEnv('RESEND_API_KEY', 'synthetic-no-delivery')
+    const unexpectedFetch = vi.fn(() => { throw new Error('No live network allowed') })
+    vi.stubGlobal('fetch', unexpectedFetch)
+
+    expect(await notifyNewApplicant(app, user, SCREENING_NOTICE_VERSION)).toBe(true)
+    expect(delivery.download).toHaveBeenCalledExactlyOnceWith(`${user}/synthetic.pdf`)
+    expect(s.reviewBudget.claim).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.countAllowed).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.reserve).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.dispatchAllowed).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.settle).toHaveBeenCalledOnce()
+    expect(s.fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      'https://api.openai.com/v1/responses/input_tokens', 'https://api.openai.com/v1/responses',
+    ])
+    const request = String(s.fetcher.mock.calls[1][1]!.body)
+    expect(request).toContain('Work Experiences:')
+    expect(request).toContain('Educational Background')
+    expect(request).toContain('not needed')
+    expect(request).toContain('Coursework included')
+    expect(request).not.toMatch(/Jordan Ellis|jordan.ellis@|Alex Smith|Jamie Jones|Acme|555-01|Manager – Training|hiking|localPages|%PDF|base64/)
+    expect(delivery.send).toHaveBeenCalledOnce()
+    const message = delivery.send.mock.calls[0][0]
+    expect(message.idempotencyKey).toBe(`application/${app}/employer`)
+    expect(message.attachments[0].content).toEqual(pdf)
+    expect(message.data.employer_resume_review_v2).toMatchObject({ qualityScore: { value: 8 }, roleFitScore: { value: 4 } })
+    expect(buildEmailHtml('new_applicant', message.data).html).toContain('Gaps for this role')
+    expect(s.fetcher.mock.invocationCallOrder[1]).toBeLessThan(delivery.send.mock.invocationCallOrder[0])
+    expect(unexpectedFetch).not.toHaveBeenCalled()
   }, 10_000)
 })
