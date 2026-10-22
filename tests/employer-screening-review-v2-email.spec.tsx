@@ -29,7 +29,7 @@ describe('compact v2 employer email section', () => {
     expect(report.qualityScore).toEqual({ status: 'scored', value: 8, outOf: 10 })
     expect(report.roleFitScore).toEqual({ status: 'scored', value: 4, outOf: 10 })
     const html = resumeReviewV2EmailSection(report)
-    expect(html).toContain('Résumé quality:</strong> <strong>8/10</strong>')
+    expect(html).toContain('Résumé text quality:</strong> <strong>8/10</strong>')
     expect(html).toContain('Résumé fit for this role:</strong> <strong>4/10</strong>')
     expect(html).toContain('Highlights')
     expect(html).toContain('Gaps for this role')
