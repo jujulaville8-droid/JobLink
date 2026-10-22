@@ -144,6 +144,9 @@ export type ResumeReviewV2 = ResumeReviewV2Response & Readonly<{
 const scopeSchema = z.object({
   sourceIds: z.array(sourceId).max(40), criterionIds: z.array(criterionId).max(20),
   professionalInputSufficient: z.boolean(), completeJobContext: z.boolean(),
+  // Absent on historical reports, whose recorded ratings retain their old
+  // validation policy. New text-quality ratings do not require job context.
+  independentQualityScope: z.literal(true).optional(),
 }).strict()
 type ReviewV2Scope = z.infer<typeof scopeSchema>
 const scoreSchema = z.union([
@@ -187,7 +190,7 @@ function boundedResponse(input: unknown, report = false): boolean {
 function score(coverage: ResumeReviewV2['coverage'], scope: ReviewV2Scope, dimensions: ResumeReviewV2Response['dimensions'], group: 'quality' | 'role_fit'): ResumeReviewV2Score {
   if (coverage === 'partial') return { status: 'unavailable', reason: 'partial_professional_input' }
   if (!scope.professionalInputSufficient || coverage === 'none') return { status: 'unavailable', reason: 'insufficient_professional_input' }
-  if (!scope.completeJobContext) return { status: 'unavailable', reason: 'incomplete_job_context' }
+  if (!scope.completeJobContext && (group === 'role_fit' || !scope.independentQualityScope)) return { status: 'unavailable', reason: 'incomplete_job_context' }
   const selected = REVIEW_V2_DIMENSIONS.filter(d => d.group === group).map(definition => dimensions.find(d => d.dimensionId === definition.id)!)
   if (selected.some(d => d.level === null)) return { status: 'unavailable', reason: 'unassessable_dimensions' }
   // Equal fixed rubric dimensions. No input-coverage ratio or partial denominator.
@@ -207,6 +210,7 @@ export function validateResumeReviewV2(input: ReviewV2Context, raw: unknown): Re
     criterionIds: context.rubric.filter(row => isScorableCriterion(row.requirement)).map(row => row.criterionId),
     professionalInputSufficient: adequateProfessionalInput(context.resume) && context.resume.overallQualityScoreAllowed,
     completeJobContext: !context.jobContextOmitted,
+    independentQualityScope: true,
   }
   validateResponseScope(response, scope, context.resume.coverage)
   // Canonical order makes downstream rendering and deterministic calculations stable.
@@ -285,7 +289,7 @@ Provide a concise, useful, role-specific overview; up to two grounded highlights
 Return every fixed dimension exactly once. Quality dimensions use no criterion IDs. Assessed role-fit dimensions cite one to three eligible decisive criterion IDs. Do not score excluded/non-document clauses such as personality, reliability, protected traits or eligibility; one unassessable job clause does not invalidate unrelated professional dimensions. Do not penalize excluded identity, contact information, photos, dates or other personal fields, and do not assess visual layout, fonts or design from extracted text. Do not penalize extraction/omission artifacts, dialect, a lack of prestigious employers or a lack of numerical metrics.
 For each dimension use basis observed with source IDs and level 0–4; use unknown with level null and no source IDs when the supplied text cannot establish it. Never infer an overall low rating from partial input. Levels rate evidence/presentation only: 0 means an observed severe text-presentation problem or no usable role evidence in a COMPLETE sufficiently detailed document; 1 minimal, vague presentation; 2 partially developed/useful presentation with material documentary gaps; 3 clear and useful presentation; 4 consistently concrete, well-contextualized presentation. Apply dimension definitions, not seniority or accomplishments. For role relevance, required/preferred/duty wording and alternatives matter; do not transform a preference into a mandatory condition.
 Only on complete sufficient professional input with complete job context may a role-fit dimension use not_evidenced, level 0, no source IDs, and decisive criterion IDs. This means the supplied résumé does not show it, NOT that the person cannot do it. With omissions, unavailable scope is unknown, not not_evidenced. A gap basis limited_evidence needs source IDs; not_evidenced needs full scope and no source IDs; uncertain_scope must describe only a limitation of available material. If the relevant text is unavailable, ask a neutral question rather than invent a weakness. Every highlight requires source and criterion IDs. Every gap requires criterion IDs. Every nonempty-input overview requires source IDs.
-Do not return numeric overall scores. The application computes two whole-number /10 ratings from fixed rubric dimensions only when coverage and assessability permit. Do not put ratings or hiring verdicts in prose. With no professional records, all dimensions must be unknown, highlights empty, gaps only uncertain_scope, and overview exactly: ${INSUFFICIENT_REVIEW_OVERVIEW}
+Do not return numeric overall scores. The application computes two whole-number /10 ratings from fixed rubric dimensions only when coverage and assessability permit. qualityRatingAllowed depends on the supplied professional résumé text, independently of job-context omissions. roleFitRatingAllowed additionally requires complete relevant job context. An unavailable role-fit rating must not turn otherwise assessable text-quality dimensions into unknown; neither permission flag supplies evidence or replaces a genuinely unknown dimension. Do not put ratings or hiring verdicts in prose. With no professional records, all dimensions must be unknown, highlights empty, gaps only uncertain_scope, and overview exactly: ${INSUFFICIENT_REVIEW_OVERVIEW}
 Dimension definitions: ${REVIEW_V2_DIMENSIONS.map(d => `${d.id}: ${d.definition}`).join(' ')}
 Keep the overview within 320 characters, each rationale within 180, each highlight/gap/question within 200. Use plain concise text without markup or newlines. Questions end in a question mark.`
 
@@ -313,6 +317,8 @@ export function buildResumeReviewV2Request(input: ReviewV2Context) {
   })
   return { instructions: RESUME_REVIEW_V2_INSTRUCTIONS, schema,
     input: { ...context, eligibleCriterionIds: eligible,
-      // This is an explicit document-coverage gate, never a quality observation.
-      overallRatingsAllowed: adequateProfessionalInput(context.resume) && context.resume.overallQualityScoreAllowed && !context.jobContextOmitted } }
+      // Independent coverage gates, never quality/ability observations.
+      qualityRatingAllowed: adequateProfessionalInput(context.resume) && context.resume.overallQualityScoreAllowed,
+      roleFitRatingAllowed: adequateProfessionalInput(context.resume) && context.resume.overallQualityScoreAllowed &&
+        !context.jobContextOmitted && eligible.length > 0 } }
 }

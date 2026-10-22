@@ -8,10 +8,10 @@ import { createHash } from 'node:crypto'
 import type { JobListing } from '../types'
 import { publicVacancyDescription } from '../public-vacancy-description'
 import type { Snapshot } from './index'
-import { isSafePublishedJobClause, MAX_PUBLISHED_JOB_CLAUSE_CHARS, MAX_PUBLISHED_JOB_CONTEXT_CHARS,
+import { isPureAgeEligibilityClause, isSafePublishedJobClause, MAX_PUBLISHED_JOB_CLAUSE_CHARS, MAX_PUBLISHED_JOB_CONTEXT_CHARS,
   MAX_PUBLISHED_JOB_CRITERIA } from './inline-job-context'
 
-export const PUBLISHED_JOB_CRITERIA_MAPPING_VERSION = 'published-context-v2'
+export const PUBLISHED_JOB_CRITERIA_MAPPING_VERSION = 'published-context-v3'
 type Criterion = Snapshot['rubric']['criteria'][number]
 type Kind = 'required' | 'preferred' | 'duty'
 type Section = Kind | 'mixed' | 'context' | 'ignored' | 'none'
@@ -35,10 +35,11 @@ export type PublishedJobCriteriaResult = {
 }
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 const headings: Readonly<Record<string, Section>> = {
-  requirements: 'required', required: 'required', qualifications: 'required', 'job requirements': 'required',
+  requirements: 'required', required: 'required', qualifications: 'required', skills: 'required', 'job requirements': 'required',
   'required qualifications': 'required', 'minimum qualifications': 'required', 'required skills': 'required',
   'essential skills': 'required', 'essential requirements': 'required', 'what you need': 'required',
   'what we are looking for': 'required', 'what we’re looking for': 'required', "what we're looking for": 'required',
+  'what they are looking for': 'required', 'what they’re looking for': 'required', "what they're looking for": 'required',
   responsibilities: 'duty', duties: 'duty', 'key responsibilities': 'duty', 'key duties': 'duty',
   'job duties': 'duty', 'your responsibilities': 'duty', 'duties and responsibilities': 'duty',
   'responsibilities and duties': 'duty', "what you'll do": 'duty', 'what you’ll do': 'duty',
@@ -52,15 +53,53 @@ const headings: Readonly<Record<string, Section>> = {
   notes: 'context', note: 'context', important: 'context', 'important notes': 'context',
   summary: 'context', clarification: 'context', clarifications: 'context', 'additional information': 'context',
 }
-const optional = /\b(?:preferred|preferable|optional|desirable|an advantage|a plus|nice to have|not (?:required|essential|a necessity))\b/i
+const optional = /\b(?:preferred|preferable|optional|desirable|an advantage|an asset|a plus|nice to have|not (?:required|essential|a necessity))\b/i
 const required = /\b(?:must|required|requires|require|essential|minimum|at least)\b/i
 const dutyStart = /^(?:(?:you (?:will|would|must)|(?:duties|responsibilities) include|responsible for|do not|never|not required to|safely|accurately|efficiently)\s+)?(?:assist|answer|apply|arrange|assemble|audit|balance|build|calculate|check|clean|clear|collect|conduct|coordinate|cook|create|deliver|develop|document|drive|ensure|enter|file|fit|follow|give|greet|handle|help|identify|inspect|install|issue|lead|maintain|manage|measure|mix|monitor|operate|order|organise|organize|paint|perform|plan|prepare|process|provide|receive|reconcile|record|repair|replace|replenish|report|represent|reset|resolve|respond|schedule|sell|serve|service|set|stock|supervise|support|take|test|track|train|transport|update|use|welcome)\b/i
 const professionalFragment = /^(?:experience (?:in|with)|(?:strong|excellent|basic|advanced|good) (?:knowledge|skills|communication)|(?:ability|able) to|(?:valid|current) (?:driver'?s? licen[cs]e|certification|certificate))\b/i
 const credential = /\b(?:certificate|certification|certified|licen[cs]e|diploma|degree|accreditation|registered|qualification)\b/i
-const waivedExperience = /^(?:no (?:previous |prior )?experience (?:is )?(?:required|necessary)|(?:previous |prior )?experience (?:is )?not (?:required|necessary))(?:[;,. ]|$)/i
+const waivedExperience = /^(?:no (?:previous |prior )?experience (?:is )?(?:required|necessary|needed)|(?:previous |prior )?experience (?:is )?not (?:required|necessary|needed))(?:[;,. ]|$)/i
 const professionalTerms = /\b(?:duties|tasks|responsibilities|requirements|qualifications|skills|experience|role|position|job|manager|supervisor|training)\b/i
 const scopeQualifier = /\b(?:above|below|following|these|those|listed|all|only|none|not|never|no|unless|except|instead|rather|belong|appl(?:y|ies)|examples?|optional|mandatory|prerequisites?)\b/i
 const globalQualifier = /^(?:this|these|those|all|none|everything)\b.{0,100}\b(?:not|optional|mandatory|required|applies|apply|examples?|prerequisites?)\b/i
+const applicationInstructionStart = /^(?:apply (?:on|through|via)\s|applications are forwarded\b|only shortlisted applicants\b)/i
+const applicationSubmission = /^Apply (?:on|through|via) this JobLink Antigua page(?: with your (?:résumé|resume|CV)(?: and a (?:brief|short) (?:introduction|note|cover letter))?)?\.?$/i
+const applicationShortlisting = /^Only shortlisted applicants will be contacted\.?$/i
+const employmentTermsOnly = /^This is (?:a )?short-term, paid project-based work\.?$/i
+
+function hasSeparateOptionalSubclause(text: string): boolean {
+  const parts = /^(.+?)(?:;\s*([^;]+)|\s+\(([^()]*)\))\.?$/.exec(text)
+  if (!parts || optional.test(parts[1])) return false
+  const extra = parts[2] || parts[3]
+  const preference = optional.exec(extra)
+  if (!preference) return false
+  // A preference-only aside, such as "(preferred)" or "(an asset)", still
+  // qualifies the main clause. A separately named subject does not make the
+  // requirement before it optional. Keep both clauses verbatim either way.
+  const subject = extra.slice(0, preference.index).trim()
+  if (/^(?:this|that|these|those|the same)\b/i.test(subject)) return false
+  if (parts[3] && !/^(?:an?|additional|previous|prior)\s+/i.test(subject)) return false
+  return /\b(?:experience|skills|knowledge|certificate|certification|diploma|degree|qualification|licen[cs]e)\b/i.test(subject)
+}
+
+/**
+ * Intentionally irrelevant only when EVERY complete sentence is unambiguously
+ * application logistics. A prefix match must never hide a role requirement,
+ * waiver, scope qualifier or unsafe instruction appended to the same record.
+ * The only variable text is a bounded employer name, not an arbitrary suffix.
+ */
+function isApplicationInstructionRecord(text: string): boolean {
+  if (text.length > MAX_PUBLISHED_JOB_CLAUSE_CHARS) return false
+  return text.split(/(?<=\.)\s+/).every(sentence => {
+    if (applicationSubmission.test(sentence) || applicationShortlisting.test(sentence)) return true
+    const forwarding = /^Applications are forwarded (?:straight|directly) to (.+?)\.?$/i.exec(sentence)
+    if (!forwarding) return false
+    const recipient = forwarding[1]
+    return /^[A-Z][A-Za-z’'-]*(?: (?:[A-Z][A-Za-z’'-]*|and|of|the|&)){0,11}$/.test(recipient) &&
+      isSafePublishedJobClause(recipient) && !professionalTerms.test(recipient) && !scopeQualifier.test(recipient) &&
+      !required.test(recipient) && !optional.test(recipient) && !dutyStart.test(recipient)
+  })
+}
 
 /**
  * Source spans are UTF-16 offsets into publicVacancyDescription(job). The result
@@ -117,9 +156,18 @@ export function derivePublishedJobCriteria(job: PublishedJobCriteriaInput): Publ
       continue
     }
     if (section === 'ignored') continue
+    if (isPureAgeEligibilityClause(text)) continue
+    if (isApplicationInstructionRecord(text)) continue
+    if (applicationInstructionStart.test(text)) {
+      // Unknown or mixed application wording may carry material qualifications.
+      // Omit the whole record with a coverage warning; never strip its footer.
+      if (text.length > MAX_PUBLISHED_JOB_CLAUSE_CHARS) return output('unsupported_format')
+      omittedContext = true
+      continue
+    }
     // Non-citable professional qualifiers remain in source order. They must not
     // become weighted criteria or disappear because they sit under Notes/Summary.
-    const qualifier = waivedExperience.test(text) || globalQualifier.test(text) ||
+    const qualifier = employmentTermsOnly.test(text) || waivedExperience.test(text) || globalQualifier.test(text) ||
       (professionalTerms.test(text) && scopeQualifier.test(text) &&
         (section === 'none' || section === 'context' || /\b(?:these|those|above|below|following|listed|belong|examples?|prerequisites?)\b/i.test(text)))
     if (qualifier) {
@@ -139,6 +187,7 @@ export function derivePublishedJobCriteria(job: PublishedJobCriteriaInput): Publ
     let kind: Kind | undefined
     // Preserve the whole clause and every qualifier, even in mixed wording.
     if (section === 'preferred') kind = 'preferred'
+    else if ((section === 'required' || section === 'mixed') && hasSeparateOptionalSubclause(text)) kind = 'required'
     else if (optional.test(text) && !/\b(?:must|required|requires|require|essential)\b/i.test(text.replace(/\bnot (?:required|essential|a necessity)\b/gi, ''))) kind = 'preferred'
     else if (required.test(text)) kind = 'required'
     else if (dutyStart.test(text)) kind = 'duty'
