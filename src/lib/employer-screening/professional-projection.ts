@@ -53,6 +53,8 @@ const professionalHeadings: Readonly<Record<string, ProfessionalSection>> = Obje
   profile: 'summary', 'professional profile': 'summary', 'personal profile': 'summary', 'personal statement': 'summary',
   objective: 'summary', 'career objective': 'summary', 'professional objective': 'summary',
   work: 'work', employment: 'work', experience: 'work', 'work experience': 'work', 'professional experience': 'work',
+  'work experiences': 'work', 'professional experiences': 'work', 'employment experiences': 'work',
+  'relevant experiences': 'work', 'volunteer experiences': 'work', 'internship experiences': 'work',
   'employment experience': 'work', 'employment history': 'work', 'work history': 'work',
   'relevant experience': 'work', 'career history': 'work', 'work and experience': 'work',
   'volunteer experience': 'work', 'volunteering experience': 'work', 'volunteer work': 'work',
@@ -63,6 +65,8 @@ const professionalHeadings: Readonly<Record<string, ProfessionalSection>> = Obje
   languages: 'skills', 'language skills': 'skills',
   'tools and technologies': 'skills', 'technical expertise': 'skills', 'areas of expertise': 'skills',
   qualifications: 'qualifications', education: 'qualifications', 'education and training': 'qualifications',
+  'educational background': 'qualifications', 'education background': 'qualifications', 'academic background': 'qualifications',
+  'educational qualifications': 'qualifications', 'academic qualifications': 'qualifications',
   'education and qualifications': 'qualifications', 'education and certifications': 'qualifications',
   training: 'qualifications', certifications: 'qualifications', certificates: 'qualifications',
   'professional certifications': 'qualifications', 'professional qualifications': 'qualifications',
@@ -72,14 +76,15 @@ const professionalHeadings: Readonly<Record<string, ProfessionalSection>> = Obje
   'professional achievements': 'achievements', 'awards and achievements': 'achievements',
   'selected achievements': 'achievements', 'career highlights': 'achievements', awards: 'achievements',
 })
+const referenceHeadings = new Set(['references', 'referees', 'professional references', 'professional referees', 'character references'])
 const excludedHeadings = new Set([
   'personal', 'personal details', 'personal information', 'contact', 'contact details', 'contact information',
-  'references', 'referees', 'professional references', 'personal interests', 'interests', 'hobbies',
+  ...referenceHeadings, 'personal interests', 'interests', 'hobbies',
   'additional personal information', 'family', 'demographics', 'equal opportunities',
   'hobbies and interests', 'interests and activities', 'personal background', 'medical information', 'health information',
 ])
 const titleHeadings = new Set(['resume', 'résumé', 'curriculum vitae', 'cv'])
-const headingKey = (text: string) => text.trim().replace(/:$/, '').replace(/\s*&\s*/g, ' and ').trim().toLowerCase()
+const headingKey = (text: string) => text.trim().replace(/:$/, '').replace(/\s*&\s*/g, ' and ').replace(/\s+/gu, ' ').trim().toLowerCase()
 function heading(text: string): Section | 'title' | undefined {
   const key = headingKey(text)
   if (Object.hasOwn(professionalHeadings, key)) return professionalHeadings[key]
@@ -168,6 +173,13 @@ function isCombinedLocationContactMetadata(text: string): boolean {
     /^\p{Lu}[\p{L}'’.-]*(?: (?:\p{Lu}[\p{L}'’.-]*|and|of|the)){0,5}$/u.test(part))
 }
 
+function isLabelledPhonePair(text: string): boolean {
+  // Consume the WHOLE labelled line: two bounded phone values, no prose tail.
+  if (text.length > 80) return false
+  const pair = text.match(/^(?:phone|telephone|mobile|tel|cell)\s*:\s*(.+?)\s+or\s+(.+)$/iu)
+  return !!pair && pair.slice(1).every(number => /^\+?[0-9 ()-]{7,25}$/u.test(number) &&
+    /^\d{7,15}$/u.test(number.replace(/\D/gu, '')))
+}
 function isAtomicContactMetadata(text: string): boolean {
   const value = detectionText(text)
   const fields = value.split(/\s*[|•]\s*/u)
@@ -177,12 +189,40 @@ function isAtomicContactMetadata(text: string): boolean {
   // is not an 'example work' disclaimer. Mixed clauses still taint context.
   return /^(?:(?:e-?mail|contact)\s*:\s*)?[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+$/iu.test(value) ||
     /^(?:(?:phone|telephone|mobile|tel|cell)\s*:\s*)?\+?[0-9 ()-]{7,25}$/iu.test(value) ||
+    isLabelledPhonePair(value) ||
     /^(?:(?:website|portfolio|linkedin)\s*:\s*)?(?:https?:\/\/|www\.)[^\s]+$/iu.test(value)
 }
 function isAtomicPersonalMetadata(text: string): boolean {
   const value = detectionText(text)
   return /^(?:no|without) (?:children|dependants|dependents|disabilities|medical conditions)[.]?$/iu.test(value) ||
     /^(?:not married|never married|not pregnant|no religion)[.]?$/iu.test(value)
+}
+function isAtomicReferenceTitle(text: string): boolean {
+  // Whole organizational titles only, after an explicit reference heading.
+  // Never erase a narrative qualifier or exempt training elsewhere. The original
+  // scope still undergoes instruction/control detection before this exemption.
+  const value = detectionText(text).replace(/\s*&\s*/gu, ' and ')
+  const role = '(?:manager|director|officer|coordinator|specialist|supervisor|head)'
+  const department = '(?:training(?: and development)?|learning and development)'
+  return new RegExp(`^(?:(?:senior|assistant|deputy) )?(?:${role}(?: ?[-–—,:] ?| of | for | )${department}|${department} ${role})$`, 'iu').test(value)
+}
+function excludedQualifierText(lines: readonly Line[], allowReferenceTitles: boolean): string {
+  // Preserve the complete scope for qualification checks before exempting any
+  // title. An ownership/claim narrative can refer to a title on another line.
+  const substantive = lines.filter(line => !isAtomicContactMetadata(line.text) && !isAtomicPersonalMetadata(line.text))
+  const original = detectionText(substantive.map(line => line.text).join('\n'))
+    .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ') // A domain is not a scope qualifier.
+  const linkedNarrative = /\b(?:I|me|my|mine|we|our|ours|he|him|his|she|her|hers|they|them|their|theirs|everything|these|those|above|below|following|preceding|earlier|work|duties|tasks?|experience|skills?|qualifications?|achievements?|claims?|certifications?|licen[cs]es?|belongs?|performed|by)\b/iu
+  if (!allowReferenceTitles || linkedNarrative.test(original)) return original
+  let inReferences = false
+  return detectionText(substantive.filter(line => {
+    // The parser deliberately keeps excluded headings in one scope, including
+    // across pages. Track their sub-boundaries without resetting risk scans.
+    const key = headingKey(line.text)
+    if (excludedHeadings.has(key)) inReferences = referenceHeadings.has(key)
+    return !(inReferences && isAtomicReferenceTitle(line.text))
+  }).map(line => line.text).join('\n'))
+    .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ')
 }
 function hasAdequateProfessionalText(records: readonly ProfessionalSourceRecord[]): boolean {
   if (!records.some(record => record.section !== 'summary')) return false
@@ -314,8 +354,7 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       const substantiveLines = scope.lines.filter(line => line.text.trim())
       // A labelled identity line containing professional claims or a qualifier
       // is not safe to erase. Scope-bearing excluded text invalidates claims.
-      const scopeText = detectionText(substantiveLines.filter(line => !isAtomicContactMetadata(line.text) && !isAtomicPersonalMetadata(line.text)).map(line => line.text).join('\n'))
-        .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ') // Detection only: a domain is not a scope qualifier.
+      const scopeText = excludedQualifierText(substantiveLines, scope.section === 'excluded')
       if (excludedScopeRisk.test(scopeText)) unresolvedContext = true
       const intentional = scope.section === 'excluded' || substantiveLines.every(line => isIdentityMetadata(line.text) ||
         (!professionalScopeSeen && isCombinedLocationContactMetadata(detectionText(line.text))))
