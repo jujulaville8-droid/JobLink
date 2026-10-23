@@ -403,13 +403,15 @@ describe('direct-read completeness, privacy, and resource limits', () => {
   })
 
   it('shares its row budget across both scans and rejects rather than returning partial counts', async () => {
+    // This large synthetic transport fixture can exceed Vitest's default 5s on CI.
+    // Keep production row/request/deadline budgets intact; only allow harness headroom.
     cap = 1_000
     jobs = [jobs[0]]
     seekers = [seekers[0]]
     apps = Array.from({ length: 25_001 }, (_, n) => ({ id: applicationId(n + 1), job_id: jobId(1), seeker_id: seekerId(1), status: 'applied', applied_at: '2026-10-08T12:00:00Z' }))
     await expect(overview()).rejects.toThrow('Application read unavailable')
     expect(reads.length).toBeLessThan(APPLICATION_READ_BUDGET.requests)
-  })
+  }, 15_000)
 
   it('does not query after caller cancellation and cleans up the deadline timer', async () => {
     vi.useFakeTimers()

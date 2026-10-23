@@ -3,7 +3,6 @@ import { cleanup, render, screen, within, waitFor, fireEvent } from '@testing-li
 import userEvent from '@testing-library/user-event';
 import ResumeStudio from '@/components/cv/studio/ResumeStudio';
 import { resumeFixture } from './fixtures/resume';
-import { writingTerms } from './fixtures/resume-writing';
 
 let stored = structuredClone(resumeFixture);
 let failSave = false;
@@ -24,39 +23,21 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('premium resume workspace', () => {
-  it('shows server-provided service availability before the purchase intake is opened', async () => {
-    render(<ResumeStudio writingConfig={{intakeEnabled:true,checkoutEnabled:true,terms:writingTerms,paymentMode:'sandbox'}} />);
-    await screen.findByLabelText('Professional summary');
-    expect(screen.getByText('Sandbox test checkout · no real payment. Use synthetic details only.')).toBeTruthy();
-    expect(screen.queryByText(/Purchasing is not available yet/)).toBeNull();
-    expect(screen.queryByText(/Delivery timing, revision and refund terms will be confirmed/)).toBeNull();
-    expect(screen.getByRole('button', {name:'Get my résumé · EC$50'}).getAttribute('aria-expanded')).toBe('false');
-    expect(vi.mocked(fetch).mock.calls.some(([url])=>url==='/api/resume-writing/orders')).toBe(false);
-  });
-  it('opens and closes the purchase intake without saving or losing the free builder draft', async () => {
-    const user = userEvent.setup();
-    render(<ResumeStudio />);
+  it('offers consultation without saving or losing the free builder draft', async () => {
+    const user = userEvent.setup(); render(<ResumeStudio />);
     const summary = await screen.findByLabelText('Professional summary');
     fireEvent.change(summary, { target: { value: 'Keep my unsaved builder draft' } });
-    expect(screen.getByText(/The builder and job applications remain free/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Book a free call' }).getAttribute('target')).toBe('_blank');
-    await user.click(screen.getByRole('button', { name: 'Get my résumé · EC$50' }));
-    expect(screen.getByRole('form', { name: 'Résumé writing intake' }).closest('form')?.parentElement?.closest('form')).toBeNull();
-    await user.type(screen.getByRole('textbox', { name: /Name for your résumé/ }), 'Synthetic Seeker');
-    const call = screen.getByRole('link', { name: 'Book a free call' });
-    call.addEventListener('click', event => event.preventDefault(), { once: true });
-    await user.click(call);
-    expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
-    expect((screen.getByRole('textbox', { name: /Name for your résumé/ }) as HTMLInputElement).value).toBe('Synthetic Seeker');
-    await user.click(screen.getByRole('button', { name: 'Keep using the free builder' }));
+    const call = screen.getByRole('link', { name: 'Book a consultation' });
+    expect(screen.getByRole('region', { name: 'Résumé consultation' }).compareDocumentPosition(screen.getByRole('region', { name: 'Resume editor' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'View existing résumé requests' })).toBeTruthy();
+    expect(call.getAttribute('target')).toBe('_blank');
+    call.addEventListener('click', event => event.preventDefault());
+    await user.click(call); await user.click(call);
     expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
     expect(screen.getByRole('status').textContent).toContain('Unsaved changes');
-    expect((screen.getByRole('button', { name: 'Save changes' }) as HTMLButtonElement).disabled).toBe(false);
-    expect(vi.mocked(fetch).mock.calls.every(([, init]) => !init?.method)).toBe(true);
+    expect(vi.mocked(fetch).mock.calls.every(([url, init]) => url !== '/api/resume-writing/orders' && !init?.method)).toBe(true);
     await user.click(screen.getByRole('button', { name: /^Work experience/ }));
     await user.click(screen.getByRole('button', { name: /^Summary/ }));
-    await user.click(screen.getByRole('button', { name: 'Get my résumé · EC$50' }));
-    expect((screen.getByRole('textbox', { name: /Name for your résumé/ }) as HTMLInputElement).value).toBe('Synthetic Seeker');
     expect((screen.getByLabelText('Professional summary') as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
   });
   it('keeps the application destination on explicit profile links from the resume builder', async () => {

@@ -3,6 +3,8 @@ import JobResults from "@/components/JobResults";
 import JobFilters from "@/components/JobFilters";
 import JobSearchBar from "@/components/JobSearchBar";
 import JobIndustryShortcuts from "@/components/JobIndustryShortcuts";
+import JobDetailPane from "@/components/JobDetailPane";
+import { RestoreListFocus } from "@/components/JobSplitNavigation";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -106,6 +108,45 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   };
 }
 
+/** The list query (search, filters, page) without the selected job. */
+function listQuery(params: JobSearchParams): string {
+  const query = new URLSearchParams();
+  if (params.q) query.set("q", params.q);
+  if (params.location) query.set("location", params.location);
+  if (params.category) query.set("category", params.category);
+  for (const type of [params.job_type ?? []].flat()) query.append("job_type", type);
+  if (typeof params.page === "string" && params.page !== "1") query.set("page", params.page);
+  return query.toString().replace(/\+/g, "%20");
+}
+
+/** With no ?job=, desktop shows the first listing in the results (featured first, as in the list). */
+async function SelectedJob({ params, page, backHref }: { params: JobSearchParams; page: number; backHref: string }) {
+  if (typeof params.job === "string") {
+    return <JobDetailPane key={params.job} jobId={params.job} backHref={backHref} />;
+  }
+  const { jobs } = await getJobResults(params, page);
+  const first = jobs?.find((job) => {
+    const company = job.company as unknown as { is_pro?: boolean } | null;
+    return job.is_featured || company?.is_pro;
+  }) ?? jobs?.[0];
+  if (!first) return null;
+  return <JobDetailPane key={first.id} jobId={first.id} backHref={backHref} />;
+}
+
+function DetailSkeleton() {
+  return (
+    <div className="rounded-[var(--radius-card)] border border-border bg-white p-7" aria-hidden="true">
+      <div className="h-8 w-2/3 skeleton" />
+      <div className="mt-3 h-5 w-1/3 skeleton" />
+      <div className="mt-6 space-y-3">
+        <div className="h-4 w-full skeleton" />
+        <div className="h-4 w-full skeleton" />
+        <div className="h-4 w-5/6 skeleton" />
+      </div>
+    </div>
+  );
+}
+
 export default async function JobsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const category = knownJobCategory(params.category);
@@ -118,69 +159,58 @@ export default async function JobsPage({ searchParams }: PageProps) {
   if (prefetchedResults && isJobPageOutOfRange(prefetchedResults)) notFound();
   if (prefetchedResults?.error) throw new Error("Unable to load the requested jobs page");
 
+  const query = listQuery(params);
+  const backHref = query ? `/jobs?${query}` : "/jobs";
+  const selectedId = typeof params.job === "string" ? params.job : undefined;
+  // Mobile shows either the list or the selected job, never both.
+  const listOnlyOnDesktop = selectedId ? "hidden lg:block" : "";
+
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Page header */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-2xl sm:text-3xl text-text">
-              {category ? `${category} Jobs` : "Browse Jobs"}
-            </h1>
-            <p className="mt-1 text-sm text-text-light">
-              {category
-                ? `Browse ${category} job listings in Antigua and Barbuda.`
-                : "Discover opportunities across Antigua and Barbuda"}
-            </p>
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div className={listOnlyOnDesktop}>
+        {/* Page header */}
+        <div className="mb-6">
+          <h1 className="font-display text-[2.25rem] sm:text-5xl leading-[1.05] text-text">
+            {category ? `${category} Jobs` : "Browse Jobs"}
+          </h1>
+          <p className="mt-2 text-base sm:text-lg text-text-light">
+            {category
+              ? `Browse ${category} job listings in Antigua and Barbuda.`
+              : "Discover opportunities across Antigua and Barbuda"}
+          </p>
+          <div className="mt-5">
+            <JobSearchBar defaultValue={params.q} defaultLocation={params.location} />
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="mt-4">
-          <JobSearchBar defaultValue={params.q} defaultLocation={params.location} />
-        </div>
-      </div>
+        {!params.q && !params.category && !params.location && !params.job_type && (
+          <Suspense fallback={null}><JobIndustryShortcuts /></Suspense>
+        )}
 
-      {!params.q && !params.category && !params.location && !params.job_type && (
-        <Suspense fallback={null}><JobIndustryShortcuts /></Suspense>
-      )}
-
-      {/* Search query indicator */}
-      {params.q && (
-        <div className="mb-4">
-          <p className="text-sm text-text-light">
-            Results for{" "}
-            <span className="font-semibold text-text">
-              &ldquo;{params.q}&rdquo;
-            </span>
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Filters */}
         <Suspense fallback={null}>
-          <JobFilters />
+          <JobFilters layout="bar" />
         </Suspense>
 
+        {/* Search query indicator */}
+        {params.q && (
+          <p className="mb-4 text-sm text-text-light">
+            Results for{" "}
+            <span className="font-semibold text-text">&ldquo;{params.q}&rdquo;</span>
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Results */}
-        <div className="flex-1 min-w-0">
+        <div className={`lg:w-[42%] lg:shrink-0 rounded-[var(--radius-card)] border border-border bg-white p-4 sm:p-5 ${listOnlyOnDesktop}`}>
           <Suspense
             fallback={
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="rounded-[--radius-card] border border-border bg-white p-5"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-lg skeleton" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 w-3/4 skeleton" />
-                        <div className="h-3 w-1/2 skeleton" />
-                        <div className="h-3 w-1/3 skeleton" />
-                      </div>
-                    </div>
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-[var(--radius-card)] border border-border bg-white p-5">
+                    <div className="h-4 w-3/4 skeleton" />
+                    <div className="mt-2 h-3 w-1/2 skeleton" />
+                    <div className="mt-2 h-3 w-1/3 skeleton" />
                   </div>
                 ))}
               </div>
@@ -189,8 +219,17 @@ export default async function JobsPage({ searchParams }: PageProps) {
             <JobResults
               searchParams={params}
               prefetchedResults={prefetchedResults}
-              gridClassName="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+              gridClassName="grid grid-cols-1 gap-3"
+              split={{ query, selectedId }}
             />
+          </Suspense>
+          {!selectedId && <RestoreListFocus href={backHref} />}
+        </div>
+
+        {/* Selected job */}
+        <div key={`${query}:${selectedId ?? "first"}`} className={`min-w-0 flex-1 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:rounded-[var(--radius-card)] ${selectedId ? "" : "hidden lg:block"}`}>
+          <Suspense key={selectedId ?? "first"} fallback={<DetailSkeleton />}>
+            <SelectedJob params={params} page={page} backHref={backHref} />
           </Suspense>
         </div>
       </div>

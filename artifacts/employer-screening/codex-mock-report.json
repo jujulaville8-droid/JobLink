@@ -1,0 +1,45 @@
+{
+  "mode": "LOCAL_MOCK_NOT_AI",
+  "authenticated": false,
+  "realApplicantData": false,
+  "report": {
+    "status": "scored",
+    "rubricVersion": "SYNTHETIC-ONLY-v1",
+    "supportedPoints": 70,
+    "unresolvedPoints": 30,
+    "evidenceCoverage": 70,
+    "criteria": [
+      {
+        "label": "Spreadsheet record keeping",
+        "weight": 40,
+        "finding": "supported",
+        "verificationRequired": false,
+        "evidence": [
+          {
+            "excerpt": "Maintained weekly stock records using Excel spreadsheets.",
+            "location": "Synthetic fixture · Skills"
+          }
+        ]
+      },
+      {
+        "label": "Customer order experience",
+        "weight": 30,
+        "finding": "supported",
+        "verificationRequired": false,
+        "evidence": [
+          {
+            "excerpt": "Processed customer orders and answered enquiries at the front desk.",
+            "location": "Synthetic fixture · Experience"
+          }
+        ]
+      },
+      {
+        "label": "Role-specific certification",
+        "weight": 30,
+        "finding": "unknown",
+        "verificationRequired": true,
+        "evidence": []
+      }
+    ]
+  }
+}

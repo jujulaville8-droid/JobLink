@@ -10,12 +10,18 @@ interface JobResultsProps {
   searchParams: JobSearchParams;
   prefetchedResults?: JobResultsData;
   gridClassName?: string;
+  /**
+   * /jobs split view: cards select in place. `query` is the current list query
+   * (without `job`); `selectedId` falls back to the first listing shown.
+   */
+  split?: { query: string; selectedId?: string };
 }
 
 export default async function JobResults({
   searchParams,
   prefetchedResults,
   gridClassName = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4",
+  split,
 }: JobResultsProps) {
   searchParams = { ...searchParams, category: jobCategoryFilter(searchParams.category) };
   const category = knownJobCategory(searchParams.category);
@@ -144,9 +150,13 @@ export default async function JobResults({
     return bPro - aPro;
   });
 
+  const selectedId = split ? split.selectedId ?? mappedJobs[0]?.id : undefined;
+  const selectHref = (id: string) => `/jobs?${split?.query ? `${split.query}&` : ""}job=${encodeURIComponent(id)}`;
+
   return (
     <div className="animate-fade-up">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      {split && <h2 className="font-display text-[1.75rem] leading-tight text-text">Job results</h2>}
+      <div className={`mb-4 flex items-center justify-between gap-3 ${split ? "mt-1" : ""}`}>
         <p className="text-sm text-text-light">
           <span className="font-semibold text-text">{totalCount}</span>{" "}
           {category ? `${category} ` : ""}
@@ -162,7 +172,14 @@ export default async function JobResults({
       </div>
       <div className={`${gridClassName} stagger-children`}>
         {mappedJobs.map((job) => (
-          <JobCard key={job.id} job={job} isSaved={savedJobIds.has(job.id)} loggedIn={!!user} highlight />
+          <JobCard
+            key={job.id}
+            job={job}
+            isSaved={savedJobIds.has(job.id)}
+            loggedIn={!!user}
+            highlight
+            {...(split ? { selectHref: selectHref(job.id), selected: job.id === selectedId } : {})}
+          />
         ))}
       </div>
       <Pagination currentPage={currentPage} totalPages={totalPages} />

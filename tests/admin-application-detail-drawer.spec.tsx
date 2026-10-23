@@ -398,6 +398,58 @@ describe('admin application detail drawer', () => {
     expect(screen.queryByRole('button', { name: /send|notify|resend|mark.*sent/i })).toBeNull()
   })
 
+  it.each([
+    ['pending', 'Pending'], ['claimed', 'Pending'], ['ready', 'Pending'], ['sending', 'Sending'],
+    ['accepted', 'Accepted'], ['uncertain', 'Needs review'], ['blocked', 'Blocked'], ['cancelled', 'Cancelled'],
+  ] as const)('shows %s outbox status instead of misleading legacy tracking', async (state, label) => {
+    fetchMock.mockResolvedValueOnce(Response.json({ application: fixture({
+      notificationTracking: { status: 'not_sent', attemptedAt: '2026-10-20T14:30:00Z', forwardedAt: null },
+      employerOutboxStatus: {
+        state, attempts: 1, firstSendAt: '2026-10-21T11:50:00.000Z',
+        acceptedAt: state === 'accepted' ? '2026-10-21T11:50:01.000Z' : null,
+        nextAttemptAt: '2026-10-21T12:00:00.000Z', lastErrorCode: state === 'uncertain' ? 'LEASE_EXPIRED_SENDING' : null,
+      },
+    }) }))
+    render(drawer())
+    expect(await screen.findByText(label)).toBeTruthy()
+    expect(screen.queryByText('Not tracked')).toBeNull()
+    expect(screen.queryByText('Not sent')).toBeNull()
+    expect(screen.queryByText('Sent to employer')).toBeNull()
+    expect(screen.getByText(/Send attempts: 1/)).toBeTruthy()
+    if (state === 'accepted') expect(screen.getByText('Accepted by the email provider. Inbox delivery and read status are not confirmed.')).toBeTruthy()
+    if (state === 'uncertain') expect(screen.getByText('Delivery outcome is uncertain. Do not resend until provider records are reconciled.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /send|notify|resend|mark.*sent/i })).toBeNull()
+  })
+
+  it('does not render unexpected operational fields, diagnostics, or malformed dates', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ application: {
+      ...fixture(), employerOutboxStatus: {
+        state: 'uncertain', attempts: 1, firstSendAt: 'private first-send diagnostic', acceptedAt: 'private accepted diagnostic',
+        nextAttemptAt: 'private next-attempt diagnostic', lastErrorCode: 'private provider diagnostic',
+        recipient: 'private-recipient@example.test', extraction: 'private extraction', score: 'private score',
+      },
+    } }))
+    render(drawer())
+    expect(await screen.findByText('Needs review')).toBeTruthy()
+    expect(screen.getByRole('dialog').textContent).not.toContain('private')
+    expect(screen.queryByText('Not sent')).toBeNull()
+  })
+
+  it('clears outbox status immediately when switching applications', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ application: fixture({
+      employerOutboxStatus: { state: 'uncertain', attempts: 1, firstSendAt: null, acceptedAt: null, nextAttemptAt: null, lastErrorCode: null },
+    }) }))
+    const view = render(drawer())
+    await screen.findByText('Needs review')
+    const pending = deferred<Response>()
+    fetchMock.mockReturnValueOnce(pending.promise)
+    view.rerender(drawer(secondApplicationId))
+    expect(screen.queryByText('Needs review')).toBeNull()
+    await act(async () => pending.resolve(Response.json({ application: fixture({ id: secondApplicationId }) })))
+    expect(await screen.findByText('Not tracked')).toBeTruthy()
+    expect(screen.queryByText('Needs review')).toBeNull()
+  })
+
   it('expands and collapses long letters accessibly and resets expansion for the next selection', async () => {
     const letter = `${'Relevant experience. '.repeat(40)}Unique final sentence.`
     fetchMock.mockResolvedValueOnce(Response.json({ application: fixture({ coverLetterText: letter }) }))

@@ -19,6 +19,7 @@ function SearchFields({ defaultValue, defaultLocation }: { defaultValue?: string
     e.preventDefault();
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    params.delete("job");
     if (query.trim()) {
       params.set("q", query.trim());
     } else {
@@ -34,6 +35,7 @@ function SearchFields({ defaultValue, defaultLocation }: { defaultValue?: string
     setQuery("");
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    params.delete("job");
     params.delete("q");
     router.push(`/jobs?${params.toString()}`);
   }
@@ -42,22 +44,26 @@ function SearchFields({ defaultValue, defaultLocation }: { defaultValue?: string
     setLocation("");
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    params.delete("job");
     params.delete("location");
     router.push(`/jobs?${params.toString()}`);
   }
 
+  const clearButton = "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors";
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3" role="search" aria-label="Find jobs">
-      <div className="sm:flex-[2] min-w-0">
-        <div className="relative flex items-center">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 lg:flex-row lg:items-center" role="search" aria-label="Find jobs">
+      <div className="flex min-w-0 flex-1 flex-col rounded-xl border border-border bg-white transition-shadow focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 items-center sm:flex-[1.4]">
           <svg
-            className="absolute left-3.5 h-4 w-4 text-text-muted pointer-events-none"
+            className="ml-4 h-5 w-5 shrink-0 text-text-light pointer-events-none"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -67,43 +73,44 @@ function SearchFields({ defaultValue, defaultLocation }: { defaultValue?: string
             aria-label="Search jobs by title, keyword, or company"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by job title, keyword, or company..."
-            className="min-h-11 w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-32 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all"
+            placeholder="Job title, keyword, or company"
+            className="min-h-13 w-full min-w-0 bg-transparent px-3 text-[0.9375rem] text-text placeholder:text-text-muted focus:outline-none"
           />
-          <div className="absolute right-1.5 flex items-center gap-1">
-            {query && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={handleClear}
-                className="flex items-center justify-center h-11 w-11 rounded-lg text-text-muted hover:text-text hover:bg-gray-100 transition-colors"
-              >
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
-            <button
-              type="submit"
-              className="rounded-lg bg-primary min-h-11 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-primary-dark transition-colors"
-            >
-              Search
+          {query && (
+            <button type="button" aria-label="Clear search" onClick={handleClear} className={clearButton}>
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
-          </div>
+          )}
         </div>
-      </div>
-      <div className="sm:flex-1 min-w-0">
-        <label htmlFor={locationId} className="sr-only">Job location</label>
-        <div className="relative">
+        <span aria-hidden="true" className="mx-4 h-px bg-border sm:mx-0 sm:h-7 sm:w-px" />
+        <div className="flex min-w-0 items-center sm:flex-1">
+          <svg className="ml-4 h-5 w-5 shrink-0 text-text-light pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <label htmlFor={locationId} className="sr-only">Job location</label>
           <input id={locationId} type="text" value={location} onChange={event => setLocation(event.target.value)}
             placeholder="Town or area" aria-describedby={`${locationId}-hint`}
-            className="input-base pr-12" />
-          {location && <button type="button" aria-label="Clear location" onClick={handleClearLocation}
-            className="absolute right-1 top-0 flex h-11 w-11 items-center justify-center rounded-lg text-text-light hover:bg-gray-100">×</button>}
+            className="min-h-13 w-full min-w-0 bg-transparent px-3 text-[0.9375rem] text-text placeholder:text-text-muted focus:outline-none" />
+          {location && <button type="button" aria-label="Clear location" onClick={handleClearLocation} className={clearButton}>×</button>}
         </div>
-        <p id={`${locationId}-hint`} className="mt-1 text-xs text-text-light">Searches the location recorded on each job.</p>
       </div>
+      <button
+        type="submit"
+        className="inline-flex min-h-13 items-center justify-center gap-2 rounded-xl bg-primary px-8 text-base font-semibold text-white hover:bg-primary-dark transition-colors"
+      >
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        Search
+      </button>
+      <p id={`${locationId}-hint`} className="text-xs text-text-light lg:max-w-[13rem] lg:border-l lg:border-border lg:pl-5">
+        Searches the location recorded on each job.
+      </p>
     </form>
   );
 }

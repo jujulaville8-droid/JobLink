@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import ApplicationDraftControls from "@/components/ApplicationDraftControls";
+import ApplicantScreeningNotice from "@/components/ApplicantScreeningNotice";
+import { SCREENING_NOTICE_VERSION } from "@/lib/employer-screening/notice";
 import { APPLICATION_DRAFT_MAX_LENGTH, deleteApplicationDraft } from "@/lib/application-drafts";
 
 type ProfileStatus = {
@@ -234,6 +236,8 @@ function ApplicationForm({ jobId }: { jobId: string }) {
         body: JSON.stringify({
           job_id: jobId,
           cover_letter_text: coverLetter.trim(),
+          ...(process.env.NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED === "true"
+            ? { screening_notice_version: SCREENING_NOTICE_VERSION } : {}),
         }),
       });
 
@@ -897,6 +901,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
                 By submitting this application, you consent to sharing your
                 profile information with the employer for recruitment purposes
                 only.
+                <ApplicantScreeningNotice visible={process.env.NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED === "true"} />
               </p>
             </div>
 

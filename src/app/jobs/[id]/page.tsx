@@ -15,6 +15,7 @@ import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
 import ReportListingButton from "@/components/ReportListingButton";
 import { displayJobLocation, normalizeJobLocation } from "@/lib/job-location";
+import { loadApplyState, loadJobDetail } from "@/lib/job-detail";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -114,27 +115,7 @@ function timeAgo(dateStr: string): string {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const { data: job, error } = await supabase
-    .from("job_listings")
-    .select(
-      `
-      *,
-      company:companies (
-        id,
-        company_name,
-        logo_url,
-        description,
-        industry,
-        location,
-        website,
-        is_verified
-      )
-    `
-    )
-    .eq("id", id)
-    .single();
+  const { supabase, job, error, company } = await loadJobDetail(id);
 
   // Only manual status controls availability. A non-active or missing listing
   // must return a real 404. Rendering a
@@ -143,17 +124,6 @@ export default async function JobDetailPage({ params }: PageProps) {
   if (error || !job || job.status !== "active") {
     notFound();
   }
-
-  const company = job.company as unknown as {
-    id: string;
-    company_name: string;
-    logo_url: string | null;
-    description: string | null;
-    industry: string | null;
-    location: string | null;
-    website: string | null;
-    is_verified: boolean;
-  } | null;
 
   const isNew =
     new Date().getTime() - new Date(job.created_at).getTime() <
@@ -179,58 +149,12 @@ export default async function JobDetailPage({ params }: PageProps) {
   );
 
   // ─── Auth & application state for dynamic Apply button ───
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let applyState: "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete" = "login";
-  let isSaved = false;
-
   const closure = getJobClosure(job.id, company?.id ?? job.company_id);
-
-  if (job.status !== "active" || closure) {
-    applyState = "closed";
-  } else if (!user) {
-    applyState = "login";
-  } else {
-    const { data: userData } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    if (!userData || userData.role !== "seeker") {
-      applyState = "not-seeker";
-    } else {
-      const { data: profile } = await supabase
-        .from("seeker_profiles")
-        .select("id, first_name, last_name, phone, cv_url")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!profile || !profile.first_name || !profile.last_name || !profile.phone || !profile.cv_url) {
-        applyState = "profile-incomplete";
-      } else {
-        const [{ data: existing }, { data: savedJob }] = await Promise.all([
-          supabase
-            .from("applications")
-            .select("id")
-            .eq("job_id", job.id)
-            .eq("seeker_id", profile.id)
-            .maybeSingle(),
-          supabase
-            .from("saved_jobs")
-            .select("id")
-            .eq("job_id", job.id)
-            .eq("seeker_id", profile.id)
-            .maybeSingle(),
-        ]);
-
-        applyState = existing ? "applied" : "apply";
-        isSaved = !!savedJob;
-      }
-    }
-  }
+  const { user, applyState, isSaved } = await loadApplyState(
+    supabase,
+    job.id,
+    job.status !== "active" || !!closure,
+  );
 
   const companyInitial = company?.company_name?.charAt(0).toUpperCase() || "?";
   const colors = [

@@ -16,6 +16,8 @@ export default function Pagination({ currentPage, totalPages }: PaginationProps)
 
   function buildHref(page: number) {
     const params = new URLSearchParams(searchParams.toString());
+    // Each page of the /jobs split view starts on its own first listing.
+    params.delete("job");
     if (page <= 1) {
       params.delete("page");
     } else {

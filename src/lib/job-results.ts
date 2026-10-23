@@ -13,6 +13,8 @@ export interface JobSearchParams {
   category?: string;
   job_type?: string | string[];
   page?: string | string[];
+  /** /jobs split view: the selected listing. Not a list filter. */
+  job?: string | string[];
 }
 
 /** Reject ambiguous inputs instead of silently treating e.g. page=2oops as page 2. */

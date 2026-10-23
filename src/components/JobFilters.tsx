@@ -16,7 +16,8 @@ function toQuery(params: URLSearchParams): string {
   return params.toString().replace(/\+/g, "%20");
 }
 
-export default function JobFilters() {
+/** `bar`: the horizontal desktop row used on /jobs; `sidebar` (default) for /browse-jobs. */
+export default function JobFilters({ layout = "sidebar" }: { layout?: "sidebar" | "bar" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -29,6 +30,8 @@ export default function JobFilters() {
   function updateParams(updates: Record<string, string | string[] | null>) {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("page");
+    // A new result set picks its own selection in the /jobs split view.
+    params.delete("job");
     const category = jobCategoryFilter(params.get("category") || undefined);
     if (category) params.set("category", category);
 
@@ -172,13 +175,59 @@ export default function JobFilters() {
         )}
       </div>
 
-      {/* Desktop sidebar */}
+      {layout === "bar" ? (
+        <div className="hidden lg:flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-5 mb-6">
+          <div className="flex items-center gap-3">
+            <label htmlFor={`${filterId}-bar-industry`} className="text-sm font-medium text-text whitespace-nowrap">
+              Industry / Category
+            </label>
+            <select
+              id={`${filterId}-bar-industry`}
+              value={currentCategory}
+              onChange={(e) => updateParams({ category: e.target.value || null })}
+              className="input-base w-64"
+            >
+              <option value="">All Industries</option>
+              {INDUSTRIES.map((ind) => (
+                <option key={ind} value={ind}>
+                  {ind}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span aria-hidden="true" className="h-6 w-px bg-border" />
+          <fieldset className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <legend className="sr-only">Job Type</legend>
+            <span aria-hidden="true" className="text-sm font-medium text-text">Job Type</span>
+            {JOB_TYPES.map(({ value, label }) => (
+              <label key={value} className="flex min-h-11 items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={currentJobTypes.includes(value)}
+                  onChange={() => toggleJobType(value)}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary accent-primary"
+                />
+                <span className="text-sm text-text-light">{label}</span>
+              </label>
+            ))}
+          </fieldset>
+          {hasFilters && (
+            <button
+              onClick={clearAll}
+              className="ml-auto min-h-11 text-sm font-medium text-primary underline underline-offset-4 hover:text-primary-dark"
+            >
+              Clear all filters
+            </button>
+          )}
+        </div>
+      ) : (
       <aside className="hidden lg:block w-64 shrink-0">
         <div className="sticky top-20 rounded-[--radius-card] border border-border bg-white p-5">
           <h2 className="font-display text-base text-text mb-4">Filters</h2>
           {filterContent("desktop")}
         </div>
       </aside>
+      )}
     </>
   );
 }

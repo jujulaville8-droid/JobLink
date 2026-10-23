@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSavedJob } from "@/lib/saved-job-sync";
 import { displayJobLocation } from "@/lib/job-location";
+import { SelectJobLink } from "@/components/JobSplitNavigation";
 
 export interface Job {
   id: string;
@@ -47,28 +48,21 @@ function getJobType(type: string): { color: string; label: string } {
   return JOB_TYPE_STYLES[type] ?? { color: "bg-bg-alt text-text-light border border-border", label: type };
 }
 
-export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false }: { job: Job; isSaved?: boolean; loggedIn?: boolean; highlight?: boolean }) {
-  const [saved, setSaved] = useState(isSaved);
-  const [savingBookmark, setSavingBookmark] = useState(false);
+export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false, selectHref, selected = false }: {
+  job: Job;
+  isSaved?: boolean;
+  loggedIn?: boolean;
+  highlight?: boolean;
+  /** /jobs split view: a plain click selects the job in place via this URL. */
+  selectHref?: string;
+  selected?: boolean;
+}) {
+  const { saved, saving: savingBookmark, error: saveError, toggle } = useSavedJob(job.id, isSaved);
 
-  async function toggleSave(e: React.MouseEvent) {
+  function toggleSave(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!loggedIn) return;
-    setSavingBookmark(true);
-    try {
-      const res = await fetch("/api/jobs/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job_id: job.id }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSaved(data.saved);
-      }
-    } finally {
-      setSavingBookmark(false);
-    }
+    if (loggedIn) void toggle();
   }
   const initial = job.company_name.charAt(0).toUpperCase();
   const salary =
@@ -104,9 +98,18 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
       isFeatured
         ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
         : "bg-white border border-border hover:border-primary/20"
+    } ${
+      // Selection only shows beside the detail pane (desktop); mobile lists have none open.
+      selected ? "lg:bg-none! lg:bg-primary/5! lg:border-2! lg:border-primary! lg:ring-0! lg:shadow-sm!" : ""
     }`}>
+      {saveError && <p role="alert" className="relative z-10 mb-2 text-xs text-red-700">{saveError}</p>}
       {highlight && <div aria-hidden="true" className="job-card-spotlight" />}
       <div className="block">
+        {selected && (
+          <span className="mb-2 hidden lg:inline-block rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary-dark">
+            Selected
+          </span>
+        )}
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (
             <img
@@ -125,13 +128,25 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
-                <Link
-                  href={`/jobs/${job.id}`}
-                  className="after:absolute after:inset-0 after:rounded-[--radius-card] focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
-                  aria-label={`View ${job.title} at ${job.company_name}`}
-                >
-                  {job.title}
-                </Link>
+                {selectHref ? (
+                  <SelectJobLink
+                    jobId={job.id}
+                    selectHref={selectHref}
+                    selected={selected}
+                    className="after:absolute after:inset-0 after:rounded-[--radius-card] focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
+                    ariaLabel={`View ${job.title} at ${job.company_name}`}
+                  >
+                    {job.title}
+                  </SelectJobLink>
+                ) : (
+                  <Link
+                    href={`/jobs/${job.id}`}
+                    className="after:absolute after:inset-0 after:rounded-[--radius-card] focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
+                    aria-label={`View ${job.title} at ${job.company_name}`}
+                  >
+                    {job.title}
+                  </Link>
+                )}
               </h3>
               {isFeatured && (
                 <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm shadow-amber-300/40">
@@ -180,6 +195,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                     disabled={savingBookmark}
                     className={`relative z-10 cursor-pointer transition-colors ${saved ? "text-primary" : "text-border hover:text-primary"} disabled:opacity-50`}
                     aria-label={saved ? "Unsave job" : "Save job"}
+                    aria-pressed={saved}
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill={saved ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
