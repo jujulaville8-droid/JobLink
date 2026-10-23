@@ -359,3 +359,20 @@ claimed. No contact details or email content beyond the approval are recorded.
 Neither live listing shows a deadline, so no `validThrough` is emitted and no
 closure entry is added (no automatic job closing). Stored listing content,
 status and the application route are unchanged; no database writes.
+
+## October 19, 2026 vacancy-scoped employer approvals (CRISPA Wholesale Distribution Company Ltd.)
+
+[PR #PENDING](https://github.com/jujulaville8-droid/JobLink/pull/PENDING) records an October 19, 2026 (about 1:29 PM ET) email to the JobLink inbox in which
+CRISPA Wholesale Distribution Company Ltd. said yes to JobLink posting these
+two vacancies. Each permission covers one vacancy only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No contact details or email content beyond the approval are recorded.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| CRISPA Wholesale Distribution Company Ltd. — Office Assistant | `ef5503e9-45a2-4121-92b7-aec94b440147` | `08c982be-1421-4657-8394-c168a1f07d61` | 2026-10-19 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| CRISPA Wholesale Distribution Company Ltd. — Sales Representative | `90a1af95-5173-43ce-a5b7-4307814ce881` | `08c982be-1421-4657-8394-c168a1f07d61` | 2026-10-19 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+Neither live listing shows an apply-before deadline, so no `validThrough` is
+emitted and no closure entry is added (no automatic job closing). Stored listing
+content, status and the application route are unchanged; no database writes.
