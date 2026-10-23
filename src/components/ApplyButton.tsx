@@ -7,9 +7,12 @@ type ApplyState = "apply" | "login" | "not-seeker" | "applied" | "closed" | "pro
 interface ApplyButtonProps {
   jobId: string;
   state: ApplyState;
+  /** "primary" is the teal treatment used in the /jobs detail pane. */
+  tone?: "warm" | "primary";
 }
 
-export default function ApplyButton({ jobId, state }: ApplyButtonProps) {
+export default function ApplyButton({ jobId, state, tone = "warm" }: ApplyButtonProps) {
+  const actionClass = tone === "primary" ? "btn-primary" : "btn-warm";
   if (state === "closed") {
     return (
       <span className="flex w-full items-center justify-center rounded-[--radius-button] bg-gray-100 px-5 py-3 text-base font-semibold text-text-muted cursor-not-allowed">
@@ -53,7 +56,7 @@ export default function ApplyButton({ jobId, state }: ApplyButtonProps) {
     return (
       <Link
         href={`/login?returnTo=/jobs/${jobId}/apply`}
-        className="flex w-full items-center justify-center btn-warm text-base"
+        className={`flex w-full items-center justify-center ${actionClass} text-base`}
       >
         Sign In to Apply
       </Link>
@@ -64,7 +67,7 @@ export default function ApplyButton({ jobId, state }: ApplyButtonProps) {
   return (
     <Link
       href={`/jobs/${jobId}/apply`}
-      className="flex w-full items-center justify-center btn-warm text-base"
+      className={`flex w-full items-center justify-center ${actionClass} text-base`}
     >
       Apply Now
     </Link>
