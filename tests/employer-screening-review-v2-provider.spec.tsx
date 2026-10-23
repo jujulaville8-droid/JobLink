@@ -69,6 +69,12 @@ describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
     await expect(s.run()).rejects.toThrow()
     expect(s.budget.claim).not.toHaveBeenCalled(); expect(s.fetcher).not.toHaveBeenCalled()
   })
+  it('emits the admission_denied stage when the claim refuses', async () => {
+    const rejected = setup(); vi.mocked(rejected.budget.claim).mockResolvedValue(false)
+    await expect(rejected.run()).rejects.toThrow()
+    expect(rejected.options.onStage).toHaveBeenCalledWith('admission_denied')
+    expect(rejected.options.onStage).not.toHaveBeenCalledWith('admission_granted')
+  })
   it('does not count when admission rejects or is no longer live', async () => {
     const rejected = setup(); vi.mocked(rejected.budget.claim).mockResolvedValue(false)
     await expect(rejected.run()).rejects.toThrow(); expect(rejected.fetcher).not.toHaveBeenCalled()
@@ -128,10 +134,18 @@ describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
     await expect(s.run()).rejects.toThrow(); expect(s.fetcher).toHaveBeenCalledTimes(2)
     expect(s.budget.settle).toHaveBeenCalledExactlyOnceWith(reservationId, null)
   })
-  it('does not repeat an uncertain settlement or return the report', async () => {
+  it('returns the validated report after an uncertain settlement without repeating it', async () => {
+    // Settlement is accounting only: the reservation hold stays durable for
+    // reconciliation, and discarding a paid, validated review bought nothing.
     const s = setup(); vi.mocked(s.budget.settle).mockRejectedValue(new Error('Uncertain settlement'))
-    await expect(s.run()).rejects.toThrow(); expect(s.budget.settle).toHaveBeenCalledTimes(1)
+    await expect(s.run()).resolves.toEqual({ version: 'synthetic-test' })
+    expect(s.budget.settle).toHaveBeenCalledTimes(1)
     expect(s.fetcher).toHaveBeenCalledTimes(2)
+  })
+  it('returns the validated report when settlement is refused', async () => {
+    const s = setup(); vi.mocked(s.budget.settle).mockResolvedValue(false)
+    await expect(s.run()).resolves.toEqual({ version: 'synthetic-test' })
+    expect(s.budget.settle).toHaveBeenCalledTimes(1)
   })
   it('ignores stage callback failures without extra requests', async () => {
     const s = setup(); s.options.onStage.mockImplementation(() => { throw new Error('Sink failed') })

@@ -113,7 +113,7 @@ export class SupabaseSolReviewBudgetStore implements SolReviewBudgetStore {
     return z.boolean().parse(data)
   }
 }
-export type SolReviewStage = 'admission_requested' | 'admission_granted' | 'count_started' | 'count_validated' | 'budget_requested' | 'budget_granted' | 'provider_request_started' | 'settlement_confirmed'
+export type SolReviewStage = 'admission_requested' | 'admission_granted' | 'admission_denied' | 'count_started' | 'count_validated' | 'budget_requested' | 'budget_granted' | 'provider_request_started' | 'settlement_confirmed'
 export type SolReviewOptions = Readonly<{
   enabled: boolean; apiKey?: string; configId: string; applicationId: string; sourceSha256: string;
   deadline: number; signal: AbortSignal; budget: SolReviewBudgetStore;
@@ -204,7 +204,7 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
     const admitted = await options.budget.claim({ applicationId: options.applicationId, sourceSha256: options.sourceSha256,
       configId: options.configId, requestSha256 })
     live()
-    if (!admitted) throw new Error('Review admission unavailable')
+    if (!admitted) { stage('admission_denied'); throw new Error('Review admission unavailable') }
     stage('admission_granted')
     live()
     if (!options.budget.countAllowed()) throw new Error('Review admission expired')
@@ -219,7 +219,7 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
       configId: options.configId, inputTokenCount: count, requestSha256,
       requestKey: `screening-v2/${options.applicationId}/${requestSha256}` })
     live()
-    if (candidate === null) throw new Error('Review budget unavailable')
+    if (candidate === null) { stage('admission_denied'); throw new Error('Review budget unavailable') }
     grant = reservationSchema.parse(candidate)
     if (grant.input_token_ceiling !== count || grant.config_id !== options.configId || grant.request_sha256 !== requestSha256 ||
         grant.reserved_microusd !== reservedCostMicrousd(count, SOL_REVIEW_MAX_OUTPUT_TOKENS,
@@ -237,10 +237,11 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
     const reviewed = validateResumeReviewV2(context, outputFrom(raw))
     live()
     settlementAttempted = true
-    settled = await options.budget.settle(grant.reservation_id, usage)
-    live()
-    if (!settled) throw new Error('Review settlement unavailable')
-    stage('settlement_confirmed')
+    // Settlement is accounting, not part of the review's value: a failed or
+    // refused settlement must not discard a validated, already-paid review.
+    // The reservation's durable hold remains for reconciliation either way.
+    try { settled = await options.budget.settle(grant.reservation_id, usage) } catch { settled = false }
+    if (settled) stage('settlement_confirmed')
     return reviewed
   } finally {
     if (grant && !settlementAttempted) {

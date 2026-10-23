@@ -12,7 +12,7 @@ import { extractPdfResume, PDF_EXTRACTION_LIMITS, type PdfExtractionOptions, typ
 import { validateMinimizedExtraction } from './privacy'
 import { createOpenAIProcessor, type ScreeningBudgetReservation, type ScreeningBudgetStore, type ScreeningUsage } from './provider'
 import { assessResumeDocumentQuality, validateResumeDocumentQuality, type ResumeDocumentQuality } from './quality'
-import { inlineDiagnostic, type InlineDiagnosticEvent } from './inline-diagnostics'
+import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS, type InlineDiagnosticEvent } from './inline-diagnostics'
 import { inlineResumeReviewV2 } from './review-v2-inline'
 import { SupabaseSolReviewBudgetStore, type SolReviewBudgetStore } from './review-v2-provider'
 import type { ResumeReviewV2 } from './review-v2'
@@ -178,7 +178,11 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
     if (job.id !== input.jobId || job.company_id !== input.companyId || job.title !== input.jobTitle) { diagnostic('job_binding_mismatch'); return localOnly() }
     failureEvent = 'job_mapping_unavailable'
     const derived = derivePublishedJobCriteria(job)
-    if (derived.status !== 'available') { diagnostic('job_mapping_unavailable'); return localOnly() }
+    if (derived.status !== 'available') {
+      diagnostic('job_mapping_unavailable')
+      if (derived.reason) diagnostic(JOB_MAPPING_REASON_EVENTS[derived.reason])
+      return localOnly()
+    }
     failureEvent = 'snapshot_invalid'
     const frozen = captureSnapshot({
       applicationId: input.applicationId, jobId: input.jobId, companyId: input.companyId, createdAt: startedAt,
@@ -239,8 +243,11 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
     const expired = new Promise<InlineScreeningFields>(resolve => {
       timer = setTimeout(() => { diagnostic('deadline_expired'); controller.abort(); resolve(localOnly()) }, Math.max(0, deadline - now()))
     })
-    const result = await Promise.race([work(), expired])
-    return controller.signal.aborted || now() >= deadline ? localOnly() : result
+    let workResult: InlineScreeningFields | undefined
+    const result = await Promise.race([work().then(value => { workResult = value; return value }), expired])
+    // A result the work already produced is returned as-is; the deadline only
+    // decides outcomes the work did not finish, never swaps a finished one out.
+    return workResult ?? (controller.signal.aborted || now() >= deadline ? localOnly() : result)
   } catch { diagnostic(controller.signal.aborted || now() >= deadline ? 'deadline_expired' : failureEvent); return localOnly() }
   finally { if (timer) clearTimeout(timer); controller.abort() }
 }
