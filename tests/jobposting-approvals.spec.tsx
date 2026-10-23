@@ -821,7 +821,7 @@ describe.each([
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
-      companyId, attestedOn: '2026-10-19', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING',
+      companyId, attestedOn: '2026-10-19', evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/97',
     });
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();

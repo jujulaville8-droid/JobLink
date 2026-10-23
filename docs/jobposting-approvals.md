@@ -362,7 +362,7 @@ status and the application route are unchanged; no database writes.
 
 ## October 19, 2026 vacancy-scoped employer approvals (CRISPA Wholesale Distribution Company Ltd.)
 
-[PR #PENDING](https://github.com/jujulaville8-droid/JobLink/pull/PENDING) records an October 19, 2026 (about 1:29 PM ET) email to the JobLink inbox in which
+[PR #97](https://github.com/jujulaville8-droid/JobLink/pull/97) records an October 19, 2026 (about 1:29 PM ET) email to the JobLink inbox in which
 CRISPA Wholesale Distribution Company Ltd. said yes to JobLink posting these
 two vacancies. Each permission covers one vacancy only and lives in
 `EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
