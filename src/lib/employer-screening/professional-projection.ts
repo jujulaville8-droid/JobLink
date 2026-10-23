@@ -5,6 +5,8 @@
  * professional section is inspected as ONE scope, including every paragraph,
  * bullet, qualification and wrap. Unsafe scopes are omitted in full. There is
  * no sentence rescue, regex replacement, full-page fallback or claim inference.
+ * Short, recognized leading professional taglines are admitted separately as
+ * exact summary spans after the complete original header is checked for risk.
  *
  * These conservative lexical checks REDUCE privacy/instruction risk. They are
  * not a general PII anonymizer, language interpreter or proof that arbitrary
@@ -77,9 +79,10 @@ const professionalHeadings: Readonly<Record<string, ProfessionalSection>> = Obje
   'selected achievements': 'achievements', 'career highlights': 'achievements', awards: 'achievements',
 })
 const referenceHeadings = new Set(['references', 'referees', 'professional references', 'professional referees', 'character references'])
+const availabilityHeadings = new Set(['availability', 'availability and references', 'availability and referees'])
 const excludedHeadings = new Set([
   'personal', 'personal details', 'personal information', 'contact', 'contact details', 'contact information',
-  ...referenceHeadings, 'personal interests', 'interests', 'hobbies',
+  ...referenceHeadings, ...availabilityHeadings, 'personal interests', 'interests', 'hobbies',
   'additional personal information', 'family', 'demographics', 'equal opportunities',
   'hobbies and interests', 'interests and activities', 'personal background', 'medical information', 'health information',
 ])
@@ -170,6 +173,17 @@ function isIdentityMetadata(text: string): boolean {
   if (/^\d{1,6} [\p{L}]+(?: [\p{L}]+){0,3} (?:Street|Road|Avenue|Lane|Drive|Boulevard|Close|Crescent)$/iu.test(value)) return true
   // Perimeter name heuristic, not a general professional vocabulary gate.
   return /^(?:\p{Lu}[\p{L}'’-]*|\p{Lu}\.)[ \t]+(?:\p{Lu}[\p{L}'’-]*|\p{Lu}\.)(?:[ \t]+\p{Lu}[\p{L}'’-]*){0,2}$/u.test(value)
+}
+
+// A small positive grammar for professional header phrase lists, not arbitrary
+// title-cased text or identity metadata. Preserve these as professional sources.
+// Unknown occupations/capabilities remain incomplete rather than being guessed.
+function isProfessionalHeaderTagline(text: string): boolean {
+  const value = detectionText(text)
+  if (value.length > 120) return false
+  const fields = value.split(/\s*[&|•·]\s*/u)
+  return fields.length >= 2 && fields.length <= 3 && fields.every(field =>
+    /^(?:(?:customer|guest|client) (?:services?|support|relations)|hospitality(?: (?:services?|operations))?|(?:retail|hotel|front desk) (?:services?|operations)|(?:multi|bi)lingual communication)$/iu.test(field))
 }
 
 // This recognizes an intentionally omitted perimeter header, not professional
@@ -263,19 +277,43 @@ function excludedQualifierText(lines: readonly Line[], allowReferenceTitles: boo
   // Preserve the complete scope for qualification checks before exempting any
   // title. An ownership/claim narrative can refer to a title on another line.
   const substantive = lines.filter(line => !isAtomicContactMetadata(line.text) && !isAtomicPersonalMetadata(line.text))
-  const original = detectionText(substantive.map(line => line.text).join('\n'))
-    .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ') // A domain is not a scope qualifier.
+  const qualifierText = (selected: readonly Line[]): string => {
+    // Excluded sections coalesce, including across pages. Apply the prospective
+    // sentence exception only inside its own availability sub-boundary, with
+    // the heading kept separate so the first body sentence has a real start.
+    const parts: string[] = []
+    let availability = false
+    let body: string[] = []
+    const flush = () => {
+      const text = detectionText(body.join('\n'))
+      parts.push(availability
+        ? text.replace(/(^|[.!?]\s+)Willing to undertake training\.(?=\s|$)/giu, '$1')
+        : text)
+      body = []
+    }
+    for (const line of selected) {
+      const key = headingKey(line.text)
+      if (excludedHeadings.has(key)) {
+        flush()
+        availability = availabilityHeadings.has(key)
+        parts.push(line.text)
+      } else body.push(line.text)
+    }
+    flush()
+    return detectionText(parts.join('\n'))
+      .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ') // A domain is not a scope qualifier.
+  }
+  const original = qualifierText(substantive)
   const linkedNarrative = /\b(?:I|me|my|mine|we|our|ours|he|him|his|she|her|hers|they|them|their|theirs|everything|these|those|above|below|following|preceding|earlier|work|duties|tasks?|experience|skills?|qualifications?|achievements?|claims?|certifications?|licen[cs]es?|belongs?|performed|by)\b/iu
   if (!allowReferenceTitles || linkedNarrative.test(original)) return original
   let inReferences = false
-  return detectionText(substantive.filter(line => {
+  return qualifierText(substantive.filter(line => {
     // The parser deliberately keeps excluded headings in one scope, including
     // across pages. Track their sub-boundaries without resetting risk scans.
     const key = headingKey(line.text)
     if (excludedHeadings.has(key)) inReferences = referenceHeadings.has(key)
     return !(inReferences && isAtomicReferenceTitle(line.text))
-  }).map(line => line.text).join('\n'))
-    .replace(/[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+/gu, ' ')
+  }))
 }
 function hasAdequateProfessionalText(records: readonly ProfessionalSourceRecord[]): boolean {
   if (!records.some(record => record.section !== 'summary')) return false
@@ -381,6 +419,28 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
   let unresolvedContext = false
   let admittedCharacters = 0
   let admittedRecords = 0
+  const admit = (section: ProfessionalSection, spans: ProfessionalSourceSpan[], raw: string, text: string, instruction: boolean) => {
+    if (instruction || contactRisk.test(text) || phoneRisk.test(text) || hasIdentityRisk(text) || protectedRisk.test(text) ||
+        hasKnownIdentity(text, identities) || hasSensitiveActivityScope(raw)) {
+      omissions.professionalContent = true
+      if (excludedScopeRisk.test(text)) unresolvedContext = true
+      localOmissions.push({ reason: 'unsafe_professional_scope', spans })
+      return
+    }
+    const length = spans.reduce((sum, span) => sum + span.end - span.start, 0)
+    if (length > PROFESSIONAL_PROJECTION_LIMITS.sectionCharacters ||
+        admittedCharacters + length > PROFESSIONAL_PROJECTION_LIMITS.providerCharacters ||
+        admittedRecords + spans.length > PROFESSIONAL_PROJECTION_LIMITS.records) {
+      omissions.professionalContent = true
+      omissions.limitReached = true
+      if (excludedScopeRisk.test(text)) unresolvedContext = true
+      localOmissions.push({ reason: 'limit', spans })
+      return
+    }
+    candidates.push({ section, spans, length })
+    admittedCharacters += length
+    admittedRecords += spans.length
+  }
   let professionalScopeSeen = false
   for (const scope of scopes) {
     if (PROFESSIONAL_SECTIONS.includes(scope.section as ProfessionalSection)) professionalScopeSeen = true
@@ -409,35 +469,23 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       // is not safe to erase. Scope-bearing excluded text invalidates claims.
       const scopeText = excludedQualifierText(substantiveLines, scope.section === 'excluded')
       if (excludedScopeRisk.test(scopeText)) unresolvedContext = true
-      const intentional = scope.section === 'excluded' || substantiveLines.every(line => isIdentityMetadata(line.text) ||
+      // Only the first preamble may contain unlabelled professional taglines.
+      // Scan its ORIGINAL joined scope above before admitting individual spans;
+      // splitting first could conceal cross-line instructions or attribution.
+      const taglines = scope === scopes[0] && scope.section === 'unknown'
+        ? substantiveLines.filter(line => line.page === 1 && isProfessionalHeaderTagline(line.text)).slice(0, 2) : []
+      for (const line of taglines) admit('summary', spansOf([line], pages), line.text, detectionText(line.text), instruction)
+      const remaining = substantiveLines.filter(line => !taglines.includes(line))
+      const intentional = scope.section === 'excluded' || remaining.every(line => isIdentityMetadata(line.text) ||
         (!professionalScopeSeen && (isCombinedLocationContactMetadata(detectionText(line.text)) ||
           isAntiguaLocalityPhoneMetadata(detectionText(line.text)))))
       if (!intentional) omissions.unclassifiedContent = true
-      localOmissions.push({ reason: intentional
+      if (remaining.length) localOmissions.push({ reason: intentional
         ? (scope.section === 'excluded' ? 'intentional_nonprofessional_exclusion' : 'intentional_identity_exclusion')
-        : 'unclassified_scope', spans })
+        : 'unclassified_scope', spans: taglines.length ? remaining.flatMap(line => spansOf([line], pages)) : spans })
       continue
     }
-    if (instruction || contactRisk.test(text) || phoneRisk.test(text) || hasIdentityRisk(text) || protectedRisk.test(text) ||
-        hasKnownIdentity(text, identities) || hasSensitiveActivityScope(raw)) {
-      omissions.professionalContent = true
-      if (excludedScopeRisk.test(text)) unresolvedContext = true
-      localOmissions.push({ reason: 'unsafe_professional_scope', spans })
-      continue
-    }
-    const length = spans.reduce((sum, span) => sum + span.end - span.start, 0)
-    if (length > PROFESSIONAL_PROJECTION_LIMITS.sectionCharacters ||
-        admittedCharacters + length > PROFESSIONAL_PROJECTION_LIMITS.providerCharacters ||
-        admittedRecords + spans.length > PROFESSIONAL_PROJECTION_LIMITS.records) {
-      omissions.professionalContent = true
-      omissions.limitReached = true
-      if (excludedScopeRisk.test(text)) unresolvedContext = true
-      localOmissions.push({ reason: 'limit', spans })
-      continue
-    }
-    candidates.push({ section: scope.section, spans, length })
-    admittedCharacters += length
-    admittedRecords += spans.length
+    admit(scope.section, spans, raw, text, instruction)
   }
   // Excluded instructions or unresolved global attribution may qualify ANY later
   // or earlier claim. No fragment rescue from a tainted document.

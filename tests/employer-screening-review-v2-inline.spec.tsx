@@ -160,6 +160,56 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(unexpectedFetch).not.toHaveBeenCalled()
   }, 15_000)
 
+  it.each(['partial', 'full'] as const)('admits a synthetic availability PDF once with truthful %s coverage rendering', async coverage => {
+    const require = createRequire(import.meta.url)
+    const PDF = require('pdfkit') as new () => Readable & { text(text: string): void; end(): void }
+    const doc = new PDF(), chunks: Buffer[] = []
+    const ready = new Promise<Buffer>((resolve, reject) => { doc.on('data', part => chunks.push(part)); doc.on('error', reject); doc.on('end', () => resolve(Buffer.concat(chunks))) })
+    const page = coverage === 'partial' ? 'Additional context supplied separately\n' + SYNTHETIC_REVIEW_PAGE
+      : SYNTHETIC_REVIEW_PAGE.replace('Jordan Ellis\n', 'Jordan Ellis\nCUSTOMER SERVICE & HOSPITALITY\nGuest services | Multilingual communication\n')
+    doc.text(page +
+      '\nAVAILABILITY & REFERENCES\nWilling\nto undertake training. References available upon request.\nJordan Ellis | Customer Service Assistant')
+    doc.end()
+    const response = syntheticReviewRaw()
+    response.overview.text = 'The supplied professional sections describe customer service and record keeping.'
+    response.gaps = [] // Incomplete input cannot support claims that evidence is absent.
+    if (coverage === 'full') for (const row of [response.overview, ...response.dimensions, ...response.highlights]) {
+      row.sourceIds = row.sourceIds.map(id => id === 'r1' ? 'r3' : id === 'r2' ? 'r4' : id)
+    }
+    const s = setup(response); delete s.deps.extract
+    const unexpectedFetch = vi.fn(() => { throw new Error('No live network allowed') })
+    vi.stubGlobal('fetch', unexpectedFetch)
+    const fields = await inlineEmployerScreening(input(await ready), s.deps)
+    expect(fields.employer_resume_review_v2).toMatchObject(coverage === 'partial' ? { coverage,
+      qualityScore: { status: 'unavailable', reason: 'partial_professional_input' },
+      roleFitScore: { status: 'unavailable', reason: 'partial_professional_input' } } : { coverage,
+      qualityScore: { value: 8 }, roleFitScore: { value: 4 } })
+    expect(s.reviewBudget.claim).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.countAllowed).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.reserve).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.dispatchAllowed).toHaveBeenCalledOnce()
+    expect(s.reviewBudget.settle).toHaveBeenCalledOnce()
+    expect(s.fetcher.mock.calls.map(([url]) => String(url))).toEqual([
+      'https://api.openai.com/v1/responses/input_tokens', 'https://api.openai.com/v1/responses',
+    ])
+    const request = String(s.fetcher.mock.calls[1][1]!.body)
+    expect(request).toContain('Answered customer enquiries')
+    expect(request).not.toMatch(/Additional context supplied separately|Jordan|Ellis|Willing|undertake training|References available|555-0148|localPages|%PDF|base64/)
+    const html = buildEmailHtml('new_applicant', { ...fields, applicant_name: 'Fictional Applicant', job_title: job.title, cv_attached: true }).html
+    if (coverage === 'partial') {
+      expect(html).toContain('Not rated')
+      expect(html).toContain('Partial text assessment.')
+      expect(html).not.toMatch(/\d+\/10/)
+    } else {
+      expect(request).toContain('CUSTOMER SERVICE & HOSPITALITY')
+      expect(request).toContain('Guest services | Multilingual communication')
+      expect(html).toContain('8/10')
+      expect(html).toContain('4/10')
+      expect(html).not.toContain('Partial text assessment.')
+    }
+    expect(unexpectedFetch).not.toHaveBeenCalled()
+  }, 10_000)
+
   it.each(['three-page variant headings', 'two-page locality and extracurricular activities'])
     ('forwards one enriched email after parsing a PDF with %s and counting/generating once', async format => {
     const require = createRequire(import.meta.url)
