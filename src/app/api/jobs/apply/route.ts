@@ -1,9 +1,15 @@
 import { getJobClosure } from '@/lib/job-closures'
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
-import { notifyNewApplicant } from '@/lib/applicant-notifications'
+import { applicantCvPath, notifyNewApplicant } from '@/lib/applicant-notifications'
+import { applicationDependencies, screeningApplicationEnabled, ScreeningSubmissionError, submitScreeningApplication } from '@/lib/employer-screening/application'
+import { hasCurrentScreeningNotice } from '@/lib/employer-screening/notice'
+import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
+
+// Deployment must support after() and this timeout before any readiness gates are enabled.
+export const maxDuration = 180
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,34 +77,70 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You cannot apply to your own job listing' }, { status: 403 })
     }
 
-    // Insert application
-    const { data: application, error: insertError } = await supabase
-      .from('applications')
-      .insert({
-        job_id,
-        seeker_id: seekerProfile.id,
-        cover_letter_text: cover_letter_text || '',
-        status: 'applied',
-      })
-      .select()
-      .single()
-
-    if (insertError) {
-      if (insertError.code === '23505') {
-        return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
+    // OFF preserves the existing insert and forwarding flow. Once the atomic RPC
+    // chooses screening, no later flag, error, timeout or rollback may select legacy.
+    let application: { id: string; [key: string]: unknown }
+    let deliveryPath: 'legacy' | 'screening' = 'legacy'
+    // Stale clients or undisclosed submissions retain ordinary forwarding, with
+    // no AI/private capture. This attests displayed notice version, not consent.
+    if (screeningApplicationEnabled() && hasCurrentScreeningNotice(body.screening_notice_version)) {
+      if (typeof job_id !== 'string' || (cover_letter_text !== undefined && typeof cover_letter_text !== 'string')) {
+        return NextResponse.json({ error: 'Invalid application' }, { status: 400 })
       }
-      console.error('[apply] Failed to save application')
-      return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+      try {
+        const { createAdminClient } = await import('@/lib/supabase/admin')
+        const saved = await submitScreeningApplication({
+          jobId: job_id, applicantUserId: user.id, seekerId: seekerProfile.id,
+          coverLetter: cover_letter_text || '',
+        }, applicationDependencies(createAdminClient()))
+        application = saved.application
+        deliveryPath = saved.deliveryPath
+      } catch (error) {
+        if (error instanceof ScreeningSubmissionError && error.duplicate) {
+          return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
+        }
+        console.error('[apply] Atomic application submission unavailable')
+        return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+      }
+    } else {
+      const { data: saved, error: insertError } = await supabase
+        .from('applications')
+        .insert({ job_id, seeker_id: seekerProfile.id, cover_letter_text: cover_letter_text || '', status: 'applied' })
+        .select()
+        .single()
+      if (insertError) {
+        if (insertError.code === '23505') {
+          return NextResponse.json({ error: 'You have already applied to this job' }, { status: 409 })
+        }
+        console.error('[apply] Failed to save application')
+        return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+      }
+      application = saved
+    }
+
+    if (deliveryPath === 'screening' && process.env.EMPLOYER_OUTBOX_WORKER_ENABLED === 'true') {
+      try {
+        after(async () => {
+          try {
+            const { runEmployerScreeningWorker } = await import('@/lib/employer-screening/worker')
+            await runEmployerScreeningWorker()
+          } catch { console.warn('[apply] Background forwarding deferred to durable watchdog') }
+        })
+      } catch { console.warn('[apply] Background forwarding deferred to durable watchdog') }
     }
 
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
     const companyName = company?.company_name || 'the company'
 
-    const { data: seekerInfo } = await supabase
+    // Preserve the ordinary participant-authorized chat link on both paths. This
+    // current uploaded CV is not the immutable screening/email capture and never
+    // replaces its bytes or evidence. Private captures must not enter chat.
+    const seekerInfo = (await supabase
       .from('seeker_profiles')
       .select('first_name, last_name, cv_url')
       .eq('id', seekerProfile.id)
-      .single()
+      .eq('user_id', user.id)
+      .single()).data
 
     // ── Auto-create messaging thread ──
     // Use admin client to bypass RLS since we've already verified authorization.
@@ -136,7 +178,9 @@ export async function POST(request: NextRequest) {
         const firstMessageBody = messageParts.join('\n')
 
         // Build CV attachment info if available
-        const cvAttachmentUrl = seekerInfo?.cv_url || null
+        const cvAttachmentUrl = deliveryPath === 'screening'
+          ? applicantCvPath(seekerInfo?.cv_url, user.id)
+          : seekerInfo?.cv_url || null
         const cvAttachmentName = cvAttachmentUrl
           ? `${(seekerInfo?.first_name || 'Applicant')}_${(seekerInfo?.last_name || '')}_CV.pdf`.replace(/\s+/g, '_')
           : null
@@ -197,7 +241,37 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    await notifyNewApplicant(application.id, user.id)
+    if (deliveryPath === 'legacy') {
+      // Capture the actual request attestation before returning. Neither a stale
+      // client nor a later flag change may invent a notice for this application.
+      const noticeVersion = process.env.EMPLOYER_SCREENING_INLINE_ENABLED === 'true' &&
+        hasCurrentScreeningNotice(body.screening_notice_version) ? body.screening_notice_version : undefined
+      const applicationId = application.id
+      inlineDiagnostic(process.env.EMPLOYER_SCREENING_INLINE_ENABLED !== 'true' ? 'route_inline_disabled' :
+        noticeVersion === undefined ? 'route_notice_missing' : 'route_notice_current', applicationId)
+      const applicantUserId = user.id
+      let forwardingStarted = false
+      const forwardEmployer = async () => {
+        // Also fences a scheduler that registers work before throwing. Never
+        // automatically replay an uncertain provider send or change its key.
+        if (forwardingStarted) return
+        forwardingStarted = true
+        try {
+          if (noticeVersion !== undefined) await notifyNewApplicant(applicationId, applicantUserId, noticeVersion)
+          else await notifyNewApplicant(applicationId, applicantUserId)
+        } catch { console.warn('[apply] Employer notification unavailable') }
+      }
+      try {
+        // Chat and applicant receipt above retain their original semantics.
+        // Only employer forwarding moves after the response; optional review
+        // remains bounded inside the notifier. This is not a durable queue.
+        after(forwardEmployer)
+      } catch {
+        // Unsupported scheduling falls back to the original awaited path once.
+        console.warn('[apply] Employer notification running inline')
+        await forwardEmployer()
+      }
+    }
 
     return NextResponse.json({
       success: true,

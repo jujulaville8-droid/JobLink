@@ -1,3 +1,9 @@
+import { resumeReviewV2EmailSection } from './employer-screening/review-v2-email'
+import type { ResumeReviewV2 } from './employer-screening/review-v2'
+import type { Report } from './employer-screening'
+import { employerAdvisoryEmailSection } from './employer-screening/email'
+import type { ResumeDocumentQualityResult } from './employer-screening/quality'
+
 type EmailType =
   | 'application_confirmation'
   | 'new_applicant'
@@ -18,6 +24,10 @@ type EmailType =
   | 'signup_reminder_3'
 
 interface EmailData {
+  /** Reserved for validated worker output; absent in the unchanged live forwarding path. */
+  employer_resume_review_v2?: ResumeReviewV2
+  employer_screening?: Report
+  employer_resume_quality?: ResumeDocumentQualityResult
   applicant_name?: string
   applicant_email?: string
   applicant_phone?: string
@@ -74,7 +84,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${content}
         </div>
         <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink &mdash; Antigua &amp; Barbuda's Job Platform</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'new_applicant' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
         </div>
       </div>
     </body>
@@ -121,8 +131,9 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${d.applicant_phone ? `<p>Phone: ${esc(d.applicant_phone)}</p>` : ''}
           ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
           <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
+          ${d.employer_resume_review_v2 ? resumeReviewV2EmailSection(d.employer_resume_review_v2) : d.employer_screening || d.employer_resume_quality ? employerAdvisoryEmailSection(d.employer_screening, d.employer_resume_quality) : ''}
           ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>
+          ${!d.employer_resume_review_v2 && !d.employer_screening && !d.employer_resume_quality ? '<p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>' : ''}
         `),
       }
 

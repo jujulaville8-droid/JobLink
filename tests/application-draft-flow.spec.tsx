@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { createElement, type ReactNode } from 'react';
 import ApplyPage from '@/app/jobs/[id]/apply/page';
+import { SCREENING_NOTICE_VERSION } from '@/lib/employer-screening/notice';
 import { readApplicationDraft, saveApplicationDraft } from '@/lib/application-drafts';
 
 const fixture = vi.hoisted(() => ({
@@ -39,9 +40,10 @@ beforeEach(() => {
   fixture.jobId = '33333333-3333-4333-8333-333333333333';
   fixture.existing = false;
   fixture.incomplete = false;
+  vi.stubEnv('NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED', 'false');
   localStorage.clear();
 });
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); localStorage.clear(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); localStorage.clear(); });
 
 async function ready() {
   await screen.findByRole('textbox', { name: 'Cover letter' });
@@ -129,4 +131,25 @@ it('retains the original application destination when profile completion is requ
   expect(target.pathname).toBe('/profile');
   expect(target.searchParams.get('returnTo')).toBe(`/jobs/${fixture.jobId}/apply`);
   await waitFor(() => expect(send).not.toHaveBeenCalled());
+});
+
+
+it.each([true, false])('sends linked-notice version only when the submission disclosure is rendered (%s)', async enabled => {
+  vi.stubEnv('NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED', String(enabled));
+  const send = vi.fn().mockResolvedValue(new Response('{}', { status: 201 }));
+  vi.stubGlobal('fetch', send);
+  render(<ApplyPage />);
+  await ready();
+  const link = screen.queryByRole('link', { name: /Terms of Service, including résumé review/ });
+  expect(Boolean(link)).toBe(enabled);
+  if (link) {
+    expect(link.closest('p')?.textContent).toContain('consent to sharing your profile information with the employer');
+    expect(link.closest('[data-screening-notice-version]')?.getAttribute('data-screening-notice-version')).toBe(SCREENING_NOTICE_VERSION);
+  }
+  expect(screen.queryByText('How your application may be reviewed')).toBeNull();
+  fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+  await screen.findByText('Application Submitted!');
+  const body = JSON.parse(send.mock.calls[0][1].body);
+  if (enabled) expect(body.screening_notice_version).toBe(SCREENING_NOTICE_VERSION);
+  else expect(body).not.toHaveProperty('screening_notice_version');
 });

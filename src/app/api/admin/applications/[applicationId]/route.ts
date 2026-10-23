@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/api-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { UUID_PATTERN, type ApplicationDetail } from '@/lib/admin-applications';
+import { UUID_PATTERN, readEmployerOutboxStatus, type ApplicationDetail } from '@/lib/admin-applications';
 import { nullableText, record, relation, text, uuid } from '../_data';
 import { SEEKER_DETAIL_COLUMNS, seekerDetailsFromRow, sensitiveDetailsFromRow } from '@/lib/seeker-details';
 import { applicationReadError, privateJson, privateResponse } from '../_response';
@@ -65,6 +65,22 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       }
     }
 
+    // Visibility survives dispatch rollback. Only schema readiness gates this read;
+    // never load payloads, recipients, résumé snapshots, or screening/model results.
+    let employerOutboxStatus: ApplicationDetail['employerOutboxStatus'];
+    if (process.env.EMPLOYER_SCREENING_SCHEMA_READY === 'true') {
+      try {
+        const outbox = await admin.rpc('employer_outbox_status', { p_application_id: applicationId });
+        if (!outbox.error && outbox.data) {
+          const status = record(outbox.data);
+          employerOutboxStatus = readEmployerOutboxStatus({
+            state: status.state, attempts: status.attempts, firstSendAt: status.first_send_at,
+            acceptedAt: status.accepted_at, nextAttemptAt: status.next_attempt_at, lastErrorCode: status.last_error_code,
+          }) ?? undefined;
+        }
+      } catch { /* Optional migration/read failures retain legacy detail without private diagnostics. */ }
+    }
+
     // Optional profile details. Read separately so the drawer keeps working
     // before the profile-details migration; failures just omit the section.
     let profileDetails: ApplicationDetail['profileDetails'] = null;
@@ -86,6 +102,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
         company: company ? { id: uuid(company.id), name: text(company.company_name) } : null,
       } : null,
       applicant, resume, notificationTracking, profileDetails, sensitiveDetails,
+      ...(employerOutboxStatus ? { employerOutboxStatus } : {}),
     };
     return privateJson({ application });
   } catch {

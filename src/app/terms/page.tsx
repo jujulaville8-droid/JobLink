@@ -1,3 +1,5 @@
+import { SCREENING_NOTICE_TEXT } from '@/lib/employer-screening/notice'
+
 export const metadata = {
   title: 'Terms of Service',
   description: 'JobLink terms of service. Rules and guidelines for using our platform.',
@@ -17,7 +19,7 @@ export default function TermsPage() {
         <h1 className="text-3xl md:text-4xl font-bold font-display text-primary mb-2">
           Terms of Service
         </h1>
-        <p className="text-text-light mb-10">Last updated: March 2026</p>
+        <p className="text-text-light mb-10">Last updated: October 2026</p>
 
         <div className="prose prose-gray max-w-none space-y-8">
           <section>
@@ -45,6 +47,13 @@ export default function TermsPage() {
             <p className="text-text-light leading-relaxed">
               Job seekers may create profiles, upload resumes, search for jobs, and apply to listings. You agree that all information in your profile and applications is truthful and accurate. You may not apply to jobs using false credentials or misrepresent your qualifications.
             </p>
+          </section>
+
+          <section id="resume-review" aria-labelledby="resume-review-title" className="scroll-mt-24">
+            <h2 id="resume-review-title" className="text-xl font-semibold text-primary mb-3">
+              3.1 Résumé Review and Automated Processing
+            </h2>
+            <p className="text-text-light leading-relaxed">{SCREENING_NOTICE_TEXT}</p>
           </section>
 
           <section>

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/employer-screening",
+      "schedule": "* * * * *"
+    }
+  ]
+}
