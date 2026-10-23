@@ -59,6 +59,7 @@ const professionalHeadings: Readonly<Record<string, ProfessionalSection>> = Obje
   'relevant experiences': 'work', 'volunteer experiences': 'work', 'internship experiences': 'work',
   'employment experience': 'work', 'employment history': 'work', 'work history': 'work',
   'relevant experience': 'work', 'career history': 'work', 'work and experience': 'work',
+  'employment record': 'work', volunteering: 'work', memberships: 'achievements',
   'volunteer experience': 'work', 'volunteering experience': 'work', 'volunteer work': 'work',
   'internship experience': 'work', internships: 'work', projects: 'work', 'professional projects': 'work',
   skills: 'skills', 'technical skills': 'skills', 'key skills': 'skills', 'core skills': 'skills',
@@ -143,7 +144,7 @@ function hasSensitiveActivityScope(raw: string): boolean {
       if (activities && hasSensitiveActivityText(scope)) return true
       activities = false; scope = ''
     }
-    activities ||= isExtracurricularHeading(line)
+    activities ||= isExtracurricularHeading(line) || headingKey(line) === 'memberships'
     scope += '\n' + line
   }
   return activities && hasSensitiveActivityText(scope)
@@ -159,6 +160,17 @@ const unsafeCharacters = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u
 // Scope-bearing content outside an admitted professional section cannot simply
 // vanish. Do not let headings/bullets promote later statements to personal facts.
 const excludedScopeRisk = /(?:\b(?:not|never|no|without|cannot|can't|didn't|haven't|hasn't|isn't|aren't|would|could|wish|hope|aspire|hypothetical|fictional|example|sample|template|training|practice|practise|coursework|simulation|requirements?|pending|expired|revoked|cancelled|canceled|unverified)\b|\b(?:my colleague|my supervisor|someone else|another person|not mine|not my|their experience|their work|they performed|they did|only observed)\b)/iu
+// Promotion of an excluded/unknown scope to a document-wide discard is kept
+// for explicit attribution, negation, disclaimer, instruction-adjacent and
+// credential-status language. Third-person possessives and belongs-to phrasing
+// are attribution even without a negation word. The bare activity words
+// (training, practice, coursework) promote ONLY in attribution shapes: a
+// copula reclassifying experience or work, an undertaking sentence that
+// survived the availability exception (so it sits outside that context), or a
+// training title. As the plain subject of an interests or personal section
+// they drop only their own scope, which is still excluded from transmission
+// and still scanned by excludedScopeRisk for intentionality.
+const globalContextRisk = /(?:\b(?:not|never|no|without|cannot|can't|didn't|haven't|hasn't|isn't|aren't|would|could|wish|hope|aspire|hypothetical|fictional|example|examples|sample|template|simulation|requirements?|pending|expired|revoked|cancelled|canceled|unverified)\b|\b(?:my colleague|my supervisor|someone else|another person|not mine|not my|their experience|their work|they performed|they did|only observed|belongs? to|his|hers|theirs)\b|\b(?:experience|work|duties|employment|background|role|job)\s+(?:was|is|were|be)\s+(?:only\s+|just\s+|merely\s+)?(?:training|practice|practise|coursework)\b|\bwilling to undertake training\b|\btraining\s+(?:and development|manager|officer|coordinator|supervisor|director)\b|\b(?:manager|director|officer|coordinator|specialist|supervisor|head)(?:\s*[-–—,:]\s*|\s+)training\b)/iu
 
 function isIdentityMetadata(text: string): boolean {
   const value = detectionText(text)
@@ -201,6 +213,19 @@ for (let first = 65; first <= 90; first++) for (let second = 65; second <= 90; s
   if (name && name !== code && code !== 'ZZ') locationAnchors.add(name.toLowerCase().replace(/&/g, 'and'))
 }
 const placeKey = (value: string) => value.toLowerCase().replace(/[.'’]/g, '').replace(/\s+/g, ' ')
+// Positive gazetteer for the platform's home market, used the same way as the
+// city anchors below: a bare locality in a builder contact row is intentional
+// metadata only when the whole field is one of these names. Anything else
+// keeps the existing incomplete-coverage behavior.
+const antiguaLocalities = new Set([
+  'all saints', 'barnes hill', 'bendals', 'bethesda', 'blue waters', 'bolans',
+  'buckleys', 'cassada gardens', 'cedar grove', 'cedar valley', 'christian hill',
+  'clarkes hill', 'cobbs cross', 'coolidge', 'crosbies', 'english harbour',
+  'falmouth', 'five islands', 'freemans village', 'golden grove', 'hodges bay',
+  'jennings', 'john hughes', 'liberta', 'marble hill', 'newfield', 'piccadilly',
+  'piggots', 'potters village', 'radio range', 'sawcolts', 'seatons', 'swetes',
+  'urlings', 'willikies',
+])
 // Positive locality anchors, not a guess that every capitalized noun is a city.
 // This deliberately supports fewer headers than a geocoder. Unknown localities
 // retain the existing incomplete-coverage behavior rather than hiding claims.
@@ -219,6 +244,9 @@ function isCombinedLocationContactMetadata(text: string): boolean {
   // The builder separates location/contact fields with middle dots. Reuse the
   // existing bounded locality + 268-phone form; extra job-title tokens still fail.
   if (fields.some(field => isAntiguaLocalityPhoneMetadata(`${places[0]} ${field}`))) return true
+  // A bare gazetteer locality with no comma form is the same perimeter shape:
+  // the whole non-contact field is one known place name and nothing else.
+  if (!places[0].includes(',') && antiguaLocalities.has(placeKey(places[0]))) return true
   const parts = places[0].replace(/&/g, 'and').split(/\s*,\s*/u)
   if (parts.length < 2 || parts.length > 3 || !locationAnchors.has(parts.at(-1)!.toLowerCase())) return false
   if (!cityAnchors.has(placeKey(parts.at(-2)!))) return false
@@ -238,6 +266,31 @@ function isAntiguaLocalityPhoneMetadata(text: string): boolean {
   const match = /^((?:(?:North|South|East|West|Central) )?\p{Lu}[\p{L}'’.-]* (?:Pasture|Village|Estate|Grove|Harbour|Harbor|Bay|Hill|Heights))\s+(?:\+?1[ -]?)?(?:\(268\)|268)[ .-]?\d{3}[ .-]?\d{4}$/u.exec(text)
   return !!match && !excludedScopeRisk.test(match[1]) && !instructionRisk.test(match[1]) &&
     !headerProfessionalRisk.test(match[1]) && !protectedRisk.test(match[1])
+}
+
+// A standalone header title line (the builder emits the seeker's job title on
+// its own line) is perimeter metadata, not a claim: short, purely alphabetic,
+// and ending in a known occupation noun. Skill claims, sentences, digits and
+// contact forms never qualify, so adversarial headers stay unclassified.
+const occupationHeads = new Set([
+  'accountant', 'administrator', 'agent', 'analyst', 'assistant', 'associate',
+  'attendant', 'baker', 'barber', 'bartender', 'butcher', 'carpenter', 'cashier',
+  'chef', 'cleaner', 'clerk', 'consultant', 'cook', 'coordinator', 'designer',
+  'developer', 'director', 'driver', 'electrician', 'engineer', 'farmer',
+  'fisherman', 'guard', 'head', 'housekeeper', 'instructor', 'lead', 'manager',
+  'mechanic', 'nurse', 'officer', 'operator', 'painter', 'paralegal', 'pharmacist',
+  'plumber', 'porter', 'receptionist', 'representative', 'seamstress', 'secretary',
+  'specialist', 'stylist', 'supervisor', 'tailor', 'teacher', 'technician',
+  'therapist', 'vendor', 'waiter', 'waitress', 'welder', 'worker',
+])
+function isStandaloneJobTitleMetadata(text: string): boolean {
+  const value = detectionText(text)
+  if (!value || value.length > 60 || /[\d@|•·,_:;]/u.test(value)) return false
+  const words = value.split(/\s+/u)
+  if (words.length < 1 || words.length > 4) return false
+  if (!words.every(word => /^[\p{L}][\p{L}'’-]*$/u.test(word))) return false
+  if (!occupationHeads.has(words.at(-1)!.toLowerCase())) return false
+  return !excludedScopeRisk.test(value) && !instructionRisk.test(value) && !protectedRisk.test(value)
 }
 
 function isLabelledPhonePair(text: string): boolean {
@@ -468,7 +521,7 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       // A labelled identity line containing professional claims or a qualifier
       // is not safe to erase. Scope-bearing excluded text invalidates claims.
       const scopeText = excludedQualifierText(substantiveLines, scope.section === 'excluded')
-      if (excludedScopeRisk.test(scopeText)) unresolvedContext = true
+      if (globalContextRisk.test(scopeText)) unresolvedContext = true
       // Only the first preamble may contain unlabelled professional taglines.
       // Scan its ORIGINAL joined scope above before admitting individual spans;
       // splitting first could conceal cross-line instructions or attribution.
@@ -478,7 +531,8 @@ export function projectProfessionalResume(input: Readonly<{ sourceSha256: string
       const remaining = substantiveLines.filter(line => !taglines.includes(line))
       const intentional = scope.section === 'excluded' || remaining.every(line => isIdentityMetadata(line.text) ||
         (!professionalScopeSeen && (isCombinedLocationContactMetadata(detectionText(line.text)) ||
-          isAntiguaLocalityPhoneMetadata(detectionText(line.text)))))
+          isAntiguaLocalityPhoneMetadata(detectionText(line.text)) ||
+          isStandaloneJobTitleMetadata(line.text))))
       if (!intentional) omissions.unclassifiedContent = true
       if (remaining.length) localOmissions.push({ reason: intentional
         ? (scope.section === 'excluded' ? 'intentional_nonprofessional_exclusion' : 'intentional_identity_exclusion')
