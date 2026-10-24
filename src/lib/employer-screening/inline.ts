@@ -12,7 +12,7 @@ import { extractPdfResume, PDF_EXTRACTION_LIMITS, type PdfExtractionOptions, typ
 import { validateMinimizedExtraction } from './privacy'
 import { createOpenAIProcessor, type ScreeningBudgetReservation, type ScreeningBudgetStore, type ScreeningUsage } from './provider'
 import { assessResumeDocumentQuality, validateResumeDocumentQuality, type ResumeDocumentQuality } from './quality'
-import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS, type InlineDiagnosticEvent } from './inline-diagnostics'
+import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS, reviewV2FailureEvent, type InlineDiagnosticEvent } from './inline-diagnostics'
 import { inlineResumeReviewV2 } from './review-v2-inline'
 import { SupabaseSolReviewBudgetStore, type SolReviewBudgetStore } from './review-v2-provider'
 import type { ResumeReviewV2 } from './review-v2'
@@ -138,6 +138,8 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
   let timer: ReturnType<typeof setTimeout> | undefined
   let quality: ResumeDocumentQuality | undefined
   let failureEvent: InlineDiagnosticEvent = 'parse_failed'
+  // Read through a function so the catch sees assignments made inside work().
+  const currentFailureEvent = (): InlineDiagnosticEvent => failureEvent
   const localOnly = (): InlineScreeningFields => quality ? { employer_resume_quality: quality } : {}
   const live = () => { if (controller.signal.aborted || now() >= deadline) throw new Error('Inline screening deadline') }
   const work = async (): Promise<InlineScreeningFields> => {
@@ -248,7 +250,14 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
     // A result the work already produced is returned as-is; the deadline only
     // decides outcomes the work did not finish, never swaps a finished one out.
     return workResult ?? (controller.signal.aborted || now() >= deadline ? localOnly() : result)
-  } catch { diagnostic(controller.signal.aborted || now() >= deadline ? 'deadline_expired' : failureEvent); return localOnly() }
+  } catch (error) {
+    // A v2 failure names its stage or validation rule; the deadline still
+    // wins, because an abort mid generation is a deadline, not a defect.
+    if (controller.signal.aborted || now() >= deadline) diagnostic('deadline_expired')
+    else if (currentFailureEvent() === 'review_v2_failed') diagnostic(reviewV2FailureEvent(error))
+    else diagnostic(currentFailureEvent())
+    return localOnly()
+  }
   finally { if (timer) clearTimeout(timer); controller.abort() }
 }
 
