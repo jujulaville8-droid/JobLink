@@ -3,6 +3,7 @@
 import 'server-only'
 import { createHash } from 'node:crypto'
 import { PDF_DIAGNOSTIC_EVENTS } from './pdf-extraction'
+import type { ProjectionEmptyReason } from './professional-projection'
 
 export const INLINE_DIAGNOSTIC_EVENTS = [
   'route_inline_disabled', 'route_notice_missing', 'route_notice_current',
@@ -16,6 +17,9 @@ export const INLINE_DIAGNOSTIC_EVENTS = [
   'budget_granted', 'dispatch_not_authorized', 'provider_request_started', 'provider_failed',
   'settlement_unconfirmed', 'assessment_invalid', 'scored', 'deadline_expired',
   'enrichment_failed', 'review_v2_failed', 'review_v2_gates_disabled', 'review_v2_notice_missing', 'review_v2_projection_empty',
+  'review_v2_projection_invalid_input', 'review_v2_projection_hash_mismatch', 'review_v2_projection_no_text',
+  'review_v2_projection_no_professional_content', 'review_v2_projection_all_omitted_privacy',
+  'review_v2_projection_all_omitted_unsafe', 'review_v2_projection_all_omitted_unclassified',
   'review_v2_admission_requested', 'review_v2_admission_granted', 'review_v2_admission_denied',
   'review_v2_count_started', 'review_v2_count_validated', 'review_v2_completed',
   'review_v2_usage_invalid', 'review_v2_dispatch_expired', 'review_v2_response_unavailable',
@@ -36,6 +40,18 @@ export const JOB_MAPPING_REASON_EVENTS = {
   unsupported_requirements: 'job_mapping_unsupported_requirements',
   too_many_criteria: 'job_mapping_too_many_criteria',
 } as const satisfies Record<string, InlineDiagnosticEvent>
+
+/** Reason specific companion codes for review_v2_projection_empty, so log scans
+ * can tell an unparsed résumé from a fully omitted one without reading the CV. */
+export const PROJECTION_EMPTY_REASON_EVENTS = {
+  invalid_input: 'review_v2_projection_invalid_input',
+  hash_mismatch: 'review_v2_projection_hash_mismatch',
+  no_text: 'review_v2_projection_no_text',
+  no_professional_content: 'review_v2_projection_no_professional_content',
+  all_omitted_privacy: 'review_v2_projection_all_omitted_privacy',
+  all_omitted_unsafe: 'review_v2_projection_all_omitted_unsafe',
+  all_omitted_unclassified: 'review_v2_projection_all_omitted_unclassified',
+} as const satisfies Record<ProjectionEmptyReason, InlineDiagnosticEvent>
 
 /** Classifies a Sol review failure into a fixed diagnostic code by exact
  * error message. The provider and validator throw only constant messages, so
