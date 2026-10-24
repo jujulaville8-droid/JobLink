@@ -1,0 +1,46 @@
+name: IndexNow
+
+# Submits job URLs to IndexNow (Bing, Yandex, Seznam, Naver) from GitHub's
+# runners. Claude's cloud runs can't reach api.indexnow.org, so they use this.
+# The key is public by design (https://joblinkantigua.com/<key>.txt); no secrets.
+
+on:
+  schedule:
+    # 12:07 UTC daily = 8:07 AM Toronto in summer time, 7:07 AM in winter;
+    # either way before the 8:37 AM daily SEO run reads the result.
+    - cron: "7 12 * * *"
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Space-separated joblinkantigua.com URLs to submit. Leave empty to submit every /jobs/<id> URL in the live sitemap."
+        required: false
+        default: ""
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # The script only needs Node's built-in fetch plus tsx, so no npm ci.
+      - name: Submit to IndexNow
+        env:
+          URLS: ${{ github.event.inputs.urls }}
+        run: |
+          if [ -n "$URLS" ]; then
+            npx --yes tsx scripts/indexnow-submit.ts $URLS
+          else
+            npx --yes tsx scripts/indexnow-submit.ts --sitemap
+          fi
