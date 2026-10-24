@@ -51,6 +51,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // The www host served duplicate 200s; send it to the apex domain so search
+  // engines only ever see one origin.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.joblinkantigua.com" }],
+        destination: "https://joblinkantigua.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

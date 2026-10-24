@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { approvedTestimonials } from '@/lib/testimonials'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Local hiring stories | JobLink Antigua', description: 'Employer experiences hiring through JobLink in Antigua and Barbuda.' }
+export const metadata = { title: 'Local hiring stories | JobLink Antigua', description: 'Employer experiences hiring through JobLink in Antigua and Barbuda.', alternates: { canonical: 'https://joblinkantigua.com/success-stories' } }
 export default async function SuccessStories() {
   const stories = await approvedTestimonials()
   return <main className="mx-auto max-w-4xl px-5 py-16">
