@@ -17,8 +17,10 @@ import { inlineResumeReviewV2 } from './review-v2-inline'
 import { SupabaseSolReviewBudgetStore, type SolReviewBudgetStore } from './review-v2-provider'
 import type { ResumeReviewV2 } from './review-v2'
 
-/** Leaves the ordinary send its existing execution time. Parsing gets at most 3s. */
-export const INLINE_SCREENING_BUDGET_MS = 25_000
+/** Leaves the ordinary send its existing execution time. Parsing gets at most
+ * 3s; a Sol generation takes 12-15s, so the budget leaves room for the one
+ * validation retry to finish inside the same request. */
+export const INLINE_SCREENING_BUDGET_MS = 40_000
 export const INLINE_SCREENING_GATES = [
   'EMPLOYER_SCREENING_INLINE_ENABLED', 'EMPLOYER_SCREENING_PRIVACY_APPROVED',
   'EMPLOYER_SCREENING_CONTEXT_PRIVACY_APPROVED', 'EMPLOYER_SCREENING_NOTICE_APPROVED',
