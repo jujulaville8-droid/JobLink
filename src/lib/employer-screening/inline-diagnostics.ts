@@ -22,7 +22,7 @@ export const INLINE_DIAGNOSTIC_EVENTS = [
   'review_v2_response_limit', 'review_v2_output_unavailable', 'review_v2_context_invalid',
   'review_v2_invalid_scope', 'review_v2_citation_invalid', 'review_v2_dimensions_invalid',
   'review_v2_findings_invalid', 'review_v2_claims_invalid', 'review_v2_overview_invalid',
-  'review_v2_response_schema',
+  'review_v2_response_schema', 'review_v2_validation_retry',
   ...PDF_DIAGNOSTIC_EVENTS,
 ] as const
 export type InlineDiagnosticEvent = typeof INLINE_DIAGNOSTIC_EVENTS[number]

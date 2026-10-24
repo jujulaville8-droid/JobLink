@@ -167,3 +167,38 @@ describe('Sol v2 single-call budget boundary (offline mocks only)', () => {
     expect(store.dispatchAllowed(reservationId)).toBe(true); s.advance(25_000); expect(store.dispatchAllowed(reservationId)).toBe(false)
   })
 })
+
+describe('Sol v2 validation retry (offline mocks only)', () => {
+  const badGeneration = () => ({ ...raw(), output: [] })
+  it('retries once inside the same reservation when the first response fails validation', async () => {
+    const s = setup()
+    let generations = 0
+    s.fetcher.mockImplementation(async url => new Response(JSON.stringify(String(url).endsWith('/input_tokens')
+      ? { object: 'response.input_tokens', input_tokens: 1200 }
+      : (++generations === 1 ? badGeneration() : raw()))))
+    await expect(s.run()).resolves.toEqual({ version: 'synthetic-test' })
+    expect(generations).toBe(2)
+    expect(s.fetcher).toHaveBeenCalledTimes(3)
+    expect(s.budget.claim).toHaveBeenCalledTimes(1)
+    expect(s.budget.reserve).toHaveBeenCalledTimes(1)
+    expect(s.budget.settle).toHaveBeenCalledTimes(1)
+    expect(s.options.onStage).toHaveBeenCalledWith('validation_retry')
+  })
+  it('propagates the second failure after exactly one retry', async () => {
+    const s = setup()
+    s.fetcher.mockImplementation(async url => new Response(JSON.stringify(String(url).endsWith('/input_tokens')
+      ? { object: 'response.input_tokens', input_tokens: 1200 } : badGeneration())))
+    await expect(s.run()).rejects.toThrow()
+    expect(s.fetcher).toHaveBeenCalledTimes(3)
+    expect(s.options.onStage).toHaveBeenCalledWith('validation_retry')
+  })
+  it('does not retry a transport failure', async () => {
+    const s = setup()
+    s.fetcher.mockImplementation(async url => String(url).endsWith('/input_tokens')
+      ? new Response(JSON.stringify({ object: 'response.input_tokens', input_tokens: 1200 }))
+      : new Response('{}', { status: 500 }))
+    await expect(s.run()).rejects.toThrow('Review response unavailable')
+    expect(s.fetcher).toHaveBeenCalledTimes(2)
+    expect(s.options.onStage).not.toHaveBeenCalledWith('validation_retry')
+  })
+})
