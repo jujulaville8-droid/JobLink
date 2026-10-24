@@ -38,6 +38,9 @@ export type ProfessionalProjectionData = Readonly<{
 export type ProfessionalSourceSpan = Readonly<{ page: number; start: number; end: number }>
 export type ProfessionalOmissionReason = 'intentional_identity_exclusion' | 'intentional_nonprofessional_exclusion' |
   'unclassified_scope' | 'unsafe_professional_scope' | 'unresolved_context' | 'limit' | 'empty_professional_scope'
+/** Fixed codes naming WHY a projection carries no records, for diagnostics only. */
+export type ProjectionEmptyReason = 'invalid_input' | 'hash_mismatch' | 'no_text' |
+  'no_professional_content' | 'all_omitted_privacy' | 'all_omitted_unsafe' | 'all_omitted_unclassified'
 export type ProfessionalProjection = Readonly<{
   sourceSha256: string
   providerInput: ProfessionalProjectionData
@@ -572,6 +575,28 @@ function deepFreeze<T>(value: T): T {
   }
   return value
 }
+/** Pure local classifier for a zero-record projection. Reads ONLY structure,
+ * counts and the fixed omission reasons, so a diagnostic can name the cause
+ * without ever copying, quoting or deriving résumé text. Returns null when the
+ * projection has records from the same source, so there is nothing to explain.
+ * A provenance mismatch is reported even when records exist, because the
+ * inline caller treats that case as empty too. */
+export function classifyEmptyProjection(projection: ProfessionalProjection | null,
+  input: Readonly<{ sourceSha256: string; pages: readonly string[] }>): ProjectionEmptyReason | null {
+  if (!projection) return 'invalid_input'
+  if (projection.sourceSha256 !== input.sourceSha256) return 'hash_mismatch'
+  if (projection.providerInput.records.length) return null
+  if (input.pages.every(page => !page.trim())) return 'no_text'
+  const reasons = new Set(projection.localOmissions.map(omission => omission.reason))
+  if (!reasons.size) return 'no_professional_content'
+  // Unsafe/unresolved scopes outrank the softer causes: a document quarantined
+  // for risk must not be reported as a mere privacy or classification gap.
+  if (reasons.has('unsafe_professional_scope') || reasons.has('unresolved_context')) return 'all_omitted_unsafe'
+  if (reasons.has('unclassified_scope') || reasons.has('empty_professional_scope') ||
+      reasons.has('limit')) return 'all_omitted_unclassified'
+  return 'all_omitted_privacy'
+}
+
 /** Explicit allowlisted serialization boundary. Never serialize the local result
  * itself or spread it into a model request. Caller must not mutate the DTO. */
 export function getProfessionalResumeContext(projection: ProfessionalProjection): ProfessionalProjectionData {

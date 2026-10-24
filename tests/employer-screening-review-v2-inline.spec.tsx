@@ -114,6 +114,20 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
     expect(events.some(text => text.includes('review_v2_response_schema'))).toBe(true)
   })
+  it('logs the umbrella projection code first and then the specific empty reason', async () => {
+    const s = setup()
+    s.deps.extract = vi.fn(async b => ({ sourceSha256: hash(b), evidence: [], context: [], omittedContext: true,
+      localPages: ['Jordan Ellis\njordan.ellis@example.invalid'] }))
+    expect(await inlineEmployerScreening(input(), s.deps)).toEqual({})
+    expect(s.fetcher).not.toHaveBeenCalled(); expect(s.deps.budget).not.toHaveBeenCalled()
+    const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
+    const umbrella = events.findIndex(text => text.includes('review_v2_projection_empty'))
+    const reason = events.findIndex(text => text.includes('review_v2_projection_all_omitted_privacy'))
+    expect(umbrella).toBeGreaterThanOrEqual(0)
+    expect(reason).toBe(umbrella + 1)
+    expect(events.join('|')).not.toMatch(/Jordan|Ellis|jordan.ellis@/)
+  })
+
   it('logs the criteria derivation reason for a stub listing', async () => {
     const s = setup()
     s.deps.loadJob = vi.fn(async () => ({ ...job, description: 'We are hiring a kitchen helper for night shifts at our busy restaurant in town.' }))

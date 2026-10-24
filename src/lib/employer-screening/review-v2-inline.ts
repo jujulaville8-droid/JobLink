@@ -7,8 +7,8 @@ import { hasNarrativeReviewNotice } from './notice'
 import type { InlineScreeningInput, InlineScreeningDependencies, InlineScreeningFields } from './inline'
 import type { PdfResumeExtraction } from './pdf-extraction'
 import { derivePublishedJobCriteria } from './inline-job-criteria'
-import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS } from './inline-diagnostics'
-import { projectProfessionalResume, getProfessionalResumeContext } from './professional-projection'
+import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS, PROJECTION_EMPTY_REASON_EVENTS } from './inline-diagnostics'
+import { projectProfessionalResume, getProfessionalResumeContext, classifyEmptyProjection } from './professional-projection'
 import { runSolResumeReview, type SolReviewStage } from './review-v2-provider'
 import type { ReviewV2Context } from './review-v2'
 
@@ -29,7 +29,12 @@ export async function inlineResumeReviewV2(input: InlineScreeningInput, parsed: 
   const projection = projectProfessionalResume({ sourceSha256: parsed.sourceSha256, pages: parsed.localPages })
   live()
   if (!projection || !projection.providerInput.records.length || projection.sourceSha256 !== parsed.sourceSha256) {
-    diagnostic('review_v2_projection_empty'); return {}
+    // The umbrella code stays first for existing log scans; the fixed reason
+    // code follows it and never carries any résumé content.
+    diagnostic('review_v2_projection_empty')
+    const reason = classifyEmptyProjection(projection, { sourceSha256: parsed.sourceSha256, pages: parsed.localPages })
+    if (reason) diagnostic(PROJECTION_EMPTY_REASON_EVENTS[reason])
+    return {}
   }
   const job = jobSchema.parse(await deps.loadJob(input.jobId, signal))
   live()
