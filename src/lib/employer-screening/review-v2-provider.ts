@@ -189,6 +189,11 @@ function isRetryableReviewFailure(error: unknown): boolean {
   return RETRYABLE_REVIEW_FAILURES.has(error.message)
 }
 
+/** A generation takes 12-15s in production. A retry started with less time
+ * than this left before the inline deadline cannot finish, so it is skipped:
+ * the email outcome is identical and the paid generation is not wasted. */
+const SOL_REVIEW_RETRY_MIN_REMAINING_MS = 15_000
+
 /** Returns only after usage settlement and narrative validation both succeed.
  * Billing rates are conservative ceilings, not a claim of invoice reconciliation.
  * The count endpoint's price is not independently documented as free; activation
@@ -271,10 +276,13 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
       reviewed = await generate()
     } catch (error) {
       // One fresh generation for a validation class rejection, inside the
-      // same admission and reservation and inside the same dispatch window.
-      // Transport, admission, budget, and deadline failures are not retried,
-      // and a second failure propagates with its own reason.
-      if (!isRetryableReviewFailure(error) || now() >= Date.parse(activeGrant.dispatch_not_after)) throw error
+      // same admission and reservation and inside the same dispatch window,
+      // and only when enough of the inline deadline remains for a typical
+      // generation to finish. Transport, admission, budget, and deadline
+      // failures are not retried, and a second failure propagates with its
+      // own reason.
+      if (!isRetryableReviewFailure(error) || now() >= Date.parse(activeGrant.dispatch_not_after) ||
+        options.deadline - now() < SOL_REVIEW_RETRY_MIN_REMAINING_MS) throw error
       live(); stage('validation_retry')
       reviewed = await generate()
     }

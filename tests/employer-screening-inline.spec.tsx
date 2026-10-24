@@ -233,7 +233,7 @@ describe('bounded inline advisory with an unchanged existing delivery', () => {
   })
   it('allows a response after the former eight-second window while keeping parser and total bounds fixed', async () => {
     vi.useFakeTimers()
-    expect(INLINE_SCREENING_BUDGET_MS).toBe(25_000)
+    expect(INLINE_SCREENING_BUDGET_MS).toBe(40_000)
     const test = setup(), response = deferred<Response>()
     test.fetcher.mockReturnValue(response.promise)
     const work = test.run()

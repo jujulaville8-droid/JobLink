@@ -192,6 +192,18 @@ describe('Sol v2 validation retry (offline mocks only)', () => {
     expect(s.fetcher).toHaveBeenCalledTimes(3)
     expect(s.options.onStage).toHaveBeenCalledWith('validation_retry')
   })
+  it('skips the retry when too little of the deadline remains for another generation', async () => {
+    const s = setup()
+    s.fetcher.mockImplementation(async url => {
+      const isCount = String(url).endsWith('/input_tokens')
+      if (!isCount) s.advance(20_000)
+      return new Response(JSON.stringify(isCount
+        ? { object: 'response.input_tokens', input_tokens: 1200 } : badGeneration()))
+    })
+    await expect(s.run()).rejects.toThrow()
+    expect(s.fetcher).toHaveBeenCalledTimes(2)
+    expect(s.options.onStage).not.toHaveBeenCalledWith('validation_retry')
+  })
   it('does not retry a transport failure', async () => {
     const s = setup()
     s.fetcher.mockImplementation(async url => String(url).endsWith('/input_tokens')
