@@ -45,6 +45,8 @@ const loadJobResults = cache(async (
     .select(
       `
       id,
+      company_id,
+      posted_by_admin,
       title,
       description,
       category,

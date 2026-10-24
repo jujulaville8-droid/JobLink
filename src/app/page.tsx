@@ -4,6 +4,7 @@ import { type Job } from "@/components/JobCard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
+import { publicJobType } from "@/lib/seo/job-type-display";
 
 /**
  * The homepage shows three featured jobs and four counters -- all public data,
@@ -27,7 +28,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       .from("job_listings")
       .select(
         `
-        id, title, job_type, salary_min, salary_max, salary_visible,
+        id, company_id, posted_by_admin, description, title, job_type, salary_min, salary_max, salary_visible,
         location, is_featured, created_at,
         company:companies ( company_name, logo_url, is_pro, location )
       `
@@ -56,7 +57,10 @@ async function getFeaturedJobs(): Promise<Job[]> {
         company_logo: company?.logo_url || null,
         location: job.location,
         company_location: company?.location ?? null,
-        job_type: JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type,
+        job_type: (() => {
+          const type = publicJobType(job);
+          return type ? JOB_TYPE_LABELS[type as JobType] || type : "";
+        })(),
         salary_min: job.salary_min,
         salary_max: job.salary_max,
         salary_visible: job.salary_visible,

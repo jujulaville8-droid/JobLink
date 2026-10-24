@@ -9,6 +9,7 @@ import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
 import { getEmployerApproval } from "@/lib/seo/employerApproved";
 import { hasUnconfirmedEmploymentType } from "@/lib/seo/unconfirmed-employment-types";
+import { isJobTypeConfirmed } from "@/lib/seo/job-type-display";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
@@ -242,8 +243,13 @@ export default async function JobDetailPage({ params }: PageProps) {
   const emitJobPosting =
     !closure && !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
 
-  const employmentTypeConfirmed = !hasUnconfirmedEmploymentType(job.id, job.company_id) &&
-    !(employerApproval && "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
+  // One rule for the visible label and the JobPosting employmentType markup.
+  const employmentTypeConfirmed = isJobTypeConfirmed({
+    id: job.id,
+    company_id: company?.id ?? job.company_id,
+    posted_by_admin: job.posted_by_admin,
+    description: job.description,
+  }) && !hasUnconfirmedEmploymentType(job.id, job.company_id);
 
   const jobPostingSchema = {
     "@context": "https://schema.org",
@@ -431,9 +437,11 @@ export default async function JobDetailPage({ params }: PageProps) {
                 </span>
 
                 {/* Employment type */}
-                <span className="inline-flex items-center rounded-full bg-primary/8 px-3 py-1 text-xs font-semibold text-primary">
-                  {jobTypeLabel}
-                </span>
+                {employmentTypeConfirmed && (
+                  <span className="inline-flex items-center rounded-full bg-primary/8 px-3 py-1 text-xs font-semibold text-primary">
+                    {jobTypeLabel}
+                  </span>
+                )}
 
                 {/* Salary pill */}
                 {salary && (

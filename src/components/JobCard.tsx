@@ -12,6 +12,7 @@ export interface Job {
   company_logo?: string | null;
   location: string | null;
   company_location?: string | null;
+  /** Empty when the job type is unconfirmed and must not be shown. */
   job_type: string;
   salary_min?: number | null;
   salary_max?: number | null;
@@ -168,9 +169,11 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                 </svg>
                 {displayJobLocation(job.location, job.company_location) || "Location not provided"}
               </span>
-              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${getJobType(job.job_type).color}`}>
-                {getJobType(job.job_type).label}
-              </span>
+              {job.job_type && (
+                <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${getJobType(job.job_type).color}`}>
+                  {getJobType(job.job_type).label}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center justify-between gap-3 mt-2.5">

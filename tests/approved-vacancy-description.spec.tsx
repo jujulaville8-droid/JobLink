@@ -185,7 +185,9 @@ describe.each(vacancies)('$companyName already-approved description fallback', v
     if (vacancy.schemaEmploymentType) expect(schema.employmentType).toBe(vacancy.schemaEmploymentType);
     else expect(schema).not.toHaveProperty('employmentType');
     expect(page.textContent).toContain('Sign In to Apply');
-    expect(page.textContent).toContain('Full Time'); // Stored/visible type is unchanged.
+    // The visible job type follows the same confirmation rule as employmentType.
+    if (vacancy.schemaEmploymentType) expect(page.textContent).toContain('Full Time');
+    else expect(page.textContent).not.toContain('Full Time');
     expect(EMPLOYER_APPROVED_JOBS).toEqual(originalApprovals);
     expect(EMPLOYER_APPROVED_COMPANIES).toEqual(originalCompanyApprovals);
     expect(db.job).toEqual(before);

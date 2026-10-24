@@ -68,7 +68,12 @@ export function NumberTicker({
       )}
       {...props}
     >
-      {startValue}
+      {/* Server-render the real number so crawlers and no-JS readers never see
+          the start value; the client animates from startValue once in view. */}
+      {Intl.NumberFormat("en-US", {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+      }).format(direction === "down" ? startValue : value)}
     </span>
   )
 }
