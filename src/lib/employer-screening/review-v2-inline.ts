@@ -55,6 +55,7 @@ export async function inlineResumeReviewV2(input: InlineScreeningInput, parsed: 
     else if (event === 'admission_denied') diagnostic('review_v2_admission_denied')
     else if (event === 'count_started') diagnostic('review_v2_count_started')
     else if (event === 'count_validated') diagnostic('review_v2_count_validated')
+    else if (event === 'validation_retry') diagnostic('review_v2_validation_retry')
     else if (event !== 'settlement_confirmed') diagnostic(event)
   }
   const report = await runSolResumeReview(context, { enabled: true, apiKey: env.OPENAI_API_KEY,

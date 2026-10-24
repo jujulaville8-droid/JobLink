@@ -104,6 +104,7 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(await inlineEmployerScreening(input(), s.deps)).toEqual({})
     const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
     expect(events.some(text => text.includes('review_v2_dimensions_invalid'))).toBe(true)
+    expect(events.some(text => text.includes('review_v2_validation_retry'))).toBe(true)
     expect(events.some(text => text.includes('review_v2_completed'))).toBe(false)
   })
   it('logs a schema code when the provider response has the wrong shape', async () => {

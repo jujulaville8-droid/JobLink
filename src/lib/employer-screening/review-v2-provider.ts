@@ -113,7 +113,7 @@ export class SupabaseSolReviewBudgetStore implements SolReviewBudgetStore {
     return z.boolean().parse(data)
   }
 }
-export type SolReviewStage = 'admission_requested' | 'admission_granted' | 'admission_denied' | 'count_started' | 'count_validated' | 'budget_requested' | 'budget_granted' | 'provider_request_started' | 'settlement_confirmed'
+export type SolReviewStage = 'admission_requested' | 'admission_granted' | 'admission_denied' | 'count_started' | 'count_validated' | 'budget_requested' | 'budget_granted' | 'provider_request_started' | 'settlement_confirmed' | 'validation_retry'
 export type SolReviewOptions = Readonly<{
   enabled: boolean; apiKey?: string; configId: string; applicationId: string; sourceSha256: string;
   deadline: number; signal: AbortSignal; budget: SolReviewBudgetStore;
@@ -165,6 +165,30 @@ function outputFrom(raw: unknown): unknown {
   if (messages.length !== 1) throw new Error('Review output unavailable')
   return JSON.parse(messages[0].content[0].text)
 }
+/** Failures that are properties of the sampled response rather than the
+ * request or the transport: the validator's constant rule messages, the
+ * response schema rejection, and the response shape failures. A fresh
+ * generation can plausibly satisfy all of them; nothing else is retried. */
+const RETRYABLE_REVIEW_FAILURES = new Set([
+  'Review output unavailable', 'Résumé review response limit',
+  'Invalid review scope', 'Unknown, duplicate or non-assessable review citation',
+  'Incomplete review dimensions', 'Unknown dimension must be unscored',
+  'Dimension requires evidence and role scope',
+  'Missing evidence cannot be inferred from incomplete input',
+  'Observed dimension requires a source', 'Text quality is separate from role evidence',
+  'Highlight requires professional and role evidence',
+  'Gap requires role scope and a single verification question',
+  'Evidence limitation requires a source',
+  'Duplicate or conflicting review claims', 'Duplicate verification questions',
+  'No professional input permits only an insufficient-scope review',
+  'Overview requires an admitted professional source',
+])
+function isRetryableReviewFailure(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  if (error.name === 'ZodError') return true
+  return RETRYABLE_REVIEW_FAILURES.has(error.message)
+}
+
 /** Returns only after usage settlement and narrative validation both succeed.
  * Billing rates are conservative ceilings, not a claim of invoice reconciliation.
  * The count endpoint's price is not independently documented as free; activation
@@ -227,15 +251,33 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
     stage('budget_granted')
     live()
     if (now() >= Date.parse(grant.dispatch_not_after) || !options.budget.dispatchAllowed(grant.reservation_id)) throw new Error('Review dispatch expired')
-    // No await/log/callback between the final synchronous fence and native fetch.
-    const pending = send(endpoint, generationBody)
-    stage('provider_request_started')
-    const raw = await readResponse(await pending, 64_000, options.signal)
-    live()
-    usage = usageFrom(raw, grant)
-    if (!usage) throw new Error('Review usage unavailable')
-    const reviewed = validateResumeReviewV2(context, outputFrom(raw))
-    live()
+    const activeGrant = grant
+    const generate = async () => {
+      const pending = send(endpoint, generationBody)
+      stage('provider_request_started')
+      const raw = await readResponse(await pending, 64_000, options.signal)
+      live()
+      const attemptUsage = usageFrom(raw, activeGrant)
+      if (!attemptUsage) throw new Error('Review usage unavailable')
+      usage = attemptUsage
+      const result = validateResumeReviewV2(context, outputFrom(raw))
+      live()
+      return result
+    }
+    // No await/log/callback between the final synchronous fence and the first
+    // generation dispatch: generate() runs synchronously up to its fetch.
+    let reviewed: ReturnType<typeof validateResumeReviewV2>
+    try {
+      reviewed = await generate()
+    } catch (error) {
+      // One fresh generation for a validation class rejection, inside the
+      // same admission and reservation and inside the same dispatch window.
+      // Transport, admission, budget, and deadline failures are not retried,
+      // and a second failure propagates with its own reason.
+      if (!isRetryableReviewFailure(error) || now() >= Date.parse(activeGrant.dispatch_not_after)) throw error
+      live(); stage('validation_retry')
+      reviewed = await generate()
+    }
     settlementAttempted = true
     // Settlement is accounting, not part of the review's value: a failed or
     // refused settlement must not discard a validated, already-paid review.
