@@ -96,6 +96,23 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(events.some(text => text.includes('review_v2_admission_denied'))).toBe(true)
     expect(events.some(text => text.includes('review_v2_admission_granted'))).toBe(false)
   })
+  it('logs the specific validation rule when the provider response fails validation', async () => {
+    const rawResponse = syntheticReviewRaw()
+    const broken = { ...rawResponse, dimensions: rawResponse.dimensions.map((dimension, index) =>
+      index === 0 ? { ...dimension, sourceIds: [] } : dimension) }
+    const s = setup(broken as ReturnType<typeof syntheticReviewRaw>)
+    expect(await inlineEmployerScreening(input(), s.deps)).toEqual({})
+    const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
+    expect(events.some(text => text.includes('review_v2_dimensions_invalid'))).toBe(true)
+    expect(events.some(text => text.includes('review_v2_completed'))).toBe(false)
+  })
+  it('logs a schema code when the provider response has the wrong shape', async () => {
+    const broken = { ...syntheticReviewRaw(), dimensions: [] }
+    const s = setup(broken as ReturnType<typeof syntheticReviewRaw>)
+    expect(await inlineEmployerScreening(input(), s.deps)).toEqual({})
+    const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
+    expect(events.some(text => text.includes('review_v2_response_schema'))).toBe(true)
+  })
   it('logs the criteria derivation reason for a stub listing', async () => {
     const s = setup()
     s.deps.loadJob = vi.fn(async () => ({ ...job, description: 'We are hiring a kitchen helper for night shifts at our busy restaurant in town.' }))
