@@ -785,3 +785,48 @@ describe('local broader professional résumé projection (default-OFF proposal)'
   })
 
 })
+
+describe('screening capacity fixes (October 2026)', () => {
+  it('treats a builder header with a gazetteer locality and a standalone title as perimeter metadata', () => {
+    const pages = [`Jordan Ellis\nCashier\nAll Saints · jordan@example.invalid · (268)555-0123\n${cv()}`]
+    const result = project(pages)
+    expect(result.providerInput).toEqual(project().providerInput)
+    expect(result.providerInput.coverage).toBe('full')
+    expect(result.providerInput.overallQualityScoreAllowed).toBe(true)
+    expect(JSON.stringify(result.providerInput)).not.toMatch(/All Saints|Cashier/)
+  })
+
+  it('treats a standalone occupation title line as perimeter metadata on its own', () => {
+    expect(project([`Jordan Ellis\nFront Desk Agent\n${cv()}`]).providerInput).toEqual(project().providerInput)
+    expect(project([`Jordan Ellis\nSales Representative\n${cv()}`]).providerInput).toEqual(project().providerInput)
+  })
+
+  it('does not promote a bare activity keyword in an interests section to a document wipe', () => {
+    const result = project([`${cv()}\nInterests\nGym training and football on weekends.`])
+    expect(result.providerInput.records.length).toBeGreaterThan(0)
+    expect(result.providerInput.coverage).toBe('full')
+    expect(JSON.stringify(result.providerInput)).not.toMatch(/Gym|football/)
+  })
+
+  it('still wipes the document for an explicit training disclaimer in an excluded section', () => {
+    const result = project([`${cv()}\nInterests\nThese are training examples, not employment.`])
+    expect(result.providerInput.records).toEqual([])
+    expect(result.providerInput.coverage).toBe('none')
+  })
+
+  it('classifies memberships as achievements and sensitivity checks the scope', () => {
+    const benign = project([`${cv()}\nMemberships\nMember of the Community Speaking Club.`])
+    expect(benign.providerInput.records.some(record => record.section === 'achievements' &&
+      record.text.includes('Community Speaking Club'))).toBe(true)
+    const sensitive = project([`${cv()}\nMemberships\nMember of the Christian Fellowship.`])
+    expect(sensitive.providerInput.records.some(record => record.section === 'achievements')).toBe(false)
+    expect(sensitive.providerInput.omissions.professionalContent).toBe(true)
+    expect(JSON.stringify(sensitive.providerInput)).not.toContain('Christian Fellowship')
+  })
+
+  it('classifies a volunteering section as work', () => {
+    const result = project([`${cv()}\nVolunteering\nOrganized weekend food bank distribution for local families.`])
+    expect(result.providerInput.records.some(record => record.section === 'work' &&
+      record.text.includes('food bank'))).toBe(true)
+  })
+})

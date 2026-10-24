@@ -89,6 +89,22 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     const s = setup(); vi.mocked(s.reviewBudget.claim).mockResolvedValue(false)
     expect(await inlineEmployerScreening(input(), s.deps)).toEqual({}); expect(s.fetcher).not.toHaveBeenCalled()
   })
+  it('logs a distinct admission_denied diagnostic when the claim refuses', async () => {
+    const s = setup(); vi.mocked(s.reviewBudget.claim).mockResolvedValue(false)
+    expect(await inlineEmployerScreening(input(), s.deps)).toEqual({})
+    const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
+    expect(events.some(text => text.includes('review_v2_admission_denied'))).toBe(true)
+    expect(events.some(text => text.includes('review_v2_admission_granted'))).toBe(false)
+  })
+  it('logs the criteria derivation reason for a stub listing', async () => {
+    const s = setup()
+    s.deps.loadJob = vi.fn(async () => ({ ...job, description: 'We are hiring a kitchen helper for night shifts at our busy restaurant in town.' }))
+    expect(await inlineEmployerScreening(input(), s.deps)).toEqual({})
+    expect(s.fetcher).not.toHaveBeenCalled()
+    const events = vi.mocked(console.info).mock.calls.map(args => String(args[1] ?? ''))
+    expect(events.some(text => text.includes('job_mapping_unavailable'))).toBe(true)
+    expect(events.some(text => text.includes('job_mapping_no_explicit_requirements'))).toBe(true)
+  })
   it('returns baseline at the unchanged25s deadline and prevents a late count from dispatching', async () => {
     vi.useFakeTimers(); const s = setup()
     let resolve!: (value: Response) => void

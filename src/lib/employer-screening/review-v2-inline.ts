@@ -7,7 +7,7 @@ import { hasNarrativeReviewNotice } from './notice'
 import type { InlineScreeningInput, InlineScreeningDependencies, InlineScreeningFields } from './inline'
 import type { PdfResumeExtraction } from './pdf-extraction'
 import { derivePublishedJobCriteria } from './inline-job-criteria'
-import { inlineDiagnostic } from './inline-diagnostics'
+import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS } from './inline-diagnostics'
 import { projectProfessionalResume, getProfessionalResumeContext } from './professional-projection'
 import { runSolResumeReview, type SolReviewStage } from './review-v2-provider'
 import type { ReviewV2Context } from './review-v2'
@@ -37,7 +37,11 @@ export async function inlineResumeReviewV2(input: InlineScreeningInput, parsed: 
     diagnostic('job_binding_mismatch'); return {}
   }
   const derived = derivePublishedJobCriteria(job)
-  if (derived.status !== 'available') { diagnostic('job_mapping_unavailable'); return {} }
+  if (derived.status !== 'available') {
+    diagnostic('job_mapping_unavailable')
+    if (derived.reason) diagnostic(JOB_MAPPING_REASON_EVENTS[derived.reason])
+    return {}
+  }
   const context: ReviewV2Context = {
     resume: getProfessionalResumeContext(projection),
     rubric: derived.criteria.map((criterion, index) => ({ criterionId: `c${index + 1}`, category: 'job_relevance',
@@ -48,6 +52,7 @@ export async function inlineResumeReviewV2(input: InlineScreeningInput, parsed: 
   const stage = (event: SolReviewStage) => {
     if (event === 'admission_requested') diagnostic('review_v2_admission_requested')
     else if (event === 'admission_granted') diagnostic('review_v2_admission_granted')
+    else if (event === 'admission_denied') diagnostic('review_v2_admission_denied')
     else if (event === 'count_started') diagnostic('review_v2_count_started')
     else if (event === 'count_validated') diagnostic('review_v2_count_validated')
     else if (event !== 'settlement_confirmed') diagnostic(event)
