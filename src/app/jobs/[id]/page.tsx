@@ -37,7 +37,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
   const title = `${job.title} at ${company?.company_name || "Company"} | JobLink`;
   const description = jobMetaDescription({ ...job, companyName: company?.company_name });
-  const url = `https://joblinkantigua.com/jobs/${id}`;
+  // The stored id, not the route param: a case-variant URL still resolves, and
+  // canonicalizing to the param would publish it as a second URL.
+  const url = `https://joblinkantigua.com/jobs/${job.id}`;
   // A closed vacancy keeps a visible "no longer available" page but drops out
   // of search results.
   const closed = !!getJobClosure(job.id, job.company_id);

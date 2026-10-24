@@ -15,7 +15,7 @@ import { generateMetadata } from '@/app/jobs/[id]/page';
 beforeEach(() => {
   db.select.mockClear();
   db.job = {
-    title: 'Carpenter / Boatbuilder', description: 'Repair wooden boats.\n\nExperience with marine joinery required.',
+    id: 'test-job', title: 'Carpenter / Boatbuilder', description: 'Repair wooden boats.\n\nExperience with marine joinery required.',
     location: 'English Harbour, Antigua', status: 'active', expires_at: null,
     company: { company_name: 'Woodstock BoatBuilders', logo_url: null },
   };
@@ -31,6 +31,12 @@ it('uses the public vacancy summary and actual location across search and share 
   expect(db.select).toHaveBeenCalledWith('id, company_id, title, description, location, status, company:companies(company_name, logo_url)');
   expect(metadata.title).toEqual({ absolute: 'Carpenter / Boatbuilder at Woodstock BoatBuilders | JobLink' });
   expect(metadata.alternates?.canonical).toBe('https://joblinkantigua.com/jobs/test-job');
+});
+
+it('canonicalizes a case-variant URL to the stored job id', async () => {
+  const metadata = await generateMetadata({ params: Promise.resolve({ id: 'TEST-JOB' }) });
+  expect(metadata.alternates?.canonical).toBe('https://joblinkantigua.com/jobs/test-job');
+  expect(metadata.openGraph?.url).toBe('https://joblinkantigua.com/jobs/test-job');
 });
 
 it('keeps descriptions vacancy-specific for roles at the same employer', () => {
