@@ -14,6 +14,13 @@
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "android": {
+      "package": "com.joblinkantigua.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/joblink-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
     "plugins": [
       "expo-secure-store",
       "expo-web-browser",

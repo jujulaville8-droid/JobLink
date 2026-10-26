@@ -33,3 +33,7 @@ An Expo account and Apple signing access are still needed. Once accounts are ava
 Before public submission: test sign-in, session restoration, save/apply, keyboard handling, sharing and web handoffs on a real iPhone; implement and verify in-app account deletion; supply a final opaque App Store icon, screenshots, privacy disclosures and review credentials; verify the app's privacy policy covers native data handling. Push notifications and native CV uploads are not included in this first version.
 
 Current local limitation: Xcode's license has not been accepted, so no simulator/native build has been run. No TestFlight upload or App Store submission has been made.
+
+## Google Play
+
+The same codebase ships to Android. app.json carries the Android package name (com.joblinkantigua.app, matching the iOS bundle identifier) and an adaptive icon; the EAS production profile builds an Android App Bundle (.aab), which is the format Play requires, and the preview profile builds an .apk for sideload testing on a real phone. Still needed before a Play release: a Google Play Console developer account (one time US$25 fee, registered by the owner), the Play data safety form, a content rating, a privacy policy URL, screenshots, and in app account deletion (Play requires it, same as Apple). The adaptive icon currently points at the standard icon art; before submission it should get a padded foreground variant so the artwork is not cropped by device masks.
