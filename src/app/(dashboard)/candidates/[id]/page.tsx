@@ -128,19 +128,8 @@ export default async function CandidateProfilePage({ params }: PageProps) {
 
               {/* CTA */}
               <div className="mt-5 flex items-center justify-center sm:justify-start gap-3 flex-wrap">
-                {isProActive ? (
+                {isProActive && (
                   <InviteToApplyButton candidateName={fullName} candidateUserId={profile.user_id} />
-                ) : (
-                  <Link
-                    href="/employers/upgrade"
-                    className="inline-flex items-center gap-2 rounded-full bg-accent-warm px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-warm-hover transition-colors"
-                  >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    Upgrade to Invite
-                  </Link>
                 )}
                 {hasCv && isProActive && (
                   <a
@@ -341,16 +330,9 @@ export default async function CandidateProfilePage({ params }: PageProps) {
                 </div>
                 {!isProActive && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Link
-                      href="/employers/upgrade"
-                      className="inline-flex items-center gap-2 rounded-full bg-accent-warm px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-accent-warm-hover transition-colors"
-                    >
-                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      Upgrade to view resume
-                    </Link>
+                    <p className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-text shadow-lg">
+                      Resume unavailable
+                    </p>
                   </div>
                 )}
               </div>

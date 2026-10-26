@@ -565,28 +565,6 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
         </Link>
       </div>
 
-      {/* Pro Upgrade Banner */}
-      {!company.is_pro && (
-        <div className="mt-5 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-orange-50/50 p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 shrink-0 rounded-xl bg-amber-100 flex items-center justify-center">
-                <svg className="h-5 w-5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-text">Upgrade to Pro</p>
-                <p className="text-xs text-text-muted">Get featured listings, priority support, and more visibility.</p>
-              </div>
-            </div>
-            <Link href="/employers/upgrade" className="rounded-full bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors whitespace-nowrap">
-              Upgrade Now
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* Alerts Row */}
       {(pendingListings ?? 0) > 0 && (
         <div className="mt-4 grid gap-3 sm:grid-cols-2">

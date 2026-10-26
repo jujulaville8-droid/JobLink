@@ -80,6 +80,8 @@ before(async () => {
   await db.exec(loadSql('supabase/migrations/20260601_security_hardening.sql'));
   await db.exec(loadSql('supabase/migrations/20260925_security_hardening_2.sql'));
 
+  await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
+
   // public.users rows come from the on_auth_user_created trigger, same as
   // production -- inserting them by hand would collide with it.
   await asServiceRole();
@@ -97,6 +99,8 @@ before(async () => {
 describe('the migration itself', () => {
   test('is idempotent', async () => {
     await db.exec(loadSql('supabase/migrations/20260925_security_hardening_2.sql'));
+    await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
+    await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
   });
 });
 
@@ -243,10 +247,10 @@ describe('job_listings: moderation cannot be skipped', () => {
   });
 });
 
-describe('job_listings: free tier cap', () => {
-  test('a free account is capped at one open listing', async () => {
+describe('job_listings: no plan cap', () => {
+  test('a free account can create another open listing', async () => {
     await actAs(EMPLOYER);
-    await assertRejected(
+    await db.exec(
       `INSERT INTO public.job_listings (company_id, title, description)
        VALUES ('${COMPANY}', 'Second job', 'Another one')`
     );

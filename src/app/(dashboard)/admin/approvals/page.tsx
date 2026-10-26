@@ -374,11 +374,6 @@ export default async function AdminApprovalsPage() {
                                 Verified
                               </span>
                             )}
-                            {company.is_pro && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
-                                Pro
-                              </span>
-                            )}
                           </div>
                           <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-text-light">
                             {company.industry && (

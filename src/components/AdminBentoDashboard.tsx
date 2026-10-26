@@ -99,7 +99,7 @@ export default function AdminBentoDashboard({
       className="space-y-6"
     >
       {/* Stat Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <AnimatedStat
           label="Total Users"
           value={stats.totalUsers}
@@ -135,14 +135,6 @@ export default function AdminBentoDashboard({
             borderColor="border-l-emerald-500"
           />
         </Link>
-        <AnimatedStat
-          label="Pro Subscribers"
-          value={stats.proSubscribers}
-          icon={StarIcon}
-          color="text-purple-600"
-          bgColor="bg-purple-50"
-          borderColor="border-l-purple-500"
-        />
       </div>
 
       <AdminApplicationsPreview />
