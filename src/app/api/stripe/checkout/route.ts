@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const auth = await requireVerifiedUser()
     if ('error' in auth) {
       const destination =
-        auth.error.status === 401 ? '/login?returnTo=/employers/upgrade' : '/verify-email'
+        auth.error.status === 401 ? '/login?returnTo=/employers/hiring-help' : '/verify-email'
       return NextResponse.redirect(new URL(destination, origin))
     }
     const { user } = auth
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       mode: 'subscription' as const,
       line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
       success_url: `${origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/employers/upgrade`,
+      cancel_url: `${origin}/employers/hiring-help`,
       metadata: {
         user_id: user.id,
         ...(company?.id ? { company_id: company.id } : {}),
@@ -53,12 +53,12 @@ export async function GET(req: NextRequest) {
     )
 
     if (!session.url) {
-      return NextResponse.redirect(new URL('/employers/upgrade?error=checkout-failed', origin))
+      return NextResponse.redirect(new URL('/employers/hiring-help?error=checkout-failed', origin))
     }
 
     return NextResponse.redirect(session.url)
   } catch (err) {
     console.error('Error creating checkout session:', err)
-    return NextResponse.redirect(new URL('/employers/upgrade?error=server-error', origin))
+    return NextResponse.redirect(new URL('/employers/hiring-help?error=server-error', origin))
   }
 }

@@ -181,7 +181,7 @@ describe('canonical sitemap SEO', () => {
     db.rows.job_listings = [];
     db.queries = [];
     const entries = await sitemap();
-    expect(entries).toHaveLength(7);
+    expect(entries).toHaveLength(6);
     expect(categoryUrls(entries)).toEqual([]);
     expect(db.queries.some(query => query.table === 'companies')).toBe(false);
   });

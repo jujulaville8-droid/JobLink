@@ -55,6 +55,7 @@ const nextConfig: NextConfig = {
   // engines only ever see one origin.
   async redirects() {
     return [
+      { source: "/employers/upgrade", destination: "/employers/hiring-help", permanent: true },
       {
         source: "/:path*",
         has: [{ type: "host", value: "www.joblinkantigua.com" }],

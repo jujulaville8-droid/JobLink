@@ -97,7 +97,7 @@ describe('post-job card preview', () => {
   });
 });
 
-describe('post-job submission and plan limits', () => {
+describe('post-job submission', () => {
   beforeEach(() => {
     api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', location: 'English Harbour', industry: 'Tourism & Hospitality', is_pro: false }, error: null });
   });
@@ -112,24 +112,25 @@ describe('post-job submission and plan limits', () => {
     return user;
   }
 
-  it('shows the free-plan gate before the form and links to the upgrade path', async () => {
-    api.count.mockResolvedValue({ count: 1, error: null });
-    render(<PostJobPage />);
-    await screen.findByText('Free plan limit reached');
-    expect(screen.queryByLabelText(/^job title/i)).toBeNull();
-    expect(screen.getByRole('link', { name: /upgrade to pro/i }).getAttribute('href')).toBe('/employers/upgrade');
-    expect(api.payload).not.toHaveBeenCalled();
+  it('lets an employer with existing listings submit another job without upgrading', async () => {
+    api.count.mockResolvedValue({ count: 2, error: null });
+    const user = await fillJob();
+    expect(screen.queryByRole('link', { name: /upgrade/i })).toBeNull();
+    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
+    await screen.findByRole('heading', { name: /job submitted successfully/i });
+    expect(api.payload).toHaveBeenCalledTimes(1);
+    expect(api.count).toHaveBeenCalledTimes(1);
   });
 
   it('offers a retry if the load-time listing count is unavailable', async () => {
-    api.count.mockResolvedValueOnce({ count: 1, error: null }).mockResolvedValueOnce({ count: null, error: { message: 'offline' } });
+    api.count.mockResolvedValueOnce({ count: null, error: { message: 'offline' } });
     const user = userEvent.setup();
     render(<PostJobPage />);
     await user.click(await screen.findByRole('button', { name: /try again/i }));
     expect(await screen.findByLabelText(/^job title/i)).toBeTruthy();
   });
 
-  it('allows Pro employers and existing listing edits past the new-post gate', async () => {
+  it('loads existing employers and listing edits', async () => {
     api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', is_pro: true }, error: null });
     api.count.mockResolvedValue({ count: 2, error: null });
     const first = render(<PostJobPage />);
@@ -171,21 +172,6 @@ describe('post-job submission and plan limits', () => {
     expect(screen.getByText('Usually reviewed within one business day. You will get an email when it goes live.')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /go to my listings/i }));
     expect(api.push).toHaveBeenCalledWith('/my-listings');
-  });
-
-  it.each(['limit reached', 'lookup failed'])('preserves the entire form when the submit-time %s', async (outcome) => {
-    const user = await fillJob();
-    api.count.mockResolvedValueOnce(outcome === 'limit reached'
-      ? { count: 1, error: null } : { count: null, error: { message: 'offline' } });
-    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
-    expect(await screen.findByRole('alert')).toBeTruthy();
-    expect((screen.getByLabelText(/^job title/i) as HTMLInputElement).value).toBe('Boat captain');
-    expect((screen.getByLabelText(/^job description/i) as HTMLTextAreaElement).value).toBe('Lead harbour tours.');
-    expect((screen.getByLabelText(/minimum rate/i) as HTMLInputElement).value).toBe('25');
-    expect(api.payload).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
-    await screen.findByRole('heading', { name: /job submitted successfully/i });
-    expect(api.payload).toHaveBeenCalledTimes(1);
   });
 });
 

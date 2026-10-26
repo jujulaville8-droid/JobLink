@@ -80,8 +80,6 @@ export default function PostJobPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const [listingGated, setListingGated] = useState(false);
-  const [submitLimitReached, setSubmitLimitReached] = useState(false);
   const [isPro, setIsPro] = useState(false);
   /** True while this is the employer's very first job post, so step 3 of onboarding. */
   const [isSetup, setIsSetup] = useState(false);
@@ -102,7 +100,7 @@ export default function PostJobPage() {
     salary_visible: true,
   });
 
-  // Load data: check Pro status + active listing count, and load edit data if needed
+  // Load company and onboarding details, and load edit data if needed
   useEffect(() => {
     async function load() {
       const supabase = createClient();
@@ -152,27 +150,7 @@ export default function PostJobPage() {
 
         if (listingCountError || listingCount === null) throw new Error('Could not count listings');
         setIsSetup(listingCount === 0);
-
-        // Free accounts get one active listing. Check that here rather than at
-        // submit: gating after the employer has written a whole job post
-        // throws the form away and shows the paywall as a punishment for
-        // finishing. Shown before the form, it is just the plan's limit.
-        if (!company.is_pro) {
-          const { count: activeCount, error: activeCountError } = await supabase
-            .from('job_listings')
-            .select('id', { count: 'exact', head: true })
-            .eq('company_id', company.id)
-            .eq('status', 'active');
-
-          if (activeCountError || activeCount === null) throw new Error('Could not count active listings');
-          if (activeCount >= 1) {
-            setListingGated(true);
-            setLoading(false);
-            return;
-          }
-        }
       }
-      setListingGated(false);
 
       // Load existing listing if editing
       if (editId) {
@@ -254,7 +232,6 @@ export default function PostJobPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError('');
-    setSubmitLimitReached(false);
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
@@ -284,7 +261,7 @@ export default function PostJobPage() {
 
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id, is_pro')
+        .select('id')
         .eq('user_id', user.id)
         .single();
 
@@ -294,29 +271,6 @@ export default function PostJobPage() {
         );
         setSubmitting(false);
         return;
-      }
-
-      // The load effect already gated this, so reaching here means a listing
-      // went active in another tab while this form was open. Keep the form
-      // visible so this race never hides the employer's work.
-      if (!editId && !company.is_pro) {
-        const { count, error: countError } = await supabase
-          .from('job_listings')
-          .select('id', { count: 'exact', head: true })
-          .eq('company_id', company.id)
-          .eq('status', 'active');
-
-        if (countError || count === null) {
-          setServerError('We could not check your listing limit. Your entries are still here. Please try again.');
-          setSubmitting(false);
-          return;
-        }
-
-        if (count >= 1) {
-          setSubmitLimitReached(true);
-          setSubmitting(false);
-          return;
-        }
       }
 
       const listingData = {
@@ -411,62 +365,6 @@ export default function PostJobPage() {
       <p role="alert" className="my-4 text-text-light">We could not load your company and listing details. Check your connection and try again.</p>
       <button type="button" className="btn-primary" onClick={() => { setLoadError(false); setLoading(true); setLoadAttempt((attempt) => attempt + 1); }}>Try again</button>
     </div>;
-  }
-
-  if (listingGated) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <div className="rounded-2xl border border-border bg-white p-10 shadow-lg">
-          {/* Usage indicator */}
-          <div className="mx-auto mb-6 flex items-center justify-center gap-2">
-            <div className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600">
-              Free plan limit reached
-            </span>
-          </div>
-
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
-            <svg className="h-7 w-7 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-          </div>
-
-          <h2 className="mt-6 text-xl font-bold font-display text-text">
-            You&apos;ve used your free listing
-          </h2>
-          <p className="mt-2 text-sm text-text-light leading-relaxed">
-            Free accounts include <span className="font-semibold text-text">1 active listing</span>. You&apos;re currently using it. Upgrade to JobLink Pro to post unlimited listings and get featured placement.
-          </p>
-
-          {/* Usage bar */}
-          <div className="mt-6 mx-auto max-w-xs">
-            <div className="flex justify-between text-xs mb-1.5">
-              <span className="text-text-muted">Active listings</span>
-              <span className="font-semibold text-text">1 / 1 used</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-bg-alt overflow-hidden">
-              <div className="h-full w-full rounded-full bg-amber-400" />
-            </div>
-          </div>
-
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href="/employers/upgrade"
-              className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
-            >
-              Upgrade to Pro for unlimited listings
-            </a>
-            <a
-              href="/my-listings"
-              className="rounded-xl border border-border px-6 py-3 text-sm font-medium text-text transition-colors hover:bg-bg-alt"
-            >
-              Manage Your Listing
-            </a>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   if (success) {
@@ -920,15 +818,6 @@ export default function PostJobPage() {
 
           {/* Submit */}
           <motion.div variants={item}>
-            {submitLimitReached && (
-              <div role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                <p>Your free plan already has an active listing. Your entries are still here. Close that listing or upgrade to Pro, then try again.</p>
-                <div className="mt-2 flex flex-wrap gap-4">
-                  <a href="/my-listings" target="_blank" rel="noopener noreferrer" className="font-medium underline">Manage your listing (new tab)</a>
-                  <a href="/employers/upgrade" target="_blank" rel="noopener noreferrer" className="font-medium underline">Upgrade to Pro (new tab)</a>
-                </div>
-              </div>
-            )}
             <button
               type="submit"
               disabled={submitting}
