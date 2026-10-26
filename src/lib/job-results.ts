@@ -51,6 +51,7 @@ const loadJobResults = cache(async (
       job_type,
       salary_min,
       salary_max,
+      salary_type,
       salary_visible,
       location,
       requires_work_permit,

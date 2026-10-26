@@ -171,7 +171,7 @@ export default async function AdminUsersPage({
       </form>
 
       {/* Users Table */}
-      <div className="overflow-x-auto bg-white rounded-[--radius-card] border border-border">
+      <div className="overflow-x-auto bg-white rounded-card border border-border">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-bg-alt">

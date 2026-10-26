@@ -78,7 +78,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
               return (
                 <div
                   key={item.id as string}
-                  className="relative rounded-[--radius-card] border border-border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="relative rounded-card border border-border bg-white p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="absolute top-3 right-3">
                     <UnsaveButton savedJobId={item.id as string} />
@@ -136,7 +136,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
           <Pagination currentPage={currentPage} totalPages={totalPages} />
         </>
       ) : (
-        <div className="mt-12 flex flex-col items-center justify-center rounded-[--radius-card] border-2 border-dashed border-border p-12 text-center">
+        <div className="mt-12 flex flex-col items-center justify-center rounded-card border-2 border-dashed border-border p-12 text-center">
           <svg
             className="h-16 w-16 text-text-light"
             viewBox="0 0 24 24"

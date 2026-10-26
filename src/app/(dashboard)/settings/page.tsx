@@ -61,7 +61,7 @@ function SubscriptionSection() {
   if (!isPro) return null;
 
   return (
-    <section className="mt-6 rounded-[--radius-card] border border-border bg-white p-6 shadow-sm">
+    <section className="mt-6 rounded-card border border-border bg-white p-6 shadow-sm">
       <h2 className="text-sm font-semibold text-text">Subscription</h2>
       <p className="mt-1 text-xs text-text-muted">
         You&apos;re on the <span className="font-medium text-primary">JobLink Pro</span> plan.
@@ -280,7 +280,7 @@ export default function SettingsPage() {
       )}
 
       {/* Email Preferences */}
-      <section className="mt-6 rounded-[--radius-card] border border-border bg-[--color-surface] p-6 shadow-sm">
+      <section className="mt-6 rounded-card border border-border bg-surface p-6 shadow-sm">
         <h2 className="text-lg font-semibold font-display text-text">
           Email Notifications
         </h2>
@@ -337,7 +337,7 @@ export default function SettingsPage() {
 
       {/* Visibility (seekers only) */}
       {role === "seeker" && (
-        <section className="mt-6 rounded-[--radius-card] border border-border bg-[--color-surface] p-6 shadow-sm">
+        <section className="mt-6 rounded-card border border-border bg-surface p-6 shadow-sm">
           <h2 className="text-lg font-semibold font-display text-text">
             Profile Visibility
           </h2>
@@ -374,7 +374,7 @@ export default function SettingsPage() {
       )}
 
       {/* Messaging Settings */}
-      <section className="mt-6 rounded-[--radius-card] border border-border bg-[--color-surface] p-6 shadow-sm">
+      <section className="mt-6 rounded-card border border-border bg-surface p-6 shadow-sm">
         <h2 className="text-lg font-semibold font-display text-text">
           Messaging Preferences
         </h2>
@@ -443,7 +443,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Change Password */}
-      <section className="mt-6 rounded-[--radius-card] border border-border bg-[--color-surface] p-6 shadow-sm">
+      <section className="mt-6 rounded-card border border-border bg-surface p-6 shadow-sm">
         <h2 className="text-lg font-semibold font-display text-text">Change Password</h2>
         <p className="mt-1 text-sm text-text-light">
           Update your account password.
@@ -507,7 +507,7 @@ export default function SettingsPage() {
       )}
 
       {/* Delete Account */}
-      <section className="mt-6 mb-12 rounded-[--radius-card] border border-red-200 bg-red-50 p-6">
+      <section className="mt-6 mb-12 rounded-card border border-red-200 bg-red-50 p-6">
         <h2 className="text-lg font-semibold text-red-800">
           Delete Account
         </h2>

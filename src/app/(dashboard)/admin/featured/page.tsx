@@ -90,7 +90,7 @@ export default async function AdminFeaturedPage() {
             {featuredListings.map((listing) => (
               <div
                 key={listing.id}
-                className="flex items-center gap-4 bg-accent/5 border border-accent/20 rounded-[--radius-card] p-4"
+                className="flex items-center gap-4 bg-accent/5 border border-accent/20 rounded-card p-4"
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text text-sm">{listing.title}</h3>
@@ -132,7 +132,7 @@ export default async function AdminFeaturedPage() {
             {regularListings.map((listing) => (
               <div
                 key={listing.id}
-                className="flex items-center gap-4 bg-white border border-border rounded-[--radius-card] p-4 hover:border-primary/30 transition-colors"
+                className="flex items-center gap-4 bg-white border border-border rounded-card p-4 hover:border-primary/30 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text text-sm">{listing.title}</h3>

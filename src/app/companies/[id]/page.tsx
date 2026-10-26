@@ -90,6 +90,7 @@ export default async function CompanyPage({ params }: PageProps) {
       job_type: jobTypeLabel,
       salary_min: job.salary_min,
       salary_max: job.salary_max,
+      salary_type: job.salary_type,
       salary_visible: job.salary_visible,
       created_at: job.created_at,
       is_featured: job.is_featured,
@@ -132,7 +133,7 @@ export default async function CompanyPage({ params }: PageProps) {
       </Link>
 
       {/* Company header card */}
-      <div className="rounded-[--radius-card] border border-border bg-white p-6 sm:p-8 mb-8">
+      <div className="rounded-card border border-border bg-white p-6 sm:p-8 mb-8">
         <div className="flex flex-col sm:flex-row items-start gap-5">
           {/* Logo / initial */}
           {company.logo_url ? (
@@ -252,7 +253,7 @@ export default async function CompanyPage({ params }: PageProps) {
         </h2>
 
         {mappedJobs.length === 0 ? (
-          <div className="rounded-[--radius-card] border border-border bg-white p-10 text-center">
+          <div className="rounded-card border border-border bg-white p-10 text-center">
             <svg
               className="mx-auto h-12 w-12 text-text-light/50"
               viewBox="0 0 24 24"

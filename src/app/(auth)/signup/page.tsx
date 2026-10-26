@@ -217,7 +217,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
   // ─── STEP 1: ROLE SELECTION ───
   if (step === 'role-selection') {
     return (
-      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14">
+      <div className="animate-scale-in bg-white rounded-card shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14 mx-auto max-w-md">
         <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-2">
           Join JobLink
         </h1>
@@ -398,7 +398,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
             type={showPassword ? 'text' : 'password'}
             name="password"
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
             aria-describedby="password-hint"
             disabled={loading || googleLoading}
             required

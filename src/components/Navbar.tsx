@@ -198,7 +198,7 @@ export default function Navbar() {
     <>
       {/* ── Static navbar ── */}
       <header
-        className={`sticky top-0 z-50 bg-[--color-bg]/95 backdrop-blur-sm ${
+        className={`sticky top-0 z-50 bg-bg/95 backdrop-blur-sm ${
           pathname === "/"
             ? `transition-all duration-200 ${scrolledPastTop ? "-translate-y-full opacity-0 pointer-events-none" : "translate-y-0 opacity-100"}`
             : ""
@@ -233,7 +233,7 @@ export default function Navbar() {
                   className={`relative px-2 lg:px-4 py-2 text-[14px] font-medium rounded-lg transition-colors ${
                     isActive(link.href)
                       ? "text-primary"
-                      : "text-text-light hover:text-primary hover:bg-[--color-surface]/50 link-animated"
+                      : "text-text-light hover:text-primary hover:bg-surface/50 link-animated"
                   }`}
                 >
                   {link.label}
@@ -254,7 +254,7 @@ export default function Navbar() {
                   {!isEmployer && !isAdmin && (
                     <Link
                       href="/saved"
-                      className={`flex h-9 w-9 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors ${pathname === "/saved" ? "text-primary" : ""}`}
+                      className={`flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface/70 transition-colors ${pathname === "/saved" ? "text-primary" : ""}`}
                       aria-label="Saved Jobs"
                     >
                       <svg className="h-[18px] w-[18px] text-text-light" viewBox="0 0 24 24" fill={pathname === "/saved" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -267,7 +267,7 @@ export default function Navbar() {
                   {userRole !== "admin" && (
                     <Link
                       href="/messages"
-                      className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors"
+                      className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-surface/70 transition-colors"
                       aria-label="Messages"
                     >
                       <svg className="h-[18px] w-[18px] text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -317,7 +317,7 @@ export default function Navbar() {
                   {!isEmployer && !isAdmin && (
                     <Link
                       href="/saved"
-                      className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors ${pathname === "/saved" ? "text-primary" : ""}`}
+                      className={`flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface/70 transition-colors ${pathname === "/saved" ? "text-primary" : ""}`}
                       aria-label="Saved Jobs"
                     >
                       <svg className="h-4 w-4 text-text-light" viewBox="0 0 24 24" fill={pathname === "/saved" ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -329,7 +329,7 @@ export default function Navbar() {
                   {userRole !== "admin" && (
                     <Link
                       href="/messages"
-                      className="relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-[--color-surface]/70 transition-colors"
+                      className="relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface/70 transition-colors"
                       aria-label="Messages"
                     >
                       <svg className="h-4 w-4 text-text-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -353,7 +353,7 @@ export default function Navbar() {
               )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[--color-surface]/50 transition-colors"
+                className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-surface/50 transition-colors"
                 aria-label="Toggle menu"
               >
                 {mobileMenuOpen ? (
@@ -375,7 +375,7 @@ export default function Navbar() {
                   className={`block px-3 py-2.5 text-[15px] font-medium rounded-lg transition-colors ${
                     isActive(link.href)
                       ? "text-primary bg-primary/[0.05]"
-                      : "text-text-light hover:text-primary hover:bg-[--color-surface]/50"
+                      : "text-text-light hover:text-primary hover:bg-surface/50"
                   }`}
                 >
                   {link.label}
@@ -385,7 +385,7 @@ export default function Navbar() {
                 <div className="mt-3 pt-3 border-t border-border/40 space-y-1 px-3">
                   <Link
                     href={isEmployer ? "/company-profile" : "/profile"}
-                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-surface/50 transition-colors"
                   >
                     {isEmployer ? <Building className="h-4 w-4" /> : <User className="h-4 w-4" />}
                     {isEmployer ? "Company Profile" : "Profile"}
@@ -395,7 +395,7 @@ export default function Navbar() {
                       <button
                         onClick={() => handleSwitchRole("seeker")}
                         disabled={switching}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-surface/50 transition-colors cursor-pointer disabled:opacity-50"
                       >
                         <ArrowRightLeft className="h-4 w-4" />
                         {switching ? "Switching..." : "Switch to Job Seeker"}
@@ -403,7 +403,7 @@ export default function Navbar() {
                       <button
                         onClick={() => handleSwitchRole("employer")}
                         disabled={switching}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                        className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-surface/50 transition-colors cursor-pointer disabled:opacity-50"
                       >
                         <Building className="h-4 w-4" />
                         {switching ? "Switching..." : "Switch to Employer"}
@@ -413,7 +413,7 @@ export default function Navbar() {
                     <button
                       onClick={() => handleSwitchRole(isEmployer ? "seeker" : "employer")}
                       disabled={switching}
-                      className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-3 w-full px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-surface/50 transition-colors cursor-pointer disabled:opacity-50"
                     >
                       <ArrowRightLeft className="h-4 w-4" />
                       {switching ? "Switching..." : switchLabel}
@@ -431,7 +431,7 @@ export default function Navbar() {
                   )}
                   <Link
                     href="/settings"
-                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-[--color-surface]/50 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 text-[15px] font-medium text-text-light rounded-lg hover:text-primary hover:bg-surface/50 transition-colors"
                   >
                     <Settings className="h-4 w-4" />
                     Settings
@@ -447,10 +447,10 @@ export default function Navbar() {
               )}
               {!isAuthenticated && !isLoading && (
                 <div className="mt-3 pt-3 border-t border-border/40 flex gap-2 px-3">
-                  <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-[--radius-button] py-2.5 hover:bg-[--color-surface]/50 transition-all duration-200">
+                  <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-button py-2.5 hover:bg-surface/50 transition-all duration-200">
                     Sign In
                   </Link>
-                  <Link href={isHiringPilot ? '#vacancy' : '/signup'} className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-[--radius-button] py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
+                  <Link href={isHiringPilot ? '#vacancy' : '/signup'} className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-button py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
                     {isHiringPilot ? 'Send us your vacancy' : 'Create Account'}
                   </Link>
                 </div>

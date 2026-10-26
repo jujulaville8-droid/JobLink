@@ -15,7 +15,7 @@ export default function ApplyButton({ jobId, state, tone = "warm" }: ApplyButton
   const actionClass = tone === "primary" ? "btn-primary" : "btn-warm";
   if (state === "closed") {
     return (
-      <span className="flex w-full items-center justify-center rounded-[--radius-button] bg-gray-100 px-5 py-3 text-base font-semibold text-text-muted cursor-not-allowed">
+      <span className="flex w-full items-center justify-center rounded-button bg-gray-100 px-5 py-3 text-base font-semibold text-text-muted cursor-not-allowed">
         Applications Closed
       </span>
     );
@@ -23,7 +23,7 @@ export default function ApplyButton({ jobId, state, tone = "warm" }: ApplyButton
 
   if (state === "applied") {
     return (
-      <span className="flex w-full items-center justify-center rounded-[--radius-button] bg-primary/10 px-5 py-3 text-base font-semibold text-primary">
+      <span className="flex w-full items-center justify-center rounded-button bg-primary/10 px-5 py-3 text-base font-semibold text-primary">
         <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M9 12l2 2 4-4" />
           <circle cx="12" cy="12" r="10" />
@@ -37,7 +37,7 @@ export default function ApplyButton({ jobId, state, tone = "warm" }: ApplyButton
     return (
       <Link
         href={`/profile?returnTo=/jobs/${jobId}/apply`}
-        className="flex w-full items-center justify-center rounded-[--radius-button] bg-amber-500 hover:bg-amber-600 px-5 py-3 text-base font-semibold text-white transition-colors"
+        className="flex w-full items-center justify-center rounded-button bg-amber-500 hover:bg-amber-600 px-5 py-3 text-base font-semibold text-white transition-colors"
       >
         Complete Profile to Apply
       </Link>
@@ -46,7 +46,7 @@ export default function ApplyButton({ jobId, state, tone = "warm" }: ApplyButton
 
   if (state === "not-seeker") {
     return (
-      <span className="flex w-full items-center justify-center rounded-[--radius-button] bg-gray-100 px-5 py-3 text-base font-semibold text-text-muted cursor-not-allowed">
+      <span className="flex w-full items-center justify-center rounded-button bg-gray-100 px-5 py-3 text-base font-semibold text-text-muted cursor-not-allowed">
         Switch to Seeker to Apply
       </span>
     );

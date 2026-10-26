@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Serif_Display, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import PrivacyAwareAnalytics from "@/components/PrivacyAwareAnalytics";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
@@ -9,13 +9,10 @@ import SupportButton from "@/components/SupportButton";
 import "./globals.css";
 import "@/components/home/home.css";
 
-const displayFont = DM_Serif_Display({
-  variable: "--font-heading",
-  subsets: ["latin"],
-  weight: "400",
-});
-
-const bodyFont = Plus_Jakarta_Sans({
+// One sans for the whole product. Inter is variable, so 400/500/600/700 are real
+// weights rather than the synthetic bold the single-weight serif used to force.
+// globals.css points --font-heading and --font-display at this same family.
+const bodyFont = Inter({
   variable: "--font-body",
   subsets: ["latin"],
 });
@@ -88,7 +85,7 @@ export default function RootLayout({
       <head>
         <meta name="impact-site-verification" content="f3103db6-1ece-4ed4-afbb-e66b3501d3d4" />
       </head>
-      <body className={`${displayFont.variable} ${bodyFont.variable} antialiased font-sans`}>
+      <body className={`${bodyFont.variable} antialiased font-sans`}>
         <AuthProvider>
           <a href="#main-content" className="skip-link">Skip to main content</a>
           <Navbar />

@@ -27,7 +27,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       .from("job_listings")
       .select(
         `
-        id, title, job_type, salary_min, salary_max, salary_visible,
+        id, title, job_type, salary_min, salary_max, salary_type, salary_visible,
         location, is_featured, created_at,
         company:companies ( company_name, logo_url, is_pro, location )
       `
@@ -59,6 +59,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         job_type: JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type,
         salary_min: job.salary_min,
         salary_max: job.salary_max,
+        salary_type: job.salary_type,
         salary_visible: job.salary_visible,
         created_at: job.created_at,
         is_featured: job.is_featured,

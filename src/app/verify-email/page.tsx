@@ -245,7 +245,7 @@ export default function VerifyEmailPage() {
   if (!hasSession) {
     return (
       <div className="min-h-screen bg-mesh-teal flex items-center justify-center px-4">
-        <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 max-w-md w-full text-center">
+        <div className="animate-scale-in bg-white rounded-card shadow-md border border-border p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-5">
             <svg
               className="w-8 h-8 text-amber-600"
@@ -288,7 +288,7 @@ export default function VerifyEmailPage() {
   // Has session but unverified — show verification prompt
   return (
     <div className="min-h-screen bg-mesh-teal flex items-center justify-center px-4">
-      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 max-w-md w-full text-center">
+      <div className="animate-scale-in bg-white rounded-card shadow-md border border-border p-8 max-w-md w-full text-center">
         <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-5">
           <svg
             className="w-8 h-8 text-amber-600"
@@ -322,13 +322,13 @@ export default function VerifyEmailPage() {
         </p>
 
         {sent && (
-          <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-[--radius-input] px-4 py-3">
+          <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-input px-4 py-3">
             Verification email resent. Please check your inbox and spam folder.
           </div>
         )}
 
         {error && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-[--radius-input] px-4 py-3">
+          <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-input px-4 py-3">
             {error}
           </div>
         )}
@@ -357,7 +357,7 @@ export default function VerifyEmailPage() {
           <button
             onClick={handleResend}
             disabled={resending || cooldown > 0}
-            className="w-full rounded-[--radius-button] border-2 border-border bg-white px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full rounded-button border-2 border-border bg-white px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             {resending
               ? 'Sending...'

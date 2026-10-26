@@ -6,7 +6,7 @@ import { jobMetaDescription } from "@/lib/seo/job-description";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
+import { JOB_TYPE_LABELS, JobType, salaryTypePeriod } from "@/lib/types";
 import { getEmployerApproval } from "@/lib/seo/employerApproved";
 import { hasUnconfirmedEmploymentType } from "@/lib/seo/unconfirmed-employment-types";
 import type { Metadata } from "next";
@@ -68,7 +68,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-function formatSalary(min: number | null, max: number | null): string {
+function formatSalary(
+  min: number | null,
+  max: number | null,
+  salaryType?: string | null,
+): string {
   if (!min && !max) return "";
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -76,9 +80,13 @@ function formatSalary(min: number | null, max: number | null): string {
       currency: "XCD",
       maximumFractionDigits: 0,
     }).format(n);
-  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
-  if (min) return `From ${fmt(min)}`;
-  return `Up to ${fmt(max!)}`;
+  // Listings from before salary_type existed carry no period, so append none
+  // rather than implying a month.
+  const period = salaryTypePeriod(salaryType);
+  const suffix = period ? ` ${period}` : "";
+  if (min && max) return `${fmt(min)} - ${fmt(max)}${suffix}`;
+  if (min) return `From ${fmt(min)}${suffix}`;
+  return `Up to ${fmt(max!)}${suffix}`;
 }
 
 // Google requires the JobPosting description as HTML. Descriptions are stored
@@ -131,7 +139,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     24 * 60 * 60 * 1000;
 
   const salary =
-    job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : null;
+    job.salary_visible ? formatSalary(job.salary_min, job.salary_max, job.salary_type) : null;
   const description = publicVacancyDescription(job);
 
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
@@ -197,8 +205,10 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Remote status comes only from the listing itself, never the company address.
   const isRemoteJob = normalizeJobLocation(job.location).toLowerCase().includes("remote");
 
-  // salary_min/max are only meaningful with a pay period. The forms collect a
-  // salary_type but it is not stored yet, so only send unitText once it is.
+  // salary_min/max are only meaningful with a pay period. salary_type is now
+  // stored, so unitText is sent whenever the listing recorded one. Listings from
+  // before the column existed have none and omit unitText, as do bi-weekly
+  // listings, which Google's unitText vocabulary does not cover.
   const salaryUnitMap: Record<string, string> = {
     hourly: "HOUR",
     weekly: "WEEK",

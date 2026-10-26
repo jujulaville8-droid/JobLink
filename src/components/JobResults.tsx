@@ -53,7 +53,7 @@ export default async function JobResults({
 
   if (error) {
     return (
-      <div className="rounded-[--radius-card] border border-red-200 bg-red-50 p-6 text-center">
+      <div className="rounded-card border border-red-200 bg-red-50 p-6 text-center">
         <p className="text-red-600 font-medium">
           Something went wrong loading jobs.
         </p>
@@ -70,7 +70,7 @@ export default async function JobResults({
         : "matching";
 
     return (
-      <div className="rounded-[--radius-card] border border-border bg-gradient-to-b from-white to-bg-alt/40 p-10 sm:p-14 text-center">
+      <div className="rounded-card border border-border bg-gradient-to-b from-white to-bg-alt/40 p-10 sm:p-14 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
           <svg
             className="h-7 w-7 text-primary"
@@ -135,6 +135,7 @@ export default async function JobResults({
       job_type: job.job_type,
       salary_min: job.salary_min,
       salary_max: job.salary_max,
+      salary_type: job.salary_type,
       salary_visible: job.salary_visible,
       created_at: job.created_at,
       is_featured: job.is_featured,

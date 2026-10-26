@@ -94,7 +94,7 @@ export default async function ApplicationsPage() {
               return (
                 <div
                   key={app.id as string}
-                  className="rounded-[--radius-card] border border-border bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="rounded-card border border-border bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -165,7 +165,7 @@ export default async function ApplicationsPage() {
         </>
       ) : (
         /* Empty state */
-        <div className="mt-12 flex flex-col items-center justify-center rounded-[--radius-card] border-2 border-dashed border-border p-12 text-center">
+        <div className="mt-12 flex flex-col items-center justify-center rounded-card border-2 border-dashed border-border p-12 text-center">
           <svg
             className="h-16 w-16 text-text-light"
             viewBox="0 0 24 24"

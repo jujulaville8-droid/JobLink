@@ -45,7 +45,7 @@ export default async function DashboardBrowseJobsPage({ searchParams }: PageProp
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="rounded-[--radius-card] border border-border bg-white p-5"
+                    className="rounded-card border border-border bg-white p-5"
                   >
                     <div className="flex items-start gap-4">
                       <div className="h-12 w-12 rounded-lg skeleton" />

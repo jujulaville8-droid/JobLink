@@ -117,7 +117,7 @@ export default function JobFilters({ layout = "sidebar" }: { layout?: "sidebar" 
       {hasFilters && (
         <button
           onClick={clearAll}
-          className="w-full rounded-[--radius-button] border border-border px-4 py-2.5 text-sm font-medium text-text-light hover:text-text hover:border-primary/30 transition-colors"
+          className="w-full rounded-button border border-border px-4 py-2.5 text-sm font-medium text-text-light hover:text-text hover:border-primary/30 transition-colors"
         >
           Clear all filters
         </button>
@@ -133,7 +133,7 @@ export default function JobFilters({ layout = "sidebar" }: { layout?: "sidebar" 
           onClick={() => setOpen(!open)}
           aria-expanded={open}
           aria-controls={`${filterId}-mobile`}
-          className="flex w-full items-center justify-between rounded-[--radius-button] border border-border bg-white px-4 py-3 text-sm font-medium text-text hover:border-primary/30 transition-colors"
+          className="flex w-full items-center justify-between rounded-button border border-border bg-white px-4 py-3 text-sm font-medium text-text hover:border-primary/30 transition-colors"
         >
           <span className="flex items-center gap-2">
             <svg
@@ -169,7 +169,7 @@ export default function JobFilters({ layout = "sidebar" }: { layout?: "sidebar" 
           </svg>
         </button>
         {open && (
-          <div id={`${filterId}-mobile`} className="mt-2 rounded-[--radius-button] border border-border bg-white p-4 animate-fade-up">
+          <div id={`${filterId}-mobile`} className="mt-2 rounded-button border border-border bg-white p-4 animate-fade-up">
             {filterContent("mobile")}
           </div>
         )}
@@ -222,7 +222,7 @@ export default function JobFilters({ layout = "sidebar" }: { layout?: "sidebar" 
         </div>
       ) : (
       <aside className="hidden lg:block w-64 shrink-0">
-        <div className="sticky top-20 rounded-[--radius-card] border border-border bg-white p-5">
+        <div className="sticky top-20 rounded-card border border-border bg-white p-5">
           <h2 className="font-display text-base text-text mb-4">Filters</h2>
           {filterContent("desktop")}
         </div>

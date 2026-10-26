@@ -35,7 +35,7 @@ export default function DashboardNudge({ hasBuiltCv, hasUploadedCv }: Props) {
   // No CV at all (neither uploaded nor built)
   if (!hasBuiltCv) {
     return (
-      <div className="relative rounded-[--radius-card] border border-primary/20 bg-primary/[0.03] p-5">
+      <div className="relative rounded-card border border-primary/20 bg-primary/[0.03] p-5">
         <button
           onClick={handleDismiss}
           className="absolute top-3 right-3 text-text-muted hover:text-text transition-colors"

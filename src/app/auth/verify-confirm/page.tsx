@@ -205,7 +205,7 @@ function VerifyConfirmContent() {
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="bg-white rounded-[--radius-card] shadow-md border border-border p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-card shadow-md border border-border p-8 max-w-md w-full text-center">
           <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -230,7 +230,7 @@ function VerifyConfirmContent() {
             </a>
             <button
               onClick={handleSignOut}
-              className="w-full rounded-[--radius-button] border-2 border-border bg-white px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 text-center cursor-pointer"
+              className="w-full rounded-button border-2 border-border bg-white px-4 py-3 text-sm font-medium text-text hover:bg-gray-50 text-center cursor-pointer"
             >
               Sign Out & Start Fresh
             </button>

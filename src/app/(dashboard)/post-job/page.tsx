@@ -14,13 +14,13 @@ import {
   ViewIcon,
 } from '@hugeicons/core-free-icons';
 import { cn } from '@/lib/utils';
+import JobCard, { type Job } from '@/components/JobCard';
 import {
   INDUSTRIES,
   JOB_TYPE_LABELS,
   type JobType,
+  type SalaryType,
 } from '@/lib/types';
-
-type SalaryType = 'hourly' | 'weekly' | 'biweekly' | 'monthly' | 'annually';
 
 interface FormData {
   title: string;
@@ -60,7 +60,13 @@ const item = {
 };
 
 const inputBase =
-  'block w-full rounded-xl border bg-white px-4 py-3 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10 placeholder:text-text-muted/60';
+  'block w-full rounded-xl border bg-white px-4 py-3 text-md outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10 placeholder:text-text-muted/60';
+
+const labelBase = 'block text-base font-medium text-text mb-1.5';
+
+const DESCRIPTION_MAX = 6000;
+/** Below this the description is still accepted, but the employer gets a nudge. */
+const DESCRIPTION_SOFT_MIN = 200;
 
 export default function PostJobPage() {
   const router = useRouter();
@@ -75,14 +81,20 @@ export default function PostJobPage() {
   const [loadError, setLoadError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [listingGated, setListingGated] = useState(false);
+  const [submitLimitReached, setSubmitLimitReached] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  /** True while this is the employer's very first job post, so step 3 of onboarding. */
+  const [isSetup, setIsSetup] = useState(false);
   const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [previewCreatedAt, setPreviewCreatedAt] = useState(() => new Date().toISOString());
+  const [previewFeatured, setPreviewFeatured] = useState(false);
   const [form, setForm] = useState<FormData>({
     title: '',
     description: '',
     category: '',
-    location: "St. John's, Antigua",
+    // Seeded from the company row in the load effect below.
+    location: '',
     job_type: 'full_time',
     salary_min: '',
     salary_max: '',
@@ -106,7 +118,7 @@ export default function PostJobPage() {
 
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id, is_pro, company_name, logo_url')
+        .select('id, is_pro, company_name, logo_url, industry, location')
         .eq('user_id', user.id)
         .maybeSingle();
 
@@ -117,11 +129,50 @@ export default function PostJobPage() {
         return;
       }
 
-      if (company.is_pro) setIsPro(true);
+      setIsPro(!!company.is_pro);
       if (company.company_name) setCompanyName(company.company_name);
       if (company.logo_url) setCompanyLogo(company.logo_url);
 
-      // Listing limit removed — all employers can post unlimited jobs
+      // The company profile already asked for industry and location. Seed the
+      // matching job fields so a new post starts from what we know rather than
+      // from a hardcoded town.
+      if (!editId) {
+        setForm((prev) => ({
+          ...prev,
+          category: prev.category || company.industry || '',
+          location: prev.location || company.location || '',
+        }));
+
+        // Company profile shows "Account, Company, First job". Keep that strip
+        // alive through step 3, but only for an employer who has no listing yet.
+        const { count: listingCount, error: listingCountError } = await supabase
+          .from('job_listings')
+          .select('id', { count: 'exact', head: true })
+          .eq('company_id', company.id);
+
+        if (listingCountError || listingCount === null) throw new Error('Could not count listings');
+        setIsSetup(listingCount === 0);
+
+        // Free accounts get one active listing. Check that here rather than at
+        // submit: gating after the employer has written a whole job post
+        // throws the form away and shows the paywall as a punishment for
+        // finishing. Shown before the form, it is just the plan's limit.
+        if (!company.is_pro) {
+          const { count: activeCount, error: activeCountError } = await supabase
+            .from('job_listings')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', company.id)
+            .eq('status', 'active');
+
+          if (activeCountError || activeCount === null) throw new Error('Could not count active listings');
+          if (activeCount >= 1) {
+            setListingGated(true);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      setListingGated(false);
 
       // Load existing listing if editing
       if (editId) {
@@ -139,11 +190,13 @@ export default function PostJobPage() {
           return;
         }
 
+        setPreviewCreatedAt(listing.created_at);
+        setPreviewFeatured(listing.is_featured ?? false);
         setForm({
           title: listing.title || '',
           description: listing.description || '',
           category: listing.category || '',
-          location: listing.location || "St. John's, Antigua",
+          location: listing.location || '',
           job_type: (listing.job_type as JobType) || 'full_time',
           salary_min: listing.salary_min ? String(listing.salary_min) : '',
           salary_max: listing.salary_max ? String(listing.salary_max) : '',
@@ -160,6 +213,12 @@ export default function PostJobPage() {
       setLoading(false);
     });
   }, [editId, router, loadAttempt]);
+
+  useEffect(() => {
+    if (!success) return;
+    const redirect = setTimeout(() => router.push('/my-listings'), 2000);
+    return () => clearTimeout(redirect);
+  }, [success, router]);
 
   function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -195,10 +254,16 @@ export default function PostJobPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError('');
+    setSubmitLimitReached(false);
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      // The submit button sits below four cards, so an error message alone can
+      // land several screens above the press. Move the caret to it.
+      requestAnimationFrame(() =>
+        document.getElementById(Object.keys(validationErrors)[0])?.focus()
+      );
       return;
     }
 
@@ -231,16 +296,24 @@ export default function PostJobPage() {
         return;
       }
 
-      // Double-check listing limit for non-Pro on new listings
+      // The load effect already gated this, so reaching here means a listing
+      // went active in another tab while this form was open. Keep the form
+      // visible so this race never hides the employer's work.
       if (!editId && !company.is_pro) {
-        const { count } = await supabase
+        const { count, error: countError } = await supabase
           .from('job_listings')
           .select('id', { count: 'exact', head: true })
           .eq('company_id', company.id)
           .eq('status', 'active');
 
-        if ((count ?? 0) >= 1) {
-          setListingGated(true);
+        if (countError || count === null) {
+          setServerError('We could not check your listing limit. Your entries are still here. Please try again.');
+          setSubmitting(false);
+          return;
+        }
+
+        if (count >= 1) {
+          setSubmitLimitReached(true);
           setSubmitting(false);
           return;
         }
@@ -254,6 +327,9 @@ export default function PostJobPage() {
         job_type: form.job_type,
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
+        // Without this the figures above are quoted in no period at all, and
+        // seekers read an hourly rate as a monthly salary.
+        salary_type: form.salary_type,
         salary_visible: form.salary_visible,
         expires_at: null,
       };
@@ -292,9 +368,6 @@ export default function PostJobPage() {
       }
 
       setSuccess(true);
-      setTimeout(() => {
-        router.push('/my-listings');
-      }, 2000);
     } catch {
       setServerError('Something went wrong. Please try again.');
     } finally {
@@ -302,14 +375,26 @@ export default function PostJobPage() {
     }
   }
 
-  function formatSalaryPreview(min: string, max: string): string {
-    if (!min && !max) return 'Not specified';
-    const fmt = (n: number) =>
-      n >= 1000 ? `EC$${(n / 1000).toFixed(0)}k` : `EC$${n}`;
-    if (min && max) return `${fmt(Number(min))} - ${fmt(Number(max))}`;
-    if (min) return `From ${fmt(Number(min))}`;
-    return `Up to ${fmt(Number(max))}`;
-  }
+  // A soft nudge, never a block: a thin description is publishable but weak.
+  const descriptionTrimmed = form.description.trim();
+  const descriptionTooShort =
+    descriptionTrimmed.length > 0 && descriptionTrimmed.length < DESCRIPTION_SOFT_MIN;
+
+  const previewJob: Job = {
+    id: editId ?? 'preview',
+    title: form.title.trim() || 'Job title',
+    company_name: companyName || 'Your company',
+    company_logo: companyLogo,
+    location: form.location.trim(),
+    job_type: form.job_type,
+    salary_min: form.salary_min ? Number(form.salary_min) : null,
+    salary_max: form.salary_max ? Number(form.salary_max) : null,
+    salary_type: form.salary_type,
+    salary_visible: form.salary_visible,
+    created_at: previewCreatedAt,
+    is_featured: previewFeatured,
+    is_pro_company: isPro,
+  };
 
   if (loading) {
     return (
@@ -323,7 +408,7 @@ export default function PostJobPage() {
   if (loadError) {
     return <div className="mx-auto max-w-3xl py-12">
       <h1 className="text-2xl font-display text-primary">Post a job</h1>
-      <p role="alert" className="my-4 text-text-light">We could not load your company. Check your connection and try again.</p>
+      <p role="alert" className="my-4 text-text-light">We could not load your company and listing details. Check your connection and try again.</p>
       <button type="button" className="btn-primary" onClick={() => { setLoadError(false); setLoading(true); setLoadAttempt((attempt) => attempt + 1); }}>Try again</button>
     </div>;
   }
@@ -370,7 +455,7 @@ export default function PostJobPage() {
               href="/employers/upgrade"
               className="rounded-xl bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
             >
-              Upgrade to Pro — Unlimited Listings
+              Upgrade to Pro for unlimited listings
             </a>
             <a
               href="/my-listings"
@@ -408,6 +493,21 @@ export default function PostJobPage() {
               ? 'Your changes have been saved and are live.'
               : "Your job listing has been submitted for review. You'll be redirected to your listings shortly."}
           </p>
+          {/* An employer who posts and then cannot find their job assumes it
+              failed. Say how long review takes and how they will hear back. */}
+          {!editId && (
+            <p className="mt-2 text-sm text-text-muted">
+              Usually reviewed within one business day. You will get an email
+              when it goes live.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => router.push('/my-listings')}
+            className="mt-6 rounded-button bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
+          >
+            Go to my listings
+          </button>
         </div>
       </motion.div>
     );
@@ -422,6 +522,20 @@ export default function PostJobPage() {
     >
       {/* Header */}
       <motion.div variants={item} className="mb-8">
+        {isSetup && (
+          <ol
+            aria-label="Employer setup progress"
+            className="mb-6 flex items-center gap-3 text-xs sm:text-sm text-text-light"
+          >
+            <li className="text-primary">✓ Account</li>
+            <li aria-hidden="true" className="h-px flex-1 bg-border" />
+            <li className="text-primary">✓ Company</li>
+            <li aria-hidden="true" className="h-px flex-1 bg-border" />
+            <li aria-current="step" className="font-semibold text-primary">
+              3. First job
+            </li>
+          </ol>
+        )}
         <div className="flex items-center gap-3 mb-1">
           <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
             <HugeiconsIcon icon={Briefcase01Icon} size={20} className="text-primary" />
@@ -441,6 +555,7 @@ export default function PostJobPage() {
 
       {serverError && (
         <motion.div
+          role="alert"
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
@@ -453,7 +568,7 @@ export default function PostJobPage() {
         {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-6 lg:col-span-3"
+          className="onboarding-form space-y-6 lg:col-span-3"
           noValidate
         >
           {/* Job Details Card */}
@@ -468,11 +583,8 @@ export default function PostJobPage() {
             <div className="space-y-5">
               {/* Title */}
               <div>
-                <label
-                  htmlFor="title"
-                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-                >
-                  Job Title <span className="text-red-500">*</span>
+                <label htmlFor="title" className={labelBase}>
+                  Job title <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="title"
@@ -480,30 +592,35 @@ export default function PostJobPage() {
                   value={form.title}
                   onChange={(e) => updateField('title', e.target.value)}
                   placeholder="e.g. Front Desk Manager"
+                  aria-invalid={!!errors.title}
+                  aria-describedby={errors.title ? 'title-error' : undefined}
                   className={cn(
                     inputBase,
                     errors.title ? 'border-red-300 bg-red-50/50' : 'border-border/60'
                   )}
                 />
                 {errors.title && (
-                  <p className="mt-1.5 text-xs text-red-600">{errors.title}</p>
+                  <p id="title-error" className="mt-1.5 text-xs text-red-600">{errors.title}</p>
                 )}
               </div>
 
               {/* Description */}
               <div>
-                <label
-                  htmlFor="description"
-                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-                >
-                  Job Description <span className="text-red-500">*</span>
+                <label htmlFor="description" className={labelBase}>
+                  Job description <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   id="description"
                   rows={8}
+                  maxLength={DESCRIPTION_MAX}
                   value={form.description}
                   onChange={(e) => updateField('description', e.target.value)}
                   placeholder="Describe the role, responsibilities, requirements, and benefits..."
+                  aria-invalid={!!errors.description}
+                  aria-describedby={cn(
+                    errors.description ? 'description-error' : 'description-hint',
+                    'description-count'
+                  )}
                   className={cn(
                     inputBase,
                     'resize-none',
@@ -512,9 +629,31 @@ export default function PostJobPage() {
                       : 'border-border/60'
                   )}
                 />
-                <p className="mt-1.5 text-xs text-text-muted">Leave application cutoffs out of the public description. Listings stay up until manually closed.</p>
+                <div className="mt-1.5 flex items-start justify-between gap-4">
+                  <p id="description-hint" className="text-xs text-text-muted">
+                    Leave application cutoffs out of the public description. Listings stay up until manually closed.
+                  </p>
+                  <p
+                    id="description-count"
+                    aria-live="polite"
+                    className={cn(
+                      'shrink-0 text-xs tabular-nums',
+                      form.description.length >= DESCRIPTION_MAX
+                        ? 'text-amber-700'
+                        : 'text-text-muted'
+                    )}
+                  >
+                    {form.description.length} / {DESCRIPTION_MAX}
+                  </p>
+                </div>
+                {descriptionTooShort && (
+                  <p className="mt-1.5 text-xs text-amber-700">
+                    A short description gets fewer good applicants. Try to cover what the person
+                    will do day to day, what they need to have, and the hours.
+                  </p>
+                )}
                 {errors.description && (
-                  <p className="mt-1.5 text-xs text-red-600">
+                  <p id="description-error" className="mt-1.5 text-xs text-red-600">
                     {errors.description}
                   </p>
                 )}
@@ -533,16 +672,15 @@ export default function PostJobPage() {
 
             <div className="space-y-5">
               <div>
-                <label
-                  htmlFor="category"
-                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-                >
+                <label htmlFor="category" className={labelBase}>
                   Category <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="category"
                   value={form.category}
                   onChange={(e) => updateField('category', e.target.value)}
+                  aria-invalid={!!errors.category}
+                  aria-describedby={errors.category ? 'category-error' : undefined}
                   className={cn(
                     inputBase,
                     errors.category
@@ -558,15 +696,12 @@ export default function PostJobPage() {
                   ))}
                 </select>
                 {errors.category && (
-                  <p className="mt-1.5 text-xs text-red-600">{errors.category}</p>
+                  <p id="category-error" className="mt-1.5 text-xs text-red-600">{errors.category}</p>
                 )}
               </div>
 
               <div>
-                <label
-                  htmlFor="location"
-                  className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2"
-                >
+                <label htmlFor="location" className={labelBase}>
                   Location <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -576,6 +711,8 @@ export default function PostJobPage() {
                   value={form.location}
                   onChange={(e) => updateField('location', e.target.value)}
                   placeholder="e.g. St. John's, Antigua"
+                  aria-invalid={!!errors.location}
+                  aria-describedby={errors.location ? 'location-error' : 'location-hint'}
                   className={cn(
                     inputBase,
                     errors.location
@@ -597,9 +734,9 @@ export default function PostJobPage() {
                   <option value="Remote — Antigua and Barbuda" />
                 </datalist>
                 {errors.location ? (
-                  <p className="mt-1.5 text-xs text-red-600">{errors.location}</p>
+                  <p id="location-error" className="mt-1.5 text-xs text-red-600">{errors.location}</p>
                 ) : (
-                  <p className="mt-1.5 text-[11px] text-text-muted">
+                  <p id="location-hint" className="mt-1.5 text-[11px] text-text-muted">
                     Required for Google Jobs visibility
                   </p>
                 )}
@@ -654,10 +791,8 @@ export default function PostJobPage() {
 
             <div className="space-y-5">
               {/* Pay type toggle */}
-              <div>
-                <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                  Pay Type
-                </label>
+              <fieldset>
+                <legend className={labelBase}>Pay period</legend>
                 <div className="flex gap-2">
                   {([
                     { value: 'hourly' as SalaryType, label: 'Hourly' },
@@ -687,14 +822,16 @@ export default function PostJobPage() {
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                    {{ hourly: 'Min Rate (XCD/hr)', weekly: 'Min Pay (XCD/wk)', biweekly: 'Min Pay (XCD/2wk)', monthly: 'Min Salary (XCD/mo)', annually: 'Min Salary (XCD/yr)' }[form.salary_type]}
+                  <label htmlFor="salary_min" className={labelBase}>
+                    {{ hourly: 'Minimum rate (XCD per hour)', weekly: 'Minimum pay (XCD per week)', biweekly: 'Minimum pay (XCD per two weeks)', monthly: 'Minimum salary (XCD per month)', annually: 'Minimum salary (XCD per year)' }[form.salary_type]}{' '}
+                    <span className="font-normal text-text-light">(optional)</span>
                   </label>
                   <input
+                    id="salary_min"
                     type="text"
                     inputMode="numeric"
                     placeholder={{ hourly: 'e.g. 25', weekly: 'e.g. 500', biweekly: 'e.g. 1000', monthly: 'e.g. 2000', annually: 'e.g. 24000' }[form.salary_type]}
@@ -703,6 +840,8 @@ export default function PostJobPage() {
                       const v = e.target.value.replace(/[^0-9]/g, '');
                       updateField('salary_min', v);
                     }}
+                    aria-invalid={!!errors.salary_min}
+                    aria-describedby={errors.salary_min ? 'salary-min-error' : undefined}
                     className={cn(
                       inputBase,
                       errors.salary_min
@@ -711,16 +850,18 @@ export default function PostJobPage() {
                     )}
                   />
                   {errors.salary_min && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p id="salary-min-error" className="mt-1.5 text-xs text-red-600">
                       {errors.salary_min}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                    {{ hourly: 'Max Rate (XCD/hr)', weekly: 'Max Pay (XCD/wk)', biweekly: 'Max Pay (XCD/2wk)', monthly: 'Max Salary (XCD/mo)', annually: 'Max Salary (XCD/yr)' }[form.salary_type]}
+                  <label htmlFor="salary_max" className={labelBase}>
+                    {{ hourly: 'Maximum rate (XCD per hour)', weekly: 'Maximum pay (XCD per week)', biweekly: 'Maximum pay (XCD per two weeks)', monthly: 'Maximum salary (XCD per month)', annually: 'Maximum salary (XCD per year)' }[form.salary_type]}{' '}
+                    <span className="font-normal text-text-light">(optional)</span>
                   </label>
                   <input
+                    id="salary_max"
                     type="text"
                     inputMode="numeric"
                     placeholder={{ hourly: 'e.g. 50', weekly: 'e.g. 1000', biweekly: 'e.g. 2000', monthly: 'e.g. 5000', annually: 'e.g. 60000' }[form.salary_type]}
@@ -729,6 +870,8 @@ export default function PostJobPage() {
                       const v = e.target.value.replace(/[^0-9]/g, '');
                       updateField('salary_max', v);
                     }}
+                    aria-invalid={!!errors.salary_max}
+                    aria-describedby={errors.salary_max ? 'salary-max-error' : undefined}
                     className={cn(
                       inputBase,
                       errors.salary_max
@@ -737,7 +880,7 @@ export default function PostJobPage() {
                     )}
                   />
                   {errors.salary_max && (
-                    <p className="mt-1.5 text-xs text-red-600">
+                    <p id="salary-max-error" className="mt-1.5 text-xs text-red-600">
                       {errors.salary_max}
                     </p>
                   )}
@@ -777,6 +920,15 @@ export default function PostJobPage() {
 
           {/* Submit */}
           <motion.div variants={item}>
+            {submitLimitReached && (
+              <div role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <p>Your free plan already has an active listing. Your entries are still here. Close that listing or upgrade to Pro, then try again.</p>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <a href="/my-listings" target="_blank" rel="noopener noreferrer" className="font-medium underline">Manage your listing (new tab)</a>
+                  <a href="/employers/upgrade" target="_blank" rel="noopener noreferrer" className="font-medium underline">Upgrade to Pro (new tab)</a>
+                </div>
+              </div>
+            )}
             <button
               type="submit"
               disabled={submitting}
@@ -802,7 +954,7 @@ export default function PostJobPage() {
           </motion.div>
         </form>
 
-        {/* Preview — exact replica of JobCard */}
+        {/* Shared search result card, with navigation and sharing disabled. */}
         <div className="lg:col-span-2">
           <motion.div variants={item} className="sticky top-20">
             <div className="flex items-center gap-2.5 mb-3">
@@ -814,84 +966,9 @@ export default function PostJobPage() {
               </h2>
             </div>
 
-            <p className="text-[11px] text-text-muted mb-2">This is exactly how job seekers will see your listing.</p>
+            <p className="text-[11px] text-text-muted mb-2">This is how your card will appear in job search results.</p>
 
-            {/* JobCard replica */}
-            <div className={`group relative rounded-[--radius-card] transition-all duration-300 p-5 cursor-pointer ${
-              isPro
-                ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
-                : "bg-white border border-border hover:border-primary/20 hover-lift"
-            }`}>
-              <div className="flex items-start gap-3.5">
-                {companyLogo ? (
-                  <img
-                    src={companyLogo}
-                    alt={companyName}
-                    className="shrink-0 h-11 w-11 rounded-xl object-cover border border-border"
-                  />
-                ) : (
-                  <div className="shrink-0 h-11 w-11 rounded-xl bg-primary flex items-center justify-center text-white font-semibold text-sm">
-                    {(companyName || 'C').charAt(0).toUpperCase()}
-                  </div>
-                )}
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
-                      {form.title || 'Job Title'}
-                    </h3>
-                    {isPro ? (
-                      <span className="shrink-0 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full tracking-wider shadow-sm shadow-amber-300/40">
-                        Featured
-                      </span>
-                    ) : (
-                      <span className="shrink-0 bg-coral text-white text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
-                        New
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-text-muted text-[13px] mt-0.5">{companyName || 'Your Company'}</p>
-
-                  <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                    <span className="flex items-center gap-1 text-xs text-text-light">
-                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      Antigua
-                    </span>
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                      ({
-                        full_time: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-                        part_time: "bg-primary/5 text-primary border border-primary/20",
-                        contract: "bg-accent-warm/10 text-amber-700 border border-accent-warm/20",
-                        seasonal: "bg-coral/10 text-orange-700 border border-coral/20",
-                      } as Record<string, string>)[form.job_type] ?? "bg-bg-alt text-text-light border border-border"
-                    }`}>
-                      {JOB_TYPE_LABELS[form.job_type]}
-                    </span>
-                  </div>
-
-                  {form.salary_visible && (form.salary_min || form.salary_max) && (
-                    <p className="text-[13px] font-semibold text-text mt-2.5">
-                      {formatSalaryPreview(form.salary_min, form.salary_max)}
-                      <span className="text-text-muted font-normal text-[11px] ml-1">
-                        {{ hourly: '/hr', weekly: '/wk', biweekly: '/2wk', monthly: '/mo', annually: '/yr' }[form.salary_type]}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom actions (visual only) */}
-              <div className="absolute bottom-4 right-4 flex items-center gap-2.5">
-                <span className="text-border">
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-                  </svg>
-                </span>
-              </div>
-            </div>
+            <JobCard job={previewJob} preview />
 
             <p className="mt-3 text-[11px] text-text-muted text-center">
               {editId ? 'Editing listing' : 'Stays active until you close it'}

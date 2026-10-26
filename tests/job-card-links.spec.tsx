@@ -62,6 +62,17 @@ it('orders the title link before the independent actions without duplicate detai
   ]);
 });
 
+it('keeps the draft card readable without links or save actions', () => {
+  const { container } = render(<JobCard job={{ ...job, location: 'Codrington, Barbuda', salary_min: 25, salary_type: 'hourly' }} preview loggedIn selectHref="/jobs?selected=preview" />);
+  expect(screen.getByRole('heading', { name: job.title })).toBeTruthy();
+  expect(screen.getByText('Codrington, Barbuda')).toBeTruthy();
+  expect(screen.getByText('From EC$25')).toBeTruthy();
+  expect(screen.getByText('/hr')).toBeTruthy();
+  expect(screen.queryAllByRole('link')).toHaveLength(0);
+  expect(screen.queryAllByRole('button')).toHaveLength(0);
+  expect(container.querySelector('[inert]')).toBeNull();
+});
+
 it('escapes unusual employer and title text without creating extra anchors', () => {
   const unusualJob = { ...job, title: 'Cook <assistant> & Prep', company_name: 'A & B "Cafe"' };
   const document = new DOMParser().parseFromString(renderToString(<JobCard job={unusualJob} />), 'text/html');
