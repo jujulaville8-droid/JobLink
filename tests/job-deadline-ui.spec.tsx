@@ -19,6 +19,7 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
       in: (key: string, values: unknown[]) => { filters.push(row => values.includes(row[key])); return query; },
       order: () => query, limit: () => query, range: () => query,
       single: async () => ({ ...execute(), data: execute().data[0] ?? null }),
+      maybeSingle: async () => ({ ...execute(), data: execute().data[0] ?? null }),
       then: (resolve: (value: unknown) => unknown) => Promise.resolve(execute()).then(resolve),
     };
     return query;
@@ -53,6 +54,32 @@ beforeEach(() => {
     saved_jobs: [{ id: 'saved', seeker_id: 'profile', job_listings: job }],
     applications: [],
   };
+});
+
+it.each([
+  ['seeker', 'Julian', 'Welcome, Julian'],
+  ['seeker', '  Julian  ', 'Welcome, Julian'],
+  ['seeker', '', 'Welcome'],
+  ['seeker', '   ', 'Welcome'],
+  ['seeker', null, 'Welcome'],
+  ['seeker', undefined, 'Welcome'],
+  ['employer', 'Test Company', 'Welcome, Test Company'],
+  ['employer', '  Test Company  ', 'Welcome, Test Company'],
+  ['employer', '', 'Welcome'],
+  ['employer', '   ', 'Welcome'],
+  ['employer', null, 'Welcome'],
+  ['employer', undefined, 'Welcome'],
+])('greets %s with name %j as exactly %s', async (role, name, expected) => {
+  db.tables.users[0].role = role;
+  if (role === 'seeker') {
+    db.tables.seeker_profiles[0].first_name = name;
+  } else {
+    db.tables.companies[0].company_name = name;
+  }
+  const page = await DashboardPage({ searchParams: Promise.resolve({}) });
+  const dashboard = page.type as (props: Record<string, unknown>) => Promise<ReactElement>;
+  const html = renderToStaticMarkup(await dashboard(page.props));
+  expect(html.match(/<h1\b[^>]*>(.*?)<\/h1>/)?.[1]).toBe(expected);
 });
 
 it('shows active employer listings and posted dates without countdowns or expiry warnings', async () => {
