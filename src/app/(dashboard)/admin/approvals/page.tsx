@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { processJobAlerts } from '@/lib/job-alert-matcher'
+import { closeJobListing } from '@/lib/close-job-listing'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
@@ -166,10 +167,7 @@ async function rejectJob(formData: FormData) {
   const jobId = formData.get('job_id') as string
   const rejectionReason = formData.get('rejection_reason') as string
 
-  await supabase
-    .from('job_listings')
-    .update({ status: 'closed' })
-    .eq('id', jobId)
+  await closeJobListing(supabase, jobId)
 
   await notifyEmployer(supabase, jobId, 'listing_rejected', rejectionReason)
   revalidatePath('/admin/approvals')

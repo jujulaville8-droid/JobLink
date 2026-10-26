@@ -1,5 +1,6 @@
 import { after, NextRequest, NextResponse } from 'next/server'
 import { processJobAlerts } from '@/lib/job-alert-matcher'
+import { notifyApplicantsOfJobClosure } from '@/lib/job-closure-notifications'
 import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdmin } from '@/lib/api-auth'
@@ -74,20 +75,30 @@ export async function PATCH(
     }
 
     // Get the listing before updating (to check previous status and get details for email)
-    const { data: currentListing } = await admin
+    const { data: currentListing, error: readError } = await admin
       .from('job_listings')
       .select('status, title, company_id, companies(user_id)')
       .eq('id', id)
       .single()
 
-    const { data: updatedListing, error: updateError } = await admin
+    if (readError && readError.code !== 'PGRST116') {
+      return NextResponse.json({ error: 'Failed to load listing' }, { status: 500 })
+    }
+    if (!currentListing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+
+    let update = admin
       .from('job_listings')
       .update(updates)
       .eq('id', id)
-      .select()
-      .single()
+    // Bind a status change to the state we read. A competing close cannot also
+    // claim an active -> closed transition (or turn a rejection into one).
+    if (status !== undefined) update = update.eq('status', currentListing.status)
+    const { data: updatedListing, error: updateError } = await update.select().single()
 
     if (updateError) {
+      if (updateError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Listing changed. Refresh and try again.' }, { status: 409 })
+      }
       return NextResponse.json({ error: 'Failed to update listing' }, { status: 500 })
     }
 
@@ -135,6 +146,9 @@ export async function PATCH(
 
     if (status === 'active' && currentListing && currentListing.status !== 'active') {
       after(async () => { await processJobAlerts(id) })
+    }
+    if (status === 'closed' && currentListing.status === 'active') {
+      after(async () => { await notifyApplicantsOfJobClosure(id) })
     }
 
     return NextResponse.json({ listing: updatedListing })

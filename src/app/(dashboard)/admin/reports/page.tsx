@@ -1,6 +1,9 @@
 import { revalidatePath } from 'next/cache'
 import { requireRole } from '@/lib/auth'
+import { closeJobListing } from '@/lib/close-job-listing'
 import ReportReplyForm from '@/components/ReportReplyForm'
+
+export const maxDuration = 300
 
 interface ReportData {
   id: string
@@ -44,10 +47,7 @@ async function removeListingAction(formData: FormData) {
   const adminClient = createAdminClient()
 
   // Close the listing
-  await adminClient
-    .from('job_listings')
-    .update({ status: 'closed' })
-    .eq('id', jobId)
+  await closeJobListing(adminClient, jobId)
 
   // Remove the report
   await adminClient
