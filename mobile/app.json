@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "JobLinks",
+    "slug": "joblinks-antigua",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "joblinks",
+    "icon": "./assets/joblink-icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.joblinkantigua.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.joblinkantigua.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/joblink-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font"
+    ],
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
