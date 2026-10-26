@@ -39,12 +39,12 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="flex items-center gap-2 rounded-full border border-border bg-[--color-surface] p-1 pr-3 hover:bg-bg-alt hover:border-primary/20 transition-all"
+        className="flex items-center gap-2 rounded-full border border-border bg-surface p-1 pr-3 hover:bg-bg-alt hover:border-primary/20 transition-all"
       >
         {children}
         <motion.span
           animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.4, ease: "easeInOut", type: "spring" }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
         >
           <ChevronDown className="h-3.5 w-3.5 text-text-muted" />
         </motion.span>
@@ -53,10 +53,10 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ y: -5, scale: 0.95, opacity: 0, filter: "blur(10px)" }}
-            animate={{ y: 0, scale: 1, opacity: 1, filter: "blur(0px)" }}
-            exit={{ y: -5, scale: 0.95, opacity: 0, filter: "blur(10px)" }}
-            transition={{ duration: 0.6, ease: "circInOut", type: "spring" }}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="absolute right-0 z-50 w-56 mt-2.5 py-1.5 rounded-xl border border-border shadow-lg shadow-black/10 flex flex-col"
             style={{ backgroundColor: "var(--color-surface)" }}
           >
@@ -68,49 +68,16 @@ const DropdownMenu = ({ options, header, dividerAfter = [], children }: Dropdown
             {options && options.length > 0 ? (
               options.map((option, index) => (
                 <React.Fragment key={option.label}>
-                  <motion.button
-                    initial={{
-                      opacity: 0,
-                      x: 10,
-                      scale: 0.95,
-                      filter: "blur(10px)",
-                    }}
-                    animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
-                    exit={{
-                      opacity: 0,
-                      x: 10,
-                      scale: 0.95,
-                      filter: "blur(10px)",
-                    }}
-                    transition={{
-                      duration: 0.4,
-                      delay: index * 0.06,
-                      ease: "easeInOut",
-                      type: "spring",
-                    }}
-                    whileHover={{
-                      backgroundColor: "var(--color-bg-alt)",
-                      transition: {
-                        duration: 0.2,
-                        ease: "easeInOut",
-                      },
-                    }}
-                    whileTap={{
-                      scale: 0.97,
-                      transition: {
-                        duration: 0.15,
-                        ease: "easeInOut",
-                      },
-                    }}
+                  <button
                     onClick={() => {
                       option.onClick();
                       setIsOpen(false);
                     }}
-                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text cursor-pointer transition-colors ${option.className ?? ""}`}
+                    className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm text-text cursor-pointer hover:bg-bg-alt transition-colors ${option.className ?? ""}`}
                   >
                     {option.Icon}
                     {option.label}
-                  </motion.button>
+                  </button>
                   {dividerAfter.includes(index) && (
                     <div className="my-1.5 border-t border-border" />
                   )}
