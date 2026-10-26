@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getSeekerFirstName } from "@/lib/seeker-first-name";
 import { knownJobCategory } from "@/lib/job-category";
 import { getJobResults, isJobPageOutOfRange, parseJobPage, type JobSearchParams } from "@/lib/job-results";
 
@@ -159,6 +160,9 @@ export default async function JobsPage({ searchParams }: PageProps) {
   if (prefetchedResults && isJobPageOutOfRange(prefetchedResults)) notFound();
   if (prefetchedResults?.error) throw new Error("Unable to load the requested jobs page");
 
+  const firstName = category ? null : await getSeekerFirstName();
+  const heading = category ? `${category} Jobs` : firstName ? `Welcome, ${firstName}` : "Browse Jobs";
+
   const query = listQuery(params);
   const backHref = query ? `/jobs?${query}` : "/jobs";
   const selectedId = typeof params.job === "string" ? params.job : undefined;
@@ -171,7 +175,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
         {/* Page header */}
         <div className="mb-6">
           <h1 className="font-display text-[2.25rem] sm:text-5xl leading-[1.05] text-text">
-            {category ? `${category} Jobs` : "Browse Jobs"}
+            {heading}
           </h1>
           <p className="mt-2 text-base sm:text-lg text-text-light">
             {category
@@ -199,6 +203,10 @@ export default async function JobsPage({ searchParams }: PageProps) {
           </p>
         )}
       </div>
+
+      {firstName && (
+        <h2 className={`mb-4 text-sm font-semibold text-text ${listOnlyOnDesktop}`}>Jobs for you</h2>
+      )}
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         {/* Results */}
