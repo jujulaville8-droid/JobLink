@@ -40,3 +40,24 @@ it('escapes supplied labels and normalizes em dashes without HTML-encoding the s
   expect(html).toContain('A &amp; B')
   expect(html).not.toMatch(/\u2014|&mdash;/)
 })
+
+it('renders the employer closure summary and the standard post-role link', () => {
+  const { subject, html } = buildEmailHtml('job_closed_employer', { ...data, applicant_count: 12 })
+  expect(subject).toBe('Your listing for Chef has been closed')
+  for (const copy of ['Your Listing Has Been Closed', 'Chef', 'Island Kitchen', 'has been closed on JobLink',
+    'All 12 applicants were notified by email', 'position is no longer available', 'has contacted the candidates it is moving forward with',
+    'Similar open roles were suggested to them', 'Nothing further is needed from you', 'Post another role on JobLink',
+    '#0d7377', 'href="https://joblinkantigua.com/post-job"']) expect(html).toContain(copy)
+  expect(subject + html).not.toMatch(/\u2014|&mdash;|&#8212;|&#x2014;/i)
+})
+
+it('escapes employer summary labels and removes their em dashes without encoding the subject', () => {
+  const { subject, html } = buildEmailHtml('job_closed_employer', {
+    job_title: '<Chef> — A & B', company_name: '<Hotel> — Kitchen', applicant_count: 0,
+  })
+  expect(subject).toBe('Your listing for <Chef>, A & B has been closed')
+  expect(html).toContain('&lt;Chef&gt;, A &amp; B')
+  expect(html).toContain('&lt;Hotel&gt;, Kitchen')
+  expect(html).toContain('All 0 applicants')
+  expect(subject + html).not.toMatch(/\u2014|&mdash;|&#8212;|&#x2014;/i)
+})

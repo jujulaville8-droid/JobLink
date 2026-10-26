@@ -68,7 +68,7 @@ it('dedupes by user, resolves first names, and skips missing profiles, users and
     { id: 'e', job_id: 'closed', seeker_profiles: null },
     { id: 'f', job_id: 'closed', seeker_profiles: [{ user_id: 'other', first_name: 'Jo' }] })
   state.tables.users.push({ id: 'no-email', email: ' ' }, { id: 'other', email: 'jo@example.com' })
-  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 2, failed: 0 })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 2, failed: 0, employer: { sent: 0, failed: 0 } })
   expect(state.send.mock.calls.map(([mail]) => mail.to)).toEqual(['maya@example.com', 'jo@example.com'])
   expect(state.send).toHaveBeenCalledWith(expect.objectContaining({
     type: 'job_closed_applicant', idempotencyKey: 'job-closed/closed/user',
@@ -107,7 +107,7 @@ it('paginates every application and the full suggestion pool before choosing fou
   state.tables.job_listings = [job('closed', { status: 'closed' }),
     ...Array.from({ length: 501 }, (_, i) => job(`${i}`, { category: i === 500 ? 'Hospitality' : 'Retail' })),
   ]
-  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 2, failed: 0 })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 2, failed: 0, employer: { sent: 0, failed: 0 } })
   expect(state.send.mock.calls[0][0].data.suggested_jobs[0].title).toBe('500')
 })
 
@@ -125,7 +125,7 @@ it.each(['rejected', 'thrown'])('isolates a %s send and retains its claim even i
   state.tables.users.push({ id: 'other', email: 'other@example.com' })
   if (failure === 'rejected') state.send.mockResolvedValueOnce({ success: false })
   else state.send.mockRejectedValueOnce(new Error('private@example.com'))
-  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 1, failed: 1 })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 1, failed: 1, employer: { sent: 0, failed: 0 } })
   await notifyApplicantsOfJobClosure('closed')
   expect(state.send).toHaveBeenCalledTimes(2)
   expect(state.send.mock.calls[1][0].to).toBe('other@example.com')
@@ -142,13 +142,13 @@ it('retains the claim if saving provider acceptance fails', async () => {
 
 it('skips all delivery when the migration is absent', async () => {
   state.missingLog = true
-  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 1 })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 1, employer: { sent: 0, failed: 0 } })
   expect(state.send).not.toHaveBeenCalled()
 })
 
 it.each(['applications', 'users', 'job_listings'])('handles an unavailable %s read without sending or leaking details', async table => {
   state.readError = table
-  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 1 })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 1, employer: { sent: 0, failed: 0 } })
   expect(state.send).not.toHaveBeenCalled()
   expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain('private@example.com')
 })
@@ -167,6 +167,78 @@ it('sends a useful update with an empty suggestions array when no open jobs exis
 
 it('does not read private records or claim delivery without a provider key', async () => {
   vi.stubEnv('RESEND_API_KEY', '')
-  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 0 })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 0, employer: { sent: 0, failed: 0 } })
   expect(state.createAdmin).not.toHaveBeenCalled()
+})
+
+function addEmployer() {
+  state.tables.job_listings[0].companies = { company_name: 'Island Hotel', user_id: 'employer' }
+  state.tables.users.push({ id: 'employer', email: 'owner@example.com' })
+}
+
+it('emails the company owner once after applicants with the successful send count', async () => {
+  addEmployer()
+  state.tables.applications.push(application('duplicate', 'user'), application('b', 'other'), application('c', 'missing'))
+  state.tables.users.push({ id: 'other', email: 'other@example.com' })
+  state.send.mockResolvedValueOnce({ success: false })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 1, failed: 1, employer: { sent: 1, failed: 0 } })
+  expect(state.send).toHaveBeenNthCalledWith(3, {
+    to: 'owner@example.com', type: 'job_closed_employer', idempotencyKey: 'job-closed/closed/employer',
+    data: { job_title: 'closed', company_name: 'Island Hotel', applicant_count: 1 },
+  })
+  expect(state.tables.job_closure_notification_log).toContainEqual({
+    job_id: 'closed', user_id: 'employer', status: 'sent', message_id: 'message-id', sent_at: expect.any(String),
+  })
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 0, employer: { sent: 0, failed: 0 } })
+  expect(state.send).toHaveBeenCalledTimes(3)
+})
+
+it('claims only one employer summary across concurrent invocations', async () => {
+  addEmployer()
+  await Promise.all([notifyApplicantsOfJobClosure('closed'), notifyApplicantsOfJobClosure('closed')])
+  expect(state.send.mock.calls.filter(([mail]) => mail.type === 'job_closed_employer')).toHaveLength(1)
+})
+
+it.each(['active', 'pending_approval'])('does not email the owner when the listing is %s', async status => {
+  addEmployer()
+  state.tables.job_listings[0].status = status
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 0, employer: { sent: 0, failed: 0 } })
+  expect(state.send).not.toHaveBeenCalled()
+})
+
+it.each([null, '', ' '])('quietly skips an employer whose email is %s', async email => {
+  addEmployer()
+  state.tables.users[1].email = email
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 1, failed: 0, employer: { sent: 0, failed: 0 } })
+  expect(state.send).toHaveBeenCalledTimes(1)
+  expect(state.tables.job_closure_notification_log).toHaveLength(1)
+  expect(console.error).not.toHaveBeenCalled()
+})
+
+it.each(['rejected', 'thrown'])('isolates a %s employer send and retains its claim', async failure => {
+  addEmployer()
+  state.send.mockResolvedValueOnce({ success: true, id: 'applicant-message' })
+  if (failure === 'rejected') state.send.mockResolvedValueOnce({ success: false })
+  else state.send.mockRejectedValueOnce(new Error('private@example.com'))
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 1, failed: 0, employer: { sent: 0, failed: 1 } })
+  expect(state.tables.job_closure_notification_log[1]).toEqual({
+    job_id: 'closed', user_id: 'employer', status: failure === 'rejected' ? 'failed' : 'claimed',
+  })
+  await notifyApplicantsOfJobClosure('closed')
+  expect(state.send).toHaveBeenCalledTimes(2)
+  expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain('private@example.com')
+})
+
+it('lets the applicant claim win when the owner applied to their own listing', async () => {
+  addEmployer()
+  state.tables.applications.push(application('b', 'employer'))
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 2, failed: 0, employer: { sent: 0, failed: 0 } })
+  expect(state.send.mock.calls.every(([mail]) => mail.type === 'job_closed_applicant')).toBe(true)
+})
+
+it('resolves an owner from an array-shaped company relationship', async () => {
+  addEmployer()
+  state.tables.job_listings[0].companies = [state.tables.job_listings[0].companies]
+  await notifyApplicantsOfJobClosure('closed')
+  expect(state.send).toHaveBeenLastCalledWith(expect.objectContaining({ to: 'owner@example.com', type: 'job_closed_employer' }))
 })
