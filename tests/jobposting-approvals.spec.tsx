@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import JobDetailPage, { generateMetadata } from '@/app/jobs/[id]/page';
+import JobCard from '@/components/JobCard';
+import JobDetailPane from '@/components/JobDetailPane';
+import type { SalaryType } from '@/lib/types';
 import observedJobs from './fixtures/approved-job-listings.json';
 import { publicVacancyDescription } from '@/lib/public-vacancy-description';
 import {
@@ -24,6 +27,9 @@ const originalCompanyApprovals = { ...EMPLOYER_APPROVED_COMPANIES };
 function makeJob(candidate = candidates[0]) {
   return {
     ...candidate.job,
+    salary_type: null as SalaryType | null,
+    salary_min: null as number | null,
+    salary_max: null as number | null,
     expires_at: null as string | null,
     company: {
       ...candidate.job.company,
@@ -37,7 +43,7 @@ function makeJob(candidate = candidates[0]) {
 }
 
 const db = vi.hoisted(() => ({ job: null as ReturnType<typeof makeJob> | null, error: null as Error | null }));
-vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('Not found'); } }));
+vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('Not found'); }, useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
   auth: { getUser: async () => ({ data: { user: null } }) },
   from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: db.job, error: db.error }) }) }) }),
@@ -63,6 +69,37 @@ afterEach(() => {
   Object.assign(EMPLOYER_APPROVED_JOBS, originalApprovals);
   Object.assign(EMPLOYER_APPROVED_COMPANIES, originalCompanyApprovals);
   vi.useRealTimers();
+});
+
+describe('salary pay periods', () => {
+  it.each([
+    ['hourly', '/hr', 'per hour', 'HOUR'],
+    ['weekly', '/wk', 'per week', 'WEEK'],
+    ['biweekly', '/2wk', 'per two weeks', undefined],
+    ['monthly', '/mo', 'per month', 'MONTH'],
+    ['annually', '/yr', 'per year', 'YEAR'],
+    [null, '', '', undefined],
+  ] as const)('renders %s pay consistently in cards, details, and structured data', async (period, suffix, phrase, unit) => {
+    db.job!.salary_min = 25;
+    db.job!.salary_visible = true;
+    db.job!.salary_type = period;
+    const card = renderToStaticMarkup(<JobCard job={{ ...db.job!, company_name: db.job!.company.company_name }} />);
+    expect(card).toContain('From EC$25');
+    if (suffix) expect(card).toContain(suffix);
+    else expect(card).not.toContain('/mo');
+    const pane = renderToStaticMarkup(await JobDetailPane({ jobId: db.job!.id, backHref: '/jobs' }));
+    for (const html of [pane, await pageHtml()]) {
+      expect(html).toContain('25');
+      if (phrase) expect(html).toContain(phrase);
+      else expect(html).not.toContain('per month');
+    }
+    const salary = (await schemas())[0].baseSalary;
+    expect(salary).toMatchObject({ currency: 'XCD', value: { value: 25 } });
+    if (unit) expect(salary.value.unitText).toBe(unit);
+    else expect(salary.value).not.toHaveProperty('unitText');
+    db.job!.salary_visible = false;
+    expect((await schemas())[0]).not.toHaveProperty('baseSalary');
+  });
 });
 
 describe('job location fallback', () => {

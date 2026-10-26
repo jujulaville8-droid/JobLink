@@ -66,6 +66,37 @@ export interface Subscription {
   current_period_end: string;
 }
 
+/** The pay period salary_min/salary_max are quoted in. Null on pre-2026-10 listings. */
+export type SalaryType = 'hourly' | 'weekly' | 'biweekly' | 'monthly' | 'annually';
+
+/** Suffix shown next to a salary figure. Empty when the period was never recorded. */
+export const SALARY_TYPE_SUFFIX: Record<SalaryType, string> = {
+  hourly: '/hr',
+  weekly: '/wk',
+  biweekly: '/2wk',
+  monthly: '/mo',
+  annually: '/yr',
+};
+
+export function salaryTypeSuffix(salaryType?: string | null): string {
+  if (!salaryType) return '';
+  return SALARY_TYPE_SUFFIX[salaryType as SalaryType] ?? '';
+}
+
+/** Spelled-out pay period for detail pages, where there is room to read it. */
+export const SALARY_TYPE_PERIOD: Record<SalaryType, string> = {
+  hourly: 'per hour',
+  weekly: 'per week',
+  biweekly: 'per two weeks',
+  monthly: 'per month',
+  annually: 'per year',
+};
+
+export function salaryTypePeriod(salaryType?: string | null): string {
+  if (!salaryType) return '';
+  return SALARY_TYPE_PERIOD[salaryType as SalaryType] ?? '';
+}
+
 export interface JobListing {
   id: string;
   company_id: string;
@@ -75,6 +106,7 @@ export interface JobListing {
   job_type: JobType;
   salary_min: number | null;
   salary_max: number | null;
+  salary_type: SalaryType | null;
   salary_visible: boolean;
   location: string;
   requires_work_permit: boolean;

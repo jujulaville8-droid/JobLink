@@ -59,6 +59,7 @@ CREATE TABLE public.job_listings (
   job_type job_type NOT NULL DEFAULT 'full_time',
   salary_min INTEGER,
   salary_max INTEGER,
+  salary_type TEXT CHECK (salary_type IS NULL OR salary_type IN ('hourly', 'weekly', 'biweekly', 'monthly', 'annually')),
   salary_visible BOOLEAN NOT NULL DEFAULT TRUE,
   location TEXT,
   requires_work_permit BOOLEAN NOT NULL DEFAULT FALSE,

@@ -59,7 +59,7 @@ type PageState =
   | "error";
 
 const cardBase =
-  "rounded-2xl border border-border/40 bg-[--color-surface] overflow-hidden transition-all duration-300 shadow-xs";
+  "rounded-2xl border border-border/40 bg-surface overflow-hidden transition-all duration-300 shadow-xs";
 
 const container = {
   hidden: { opacity: 0 },
@@ -83,7 +83,7 @@ const btnPrimary =
   "inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20";
 
 const btnOutline =
-  "inline-flex items-center gap-2 rounded-xl border-2 border-border bg-[--color-surface] px-5 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-all duration-200";
+  "inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-all duration-200";
 
 export default function ApplyPage() {
   const params = useParams();
@@ -864,7 +864,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
                 rows={7}
                 maxLength={APPLICATION_DRAFT_MAX_LENGTH}
                 placeholder="Tell the employer why you're a great fit for this role..."
-                className="w-full rounded-xl border border-border/60 bg-[--color-bg] px-4 py-3.5 text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 resize-y leading-relaxed"
+                className="w-full rounded-xl border border-border/60 bg-bg px-4 py-3.5 text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 resize-y leading-relaxed"
               />
               <div className="mt-1.5 flex items-center justify-end">
                 <p

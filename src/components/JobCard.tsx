@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSavedJob } from "@/lib/saved-job-sync";
 import { displayJobLocation } from "@/lib/job-location";
 import { SelectJobLink } from "@/components/JobSplitNavigation";
+import { salaryTypeSuffix } from "@/lib/types";
 
 export interface Job {
   id: string;
@@ -15,6 +16,7 @@ export interface Job {
   job_type: string;
   salary_min?: number | null;
   salary_max?: number | null;
+  salary_type?: string | null;
   salary_visible?: boolean;
   created_at: string;
   is_featured?: boolean;
@@ -47,7 +49,7 @@ function getJobType(type: string): { color: string; label: string } {
   return JOB_TYPE_STYLES[type] ?? { color: "bg-bg-alt text-text-light border border-border", label: type };
 }
 
-export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false, selectHref, selected = false }: {
+export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false, selectHref, selected = false, preview = false }: {
   job: Job;
   isSaved?: boolean;
   loggedIn?: boolean;
@@ -55,6 +57,8 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
   /** /jobs split view: a plain click selects the job in place via this URL. */
   selectHref?: string;
   selected?: boolean;
+  /** Show a readable draft card without navigation, saving, or sharing. */
+  preview?: boolean;
 }) {
   const { saved, saving: savingBookmark, error: saveError, toggle } = useSavedJob(job.id, isSaved);
 
@@ -68,6 +72,9 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
     job.salary_visible !== false
       ? formatSalary(job.salary_min, job.salary_max)
       : "";
+  // Listings created before salary_type existed carry no period, so show none
+  // rather than the "/mo" this card used to hardcode onto every figure.
+  const salaryPeriod = salaryTypeSuffix(job.salary_type);
 
   const colors = [
     "bg-primary",
@@ -93,7 +100,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
       const rect = event.currentTarget.getBoundingClientRect();
       event.currentTarget.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
       event.currentTarget.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
-    } : undefined} className={`group relative rounded-[--radius-card] transition-all duration-300 p-5 ${highlight ? "job-magic-card" : "hover-lift"} ${
+    } : undefined} className={`group relative rounded-card transition-all duration-300 p-5 ${highlight ? "job-magic-card" : "hover-lift"} ${
       isFeatured
         ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
         : "bg-white border border-border hover:border-primary/20"
@@ -127,12 +134,14 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold text-text group-hover:text-primary transition-colors text-[14px] leading-snug min-w-0">
-                {selectHref ? (
+                {preview ? (
+                  <span>{job.title}</span>
+                ) : selectHref ? (
                   <SelectJobLink
                     jobId={job.id}
                     selectHref={selectHref}
                     selected={selected}
-                    className="after:absolute after:inset-0 after:rounded-[--radius-card] focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
+                    className="after:absolute after:inset-0 after:rounded-card focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
                     ariaLabel={`View ${job.title} at ${job.company_name}`}
                   >
                     {job.title}
@@ -140,7 +149,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                 ) : (
                   <Link
                     href={`/jobs/${job.id}`}
-                    className="after:absolute after:inset-0 after:rounded-[--radius-card] focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
+                    className="after:absolute after:inset-0 after:rounded-card focus-visible:outline-none! focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary"
                     aria-label={`View ${job.title} at ${job.company_name}`}
                   >
                     {job.title}
@@ -177,7 +186,9 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
               {salary ? (
                 <p className="flex-1 min-w-0 text-[13px] font-semibold text-text truncate">
                   {salary}
-                  <span className="text-text-muted font-normal text-[11px] ml-1">/mo</span>
+                  {salaryPeriod && (
+                    <span className="text-text-muted font-normal text-[11px] ml-1">{salaryPeriod}</span>
+                  )}
                 </p>
               ) : (
                 <p className="flex-1 min-w-0 text-[12px] text-text-muted italic truncate">
@@ -186,7 +197,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
               )}
 
               <div className="flex items-center gap-2.5 shrink-0">
-                {loggedIn && (
+                {loggedIn && !preview && (
                   <button
                     onClick={toggleSave}
                     disabled={savingBookmark}
@@ -200,11 +211,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                   </button>
                 )}
                 <a
-                  href={`https://wa.me/?text=${whatsappText}`}
+                  href={preview ? undefined : `https://wa.me/?text=${whatsappText}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="relative z-10 text-border hover:text-green-600 transition-colors"
-                  aria-label="Share on WhatsApp"
+                  aria-label={preview ? undefined : "Share on WhatsApp"}
+                  aria-hidden={preview || undefined}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <svg className="h-4.5 w-4.5" viewBox="0 0 24 24" fill="currentColor">

@@ -83,7 +83,7 @@ export default function ResetPasswordPage() {
   // Loading state while checking session
   if (hasSession === null) {
     return (
-      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center">
+      <div className="animate-scale-in bg-white rounded-card shadow-md border border-border p-8 text-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
         <p className="text-sm text-text-light">Verifying your reset link...</p>
       </div>
@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
   // No valid session — show error with link to request a new reset
   if (!hasSession) {
     return (
-      <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 text-center">
+      <div className="animate-scale-in bg-white rounded-card shadow-md border border-border p-8 text-center">
         <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg className="w-6 h-6 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
@@ -116,7 +116,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 mx-auto max-w-md">
+    <div className="animate-scale-in bg-white rounded-card shadow-md border border-border p-8 mx-auto max-w-md">
       <h1 className="font-display text-2xl text-text text-center mb-2">
         Set new password
       </h1>
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
+            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-input px-4 py-3">
               {error}
             </div>
           )}

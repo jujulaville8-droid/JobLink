@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createElement, type ComponentProps } from 'react';
 import CompanyProfilePage from '@/app/(dashboard)/company-profile/page';
 import SignupPage from '@/app/(auth)/signup/page';
 import PostJobPage from '@/app/(dashboard)/post-job/page';
@@ -8,11 +9,19 @@ import PostJobPage from '@/app/(dashboard)/post-job/page';
 const api = vi.hoisted(() => ({
   push: vi.fn(), replace: vi.fn(), load: vi.fn(), save: vi.fn(),
   signup: vi.fn(), resend: vi.fn(), oauth: vi.fn(), payload: vi.fn(),
-  role: 'employer',
+  role: 'employer', editId: null as string | null, listing: vi.fn(),
+  count: vi.fn(),
 }));
+// Exercise form behavior without Happy DOM's canceled animation promises.
+vi.mock('motion/react', () => ({ motion: {
+  div: ({ children, ...props }: ComponentProps<'div'> & Record<string, unknown>) => {
+    for (const key of ['variants', 'initial', 'animate', 'transition']) delete props[key];
+    return createElement('div', props, children);
+  },
+} }));
 vi.mock('next/navigation', () => {
   const router = { push: api.push, replace: api.replace };
-  return { useRouter: () => router, useSearchParams: () => new URLSearchParams({ role: api.role }) };
+  return { useRouter: () => router, useSearchParams: () => new URLSearchParams({ role: api.role, ...(api.editId ? { edit: api.editId } : {}) }) };
 });
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
@@ -23,12 +32,12 @@ vi.mock('@/lib/supabase/client', () => ({
     from: (table: string) => {
       let writing = false;
       const query = {
-        select: () => query, eq: () => query,
+        select: () => query, eq: () => query, in: () => query,
         insert: (value: unknown) => { writing = true; api.payload(value); return query; },
         update: (value: unknown) => { writing = true; api.payload(value); return query; },
-        single: () => table === 'users' ? Promise.resolve({ data: { id: 'employer-1' }, error: null }) : writing ? api.save() : api.load(),
+        single: () => table === 'users' ? Promise.resolve({ data: { id: 'employer-1' }, error: null }) : writing ? api.save() : table === 'job_listings' ? api.listing() : api.load(),
         maybeSingle: () => api.load(),
-        then: (resolve: (value: unknown) => unknown) => api.save().then(resolve),
+        then: (resolve: (value: unknown) => unknown) => (table === 'job_listings' && !writing ? api.count() : api.save()).then(resolve),
       };
       return query;
     },
@@ -38,12 +47,147 @@ vi.mock('@/lib/supabase/client', () => ({
 beforeEach(() => {
   vi.resetAllMocks();
   api.role = 'employer';
+  api.editId = null;
+  api.count.mockResolvedValue({ count: 0, error: null });
   api.load.mockResolvedValue({ data: null, error: null });
   api.save.mockResolvedValue({ data: { id: 'company-1' }, error: null });
   api.signup.mockResolvedValue({ data: { user: { id: 'employer-1', identities: [{}] }, session: null }, error: null });
   api.resend.mockResolvedValue({ data: {}, error: null });
 });
 afterEach(cleanup);
+
+describe('post-job card preview', () => {
+  beforeEach(() => {
+    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', location: 'English Harbour', industry: 'Hospitality', is_pro: false }, error: null });
+  });
+
+  it('updates the real card as the employer edits the location, title, and pay', async () => {
+    const user = userEvent.setup();
+    render(<PostJobPage />);
+    const location = await screen.findByLabelText(/^location/i);
+    expect((location as HTMLInputElement).value).toBe('English Harbour');
+    await user.clear(location);
+    await user.type(location, 'Codrington, Barbuda');
+    await user.type(screen.getByLabelText(/^job title/i), 'Boat captain');
+    await user.click(screen.getByRole('radio', { name: 'Hourly' }));
+    await user.type(screen.getByLabelText(/minimum rate/i), '25');
+    expect(screen.getByRole('heading', { name: 'Boat captain' })).toBeTruthy();
+    expect(screen.getByText('Codrington, Barbuda', { selector: 'span' })).toBeTruthy();
+    expect(screen.getByText('From EC$25')).toBeTruthy();
+    expect(screen.getByText('/hr')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /view boat captain/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /share on whatsapp/i })).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: /show salary/i }));
+    expect(screen.queryByText('From EC$25')).toBeNull();
+    expect(screen.getByText('Salary discussed after application')).toBeTruthy();
+  });
+
+  it.each([false, true])('preserves the age and featured status of an edited listing (featured: %s)', async (featured) => {
+    api.editId = 'job-1';
+    api.listing.mockResolvedValue({ data: {
+      id: 'job-1', title: 'Boat captain', location: 'Codrington, Barbuda',
+      salary_min: 25, salary_type: 'hourly', created_at: '2020-01-01T00:00:00Z', is_featured: featured,
+    }, error: null });
+    render(<PostJobPage />);
+    await screen.findByRole('heading', { name: 'Boat captain' });
+    expect(screen.queryByText('New', { exact: true })).toBeNull();
+    expect(Boolean(screen.queryByText('Featured', { exact: true }))).toBe(featured);
+    expect((screen.getByRole('radio', { name: 'Hourly' }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByText('/hr')).toBeTruthy();
+  });
+});
+
+describe('post-job submission and plan limits', () => {
+  beforeEach(() => {
+    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', location: 'English Harbour', industry: 'Tourism & Hospitality', is_pro: false }, error: null });
+  });
+
+  async function fillJob() {
+    const user = userEvent.setup();
+    render(<PostJobPage />);
+    await user.type(await screen.findByLabelText(/^job title/i), 'Boat captain');
+    await user.type(screen.getByLabelText(/^job description/i), 'Lead harbour tours.');
+    await user.click(screen.getByRole('radio', { name: 'Hourly' }));
+    await user.type(screen.getByLabelText(/minimum rate/i), '25');
+    return user;
+  }
+
+  it('shows the free-plan gate before the form and links to the upgrade path', async () => {
+    api.count.mockResolvedValue({ count: 1, error: null });
+    render(<PostJobPage />);
+    await screen.findByText('Free plan limit reached');
+    expect(screen.queryByLabelText(/^job title/i)).toBeNull();
+    expect(screen.getByRole('link', { name: /upgrade to pro/i }).getAttribute('href')).toBe('/employers/upgrade');
+    expect(api.payload).not.toHaveBeenCalled();
+  });
+
+  it('offers a retry if the load-time listing count is unavailable', async () => {
+    api.count.mockResolvedValueOnce({ count: 1, error: null }).mockResolvedValueOnce({ count: null, error: { message: 'offline' } });
+    const user = userEvent.setup();
+    render(<PostJobPage />);
+    await user.click(await screen.findByRole('button', { name: /try again/i }));
+    expect(await screen.findByLabelText(/^job title/i)).toBeTruthy();
+  });
+
+  it('allows Pro employers and existing listing edits past the new-post gate', async () => {
+    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', is_pro: true }, error: null });
+    api.count.mockResolvedValue({ count: 2, error: null });
+    const first = render(<PostJobPage />);
+    expect(await screen.findByLabelText(/^job title/i)).toBeTruthy();
+    expect(api.count).toHaveBeenCalledTimes(1);
+    first.unmount();
+    api.count.mockClear();
+    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', is_pro: false }, error: null });
+    api.editId = 'job-1';
+    api.listing.mockResolvedValue({ data: { title: 'Existing job', created_at: '2020-01-01T00:00:00Z' }, error: null });
+    render(<PostJobPage />);
+    expect((await screen.findByLabelText(/^job title/i) as HTMLInputElement).value).toBe('Existing job');
+    expect(api.count).not.toHaveBeenCalled();
+  });
+
+  it('focuses the first invalid post field and associates its error', async () => {
+    const user = userEvent.setup();
+    render(<PostJobPage />);
+    const title = await screen.findByLabelText(/^job title/i);
+    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
+    await waitFor(() => expect(document.activeElement).toBe(title));
+    expect(title.getAttribute('aria-invalid')).toBe('true');
+    expect(document.getElementById(title.getAttribute('aria-describedby')!)?.textContent).toBe('Job title is required');
+    expect(api.payload).not.toHaveBeenCalled();
+  });
+
+  it('saves hourly pay with company defaults, accepts a short description, and explains review', async () => {
+    const user = await fillJob();
+    expect(screen.getByRole('list', { name: /employer setup progress/i }).querySelector('[aria-current="step"]')?.textContent).toContain('First job');
+    expect(screen.getByLabelText(/^job description/i).getAttribute('maxlength')).toBe('6000');
+    expect(screen.getByText('19 / 6000')).toBeTruthy();
+    expect(screen.getByText(/a short description gets fewer/i)).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
+    await screen.findByRole('heading', { name: /job submitted successfully/i });
+    expect(api.payload).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Boat captain', description: 'Lead harbour tours.', category: 'Tourism & Hospitality',
+      location: 'English Harbour', salary_min: 25, salary_type: 'hourly', status: 'pending_approval',
+    }));
+    expect(screen.getByText('Usually reviewed within one business day. You will get an email when it goes live.')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /go to my listings/i }));
+    expect(api.push).toHaveBeenCalledWith('/my-listings');
+  });
+
+  it.each(['limit reached', 'lookup failed'])('preserves the entire form when the submit-time %s', async (outcome) => {
+    const user = await fillJob();
+    api.count.mockResolvedValueOnce(outcome === 'limit reached'
+      ? { count: 1, error: null } : { count: null, error: { message: 'offline' } });
+    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect((screen.getByLabelText(/^job title/i) as HTMLInputElement).value).toBe('Boat captain');
+    expect((screen.getByLabelText(/^job description/i) as HTMLTextAreaElement).value).toBe('Lead harbour tours.');
+    expect((screen.getByLabelText(/minimum rate/i) as HTMLInputElement).value).toBe('25');
+    expect(api.payload).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
+    await screen.findByRole('heading', { name: /job submitted successfully/i });
+    expect(api.payload).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('company setup', () => {
   it('routes returning employers with no company back to setup', async () => {

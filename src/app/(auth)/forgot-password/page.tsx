@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border p-8 mx-auto max-w-md">
+    <div className="animate-scale-in bg-white rounded-card shadow-md border border-border p-8 mx-auto max-w-md">
       <h1 className="font-display text-2xl text-text text-center mb-2">
         Reset your password
       </h1>
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
         <>
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-input px-4 py-3">
                 {error}
               </div>
             )}

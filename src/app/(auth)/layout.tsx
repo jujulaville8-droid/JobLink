@@ -22,11 +22,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-mesh-teal flex flex-col items-center justify-start px-4 pt-16 pb-12 relative">
-      {/* Decorative geometric element */}
-      <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="absolute bottom-20 left-10 w-48 h-48 rounded-full bg-accent-warm/5 blur-3xl pointer-events-none" />
-
+    <div className="min-h-screen bg-bg flex flex-col items-center justify-start px-4 pt-16 pb-12 relative">
       <div className="w-full max-w-xl relative">
         <AuthRedirect>{children}</AuthRedirect>
       </div>

@@ -44,7 +44,7 @@ function StatCard({
 
   const c = colors[color] ?? colors.primary;
   const content = (
-    <div className={`rounded-[--radius-card] border border-border bg-white p-5 shadow-sm border-l-4 ${c.border} ${href ? 'hover:shadow-md hover:border-primary/20 transition-all cursor-pointer' : ''}`}>
+    <div className={`rounded-card border border-border bg-white p-5 shadow-sm border-l-4 ${c.border} ${href ? 'hover:shadow-md hover:border-primary/20 transition-all cursor-pointer' : ''}`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-text-light">{label}</p>
@@ -579,7 +579,7 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
                 <p className="text-xs text-text-muted">Get featured listings, priority support, and more visibility.</p>
               </div>
             </div>
-            <Link href="/company-profile" className="rounded-full bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors whitespace-nowrap">
+            <Link href="/employers/upgrade" className="rounded-full bg-amber-500 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors whitespace-nowrap">
               Upgrade Now
             </Link>
           </div>
@@ -598,7 +598,13 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-800">{pendingListings} listing{(pendingListings ?? 0) !== 1 ? 's' : ''} pending</p>
+                  <p className="text-sm font-semibold text-amber-800">{pendingListings} listing{(pendingListings ?? 0) !== 1 ? 's' : ''} pending review</p>
+                  {/* Without a timeframe this alert only says "something is
+                      wrong", which is the opposite of what is happening. */}
+                  <p className="mt-1 text-xs text-amber-700">
+                    Usually reviewed within one business day. You will get an
+                    email when {(pendingListings ?? 0) !== 1 ? 'they go' : 'it goes'} live.
+                  </p>
                   {pendingJobs && pendingJobs.length > 0 && (
                     <div className="mt-1.5 space-y-0.5">
                       {pendingJobs.map((job: Record<string, unknown>) => (

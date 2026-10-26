@@ -46,6 +46,10 @@
   --motion-fast: 120ms;
   --motion-page: 180ms;
   --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* One sans everywhere. The display family used to be a single-weight serif, which
+     made every `font-bold font-display` heading a synthetic bold. Module CSS files
+     that read --font-heading directly now resolve to the body family too. */
+  --font-heading: var(--font-body);
 }
 
 
@@ -69,9 +73,31 @@
   --color-border: var(--color-border);
   --color-surface: var(--color-surface);
   --font-sans: var(--font-body);
-  --font-display: var(--font-heading);
+  --font-display: var(--font-body);
+
+  /* Type scale. text-md is new (Tailwind has no default) and is the 16px input size. */
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.375rem;
+  --text-md: 1rem;
+  --text-md--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.625rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 2.5rem;
+
   --shadow-lg: var(--shadow-lg);
   --color-primary-50: var(--color-primary-50);
+  --radius-card: var(--radius-card);
+  --radius-button: var(--radius-button);
+  --radius-input: var(--radius-input);
 
   --animate-aurora: aurora 8s ease-in-out infinite alternate;
   --animate-marquee: marquee var(--duration) infinite linear;

@@ -152,7 +152,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="animate-scale-in bg-white rounded-[--radius-card] shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14 mx-auto max-w-lg">
+    <div className="animate-scale-in bg-white rounded-card shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14 mx-auto max-w-lg">
       <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-8">
         Welcome back
       </h1>
@@ -160,14 +160,14 @@ export default function LoginPage() {
       {getApplicationReturnTo(returnTo) && <p className="mb-6 text-center text-sm text-text-light">Sign in or create an account to continue your job application.</p>}
 
       {verified && (
-        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-[--radius-input] px-4 py-3 text-center">
+        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-input px-4 py-3 text-center">
           Your email has been verified successfully! Sign in to get started.
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-[--radius-input] px-4 py-3">
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-input px-4 py-3">
             <p>{error}</p>
             {unverified && (
               <div className="mt-2 space-y-1">
@@ -278,7 +278,7 @@ export default function LoginPage() {
         type="button"
         onClick={handleGoogleSignIn}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 rounded-[--radius-button] border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 rounded-button border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {googleLoading ? (
           <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">

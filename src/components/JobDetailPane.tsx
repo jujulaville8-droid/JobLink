@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getJobClosure } from "@/lib/job-closures";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import { getEmployerApproval } from "@/lib/seo/employerApproved";
-import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
+import { JOB_TYPE_LABELS, JobType, salaryTypePeriod } from "@/lib/types";
 import { displayJobLocation } from "@/lib/job-location";
 import { loadApplyState, loadJobDetail } from "@/lib/job-detail";
 import ApplyButton from "@/components/ApplyButton";
@@ -12,7 +12,11 @@ import { BackToResults, FocusDetailHeading } from "@/components/JobSplitNavigati
 
 const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-function formatSalary(min: number | null, max: number | null): string {
+function formatSalary(
+  min: number | null,
+  max: number | null,
+  salaryType?: string | null,
+): string {
   if (!min && !max) return "";
   const fmt = (n: number) =>
     new Intl.NumberFormat("en-US", {
@@ -20,9 +24,13 @@ function formatSalary(min: number | null, max: number | null): string {
       currency: "XCD",
       maximumFractionDigits: 0,
     }).format(n);
-  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
-  if (min) return `From ${fmt(min)}`;
-  return `Up to ${fmt(max!)}`;
+  // Listings from before salary_type existed carry no period, so append none
+  // rather than implying a month.
+  const period = salaryTypePeriod(salaryType);
+  const suffix = period ? ` ${period}` : "";
+  if (min && max) return `${fmt(min)} - ${fmt(max)}${suffix}`;
+  if (min) return `From ${fmt(min)}${suffix}`;
+  return `Up to ${fmt(max!)}${suffix}`;
 }
 
 const panelClass =
@@ -57,7 +65,7 @@ export default async function JobDetailPane({ jobId, backHref }: { jobId: string
   const employerApproval = getEmployerApproval(company?.id ?? job.company_id, job.id);
   const jobType: string = employerApproval?.jobTypeOverrides?.[job.id] ?? job.job_type;
   const jobTypeLabel = JOB_TYPE_LABELS[jobType as JobType] || jobType;
-  const salary = job.salary_visible ? formatSalary(job.salary_min, job.salary_max) : "";
+  const salary = job.salary_visible ? formatSalary(job.salary_min, job.salary_max, job.salary_type) : "";
   const description = publicVacancyDescription(job);
   const location = displayJobLocation(job.location, company?.location);
   const whatsappText = encodeURIComponent(

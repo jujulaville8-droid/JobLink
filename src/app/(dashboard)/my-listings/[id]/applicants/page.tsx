@@ -302,7 +302,7 @@ export default async function ApplicantsPage({
             return (
               <details
                 key={app.id}
-                className="group rounded-[--radius-card] border border-border bg-white transition-shadow hover:shadow-sm"
+                className="group rounded-card border border-border bg-white transition-shadow hover:shadow-sm"
               >
                 <summary className="cursor-pointer list-none p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
