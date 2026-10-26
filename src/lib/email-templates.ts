@@ -10,6 +10,7 @@ type EmailType =
   | 'status_update'
   | 'job_alert'
   | 'job_closed_applicant'
+  | 'job_closed_employer'
   | 'listing_expiry'
   | 'listing_approved'
   | 'listing_rejected'
@@ -29,6 +30,7 @@ interface EmailData {
   employer_resume_review_v2?: ResumeReviewV2
   employer_screening?: Report
   employer_resume_quality?: ResumeDocumentQualityResult
+  applicant_count?: number
   applicant_name?: string
   applicant_email?: string
   applicant_phone?: string
@@ -86,7 +88,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${content}
         </div>
         <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'new_applicant' || emailType === 'job_closed_applicant' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'new_applicant' || emailType === 'job_closed_applicant' || emailType === 'job_closed_employer' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
         </div>
       </div>
     </body>
@@ -193,6 +195,29 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             `).join('')}
           ` : ''}
           <p style="color: #374151; line-height: 1.6;">You can also <a href="${SITE}/jobs" style="color: #0d7377;">browse all current jobs on JobLink</a>.</p>
+        `),
+      }
+    }
+
+    case 'job_closed_employer': {
+      // Keep this update free of em dashes, including employer-provided labels.
+      const copy = (value: string | undefined) => (value || '').replace(/\s*\u2014\s*/g, ', ')
+      return {
+        subject: `Your listing for ${copy(d.job_title)} has been closed`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Your Listing Has Been Closed</h2>
+          <p style="color: #374151; line-height: 1.6;">
+            The <strong>${esc(copy(d.job_title))}</strong> role at <strong>${esc(copy(d.company_name))}</strong>
+            has been closed on JobLink.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            All ${d.applicant_count ?? 0} applicants were notified by email that the position is no longer available
+            and that ${esc(copy(d.company_name))} has contacted the candidates it is moving forward with.
+            Similar open roles were suggested to them.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">Nothing further is needed from you.</p>
+          <p style="color: #374151; line-height: 1.6;">Ready to grow your team again? Post another role on JobLink.</p>
+          ${btn('Post Another Role', '/post-job')}
         `),
       }
     }

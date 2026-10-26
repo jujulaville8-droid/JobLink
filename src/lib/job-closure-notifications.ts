@@ -36,12 +36,12 @@ export function selectClosureSuggestions(job: Pick<Job, 'id' | 'category' | 'job
  * inbox delivery. Missing migration/log access fails closed without undoing closure.
  */
 export async function notifyApplicantsOfJobClosure(jobId: string) {
-  const result = { sent: 0, failed: 0 }
+  const result = { sent: 0, failed: 0, employer: { sent: 0, failed: 0 } }
   if (!process.env.RESEND_API_KEY) return result
   try {
     const db = createAdminClient()
     const { data: job, error: jobError } = await db.from('job_listings')
-      .select('id, title, category, job_type, status, companies(company_name)').eq('id', jobId).single()
+      .select('id, title, category, job_type, status, companies(company_name, user_id)').eq('id', jobId).single()
     if (jobError) throw jobError
     if (!job || job.status !== 'closed') return result
 
@@ -110,6 +110,42 @@ export async function notifyApplicantsOfJobClosure(jobId: string) {
         // Do not log database/provider errors containing applicant addresses.
         console.error('[job-closure] Recipient processing failed')
       }
+    }
+
+    try {
+      const company = first(job.companies)
+      const userId = company?.user_id
+      if (!userId) return result
+      const { data: user, error: userError } = await db.from('users').select('email').eq('id', userId).maybeSingle()
+      if (userError) throw userError
+      if (!user?.email?.trim()) return result
+
+      // If the employer applied to their own listing, the applicant claim wins
+      // because applicants are processed first, so the employer summary may be skipped.
+      // Never release this claim, even if sending or recording the result fails.
+      const { error: claimError } = await db.from('job_closure_notification_log')
+        .insert({ job_id: jobId, user_id: userId })
+      if (claimError?.code === '23505') return result
+      if (claimError) throw claimError
+
+      const sent = await sendEmail({
+        to: user.email, type: 'job_closed_employer',
+        idempotencyKey: `job-closed/${jobId}/${userId}`,
+        data: {
+          job_title: job.title, company_name: company.company_name || 'The company',
+          applicant_count: result.sent,
+        },
+      })
+      if (sent.success) result.employer.sent++
+      else result.employer.failed++
+      const { error: logError } = await db.from('job_closure_notification_log').update({
+        status: sent.success ? 'sent' : 'failed',
+        ...(sent.success ? { sent_at: new Date().toISOString(), message_id: sent.id } : {}),
+      }).eq('job_id', jobId).eq('user_id', userId)
+      if (logError) console.warn('[job-closure] Delivery result not recorded; claim retained')
+    } catch {
+      result.employer.failed++
+      console.error('[job-closure] Employer processing failed')
     }
   } catch {
     result.failed++
