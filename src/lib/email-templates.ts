@@ -9,6 +9,7 @@ type EmailType =
   | 'new_applicant'
   | 'status_update'
   | 'job_alert'
+  | 'job_closed_applicant'
   | 'listing_expiry'
   | 'listing_approved'
   | 'listing_rejected'
@@ -38,6 +39,7 @@ interface EmailData {
   company_name?: string
   status?: string
   jobs?: { title: string; company: string; url: string }[]
+  suggested_jobs?: { title: string; company: string; location: string; url: string }[]
   listing_title?: string
   listing_url?: string
   expires_at?: string
@@ -84,7 +86,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${content}
         </div>
         <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'new_applicant' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'new_applicant' || emailType === 'job_closed_applicant' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
         </div>
       </div>
     </body>
@@ -159,6 +161,38 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${isHold ? `<p style="color: #374151; line-height: 1.6;">Your application is on hold. The employer may follow up with next steps.</p>` : ''}
           ${!isInterview && !isRejected && !isHold ? `<p style="color: #374151; line-height: 1.6;">The employer is moving forward with your application. Stay tuned for further updates.</p>` : ''}
           ${isRejected ? btn('Browse More Jobs', '/jobs') : btn('View My Applications', '/applications')}
+        `),
+      }
+    }
+
+    case 'job_closed_applicant': {
+      // Keep this update free of em dashes, including employer-provided labels.
+      const copy = (value: string | undefined) => (value || '').replace(/\s*\u2014\s*/g, ', ')
+      const suggestions = (d.suggested_jobs || []).slice(0, 4)
+      return {
+        subject: `Update on your application for ${copy(d.job_title)} at ${copy(d.company_name)}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">An Update on Your Application</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(copy(d.applicant_name)) || 'there'},</p>
+          <p style="color: #374151; line-height: 1.6;">
+            The <strong>${esc(copy(d.job_title))}</strong> role at <strong>${esc(copy(d.company_name))}</strong>
+            is no longer available, and the listing has been closed on JobLink.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">
+            ${esc(copy(d.company_name))} has contacted the candidates it is moving forward with in the hiring process.
+            If you have not heard from the company, you were not selected for this role this time.
+          </p>
+          <p style="color: #374151; line-height: 1.6;">Keep going. New roles are added every week, and your next opportunity could be just ahead.</p>
+          ${suggestions.length ? `
+            <h3 style="color: #0d7377;">Open roles you may want to apply to next</h3>
+            ${suggestions.map(job => `
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                <h4 style="margin: 0 0 4px;"><a href="${esc(job.url)}" style="color: #0d7377;">${esc(copy(job.title))}</a></h4>
+                <p style="color: #6b7280; margin: 0;">${esc(copy(job.company))} · ${esc(copy(job.location))}</p>
+              </div>
+            `).join('')}
+          ` : ''}
+          <p style="color: #374151; line-height: 1.6;">You can also <a href="${SITE}/jobs" style="color: #0d7377;">browse all current jobs on JobLink</a>.</p>
         `),
       }
     }
