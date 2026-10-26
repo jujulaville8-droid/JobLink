@@ -10,7 +10,7 @@ it('renders the closure update, first name and up to four linked roles with comp
   const { subject, html } = buildEmailHtml('job_closed_applicant', { ...data, suggested_jobs })
   expect(subject).toBe('Update on your application for Chef at Island Kitchen')
   for (const copy of ['Hi Maya', 'Chef', 'Island Kitchen', 'no longer available', 'listing has been closed on JobLink',
-    'has contacted the candidates', 'you were not selected for this role this time', 'New roles are added every week',
+    'has contacted the candidates', 'you were not selected for interview this time', 'New roles are added every week',
     'Open roles you may want to apply to next', '#0d7377', 'href="https://joblinkantigua.com/jobs"']) expect(html).toContain(copy)
   for (let i = 0; i < 4; i++) {
     expect(html).toContain(`href="https://joblinkantigua.com/jobs/${i}"`)
