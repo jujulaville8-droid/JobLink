@@ -1,5 +1,6 @@
 import JobResults from "@/components/JobResults";
 import JobFilters from "@/components/JobFilters";
+import { getSeekerFirstName } from "@/lib/seeker-first-name";
 import { Suspense } from "react";
 
 interface PageProps {
@@ -12,15 +13,21 @@ interface PageProps {
 
 export default async function DashboardBrowseJobsPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const firstName = await getSeekerFirstName();
+  const heading = firstName ? `Welcome, ${firstName}` : "Browse Jobs";
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold font-display text-text">Browse Jobs</h1>
+        <h1 className="text-2xl font-bold font-display text-text">{heading}</h1>
         <p className="mt-1 text-sm text-text-light">
           Discover opportunities across Antigua and Barbuda
         </p>
       </div>
+
+      {firstName && (
+        <h2 className="mb-4 text-lg font-semibold font-display text-text">Jobs for you</h2>
+      )}
 
       {params.q && (
         <div className="mb-4">
