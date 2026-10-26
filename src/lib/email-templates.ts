@@ -182,7 +182,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           </p>
           <p style="color: #374151; line-height: 1.6;">
             ${esc(copy(d.company_name))} has contacted the candidates it is moving forward with in the hiring process.
-            If you have not heard from the company, you were not selected for this role this time.
+            If you have not heard from the company, you were not selected for interview this time.
           </p>
           <p style="color: #374151; line-height: 1.6;">Keep going. New roles are added every week, and your next opportunity could be just ahead.</p>
           ${suggestions.length ? `
