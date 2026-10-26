@@ -45,6 +45,26 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // CRISPA Wholesale Distribution Company Ltd. replied yes on 2026-10-19 (about 1:29 PM ET)
+  // by email to the JobLink inbox to posting this Office Assistant vacancy. Full Time is an
+  // unconfirmed placeholder.
+  "ef5503e9-45a2-4121-92b7-aec94b440147": {
+    companyId: "08c982be-1421-4657-8394-c168a1f07d61",
+    companyName: "CRISPA Wholesale Distribution Company Ltd.",
+    attestedOn: "2026-10-19",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/97",
+    employmentTypeUnconfirmed: true,
+  },
+  // CRISPA Wholesale Distribution Company Ltd. replied yes on 2026-10-19 (about 1:29 PM ET)
+  // by email to the JobLink inbox to posting this Sales Representative vacancy. Full Time is
+  // an unconfirmed placeholder.
+  "90a1af95-5173-43ce-a5b7-4307814ce881": {
+    companyId: "08c982be-1421-4657-8394-c168a1f07d61",
+    companyName: "CRISPA Wholesale Distribution Company Ltd.",
+    attestedOn: "2026-10-19",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/97",
+    employmentTypeUnconfirmed: true,
+  },
   // The Massage Goddess replied yes on 2026-10-19 (ET) by email reply to the JobLink
   // inbox to posting this Nail Technician vacancy. Full Time is an unconfirmed placeholder.
   "d00f5ff5-29cf-4110-9828-a2f84e49245f": {
