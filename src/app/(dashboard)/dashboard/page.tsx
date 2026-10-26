@@ -91,7 +91,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
   const hasCvProfile = !!cvProfile;
   const profileWithCv = { ...profile, has_cv_profile: hasCvProfile };
   const { percentage: completePct, missing } = calculateProfileCompletion(profileWithCv);
-  const firstName = profile.first_name || "there";
+  const firstName = profile.first_name?.trim();
 
   const [
     { data: applications },
@@ -129,7 +129,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-text sm:text-3xl">
-            Welcome back, {firstName}!
+            {firstName ? `Welcome, ${firstName}` : "Welcome"}
           </h1>
           <p className="mt-1 text-text-light text-sm">
             Here&apos;s what&apos;s happening with your job search.
@@ -392,6 +392,7 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
   }
 
   const companyName = company.company_name || "your company";
+  const greetingCompanyName = company.company_name?.trim();
 
   // Company profile completion
   const companyFields = [
@@ -498,7 +499,7 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-text sm:text-3xl">
-            Welcome back, {companyName}!
+            {greetingCompanyName ? `Welcome, ${greetingCompanyName}` : "Welcome"}
           </h1>
           {claimedId === company.id && company.claimed_at && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-4 text-emerald-800">You now manage {companyName}. Your existing jobs and applications are ready.</p>}
           <p className="mt-1 text-text-light text-sm">Manage your listings, review applicants, and find talent.</p>
