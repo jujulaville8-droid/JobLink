@@ -1,3 +1,4 @@
+import { MAX_CV_BYTES, CV_TYPES, cvExtension, ownedCvPath } from '@/lib/cv-upload'
 import { resumeFilename } from '@/lib/resume-filename'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
@@ -5,7 +6,7 @@ import { parseCompanyContactEmail } from '@/lib/company-contact-email'
 import { inlineEmployerScreening, inlineScreeningDependencies, inlineScreeningEnabled, type InlineScreeningFields } from '@/lib/employer-screening/inline'
 import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
 
-const MAX_CV_BYTES = 5 * 1024 * 1024
+
 
 /** Normalize legacy storage URLs without accepting another host, bucket or owner. */
 export function applicantCvPath(value: unknown, userId: string): string | null {
@@ -24,10 +25,7 @@ export function applicantCvPath(value: unknown, userId: string): string | null {
   }
   // Uploaded CVs belong to the seeker's auth-user folder. No nested paths,
   // encoded separators, traversal, queries, or arbitrary URLs reach service storage.
-  const parts = path.split('/')
-  return parts.length === 2 && parts[0] === userId &&
-    /^[a-zA-Z0-9][a-zA-Z0-9._-]*\.pdf$/i.test(parts[1]) && !parts[1].includes('..')
-    ? path : null
+  return ownedCvPath(path, userId) ? path : null
 }
 
 /** Called only after a verified seeker successfully inserts an application. */
@@ -96,8 +94,9 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
         const { data: file, error: downloadError } = await db.storage.from('cvs').download(path)
         if (!downloadError && file && file.size > 0 && file.size <= MAX_CV_BYTES) {
           const bytes = Buffer.from(await file.arrayBuffer())
-          if (bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
-            attachments.push({ filename: resumeFilename(seeker.first_name, seeker.last_name), content: bytes, contentType: 'application/pdf' })
+          const extension = cvExtension(path)!
+          if (extension !== 'pdf' || bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
+            attachments.push({ filename: resumeFilename(seeker.first_name, seeker.last_name, extension), content: bytes, contentType: CV_TYPES[extension] })
           }
         }
       } catch { /* Send contact details even when storage is unavailable. */ }
@@ -124,7 +123,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
       inlineDiagnostic(attachments[0] ? 'attachment_ready' : 'attachment_missing', applicationId)
       if (!inlineScreeningEnabled(noticeVersion)) inlineDiagnostic('entry_gates_disabled', applicationId)
     }
-    if (attachments[0] && inlineScreeningEnabled(noticeVersion)) {
+    if (attachments[0]?.contentType === 'application/pdf' && inlineScreeningEnabled(noticeVersion)) {
       try {
         screening = await inlineEmployerScreening({ applicationId: application.id, applicantUserId,
           jobId: job.id, companyId: job.company_id, jobTitle: job.title,

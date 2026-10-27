@@ -1,3 +1,4 @@
+import { cvExtension } from '@/lib/cv-upload'
 import { resumeFilename } from '@/lib/resume-filename'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/api-auth'
@@ -84,7 +85,7 @@ export async function GET(request: NextRequest) {
 
   const { data: signedUrlData, error: signError } = await adminClient.storage
     .from('cvs')
-    .createSignedUrl(profile.cv_url, 3600, { download: resumeFilename(profile.first_name, profile.last_name) })
+    .createSignedUrl(profile.cv_url, 3600, { download: resumeFilename(profile.first_name, profile.last_name, cvExtension(profile.cv_url) || 'pdf') })
 
   if (signError || !signedUrlData?.signedUrl) {
     return NextResponse.json(

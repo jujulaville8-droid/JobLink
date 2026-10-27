@@ -1,3 +1,4 @@
+import { cvExtension } from '@/lib/cv-upload'
 import { resumeFilename } from '@/lib/resume-filename';
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
     .select("first_name, last_name")
     .eq("cv_url", path)
     .maybeSingle();
-  const downloadName = resumeFilename(namedProfile?.first_name, namedProfile?.last_name, /\.docx$/i.test(path) ? 'docx' : 'pdf');
+  const downloadName = resumeFilename(namedProfile?.first_name, namedProfile?.last_name, cvExtension(path) || 'pdf');
 
   // Generate signed download URL
   const { data: signedUrlData, error: signError } = await adminClient.storage

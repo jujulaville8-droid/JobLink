@@ -142,3 +142,21 @@ describe('profile completion returns to the original application', () => {
     expect(JSON.parse(api.save.mock.calls[0][1].body).first_name).toBe('Janet');
   });
 });
+
+it.each([undefined, applicationPath])('surfaces upload failures in profile/apply completion (%s) and retains the saved CV', async returnTo => {
+  openProfile(returnTo);
+  await editProfile();
+  fireEvent.click(screen.getByRole('button', { name: '3' }));
+  expect(screen.getByText('Having trouble? Email your resume to support@joblinkantigua.com.')).toBeTruthy();
+  api.save.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+  fireEvent.change(screen.getByLabelText('Upload your CV'), {
+    target: { files: [new File(['%PDF-'], 'phone.pdf', { type: '' })] },
+  });
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent', expect.stringContaining('Check your internet connection'));
+  expect(screen.getByRole('button', { name: 'View current CV' })).toBeTruthy();
+  expect((screen.getByLabelText('Upload your CV') as HTMLInputElement).disabled).toBe(false);
+  expect(api.save).toHaveBeenCalledExactlyOnceWith('/api/cv-upload', expect.anything());
+  fireEvent.click(screen.getByRole('button', { name: returnTo ? 'Save and return to application' : 'Save' }));
+  await waitFor(() => expect(api.save).toHaveBeenCalledTimes(2));
+  expect(JSON.parse(api.save.mock.calls[1][1].body).cv_url).toBe('seeker-id/cv.pdf');
+});

@@ -21,6 +21,7 @@ import {
   Search01Icon,
   Message01Icon,
 } from "@hugeicons/core-free-icons";
+import { CV_FALLBACK } from "@/lib/cv-upload";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -104,6 +105,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
   });
   const [coverLetter, setCoverLetter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [applicantUserId, setApplicantUserId] = useState<string | null>(null);
   const [draftCleanupFailed, setDraftCleanupFailed] = useState(false);
@@ -220,7 +222,13 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       setState("ready");
     }
 
-    init();
+    init().catch(() => {
+      if (active) {
+        setLoadFailed(true);
+        setErrorMessage("Could not load your application. Check your connection and reload this page, or email support@joblinkantigua.com.");
+        setState("error");
+      }
+    });
     return () => { active = false; };
   }, [jobId]);
 
@@ -492,6 +500,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
                 <HugeiconsIcon icon={UserIcon} size={14} />
                 Complete Profile
               </Link>
+              <p className="mt-2 text-xs text-text-muted">{CV_FALLBACK}</p>
             </div>
           </motion.div>
         </motion.div>
@@ -721,7 +730,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
                 </div>
               </div>
               <button
-                onClick={() => setState("ready")}
+                onClick={() => loadFailed ? window.location.reload() : setState("ready")}
                 className={btnPrimary}
               >
                 Try Again

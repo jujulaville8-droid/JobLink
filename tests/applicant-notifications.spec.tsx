@@ -177,7 +177,7 @@ it('normalizes only same-project legacy CV URLs within the applicant folder', ()
   expect(applicantCvPath(`https://example.supabase.co/storage/v1/object/public/cvs/${uid}/%2fother.pdf`, uid)).toBeNull()
 })
 
-it.each([null, new Blob(['not a PDF']), new Blob(['%PDF-' + 'x'.repeat(5 * 1024 * 1024)])])('omits missing, invalid or oversized CVs; notification stays useful', async file => {
+it.each([null, new Blob(['not a PDF']), new Blob(['%PDF-' + 'x'.repeat(10 * 1024 * 1024)])])('omits missing, invalid or oversized CVs; notification stays useful', async file => {
   mocks.download.mockResolvedValue({ data: file, error: file ? null : { message: 'unavailable' } })
   expect(await notifyNewApplicant('saved-app', uid)).toBe(true)
   expect(mocks.send.mock.calls[0][0]).toMatchObject({ attachments: [], data: { applicant_email: 'applicant@example.test', cv_attached: false } })
@@ -253,4 +253,17 @@ it('includes the validated v2 review in the original single email and unchanged 
   expect(message.data).not.toHaveProperty('employer_resume_quality')
   const html = buildEmailHtml('new_applicant', message.data).html
   expect(html).toContain('Gaps for this role'); expect(html).not.toMatch(/unresolved|3\.125/)
+})
+
+it.each([
+  ['doc', 'application/msword'],
+  ['docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  ['jpg', 'image/jpeg'], ['png', 'image/png'], ['heic', 'image/heic'],
+])('forwards an accepted %s with its correct filename and content type', async (extension, contentType) => {
+  rows.seeker_profiles!.cv_url = `${uid}/cv-1.${extension}`
+  mocks.download.mockResolvedValue({ data: new Blob(['fixture']), error: null })
+  expect(await notifyNewApplicant('saved-app', uid)).toBe(true)
+  expect(mocks.send.mock.calls[0][0].attachments).toEqual([
+    { filename: `Applicant Name Resume.${extension}`, content: Buffer.from('fixture'), contentType },
+  ])
 })
