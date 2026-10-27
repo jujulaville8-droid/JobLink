@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { BENEFITS, EMPTY_POSTING, postingErrors, STEPS, templateDescription, type PostingForm } from '@/lib/job-posting';
 import { INDUSTRIES, JOB_TYPE_LABELS, SALARY_TYPE_PERIOD, type JobStatus } from '@/lib/types';
 
 const inputClass = 'mt-2 block w-full rounded-xl border border-border bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30';
 const buttonClass = 'rounded-xl bg-primary px-6 py-3 font-semibold text-white hover:bg-primary-dark disabled:opacity-50';
+// Floating-dock motion: the bar rises into place on mount, the buttons lift on hover and press in on tap.
+const barSpring = { type: 'spring', stiffness: 260, damping: 30 } as const;
+const pressSpring = { type: 'spring', stiffness: 400, damping: 25 } as const;
+const labelSwap = { duration: 0.15, ease: 'easeOut' } as const;
 async function jsonRequest(url: string, body?: unknown) {
   const response = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
   const data = await response.json();
@@ -40,6 +45,7 @@ export default function PostJobPage() {
   const stopped = useRef(false);
   const revision = useRef(0);
   const heading = useRef<HTMLHeadingElement>(null);
+  const still = useReducedMotion() === true;
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +158,10 @@ export default function PostJobPage() {
   if (loadError) return <div className="mx-auto max-w-2xl py-12"><p role="alert">{loadError}</p><button className={`${buttonClass} mt-6`} onClick={() => { setLoadError(''); setLoading(true); setAttempt(v => v + 1); }}>Try again</button></div>;
   if (result) return <div className="mx-auto max-w-2xl px-4 py-12"><p className="text-sm font-semibold text-primary">{result.status === 'pending_approval' ? 'Pending review' : 'Active'}</p><h1 className="mt-4 font-display text-4xl font-bold">{editing ? 'Listing updated' : 'Job submitted successfully'}</h1><p className="mt-5 text-text-light">{result.status === 'pending_approval' ? 'Your job is in review. Usually reviewed within one business day. You will get an email when it goes live.' : 'Your changes are saved and your listing is live.'}</p><section className="my-8 rounded-2xl border border-border bg-white p-6"><h2 className="font-display text-xl font-semibold">Job performance</h2><p className="mt-3 font-semibold">{form.title}</p><p className="text-text-light">{form.location} · {JOB_TYPE_LABELS[form.job_type]}</p><p className="mt-5 text-text-light">Your job performance will appear here.</p></section><Link href="/my-listings" className={buttonClass}>Go to my listings</Link></div>;
 
+  const backDisabled = step === 0 || busy || drafting;
+  const primaryDisabled = busy || drafting;
+  const primaryLabel = drafting ? 'Preparing your draft…' : busy ? 'Saving…' : step === 4 ? editing ? 'Save Changes' : 'Submit Job Listing' : 'Continue';
+
   return <div className="mx-auto max-w-2xl px-4 pb-24 pt-8 sm:pb-28 sm:pt-12">
     <div className="mb-4 flex items-center justify-between gap-4 text-sm text-text-light"><p aria-live="polite">Step {step + 1} of 5</p>{!editing && <span role="status">{saveState || 'Progress saves automatically'}</span>}</div>
     <div className="mb-8 flex gap-2" aria-hidden="true">{STEPS.map((name, index) => <div key={name} className={`h-1 flex-1 rounded-full ${index <= step ? 'bg-primary' : 'bg-border'}`} />)}</div>
@@ -163,16 +173,25 @@ export default function PostJobPage() {
     {serverError && <p role="alert" className="mb-6 text-red-700">{serverError}</p>}
     <form onSubmit={event => { event.preventDefault(); if (step === 4) void submit(); else void next(); }}>
       <fieldset disabled={busy || drafting} className="min-h-[340px] space-y-7">
-        {step === 0 && <>{field('title', 'Job title *')}<fieldset><legend className="mb-3 font-medium">Location type</legend>{chips('location_type', { 'On site': 'On site', Hybrid: 'Hybrid', Remote: 'Remote' })}</fieldset>{field('location', 'Location (parish or area) *')}</>}
+        {step === 0 && <>{field('title', 'Job title *')}<fieldset><legend className="mb-3 font-medium">Location type</legend>{chips('location_type', { 'On site': 'On site', Hybrid: 'Hybrid', Remote: 'Remote' })}</fieldset>{field('location', 'Location (parish or town) *')}</>}
         {step === 1 && <><fieldset><legend className="mb-3 font-medium">Pay period</legend>{chips('salary_type', { hourly: 'Hourly', weekly: 'Weekly', biweekly: 'Bi-Weekly', monthly: 'Monthly', annually: 'Annually' })}</fieldset><div className="grid gap-5 sm:grid-cols-2">{field('salary_min', 'Minimum pay (XCD, optional)')}{field('salary_max', 'Maximum pay (XCD, optional)')}</div><label className="flex items-center gap-3"><input type="checkbox" checked={form.salary_visible} onChange={event => update('salary_visible', event.target.checked)} />Show salary on listing</label><fieldset><legend className="mb-3 font-medium">Benefits (optional)</legend><div className="flex flex-wrap gap-2">{BENEFITS.map(benefit => <button type="button" key={benefit} aria-pressed={form.benefits.includes(benefit)} onClick={() => update('benefits', form.benefits.includes(benefit) ? form.benefits.filter(v => v !== benefit) : [...form.benefits, benefit])} className={`rounded-full border px-4 py-2 ${form.benefits.includes(benefit) ? 'border-primary bg-primary/5 text-primary' : 'border-border'}`}>{form.benefits.includes(benefit) ? '✓ ' : '+ '}{benefit}</button>)}</div></fieldset></>}
         {step === 2 && <div><label htmlFor="description" className="font-medium">Job description *</label><textarea id="description" rows={16} maxLength={6000} className={inputClass} value={form.description} onChange={event => update('description', event.target.value)} aria-invalid={!!errors.description} aria-describedby="description-note description-error" /><p id="description-note" className="mt-3 text-sm text-text-light">You are responsible for the accuracy of this description. Review any suggested details before submitting.</p>{errors.description && <p id="description-error" className="text-sm text-red-700">{errors.description}</p>}<p className="mt-2 text-xs text-text-muted">{form.description.length} / 6000</p>{form.description.length > 0 && form.description.length < 200 && <p className="mt-2 text-sm text-text-light">A short description gets fewer good applicants. Add the main duties, requirements and hours.</p>}</div>}
         {step === 3 && <><fieldset><legend className="mb-3 font-medium">Job type</legend>{chips('job_type', JOB_TYPE_LABELS)}</fieldset><div><label htmlFor="category" className="font-medium">Category *</label><select id="category" value={form.category} onChange={event => update('category', event.target.value)} className={inputClass} aria-invalid={!!errors.category} aria-describedby={errors.category ? 'category-error' : undefined}><option value="">Select category</option>{form.category && !INDUSTRIES.includes(form.category) && <option>{form.category}</option>}{INDUSTRIES.map(value => <option key={value}>{value}</option>)}</select>{errors.category && <p id="category-error" className="text-red-700">{errors.category}</p>}</div><section className="rounded-xl border border-border p-5"><h2 className="font-display text-xl font-semibold">Screening questions and criteria</h2><p className="mt-2 text-sm text-text-light">JobLink screens applications against the responsibilities and requirements in your description. These are the criteria it can use after your job is published.</p>{criteriaState && <p role="status" className="mt-3 text-sm">{criteriaState}</p>}{criteria.length > 0 && <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">{criteria.map(item => <li key={item.id}>{item.label}</li>)}</ul>}<button type="button" className="mt-4 text-sm font-semibold text-primary underline" onClick={() => jump(2)}>Edit screening requirements in description</button></section><p className="text-sm text-text-light">Jobs stay active until you close them. No expiry date.</p></>}
         {step === 4 && <div className="space-y-5">{STEPS.slice(0, 4).map((name, index) => <section key={name} className="rounded-xl border border-border bg-white p-5"><div className="mb-3 flex justify-between gap-3"><h2 className="font-display text-lg font-semibold">{name}</h2><button type="button" className="font-semibold text-primary underline" aria-label={`Edit ${name}`} onClick={() => jump(index)}>Edit</button></div>{index === 0 && <><p className="font-semibold">{form.title}</p><p>{form.location_type} · {form.location}</p></>}{index === 1 && <><p>{form.salary_min || form.salary_max ? `EC$${form.salary_min || '—'} to EC$${form.salary_max || '—'} ${SALARY_TYPE_PERIOD[form.salary_type]}` : 'Add optional pay information'}</p><p className="mt-1 text-sm text-text-light">{form.salary_visible ? 'Salary shown on listing' : 'Salary hidden on listing'}</p><p className="mt-3">{form.benefits.join(', ') || 'Add optional benefits'}</p></>}{index === 2 && <p className="whitespace-pre-wrap text-sm leading-relaxed">{form.description}</p>}{index === 3 && <><p>{JOB_TYPE_LABELS[form.job_type]} · {form.category}</p><p className="mt-2 text-sm text-text-light">Screening uses the requirements in your description. Stays active until you close it.</p></>}</section>)}</div>}
       </fieldset>
-      <div className="sticky bottom-4 mt-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-white px-3 py-5 shadow-lg shadow-primary/10 sm:px-5">
-        <button type="button" disabled={step === 0 || busy || drafting} onClick={() => jump(step - 1)} className="rounded-xl border border-border px-5 py-3 font-semibold disabled:opacity-40 sm:px-6">Back</button>
-        <button type="submit" disabled={busy || drafting} className={`${buttonClass} max-sm:px-4`}>{drafting ? 'Preparing your draft…' : busy ? 'Saving…' : step === 4 ? editing ? 'Save Changes' : 'Submit Job Listing' : 'Continue'}</button>
-      </div>
+      <motion.div initial={still ? { opacity: 0 } : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={still ? { duration: 0.2 } : barSpring} className="sticky bottom-4 mt-10 flex items-center justify-between gap-3 rounded-2xl border border-border bg-white px-3 py-5 shadow-lg shadow-primary/10 sm:px-5">
+        <motion.button type="button" disabled={backDisabled} onClick={() => jump(step - 1)} whileHover={still || backDisabled ? undefined : { y: -2 }} whileTap={still || backDisabled ? undefined : { scale: 0.98 }} transition={pressSpring} className="rounded-xl border border-border px-5 py-3 font-semibold disabled:opacity-40 sm:px-6">Back</motion.button>
+        <motion.button type="submit" disabled={primaryDisabled} aria-label={primaryLabel} whileHover={still || primaryDisabled ? undefined : { y: -2 }} whileTap={still || primaryDisabled ? undefined : { scale: 0.98 }} transition={pressSpring} className={`${buttonClass} max-sm:px-4`}>
+          {/* Both crossfading labels are absolutely positioned, so this invisible copy of the current
+              label is what gives the button its size. */}
+          <span aria-hidden="true" className="relative inline-flex items-center justify-center">
+            <span className="invisible">{primaryLabel}</span>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span key={primaryLabel} className="absolute inset-0 inline-flex items-center justify-center" initial={still ? { opacity: 0 } : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={still ? { opacity: 0 } : { opacity: 0, y: -6 }} transition={labelSwap}>{primaryLabel}</motion.span>
+            </AnimatePresence>
+          </span>
+        </motion.button>
+      </motion.div>
     </form>
   </div>;
 }
