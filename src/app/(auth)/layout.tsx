@@ -23,7 +23,8 @@ export default function AuthLayout({
 }) {
   return (
     <div className="min-h-screen bg-bg flex flex-col items-center justify-start px-4 pt-16 pb-12 relative">
-      <div className="w-full max-w-xl relative">
+      {/* Only the signup role picker needs a wider canvas; other auth states retain their existing cap. */}
+      <div className="w-full max-w-xl has-[[data-signup-step=role-selection]]:max-w-2xl relative">
         <AuthRedirect>{children}</AuthRedirect>
       </div>
     </div>

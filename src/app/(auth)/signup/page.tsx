@@ -217,15 +217,15 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
   // ─── STEP 1: ROLE SELECTION ───
   if (step === 'role-selection') {
     return (
-      <div className="animate-scale-in bg-white rounded-card shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14 mx-auto max-w-md">
-        <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-2">
+      <div data-signup-step="role-selection" className="animate-scale-in bg-white rounded-card shadow-md border border-border px-5 sm:px-8 py-10 sm:py-12 mx-auto w-full max-w-2xl">
+        <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-text text-center mb-2">
           Join JobLink
         </h1>
-        <p className="text-center text-sm sm:text-base text-text-light mb-10 sm:mb-12">
+        <p className="text-center text-sm sm:text-base text-text-light mb-8">
           I want to...
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-5">
           {/* Job Seeker Card */}
           <button
             type="button"
@@ -234,7 +234,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
             role="radio"
             aria-checked={role === 'seeker'}
             tabIndex={0}
-            className={`relative rounded-2xl border-2 px-7 py-8 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+            className={`relative flex flex-col items-start rounded-2xl border-2 p-6 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
               role === 'seeker'
                 ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
                 : 'border-border hover:border-primary/30 hover:shadow-md bg-white'
@@ -270,7 +270,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
             role="radio"
             aria-checked={role === 'employer'}
             tabIndex={0}
-            className={`relative rounded-2xl border-2 px-7 py-8 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+            className={`relative flex flex-col items-start rounded-2xl border-2 p-6 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
               role === 'employer'
                 ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
                 : 'border-border hover:border-primary/30 hover:shadow-md bg-white'
@@ -304,12 +304,12 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
           type="button"
           onClick={handleContinue}
           disabled={!role}
-          className="w-full mt-10 sm:mt-12 btn-primary py-3.5 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+          className="w-full mt-8 btn-primary py-3.5 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
         >
           {role === 'employer' ? 'Continue as Employer' : role === 'seeker' ? 'Continue as Job Seeker' : 'Select an option to continue'}
         </button>
 
-        <p className="mt-8 text-center text-sm text-text-light">
+        <p className="mt-6 text-center text-sm text-text-light">
           Already have an account?{' '}
           <a href={signInHref} className="font-medium text-primary hover:text-primary-dark transition">
             Sign in
