@@ -1,3 +1,4 @@
+import { ownedCvPath, validateCvFile } from '@/lib/cv-upload'
 import { NextRequest, NextResponse } from 'next/server'
 import { calculateProfileCompletion } from '@/lib/profile-completion'
 import { requireVerifiedUser } from '@/lib/api-auth'
@@ -75,6 +76,58 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Unchanged CVs must not block unrelated edits, including dangling/legacy paths.
+    if (payload.cv_url) {
+      const { data: currentProfile, error: readError } = await supabase
+        .from('seeker_profiles')
+        .select('cv_url')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (readError) throw readError
+
+      const normalizeCvUrl = (value: unknown): unknown => {
+        if (typeof value === 'string' && /^https?:/i.test(value)) {
+          try {
+            const url = new URL(value)
+            const origin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').origin
+            const prefix = ['/storage/v1/object/public/cvs/', '/storage/v1/object/sign/cvs/']
+              .find(value => url.pathname.startsWith(value))
+            if (url.origin === origin && !url.username && !url.password && prefix) {
+              return decodeURIComponent(url.pathname.slice(prefix.length))
+            }
+          } catch { /* Preserve legacy values for the unchanged-path comparison. */ }
+        }
+        return value
+      }
+      payload.cv_url = normalizeCvUrl(payload.cv_url)
+      if (payload.cv_url !== normalizeCvUrl(currentProfile?.cv_url)) {
+        if (!ownedCvPath(payload.cv_url, user.id)) {
+          return NextResponse.json({ error: 'Invalid resume path. Upload your resume again before saving.' }, { status: 400 })
+        }
+        try {
+          const { data: stored, error: storageError } = await supabase.storage.from('cvs').info(payload.cv_url)
+          // Storage can return missing objects as an error (including legacy errors).
+          const missing = storageError && (
+            ('code' in storageError && storageError.code === 'NoSuchKey') ||
+            ('error' in storageError && storageError.error === 'NoSuchKey') ||
+            ('statusCode' in storageError && String(storageError.statusCode) === '404') ||
+            /^(object not found|not found)$/i.test(storageError.message)
+          )
+          if (missing || (!storageError && !stored)) {
+            return NextResponse.json({ error: 'Your resume upload could not be confirmed. Check your connection and upload it again before saving.' }, { status: 400 })
+          }
+          if (storageError) throw storageError
+          if (stored) {
+            const checked = validateCvFile({ name: payload.cv_url, size: stored.size ?? stored.metadata?.size ?? 0 })
+            if (checked.error) return NextResponse.json({ error: checked.error }, { status: 400 })
+          }
+        } catch (error) {
+          // An unavailable info endpoint must not turn profile saves into an outage.
+          console.error('Profile CV storage verification failed; allowing save:', { userId: user.id, error })
+        }
+      }
+    }
+
     Object.assign(payload, detailFields)
 
     // Check if user has a built resume (for completion calc)
@@ -108,6 +161,8 @@ export async function POST(request: NextRequest) {
         .update(payload)
         .eq('id', profile_id)
         .eq('user_id', user.id)
+        .select('id')
+        .single()
       error = result.error
     } else {
       const result = await supabase
@@ -124,7 +179,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Profile save error:', error)
       return NextResponse.json(
-        { error: 'Failed to save profile' },
+        { error: 'Could not save your profile and resume. Please try again, or email support@joblinkantigua.com.' },
         { status: 500 }
       )
     }
@@ -155,6 +210,6 @@ export async function POST(request: NextRequest) {
     })
   } catch (err) {
     console.error('Profile API error:', err)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Could not save your profile and resume. Check your connection and try again, or email support@joblinkantigua.com.' }, { status: 500 })
   }
 }

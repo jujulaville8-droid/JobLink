@@ -1,5 +1,6 @@
+import type { CvExtension } from './cv-upload';
 /** Shared download/display naming only; never use this to rename storage objects. */
-export function resumeFilename(firstName?: string | null, lastName?: string | null, extension: 'pdf' | 'docx' = 'pdf'): string {
+export function resumeFilename(firstName?: string | null, lastName?: string | null, extension: CvExtension = 'pdf'): string {
   const raw = [firstName, lastName].filter((part): part is string => typeof part === 'string').join(' ').normalize('NFC');
   // Keep names in their original script, but remove path, control and bidi characters.
   const clean = raw.replace(/[<>:"/\\|?*\p{Cc}\p{Cf}\p{Cs}]/gu, ' ').replace(/\s+/gu, ' ').replace(/^[. ]+|[. ]+$/g, '');

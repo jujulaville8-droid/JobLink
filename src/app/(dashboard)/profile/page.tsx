@@ -1,5 +1,7 @@
 "use client";
 
+import CvUpload from "@/components/CvUpload";
+
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -887,51 +889,6 @@ function ProfileEditForm({
     setSaving(false);
   }, [userId, profile, profileId, onSaved, hasBuiltResume, applicationReturnTo]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !userId) return;
-
-    if (file.type !== "application/pdf") {
-      setMessage({ type: "error", text: "Please upload a PDF file." });
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "File size must be less than 5MB." });
-      return;
-    }
-
-    setUploading(true);
-    setMessage(null);
-
-    const supabase = createClient();
-    const fileName = `${userId}/cv-${Date.now()}.pdf`;
-
-    // Delete the old CV file if one exists to free up storage
-    if (profile.cv_url) {
-      await fetch("/api/cv-delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: profile.cv_url }),
-      });
-    }
-
-    const { error: uploadError } = await supabase.storage
-      .from("cvs")
-      .upload(fileName, file, { upsert: true });
-
-    if (uploadError) {
-      setMessage({ type: "error", text: "Failed to upload CV. Please try again." });
-      setUploading(false);
-      return;
-    }
-
-    // Store the storage path, not a public URL — the preview generates a signed URL at runtime
-    setProfile((prev) => ({ ...prev, cv_url: fileName }));
-    setMessage({ type: "success", text: "CV uploaded successfully!" });
-    setUploading(false);
-  };
-
   const addSkill = () => {
     const skill = skillInput.trim();
     if (skill && !profile.skills.includes(skill)) {
@@ -963,6 +920,7 @@ function ProfileEditForm({
         {!isNewProfile && (
           <button
             onClick={onCancel}
+            disabled={uploading}
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:bg-bg-alt transition-colors"
           >
             Cancel
@@ -995,6 +953,7 @@ function ProfileEditForm({
           <button
             key={s}
             onClick={() => setStep(s)}
+            disabled={uploading}
             className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
               s === step
                 ? "bg-primary text-white"
@@ -1209,7 +1168,7 @@ function ProfileEditForm({
         {step === 3 && (
           <div className="space-y-5">
             <h2 className="text-base font-semibold font-display text-text">Resume / CV</h2>
-            <p className="text-sm text-text-light">Upload your CV as a PDF (max 5MB).</p>
+            <p className="text-sm text-text-light">Upload a document or photo of your resume (up to 10 MB).</p>
             {hasBuiltResume && (
               <p className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
                 Your built resume meets the resume requirement. Uploading another CV is optional.
@@ -1241,28 +1200,11 @@ function ProfileEditForm({
               </div>
             )}
 
-            <label className="block cursor-pointer">
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 hover:border-primary hover:bg-bg-alt/50 transition-colors">
-                {uploading ? (
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
-                ) : (
-                  <>
-                    <IconUpload className="h-8 w-8 text-text-muted" />
-                    <p className="mt-2 text-sm font-medium text-text-light">
-                      {profile.cv_url ? "Upload a new CV" : "Click to upload your CV"}
-                    </p>
-                    <p className="mt-1 text-xs text-text-muted">PDF up to 5MB</p>
-                  </>
-                )}
-              </div>
-              <input
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={handleFileUpload}
-                className="hidden"
-                disabled={uploading}
-              />
-            </label>
+            <CvUpload
+              hasCv={!!profile.cv_url}
+              onBusy={setUploading}
+              onUploaded={(path) => setProfile((prev) => ({ ...prev, cv_url: path }))}
+            />
             <button
               type="button"
               onClick={() => void handleSave("build-resume")}
@@ -1313,7 +1255,7 @@ function ProfileEditForm({
           <button
             type="button"
             onClick={() => setStep((s) => Math.max(1, s - 1))}
-            disabled={step === 1}
+            disabled={step === 1 || uploading}
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-light hover:bg-bg-alt disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Previous
@@ -1333,6 +1275,7 @@ function ProfileEditForm({
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(4, s + 1))}
+                disabled={uploading}
                 className="rounded-[10px] bg-primary-light px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
               >
                 Next

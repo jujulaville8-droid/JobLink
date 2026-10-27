@@ -1,3 +1,4 @@
+import { cvExtension } from '@/lib/cv-upload'
 import { getJobClosure } from '@/lib/job-closures'
 import { after, NextRequest, NextResponse } from 'next/server'
 import { requireVerifiedUser } from '@/lib/api-auth'
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
           ? applicantCvPath(seekerInfo?.cv_url, user.id)
           : seekerInfo?.cv_url || null
         const cvAttachmentName = cvAttachmentUrl
-          ? `${(seekerInfo?.first_name || 'Applicant')}_${(seekerInfo?.last_name || '')}_CV.pdf`.replace(/\s+/g, '_')
+          ? `${(seekerInfo?.first_name || 'Applicant')}_${(seekerInfo?.last_name || '')}_CV.${cvExtension(seekerInfo?.cv_url || '') || 'pdf'}`.replace(/\s+/g, '_')
           : null
 
         // Create conversation
