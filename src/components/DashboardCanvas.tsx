@@ -11,7 +11,9 @@ export default function DashboardCanvas({ sidebar, children }: { sidebar: ReactN
   if (pathname === '/profile/cv') return <div className="w-full min-w-0">{children}</div>;
   return <div className={`flex min-h-screen ${isRouteActive(pathname, '/admin/applications') ? applicationStyles.applicationsShell : ''}`}>
     {sidebar}
-    <div className="min-w-0 flex-1 overflow-x-hidden md:ml-64">
+    {/* overflow-x-clip, not -hidden: `hidden` forces overflow-y to `auto`, which makes this a
+        scroll container and stops descendant `position: sticky` from engaging with the viewport. */}
+    <div className="min-w-0 flex-1 overflow-x-clip md:ml-64">
       <div className="w-full max-w-6xl px-4 py-6 pb-20 sm:px-6 md:pb-6 lg:px-8"><DashboardPageTransition>{children}</DashboardPageTransition></div>
     </div>
   </div>;
