@@ -6,7 +6,7 @@ export type VisibilityMode = 'actively_looking' | 'open' | 'not_looking';
 
 export type JobType = 'full_time' | 'part_time' | 'seasonal' | 'contract';
 
-export type JobStatus = 'active' | 'closed' | 'pending_approval';
+export type JobStatus = 'draft' | 'active' | 'closed' | 'pending_approval';
 
 export type ApplicationStatus = 'applied' | 'interview' | 'rejected' | 'hold';
 

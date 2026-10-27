@@ -53,7 +53,7 @@ export async function updateSession(request: NextRequest, event?: NextFetchEvent
     '/api/', '/companies', '/employers/hiring-help', '/jobs', '/success-stories',
   ]
   // Members performs its own account checks and preserves its signup destination.
-  const isPublic = pathname === '/' || pathname === '/members' || publicPaths.some(p => pathname.startsWith(p))
+  const isPublic = pathname === '/' || pathname === '/employers' || pathname === '/members' || publicPaths.some(p => pathname.startsWith(p))
 
   // Protected paths — require login, redirect to signup if not authenticated.
   // /browse-jobs is the dashboard variant; the public /jobs is open.

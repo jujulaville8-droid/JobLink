@@ -1,870 +1,178 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import { motion } from 'motion/react';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  Briefcase01Icon,
-  MoneyBag02Icon,
-  Tick01Icon,
-  File01Icon,
-  CircleArrowUpRight02Icon,
-  ViewIcon,
-} from '@hugeicons/core-free-icons';
-import { cn } from '@/lib/utils';
-import JobCard, { type Job } from '@/components/JobCard';
-import {
-  INDUSTRIES,
-  JOB_TYPE_LABELS,
-  type JobType,
-  type SalaryType,
-} from '@/lib/types';
+import { BENEFITS, EMPTY_POSTING, postingErrors, STEPS, templateDescription, type PostingForm } from '@/lib/job-posting';
+import { INDUSTRIES, JOB_TYPE_LABELS, SALARY_TYPE_PERIOD, type JobStatus } from '@/lib/types';
 
-interface FormData {
-  title: string;
-  description: string;
-  category: string;
-  location: string;
-  job_type: JobType;
-  salary_min: string;
-  salary_max: string;
-  salary_type: SalaryType;
-  salary_visible: boolean;
+const inputClass = 'mt-2 block w-full rounded-xl border border-border bg-white px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary/30';
+const buttonClass = 'rounded-xl bg-primary px-6 py-3 font-semibold text-white hover:bg-primary-dark disabled:opacity-50';
+async function jsonRequest(url: string, body?: unknown) {
+  const response = await fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { cache: 'no-store' });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Could not save. Please try again.');
+  return data;
 }
-
-interface FormErrors {
-  [key: string]: string;
-}
-
-const cardBase =
-  'rounded-2xl border border-border/40 bg-white overflow-hidden transition-all duration-300';
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08 },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
-  show: {
-    opacity: 1,
-    y: 0,
-    filter: 'blur(0px)',
-    transition: { duration: 0.4, ease: [0.23, 1, 0.32, 1] as const },
-  },
-};
-
-const inputBase =
-  'block w-full rounded-xl border bg-white px-4 py-3 text-md outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/10 placeholder:text-text-muted/60';
-
-const labelBase = 'block text-base font-medium text-text mb-1.5';
-
-const DESCRIPTION_MAX = 6000;
-/** Below this the description is still accepted, but the employer gets a nudge. */
-const DESCRIPTION_SOFT_MIN = 200;
 
 export default function PostJobPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const editId = searchParams.get('edit');
-
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [serverError, setServerError] = useState('');
-  const [errors, setErrors] = useState<FormErrors>({});
+  const params = useSearchParams();
+  const requestedId = params.get('edit') || params.get('draft');
+  const [form, setForm] = useState<PostingForm>(EMPTY_POSTING);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const [isPro, setIsPro] = useState(false);
-  /** True while this is the employer's very first job post, so step 3 of onboarding. */
-  const [isSetup, setIsSetup] = useState(false);
-  const [companyName, setCompanyName] = useState('');
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [previewCreatedAt, setPreviewCreatedAt] = useState(() => new Date().toISOString());
-  const [previewFeatured, setPreviewFeatured] = useState(false);
-  const [form, setForm] = useState<FormData>({
-    title: '',
-    description: '',
-    category: '',
-    // Seeded from the company row in the load effect below.
-    location: '',
-    job_type: 'full_time',
-    salary_min: '',
-    salary_max: '',
-    salary_type: 'monthly' as SalaryType,
-    salary_visible: true,
-  });
-
-  // Load company and onboarding details, and load edit data if needed
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setServerError('You must be logged in.');
-        setLoading(false);
-        return;
-      }
-
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('id, is_pro, company_name, logo_url, industry, location')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (companyError) throw companyError;
-
-      if (!company) {
-        router.replace('/company-profile');
-        return;
-      }
-
-      setIsPro(!!company.is_pro);
-      if (company.company_name) setCompanyName(company.company_name);
-      if (company.logo_url) setCompanyLogo(company.logo_url);
-
-      // The company profile already asked for industry and location. Seed the
-      // matching job fields so a new post starts from what we know rather than
-      // from a hardcoded town.
-      if (!editId) {
-        setForm((prev) => ({
-          ...prev,
-          category: prev.category || company.industry || '',
-          location: prev.location || company.location || '',
-        }));
-
-        // Company profile shows "Account, Company, First job". Keep that strip
-        // alive through step 3, but only for an employer who has no listing yet.
-        const { count: listingCount, error: listingCountError } = await supabase
-          .from('job_listings')
-          .select('id', { count: 'exact', head: true })
-          .eq('company_id', company.id);
-
-        if (listingCountError || listingCount === null) throw new Error('Could not count listings');
-        setIsSetup(listingCount === 0);
-      }
-
-      // Load existing listing if editing
-      if (editId) {
-        const { data: listing, error } = await supabase
-          .from('job_listings')
-          .select('*')
-          .eq('id', editId)
-          .eq('company_id', company.id)
-          .in('status', ['pending_approval', 'active'])
-          .single();
-
-        if (error || !listing) {
-          setServerError('Listing not found or cannot be edited.');
-          setLoading(false);
-          return;
-        }
-
-        setPreviewCreatedAt(listing.created_at);
-        setPreviewFeatured(listing.is_featured ?? false);
-        setForm({
-          title: listing.title || '',
-          description: listing.description || '',
-          category: listing.category || '',
-          location: listing.location || '',
-          job_type: (listing.job_type as JobType) || 'full_time',
-          salary_min: listing.salary_min ? String(listing.salary_min) : '',
-          salary_max: listing.salary_max ? String(listing.salary_max) : '',
-          salary_type: (listing.salary_type as SalaryType) || 'monthly',
-          salary_visible: listing.salary_visible ?? true,
-        });
-      }
-
-      setLoading(false);
-    }
-
-    load().catch(() => {
-      setLoadError(true);
-      setLoading(false);
-    });
-  }, [editId, router, loadAttempt]);
+  const [loadError, setLoadError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const [saveState, setSaveState] = useState('');
+  const [dirty, setDirty] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [result, setResult] = useState<{ id: string; status: JobStatus } | null>(null);
+  const [criteria, setCriteria] = useState<{ id: string; label: string }[]>([]);
+  const [criteriaState, setCriteriaState] = useState('Loading screening criteria…');
+  const id = useRef('');
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const stopped = useRef(false);
+  const revision = useRef(0);
+  const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    if (!success) return;
-    const redirect = setTimeout(() => router.push('/my-listings'), 2000);
-    return () => clearTimeout(redirect);
-  }, [success, router]);
+    let cancelled = false;
+    jsonRequest(`/api/employer/listings${requestedId ? `?id=${encodeURIComponent(requestedId)}` : ''}`).then(data => {
+      if (cancelled) return;
+      if (data.setup) { router.replace('/company-profile'); return; }
+      const listing = data.listing;
+      id.current = listing?.id || crypto.randomUUID();
+      const isDraft = listing?.status === 'draft';
+      setEditing(!!listing && !isDraft);
+      setRestored(isDraft);
+      if (isDraft) {
+        setForm({ ...EMPTY_POSTING, ...listing.draft_data?.form });
+        setStep(Math.max(0, Math.min(4, listing.draft_data?.step ?? 0)));
+        setSaveState('Draft saved');
+      } else if (listing) {
+        setForm({ ...EMPTY_POSTING, ...Object.fromEntries(Object.keys(EMPTY_POSTING).filter(key => listing[key] != null).map(key => [key, listing[key]])),
+          salary_min: listing.salary_min == null ? '' : String(listing.salary_min), salary_max: listing.salary_max == null ? '' : String(listing.salary_max),
+          location_type: listing.draft_data?.location_type || 'On site' });
+      } else setForm({ ...EMPTY_POSTING, category: data.company.industry || '', location: data.company.location || '' });
+      setLoading(false);
+    }).catch(() => { if (!cancelled) { setLoadError('We could not load your company and listing details. Check your connection and try again.'); setLoading(false); } });
+    return () => { cancelled = true; };
+  }, [requestedId, router, attempt]);
 
-  function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
+  const saveDraft = useCallback((snapshot: PostingForm, currentStep: number) => {
+    setSaveState('Saving draft…');
+    const draftId = id.current;
+    const savedRevision = revision.current;
+    const work = queue.current.catch(() => {}).then(() => jsonRequest('/api/employer/listings', { id: draftId, action: 'draft', form: snapshot, step: currentStep }));
+    queue.current = work;
+    work.then(() => { if (savedRevision === revision.current) setSaveState('Draft saved'); }, () => { if (savedRevision === revision.current) setSaveState('Draft could not be saved. Please retry.'); });
+    return work;
+  }, []);
+
+  useEffect(() => {
+    if (loading || editing || !dirty || result || busy) return;
+    const timer = setTimeout(() => { if (!stopped.current) void saveDraft(form, step).catch(() => {}); }, 700);
+    return () => clearTimeout(timer);
+  }, [form, step, loading, editing, dirty, result, busy, saveDraft]);
+
+  useEffect(() => {
+    if (!dirty || editing || result || saveState === 'Draft saved') return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty, editing, result, saveState]);
+
+  useEffect(() => {
+    if (step !== 3 || loading) return;
+    let cancelled = false;
+    jsonRequest('/api/employer/screening-preview', form).then(data => {
+      if (!cancelled) { setCriteria(data.criteria); setCriteriaState(data.criteria.length ? '' : 'Add clear responsibilities and requirements to your description to guide screening.'); }
+    }).catch(() => { if (!cancelled) setCriteriaState('Screening preview is unavailable. Your description will still be used for screening after publication.'); });
+    return () => { cancelled = true; };
+  }, [step, loading, form]);
+
+  function update<K extends keyof PostingForm>(key: K, value: PostingForm[K]) {
+    revision.current += 1;
+    setForm(previous => ({ ...previous, [key]: value }));
+    setDirty(true);
+    if (!editing) setSaveState('Unsaved changes');
+    setErrors(previous => { const next = { ...previous }; delete next[key]; return next; });
   }
-
-  function validate(): FormErrors {
-    const errs: FormErrors = {};
-    if (!form.title.trim()) errs.title = 'Job title is required';
-    if (!form.description.trim()) errs.description = 'Description is required';
-    if (!form.category) errs.category = 'Please select a category';
-    if (!form.location.trim()) errs.location = 'Location is required';
-    if (form.salary_min && form.salary_max) {
-      if (Number(form.salary_min) > Number(form.salary_max)) {
-        errs.salary_max = 'Max salary must be greater than min salary';
-      }
-    }
-    if (form.salary_min && Number(form.salary_min) < 0) {
-      errs.salary_min = 'Salary cannot be negative';
-    }
-    if (form.salary_max && Number(form.salary_max) < 0) {
-      errs.salary_max = 'Salary cannot be negative';
-    }
-    return errs;
+  function jump(next: number) {
+    revision.current += 1;
+    setStep(next); setErrors({}); setDirty(true);
+    if (!editing) setSaveState('Unsaved changes');
+    if (next === 3) { setCriteria([]); setCriteriaState('Loading screening criteria…'); }
+    requestAnimationFrame(() => heading.current?.focus());
   }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setServerError('');
-
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      // The submit button sits below four cards, so an error message alone can
-      // land several screens above the press. Move the caret to it.
-      requestAnimationFrame(() =>
-        document.getElementById(Object.keys(validationErrors)[0])?.focus()
-      );
-      return;
+  function showErrors(found: Record<string, string>) {
+    setErrors(found);
+    requestAnimationFrame(() => document.getElementById(Object.keys(found)[0])?.focus());
+  }
+  async function next() {
+    const found = postingErrors(form, step);
+    if (Object.keys(found).length) { showErrors(found); return; }
+    if (step === 1 && !form.description.trim()) {
+      setDrafting(true);
+      let description = templateDescription(form);
+      try { description = (await jsonRequest('/api/employer/description', form)).description; } catch { /* Editable local fallback is always available. */ }
+      update('description', description);
+      setDrafting(false);
     }
-
-    setSubmitting(true);
-
+    jump(step + 1);
+  }
+  async function submit() {
+    const found = postingErrors(form);
+    if (Object.keys(found).length) {
+      const field = Object.keys(found)[0];
+      setStep(field === 'description' ? 2 : field === 'category' ? 3 : field.startsWith('salary') ? 1 : 0);
+      showErrors(found); return;
+    }
+    stopped.current = true; setBusy(true); setServerError('');
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        setServerError('You must be logged in to post a job.');
-        setSubmitting(false);
-        return;
-      }
-
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (companyError || !company) {
-        setServerError(
-          'Please complete your company profile before posting a job.'
-        );
-        setSubmitting(false);
-        return;
-      }
-
-      const listingData = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        category: form.category,
-        location: form.location.trim(),
-        job_type: form.job_type,
-        salary_min: form.salary_min ? Number(form.salary_min) : null,
-        salary_max: form.salary_max ? Number(form.salary_max) : null,
-        // Without this the figures above are quoted in no period at all, and
-        // seekers read an hourly rate as a monthly salary.
-        salary_type: form.salary_type,
-        salary_visible: form.salary_visible,
-        expires_at: null,
-      };
-
-      if (editId) {
-        // Update existing listing (pending or active)
-        const { error: updateError } = await supabase
-          .from('job_listings')
-          .update(listingData)
-          .eq('id', editId)
-          .eq('company_id', company.id)
-          .in('status', ['pending_approval', 'active']);
-
-        if (updateError) {
-          setServerError(updateError.message);
-          setSubmitting(false);
-          return;
-        }
-      } else {
-        // Create new listing
-        const { error: insertError } = await supabase
-          .from('job_listings')
-          .insert({
-            company_id: company.id,
-            ...listingData,
-            requires_work_permit: false,
-            status: 'pending_approval',
-            expires_at: null,
-          });
-
-        if (insertError) {
-          setServerError(insertError.message);
-          setSubmitting(false);
-          return;
-        }
-      }
-
-      setSuccess(true);
-    } catch {
-      setServerError('Something went wrong. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+      await queue.current.catch(() => {});
+      const data = await jsonRequest('/api/employer/listings', { id: id.current, action: editing ? 'edit' : 'submit', form, step });
+      setResult(data.listing);
+    } catch (error) { setServerError(error instanceof Error ? error.message : 'Please try again.'); stopped.current = false; }
+    finally { setBusy(false); }
   }
+  function field(key: 'title' | 'location' | 'salary_min' | 'salary_max', label: string) {
+    return <div><label htmlFor={key} className="font-medium">{label}</label><input id={key} className={inputClass} value={form[key]} maxLength={key.startsWith('salary') ? 10 : 200} inputMode={key.startsWith('salary') ? 'numeric' : 'text'} onChange={event => update(key, event.target.value)} aria-invalid={!!errors[key]} aria-describedby={errors[key] ? `${key}-error` : undefined} />{errors[key] && <p id={`${key}-error`} className="mt-2 text-sm text-red-700">{errors[key]}</p>}</div>;
+  }
+  function chips<K extends 'location_type' | 'job_type' | 'salary_type'>(key: K, choices: Record<string, string>) {
+    return <div className="flex flex-wrap gap-2">{Object.entries(choices).map(([value, label]) => <label key={value} className={`cursor-pointer rounded-full border px-4 py-2 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary ${form[key] === value ? 'border-primary bg-primary/5 text-primary' : 'border-border text-text-light'}`}><input type="radio" className="sr-only" name={key} checked={form[key] === value} onChange={() => update(key, value as PostingForm[K])} />{label}</label>)}</div>;
+  }
+  if (loading) return <p role="status" className="py-20 text-center">Loading listing…</p>;
+  if (loadError) return <div className="mx-auto max-w-2xl py-12"><p role="alert">{loadError}</p><button className={`${buttonClass} mt-6`} onClick={() => { setLoadError(''); setLoading(true); setAttempt(v => v + 1); }}>Try again</button></div>;
+  if (result) return <div className="mx-auto max-w-2xl px-4 py-12"><p className="text-sm font-semibold text-primary">{result.status === 'pending_approval' ? 'Pending review' : 'Active'}</p><h1 className="mt-4 font-display text-4xl font-bold">{editing ? 'Listing updated' : 'Job submitted successfully'}</h1><p className="mt-5 text-text-light">{result.status === 'pending_approval' ? 'Your job is in review. Usually reviewed within one business day. You will get an email when it goes live.' : 'Your changes are saved and your listing is live.'}</p><section className="my-8 rounded-2xl border border-border bg-white p-6"><h2 className="font-display text-xl font-semibold">Job performance</h2><p className="mt-3 font-semibold">{form.title}</p><p className="text-text-light">{form.location} · {JOB_TYPE_LABELS[form.job_type]}</p><p className="mt-5 text-text-light">Your job performance will appear here.</p></section><Link href="/my-listings" className={buttonClass}>Go to my listings</Link></div>;
 
-  // A soft nudge, never a block: a thin description is publishable but weak.
-  const descriptionTrimmed = form.description.trim();
-  const descriptionTooShort =
-    descriptionTrimmed.length > 0 && descriptionTrimmed.length < DESCRIPTION_SOFT_MIN;
-
-  const previewJob: Job = {
-    id: editId ?? 'preview',
-    title: form.title.trim() || 'Job title',
-    company_name: companyName || 'Your company',
-    company_logo: companyLogo,
-    location: form.location.trim(),
-    job_type: form.job_type,
-    salary_min: form.salary_min ? Number(form.salary_min) : null,
-    salary_max: form.salary_max ? Number(form.salary_max) : null,
-    salary_type: form.salary_type,
-    salary_visible: form.salary_visible,
-    created_at: previewCreatedAt,
-    is_featured: previewFeatured,
-    is_pro_company: isPro,
-  };
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
-        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
-        <p className="mt-4 text-sm text-text-muted">Loading listing...</p>
+  return <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+    <div className="mb-4 flex items-center justify-between gap-4 text-sm text-text-light"><p aria-live="polite">Step {step + 1} of 5</p>{!editing && <span role="status">{saveState || 'Progress saves automatically'}</span>}</div>
+    <div className="mb-8 flex gap-2" aria-hidden="true">{STEPS.map((name, index) => <div key={name} className={`h-1 flex-1 rounded-full ${index <= step ? 'bg-primary' : 'bg-border'}`} />)}</div>
+    {restored && <p className="mb-5 rounded-xl bg-primary/5 p-4 text-sm text-primary">Draft restored. Continue where you left off.</p>}
+    {saveState.includes('could not') && <button type="button" className="mb-4 text-primary underline" onClick={() => void saveDraft(form, step).catch(() => {})}>Retry draft save</button>}
+    <h1 ref={heading} tabIndex={-1} className="font-display text-3xl font-bold tracking-tight text-text outline-none sm:text-4xl">{STEPS[step]}</h1>
+    <p className="mb-8 mt-3 text-text-light">{['Start with the role and where the work happens.', 'Help candidates understand what you offer. Pay and benefits are optional.', 'We have started a draft for you. Make it your own.', 'Choose how you want to hire.', 'Check your job before sending it for review.'][step]}</p>
+    {Object.keys(errors).length > 0 && <p role="alert" className="mb-6 rounded-xl bg-red-50 p-4 text-red-700">{Object.values(errors).join('. ')}</p>}
+    {serverError && <p role="alert" className="mb-6 text-red-700">{serverError}</p>}
+    <form onSubmit={event => { event.preventDefault(); if (step === 4) void submit(); else void next(); }}>
+      <fieldset disabled={busy || drafting} className="min-h-[340px] space-y-7">
+        {step === 0 && <>{field('title', 'Job title *')}<fieldset><legend className="mb-3 font-medium">Location type</legend>{chips('location_type', { 'On site': 'On site', Hybrid: 'Hybrid', Remote: 'Remote' })}</fieldset>{field('location', 'Location (parish or town) *')}</>}
+        {step === 1 && <><fieldset><legend className="mb-3 font-medium">Pay period</legend>{chips('salary_type', { hourly: 'Hourly', weekly: 'Weekly', biweekly: 'Bi-Weekly', monthly: 'Monthly', annually: 'Annually' })}</fieldset><div className="grid gap-5 sm:grid-cols-2">{field('salary_min', 'Minimum pay (XCD, optional)')}{field('salary_max', 'Maximum pay (XCD, optional)')}</div><label className="flex items-center gap-3"><input type="checkbox" checked={form.salary_visible} onChange={event => update('salary_visible', event.target.checked)} />Show salary on listing</label><fieldset><legend className="mb-3 font-medium">Benefits (optional)</legend><div className="flex flex-wrap gap-2">{BENEFITS.map(benefit => <button type="button" key={benefit} aria-pressed={form.benefits.includes(benefit)} onClick={() => update('benefits', form.benefits.includes(benefit) ? form.benefits.filter(v => v !== benefit) : [...form.benefits, benefit])} className={`rounded-full border px-4 py-2 ${form.benefits.includes(benefit) ? 'border-primary bg-primary/5 text-primary' : 'border-border'}`}>{form.benefits.includes(benefit) ? '✓ ' : '+ '}{benefit}</button>)}</div></fieldset></>}
+        {step === 2 && <div><label htmlFor="description" className="font-medium">Job description *</label><textarea id="description" rows={16} maxLength={6000} className={inputClass} value={form.description} onChange={event => update('description', event.target.value)} aria-invalid={!!errors.description} aria-describedby="description-note description-error" /><p id="description-note" className="mt-3 text-sm text-text-light">You are responsible for the accuracy of this description. Review any suggested details before submitting.</p>{errors.description && <p id="description-error" className="text-sm text-red-700">{errors.description}</p>}<p className="mt-2 text-xs text-text-muted">{form.description.length} / 6000</p>{form.description.length > 0 && form.description.length < 200 && <p className="mt-2 text-sm text-text-light">A short description gets fewer good applicants. Add the main duties, requirements and hours.</p>}</div>}
+        {step === 3 && <><fieldset><legend className="mb-3 font-medium">Job type</legend>{chips('job_type', JOB_TYPE_LABELS)}</fieldset><div><label htmlFor="category" className="font-medium">Category *</label><select id="category" value={form.category} onChange={event => update('category', event.target.value)} className={inputClass} aria-invalid={!!errors.category} aria-describedby={errors.category ? 'category-error' : undefined}><option value="">Select category</option>{form.category && !INDUSTRIES.includes(form.category) && <option>{form.category}</option>}{INDUSTRIES.map(value => <option key={value}>{value}</option>)}</select>{errors.category && <p id="category-error" className="text-red-700">{errors.category}</p>}</div><section className="rounded-xl border border-border p-5"><h2 className="font-display text-xl font-semibold">Screening questions and criteria</h2><p className="mt-2 text-sm text-text-light">JobLink screens applications against the responsibilities and requirements in your description. These are the criteria it can use after your job is published.</p>{criteriaState && <p role="status" className="mt-3 text-sm">{criteriaState}</p>}{criteria.length > 0 && <ul className="mt-4 list-disc space-y-2 pl-5 text-sm">{criteria.map(item => <li key={item.id}>{item.label}</li>)}</ul>}<button type="button" className="mt-4 text-sm font-semibold text-primary underline" onClick={() => jump(2)}>Edit screening requirements in description</button></section><p className="text-sm text-text-light">Jobs stay active until you close them. No expiry date.</p></>}
+        {step === 4 && <div className="space-y-5">{STEPS.slice(0, 4).map((name, index) => <section key={name} className="rounded-xl border border-border bg-white p-5"><div className="mb-3 flex justify-between gap-3"><h2 className="font-display text-lg font-semibold">{name}</h2><button type="button" className="font-semibold text-primary underline" aria-label={`Edit ${name}`} onClick={() => jump(index)}>Edit</button></div>{index === 0 && <><p className="font-semibold">{form.title}</p><p>{form.location_type} · {form.location}</p></>}{index === 1 && <><p>{form.salary_min || form.salary_max ? `EC$${form.salary_min || '—'} to EC$${form.salary_max || '—'} ${SALARY_TYPE_PERIOD[form.salary_type]}` : 'Add optional pay information'}</p><p className="mt-1 text-sm text-text-light">{form.salary_visible ? 'Salary shown on listing' : 'Salary hidden on listing'}</p><p className="mt-3">{form.benefits.join(', ') || 'Add optional benefits'}</p></>}{index === 2 && <p className="whitespace-pre-wrap text-sm leading-relaxed">{form.description}</p>}{index === 3 && <><p>{JOB_TYPE_LABELS[form.job_type]} · {form.category}</p><p className="mt-2 text-sm text-text-light">Screening uses the requirements in your description. Stays active until you close it.</p></>}</section>)}</div>}
+      </fieldset>
+      <div className="sticky bottom-0 mt-10 flex items-center justify-between border-t border-border bg-white/95 py-5 backdrop-blur">
+        <button type="button" disabled={step === 0 || busy || drafting} onClick={() => jump(step - 1)} className="rounded-xl border border-border px-6 py-3 font-semibold disabled:opacity-40">Back</button>
+        <button type="submit" disabled={busy || drafting} className={buttonClass}>{drafting ? 'Preparing your draft…' : busy ? 'Saving…' : step === 4 ? editing ? 'Save Changes' : 'Submit Job Listing' : 'Continue'}</button>
       </div>
-    );
-  }
-
-  if (loadError) {
-    return <div className="mx-auto max-w-3xl py-12">
-      <h1 className="text-2xl font-display text-primary">Post a job</h1>
-      <p role="alert" className="my-4 text-text-light">We could not load your company and listing details. Check your connection and try again.</p>
-      <button type="button" className="btn-primary" onClick={() => { setLoadError(false); setLoading(true); setLoadAttempt((attempt) => attempt + 1); }}>Try again</button>
-    </div>;
-  }
-
-  if (success) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="mx-auto max-w-lg px-4 py-16"
-      >
-        <div className={cn(cardBase, 'p-10 text-center')}>
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', bounce: 0.5, delay: 0.1 }}
-            className="mx-auto w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center"
-          >
-            <HugeiconsIcon icon={Tick01Icon} size={32} className="text-emerald-500" />
-          </motion.div>
-          <h2 className="mt-5 text-xl font-bold font-display text-text">
-            {editId ? 'Listing Updated!' : 'Job Submitted Successfully!'}
-          </h2>
-          <p className="mt-2 text-sm text-text-muted">
-            {editId
-              ? 'Your changes have been saved and are live.'
-              : "Your job listing has been submitted for review. You'll be redirected to your listings shortly."}
-          </p>
-          {/* An employer who posts and then cannot find their job assumes it
-              failed. Say how long review takes and how they will hear back. */}
-          {!editId && (
-            <p className="mt-2 text-sm text-text-muted">
-              Usually reviewed within one business day. You will get an email
-              when it goes live.
-            </p>
-          )}
-          <button
-            type="button"
-            onClick={() => router.push('/my-listings')}
-            className="mt-6 rounded-button bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
-          >
-            Go to my listings
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="mx-auto max-w-5xl"
-    >
-      {/* Header */}
-      <motion.div variants={item} className="mb-8">
-        {isSetup && (
-          <ol
-            aria-label="Employer setup progress"
-            className="mb-6 flex items-center gap-3 text-xs sm:text-sm text-text-light"
-          >
-            <li className="text-primary">✓ Account</li>
-            <li aria-hidden="true" className="h-px flex-1 bg-border" />
-            <li className="text-primary">✓ Company</li>
-            <li aria-hidden="true" className="h-px flex-1 bg-border" />
-            <li aria-current="step" className="font-semibold text-primary">
-              3. First job
-            </li>
-          </ol>
-        )}
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
-            <HugeiconsIcon icon={Briefcase01Icon} size={20} className="text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">
-              {editId ? 'Edit Listing' : 'Post a Job'}
-            </h1>
-            <p className="text-sm text-text-muted">
-              {editId
-                ? 'Update your listing details.'
-                : 'Fill out the details below to submit your listing for review.'}
-            </p>
-          </div>
-        </div>
-      </motion.div>
-
-      {serverError && (
-        <motion.div
-          role="alert"
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
-        >
-          {serverError}
-        </motion.div>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="onboarding-form space-y-6 lg:col-span-3"
-          noValidate
-        >
-          {/* Job Details Card */}
-          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
-                <HugeiconsIcon icon={File01Icon} size={16} className="text-primary" />
-              </div>
-              <h2 className="text-sm font-semibold text-text">Job Details</h2>
-            </div>
-
-            <div className="space-y-5">
-              {/* Title */}
-              <div>
-                <label htmlFor="title" className={labelBase}>
-                  Job title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => updateField('title', e.target.value)}
-                  placeholder="e.g. Front Desk Manager"
-                  aria-invalid={!!errors.title}
-                  aria-describedby={errors.title ? 'title-error' : undefined}
-                  className={cn(
-                    inputBase,
-                    errors.title ? 'border-red-300 bg-red-50/50' : 'border-border/60'
-                  )}
-                />
-                {errors.title && (
-                  <p id="title-error" className="mt-1.5 text-xs text-red-600">{errors.title}</p>
-                )}
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="description" className={labelBase}>
-                  Job description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="description"
-                  rows={8}
-                  maxLength={DESCRIPTION_MAX}
-                  value={form.description}
-                  onChange={(e) => updateField('description', e.target.value)}
-                  placeholder="Describe the role, responsibilities, requirements, and benefits..."
-                  aria-invalid={!!errors.description}
-                  aria-describedby={cn(
-                    errors.description ? 'description-error' : 'description-hint',
-                    'description-count'
-                  )}
-                  className={cn(
-                    inputBase,
-                    'resize-none',
-                    errors.description
-                      ? 'border-red-300 bg-red-50/50'
-                      : 'border-border/60'
-                  )}
-                />
-                <div className="mt-1.5 flex items-start justify-between gap-4">
-                  <p id="description-hint" className="text-xs text-text-muted">
-                    Leave application cutoffs out of the public description. Listings stay up until manually closed.
-                  </p>
-                  <p
-                    id="description-count"
-                    aria-live="polite"
-                    className={cn(
-                      'shrink-0 text-xs tabular-nums',
-                      form.description.length >= DESCRIPTION_MAX
-                        ? 'text-amber-700'
-                        : 'text-text-muted'
-                    )}
-                  >
-                    {form.description.length} / {DESCRIPTION_MAX}
-                  </p>
-                </div>
-                {descriptionTooShort && (
-                  <p className="mt-1.5 text-xs text-amber-700">
-                    A short description gets fewer good applicants. Try to cover what the person
-                    will do day to day, what they need to have, and the hours.
-                  </p>
-                )}
-                {errors.description && (
-                  <p id="description-error" className="mt-1.5 text-xs text-red-600">
-                    {errors.description}
-                  </p>
-                )}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Category & Location Card */}
-          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                <HugeiconsIcon icon={Briefcase01Icon} size={16} className="text-blue-600" />
-              </div>
-              <h2 className="text-sm font-semibold text-text">Category & Location</h2>
-            </div>
-
-            <div className="space-y-5">
-              <div>
-                <label htmlFor="category" className={labelBase}>
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="category"
-                  value={form.category}
-                  onChange={(e) => updateField('category', e.target.value)}
-                  aria-invalid={!!errors.category}
-                  aria-describedby={errors.category ? 'category-error' : undefined}
-                  className={cn(
-                    inputBase,
-                    errors.category
-                      ? 'border-red-300 bg-red-50/50'
-                      : 'border-border/60'
-                  )}
-                >
-                  <option value="">Select category</option>
-                  {INDUSTRIES.map((ind) => (
-                    <option key={ind} value={ind}>
-                      {ind}
-                    </option>
-                  ))}
-                </select>
-                {errors.category && (
-                  <p id="category-error" className="mt-1.5 text-xs text-red-600">{errors.category}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="location" className={labelBase}>
-                  Location <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="location"
-                  type="text"
-                  list="location-suggestions"
-                  value={form.location}
-                  onChange={(e) => updateField('location', e.target.value)}
-                  placeholder="e.g. St. John's, Antigua"
-                  aria-invalid={!!errors.location}
-                  aria-describedby={errors.location ? 'location-error' : 'location-hint'}
-                  className={cn(
-                    inputBase,
-                    errors.location
-                      ? 'border-red-300 bg-red-50/50'
-                      : 'border-border/60'
-                  )}
-                />
-                <datalist id="location-suggestions">
-                  <option value="St. John's, Antigua" />
-                  <option value="English Harbour, Antigua" />
-                  <option value="Jolly Harbour, Antigua" />
-                  <option value="Hodges Bay, Antigua" />
-                  <option value="Falmouth Harbour, Antigua" />
-                  <option value="All Saints, Antigua" />
-                  <option value="Liberta, Antigua" />
-                  <option value="Parham, Antigua" />
-                  <option value="Bolans, Antigua" />
-                  <option value="Codrington, Barbuda" />
-                  <option value="Remote — Antigua and Barbuda" />
-                </datalist>
-                {errors.location ? (
-                  <p id="location-error" className="mt-1.5 text-xs text-red-600">{errors.location}</p>
-                ) : (
-                  <p id="location-hint" className="mt-1.5 text-[11px] text-text-muted">
-                    Required for Google Jobs visibility
-                  </p>
-                )}
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Job Type Card */}
-          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                <HugeiconsIcon icon={Briefcase01Icon} size={16} className="text-emerald-600" />
-              </div>
-              <h2 className="text-sm font-semibold text-text">Job Type</h2>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {(
-                Object.entries(JOB_TYPE_LABELS) as [JobType, string][]
-              ).map(([value, label]) => (
-                <label
-                  key={value}
-                  className={cn(
-                    'cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200',
-                    form.job_type === value
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                      : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="job_type"
-                    value={value}
-                    checked={form.job_type === value}
-                    onChange={() => updateField('job_type', value)}
-                    className="sr-only"
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Salary Card */}
-          <motion.div variants={item} className={cn(cardBase, 'p-6')}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                <HugeiconsIcon icon={MoneyBag02Icon} size={16} className="text-amber-600" />
-              </div>
-              <h2 className="text-sm font-semibold text-text">Compensation</h2>
-            </div>
-
-            <div className="space-y-5">
-              {/* Pay type toggle */}
-              <fieldset>
-                <legend className={labelBase}>Pay period</legend>
-                <div className="flex gap-2">
-                  {([
-                    { value: 'hourly' as SalaryType, label: 'Hourly' },
-                    { value: 'weekly' as SalaryType, label: 'Weekly' },
-                    { value: 'biweekly' as SalaryType, label: 'Bi-Weekly' },
-                    { value: 'monthly' as SalaryType, label: 'Monthly' },
-                    { value: 'annually' as SalaryType, label: 'Annually' },
-                  ]).map(({ value, label }) => (
-                    <label
-                      key={value}
-                      className={cn(
-                        'cursor-pointer rounded-xl border px-4 py-2.5 text-sm font-medium transition-all duration-200',
-                        form.salary_type === value
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10'
-                          : 'border-border/60 text-text-muted hover:border-primary/30 hover:text-text'
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="salary_type"
-                        value={value}
-                        checked={form.salary_type === value}
-                        onChange={() => updateField('salary_type', value)}
-                        className="sr-only"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="salary_min" className={labelBase}>
-                    {{ hourly: 'Minimum rate (XCD per hour)', weekly: 'Minimum pay (XCD per week)', biweekly: 'Minimum pay (XCD per two weeks)', monthly: 'Minimum salary (XCD per month)', annually: 'Minimum salary (XCD per year)' }[form.salary_type]}{' '}
-                    <span className="font-normal text-text-light">(optional)</span>
-                  </label>
-                  <input
-                    id="salary_min"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder={{ hourly: 'e.g. 25', weekly: 'e.g. 500', biweekly: 'e.g. 1000', monthly: 'e.g. 2000', annually: 'e.g. 24000' }[form.salary_type]}
-                    value={form.salary_min}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^0-9]/g, '');
-                      updateField('salary_min', v);
-                    }}
-                    aria-invalid={!!errors.salary_min}
-                    aria-describedby={errors.salary_min ? 'salary-min-error' : undefined}
-                    className={cn(
-                      inputBase,
-                      errors.salary_min
-                        ? 'border-red-300 bg-red-50/50'
-                        : 'border-border/60'
-                    )}
-                  />
-                  {errors.salary_min && (
-                    <p id="salary-min-error" className="mt-1.5 text-xs text-red-600">
-                      {errors.salary_min}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="salary_max" className={labelBase}>
-                    {{ hourly: 'Maximum rate (XCD per hour)', weekly: 'Maximum pay (XCD per week)', biweekly: 'Maximum pay (XCD per two weeks)', monthly: 'Maximum salary (XCD per month)', annually: 'Maximum salary (XCD per year)' }[form.salary_type]}{' '}
-                    <span className="font-normal text-text-light">(optional)</span>
-                  </label>
-                  <input
-                    id="salary_max"
-                    type="text"
-                    inputMode="numeric"
-                    placeholder={{ hourly: 'e.g. 50', weekly: 'e.g. 1000', biweekly: 'e.g. 2000', monthly: 'e.g. 5000', annually: 'e.g. 60000' }[form.salary_type]}
-                    value={form.salary_max}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^0-9]/g, '');
-                      updateField('salary_max', v);
-                    }}
-                    aria-invalid={!!errors.salary_max}
-                    aria-describedby={errors.salary_max ? 'salary-max-error' : undefined}
-                    className={cn(
-                      inputBase,
-                      errors.salary_max
-                        ? 'border-red-300 bg-red-50/50'
-                        : 'border-border/60'
-                    )}
-                  />
-                  {errors.salary_max && (
-                    <p id="salary-max-error" className="mt-1.5 text-xs text-red-600">
-                      {errors.salary_max}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className={cn(
-                    'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200',
-                    form.salary_visible
-                      ? 'border-primary bg-primary'
-                      : 'border-border/60 group-hover:border-primary/40'
-                  )}>
-                    {form.salary_visible && (
-                      <HugeiconsIcon icon={Tick01Icon} size={12} className="text-white" />
-                    )}
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={form.salary_visible}
-                    onChange={(e) =>
-                      updateField('salary_visible', e.target.checked)
-                    }
-                    className="sr-only"
-                  />
-                  <span className="text-sm text-text">
-                    Show salary on listing
-                  </span>
-                </label>
-
-              </div>
-            </div>
-          </motion.div>
-
-          <p className="text-sm text-text-muted">Jobs stay active until you close them. No expiry date.</p>
-
-          {/* Submit */}
-          <motion.div variants={item}>
-            <button
-              type="submit"
-              disabled={submitting}
-              className={cn(
-                'w-full sm:w-auto rounded-xl px-8 py-3.5 text-sm font-semibold text-white transition-all duration-300',
-                'bg-accent hover:bg-accent-hover hover:shadow-lg hover:shadow-accent/20 hover:-translate-y-0.5',
-                'disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0',
-                'flex items-center justify-center gap-2'
-              )}
-            >
-              {submitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {editId ? 'Saving...' : 'Submitting...'}
-                </>
-              ) : (
-                <>
-                  <HugeiconsIcon icon={CircleArrowUpRight02Icon} size={16} />
-                  {editId ? 'Save Changes' : 'Submit Job Listing'}
-                </>
-              )}
-            </button>
-          </motion.div>
-        </form>
-
-        {/* Shared search result card, with navigation and sharing disabled. */}
-        <div className="lg:col-span-2">
-          <motion.div variants={item} className="sticky top-20">
-            <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center">
-                <HugeiconsIcon icon={ViewIcon} size={16} className="text-primary" />
-              </div>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                Live Preview
-              </h2>
-            </div>
-
-            <p className="text-[11px] text-text-muted mb-2">This is how your card will appear in job search results.</p>
-
-            <JobCard job={previewJob} preview />
-
-            <p className="mt-3 text-[11px] text-text-muted text-center">
-              {editId ? 'Editing listing' : 'Stays active until you close it'}
-            </p>
-          </motion.div>
-        </div>
-      </div>
-    </motion.div>
-  );
+    </form>
+  </div>;
 }

@@ -12,11 +12,13 @@ export const maxDuration = 300;
 
 function StatusBadge({ status }: { status: JobStatus }) {
   const styles: Record<JobStatus, string> = {
+    draft: 'bg-primary/5 text-primary border border-primary/20',
     active: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60',
     pending_approval: 'bg-amber-50 text-amber-700 border border-amber-200/60',
     closed: 'bg-gray-100 text-gray-500 border border-gray-200/60',
   };
   const labels: Record<JobStatus, string> = {
+    draft: 'Draft',
     active: 'Active',
     // "Pending" alone reads as stuck. Name what it is waiting on.
     pending_approval: 'Pending review',
@@ -58,7 +60,9 @@ async function getListings(
     .eq('company_id', companyId)
     .order('created_at', { ascending: false });
 
-  if (filter === 'active') {
+  if (filter === 'draft') {
+    query = query.eq('status', 'draft');
+  } else if (filter === 'active') {
     query = query.eq('status', 'active');
   } else if (filter === 'pending') {
     query = query.eq('status', 'pending_approval');
@@ -103,6 +107,7 @@ export default async function MyListingsPage({
 
   const tabs = [
     { key: 'all', label: 'All' },
+    { key: 'draft', label: 'Drafts' },
     { key: 'active', label: 'Active' },
     { key: 'pending', label: 'Pending' },
     { key: 'closed', label: 'Closed' },
@@ -186,7 +191,7 @@ export default async function MyListingsPage({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <h3 className="text-base font-semibold text-text group-hover:text-primary transition-colors duration-200">
-                      {listing.title}
+                      {listing.title || 'Untitled draft'}
                     </h3>
                     <StatusBadge status={listing.status} />
                   </div>
@@ -217,12 +222,12 @@ export default async function MyListingsPage({
                     <span className="rounded-full bg-primary/5 px-2.5 py-0.5 font-medium text-primary">
                       {JOB_TYPE_LABELS[listing.job_type as JobType] ?? listing.job_type}
                     </span>
-                    <span>Posted {formatDate(listing.created_at)}</span>
+                    <span>{listing.status === 'draft' ? 'Started' : 'Posted'} {formatDate(listing.created_at)}</span>
                   </div>
                 </div>
 
                 {/* Applicant count badge */}
-                <Link
+                {listing.status !== 'draft' && <Link
                   href={`/my-listings/${listing.id}/applicants`}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 py-2.5 sm:py-2 text-sm font-medium text-text transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0"
                 >
@@ -242,12 +247,12 @@ export default async function MyListingsPage({
                   </svg>
                   <span className="font-semibold">{listing.applicant_count}</span>
                   Applicant{listing.applicant_count !== 1 ? 's' : ''}
-                </Link>
+                </Link>}
               </div>
 
               {/* Actions */}
               <div className="mt-4 grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 border-t border-border/60 pt-4">
-                <Link
+                {listing.status !== 'draft' && <Link
                   href={`/my-listings/${listing.id}/applicants`}
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary/5 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-primary transition-all duration-200 hover:bg-primary hover:text-white hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
                 >
@@ -256,7 +261,9 @@ export default async function MyListingsPage({
                     <circle cx="9" cy="7" r="4" />
                   </svg>
                   View Applicants
-                </Link>
+                </Link>}
+
+                {listing.status === 'draft' && <Link href={`/post-job?draft=${listing.id}`} className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">Resume draft</Link>}
 
                 {(listing.status === 'pending_approval' || listing.status === 'active') && (
                   <Link
@@ -405,6 +412,8 @@ function RepostListing({ listingId }: { listingId: string }) {
       salary_max: original.salary_max,
       salary_type: original.salary_type,
       salary_visible: original.salary_visible,
+      benefits: original.benefits,
+      draft_data: original.draft_data,
       requires_work_permit: original.requires_work_permit,
       status: 'active',
       expires_at: null,
