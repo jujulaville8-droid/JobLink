@@ -82,7 +82,7 @@ export default async function AdminAnalyticsPage() {
     supabase.from('users').select('id', { count: 'exact', head: true }),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'seeker').not('email', 'like', 'admin-company-%@joblinkantigua.com'),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'employer'),
-    supabase.from('job_listings').select('id', { count: 'exact', head: true }),
+    supabase.from('job_listings').select('id', { count: 'exact', head: true }).neq('status', 'draft'),
     supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'pending_approval'),
     supabase.from('job_listings').select('id', { count: 'exact', head: true }).eq('status', 'closed'),
@@ -96,7 +96,7 @@ export default async function AdminAnalyticsPage() {
     supabase.from('users').select('created_at').gte('created_at', since).eq('role', 'seeker'),
     supabase.from('users').select('created_at').gte('created_at', since).eq('role', 'employer').not('email', 'like', 'admin-company-%@joblinkantigua.com'),
     supabase.from('applications').select('applied_at').gte('applied_at', since),
-    supabase.from('job_listings').select('created_at').gte('created_at', since),
+    supabase.from('job_listings').select('created_at').gte('created_at', since).neq('status', 'draft'),
     // Application status counts
     supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'applied'),
     supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', 'interview'),

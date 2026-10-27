@@ -99,7 +99,7 @@ function responseSchema(criterionIds: string[], evidenceIds: string[]) {
     } },
   }, required: ['assessments'] }
 }
-async function readBoundedResponse(response: Response, maximum: number, signal: AbortSignal): Promise<unknown> {
+export async function readBoundedResponse(response: Response, maximum: number, signal: AbortSignal): Promise<unknown> {
   if (!response.ok || response.redirected || !response.body) throw new Error('Screening provider unavailable')
   const declared = response.headers.get('content-length')
   if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maximum)) throw new Error('Screening response limit')

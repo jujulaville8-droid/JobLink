@@ -81,6 +81,7 @@ before(async () => {
   await db.exec(loadSql('supabase/migrations/20260925_security_hardening_2.sql'));
 
   await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
+  await db.exec(loadSql('supabase/migrations/20261026190000_employer_drafts_and_benefits.sql'));
 
   // public.users rows come from the on_auth_user_created trigger, same as
   // production -- inserting them by hand would collide with it.
@@ -101,6 +102,8 @@ describe('the migration itself', () => {
     await db.exec(loadSql('supabase/migrations/20260925_security_hardening_2.sql'));
     await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
     await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
+    await db.exec(loadSql('supabase/migrations/20261026190000_employer_drafts_and_benefits.sql'));
+    await db.exec(loadSql('supabase/migrations/20261026190000_employer_drafts_and_benefits.sql'));
   });
 });
 

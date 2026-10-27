@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { createElement, type ComponentProps } from 'react';
 import CompanyProfilePage from '@/app/(dashboard)/company-profile/page';
 import SignupPage from '@/app/(auth)/signup/page';
-import PostJobPage from '@/app/(dashboard)/post-job/page';
 
 const api = vi.hoisted(() => ({
   push: vi.fn(), replace: vi.fn(), load: vi.fn(), save: vi.fn(),
@@ -56,137 +55,8 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe('post-job card preview', () => {
-  beforeEach(() => {
-    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', location: 'English Harbour', industry: 'Hospitality', is_pro: false }, error: null });
-  });
-
-  it('updates the real card as the employer edits the location, title, and pay', async () => {
-    const user = userEvent.setup();
-    render(<PostJobPage />);
-    const location = await screen.findByLabelText(/^location/i);
-    expect((location as HTMLInputElement).value).toBe('English Harbour');
-    await user.clear(location);
-    await user.type(location, 'Codrington, Barbuda');
-    await user.type(screen.getByLabelText(/^job title/i), 'Boat captain');
-    await user.click(screen.getByRole('radio', { name: 'Hourly' }));
-    await user.type(screen.getByLabelText(/minimum rate/i), '25');
-    expect(screen.getByRole('heading', { name: 'Boat captain' })).toBeTruthy();
-    expect(screen.getByText('Codrington, Barbuda', { selector: 'span' })).toBeTruthy();
-    expect(screen.getByText('From EC$25')).toBeTruthy();
-    expect(screen.getByText('/hr')).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /view boat captain/i })).toBeNull();
-    expect(screen.queryByRole('link', { name: /share on whatsapp/i })).toBeNull();
-    await user.click(screen.getByRole('checkbox', { name: /show salary/i }));
-    expect(screen.queryByText('From EC$25')).toBeNull();
-    expect(screen.getByText('Salary discussed after application')).toBeTruthy();
-  });
-
-  it.each([false, true])('preserves the age and featured status of an edited listing (featured: %s)', async (featured) => {
-    api.editId = 'job-1';
-    api.listing.mockResolvedValue({ data: {
-      id: 'job-1', title: 'Boat captain', location: 'Codrington, Barbuda',
-      salary_min: 25, salary_type: 'hourly', created_at: '2020-01-01T00:00:00Z', is_featured: featured,
-    }, error: null });
-    render(<PostJobPage />);
-    await screen.findByRole('heading', { name: 'Boat captain' });
-    expect(screen.queryByText('New', { exact: true })).toBeNull();
-    expect(Boolean(screen.queryByText('Featured', { exact: true }))).toBe(featured);
-    expect((screen.getByRole('radio', { name: 'Hourly' }) as HTMLInputElement).checked).toBe(true);
-    expect(screen.getByText('/hr')).toBeTruthy();
-  });
-});
-
-describe('post-job submission', () => {
-  beforeEach(() => {
-    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', location: 'English Harbour', industry: 'Tourism & Hospitality', is_pro: false }, error: null });
-  });
-
-  async function fillJob() {
-    const user = userEvent.setup();
-    render(<PostJobPage />);
-    await user.type(await screen.findByLabelText(/^job title/i), 'Boat captain');
-    await user.type(screen.getByLabelText(/^job description/i), 'Lead harbour tours.');
-    await user.click(screen.getByRole('radio', { name: 'Hourly' }));
-    await user.type(screen.getByLabelText(/minimum rate/i), '25');
-    return user;
-  }
-
-  it('lets an employer with existing listings submit another job without upgrading', async () => {
-    api.count.mockResolvedValue({ count: 2, error: null });
-    const user = await fillJob();
-    expect(screen.queryByRole('link', { name: /upgrade/i })).toBeNull();
-    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
-    await screen.findByRole('heading', { name: /job submitted successfully/i });
-    expect(api.payload).toHaveBeenCalledTimes(1);
-    expect(api.count).toHaveBeenCalledTimes(1);
-  });
-
-  it('offers a retry if the load-time listing count is unavailable', async () => {
-    api.count.mockResolvedValueOnce({ count: null, error: { message: 'offline' } });
-    const user = userEvent.setup();
-    render(<PostJobPage />);
-    await user.click(await screen.findByRole('button', { name: /try again/i }));
-    expect(await screen.findByLabelText(/^job title/i)).toBeTruthy();
-  });
-
-  it('loads existing employers and listing edits', async () => {
-    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', is_pro: true }, error: null });
-    api.count.mockResolvedValue({ count: 2, error: null });
-    const first = render(<PostJobPage />);
-    expect(await screen.findByLabelText(/^job title/i)).toBeTruthy();
-    expect(api.count).toHaveBeenCalledTimes(1);
-    first.unmount();
-    api.count.mockClear();
-    api.load.mockResolvedValue({ data: { id: 'company-1', company_name: 'Island Studio', is_pro: false }, error: null });
-    api.editId = 'job-1';
-    api.listing.mockResolvedValue({ data: { title: 'Existing job', created_at: '2020-01-01T00:00:00Z' }, error: null });
-    render(<PostJobPage />);
-    expect((await screen.findByLabelText(/^job title/i) as HTMLInputElement).value).toBe('Existing job');
-    expect(api.count).not.toHaveBeenCalled();
-  });
-
-  it('focuses the first invalid post field and associates its error', async () => {
-    const user = userEvent.setup();
-    render(<PostJobPage />);
-    const title = await screen.findByLabelText(/^job title/i);
-    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
-    await waitFor(() => expect(document.activeElement).toBe(title));
-    expect(title.getAttribute('aria-invalid')).toBe('true');
-    expect(document.getElementById(title.getAttribute('aria-describedby')!)?.textContent).toBe('Job title is required');
-    expect(api.payload).not.toHaveBeenCalled();
-  });
-
-  it('saves hourly pay with company defaults, accepts a short description, and explains review', async () => {
-    const user = await fillJob();
-    expect(screen.getByRole('list', { name: /employer setup progress/i }).querySelector('[aria-current="step"]')?.textContent).toContain('First job');
-    expect(screen.getByLabelText(/^job description/i).getAttribute('maxlength')).toBe('6000');
-    expect(screen.getByText('19 / 6000')).toBeTruthy();
-    expect(screen.getByText(/a short description gets fewer/i)).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: /submit job listing/i }));
-    await screen.findByRole('heading', { name: /job submitted successfully/i });
-    expect(api.payload).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Boat captain', description: 'Lead harbour tours.', category: 'Tourism & Hospitality',
-      location: 'English Harbour', salary_min: 25, salary_type: 'hourly', status: 'pending_approval',
-    }));
-    expect(screen.getByText('Usually reviewed within one business day. You will get an email when it goes live.')).toBeTruthy();
-    await user.click(screen.getByRole('button', { name: /go to my listings/i }));
-    expect(api.push).toHaveBeenCalledWith('/my-listings');
-  });
-});
-
+// Posting behavior is covered by employer-posting-flow.spec.tsx.
 describe('company setup', () => {
-  it('routes returning employers with no company back to setup', async () => {
-    render(<PostJobPage />);
-    await waitFor(() => expect(api.replace).toHaveBeenCalledWith('/company-profile'));
-  });
-
-  it('does not treat a company lookup error as a missing company', async () => {
-    api.load.mockResolvedValueOnce({ data: null, error: { message: 'offline' } });
-    render(<PostJobPage />);
-    await screen.findByText(/could not load your company/i);
-    expect(api.replace).not.toHaveBeenCalled();
-  });
   it('lets a new employer continue with only a company name', async () => {
     const user = userEvent.setup();
     render(<CompanyProfilePage />);

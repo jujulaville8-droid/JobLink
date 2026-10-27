@@ -5,6 +5,8 @@ import { employerAdvisoryEmailSection } from './employer-screening/email'
 import type { ResumeDocumentQualityResult } from './employer-screening/quality'
 
 type EmailType =
+  | 'listing_submitted'
+  | 'listing_submitted_admin'
   | 'application_confirmation'
   | 'new_applicant'
   | 'status_update'
@@ -88,7 +90,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${content}
         </div>
         <div style="background-color: #f9fafb; padding: 16px 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'new_applicant' || emailType === 'job_closed_applicant' || emailType === 'job_closed_employer' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
+          <p style="color: #6b7280; font-size: 12px; margin: 0;">JobLink${emailType === 'listing_submitted' || emailType === 'listing_submitted_admin' || emailType === 'new_applicant' || emailType === 'job_closed_applicant' || emailType === 'job_closed_employer' ? '<br>' : ' &mdash; '}Antigua &amp; Barbuda's Job Platform</p>
         </div>
       </div>
     </body>
@@ -107,6 +109,16 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
   }
 
   switch (emailType) {
+    case 'listing_submitted':
+      return {
+        subject: `Job received: ${d.job_title || 'Your listing'}`,
+        html: wrapper(`<h2>We received your job</h2><p>${esc(d.job_title)} at ${esc(d.company_name)} is pending review.</p><p>Usually reviewed within one business day. You will get an email when it goes live.</p>${btn('View my listings', '/my-listings')}`),
+      }
+    case 'listing_submitted_admin':
+      return {
+        subject: `Listing ready for review: ${d.job_title || 'New job'}`,
+        html: wrapper(`<h2>A job is ready for review</h2><p>${esc(d.company_name)} submitted ${esc(d.job_title)}.</p><p>Status: pending review.</p>${btn('Review listings', '/admin/approvals')}`),
+      }
     case 'application_confirmation':
       return {
         subject: `You applied for ${esc(d.job_title)} — we'll keep you posted`,
