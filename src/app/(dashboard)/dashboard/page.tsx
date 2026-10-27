@@ -496,7 +496,7 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
   return (
     <div className="animate-fade-up">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl text-text sm:text-3xl">
             {greetingCompanyName ? `Welcome, ${greetingCompanyName}` : "Welcome"}
@@ -504,7 +504,7 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
           {claimedId === company.id && company.claimed_at && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-4 text-emerald-800">You now manage {companyName}. Your existing jobs and applications are ready.</p>}
           <p className="mt-1 text-text-light text-sm">Manage your listings, review applicants, and find talent.</p>
         </div>
-        <div className="hidden sm:flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link href="/browse-candidates" className="rounded-full border border-border px-4 py-2.5 text-sm font-medium text-text hover:border-primary/30 hover:text-primary transition-colors">
             Browse Candidates
           </Link>
@@ -513,6 +513,11 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
           </Link>
         </div>
       </div>
+
+      <nav aria-label="Employer actions" className="mt-4 flex flex-wrap gap-4 text-sm text-primary">
+        <Link href="/company-profile">Company Profile</Link>
+        <Link href="/analytics">Analytics</Link>
+      </nav>
 
       {/* Quick Stats */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -735,16 +740,6 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
             </div>
           )}
         </div>
-      </div>
-
-      {/* Mobile CTAs */}
-      <div className="mt-6 flex gap-2 sm:hidden">
-        <Link href="/browse-candidates" className="flex-1 text-center rounded-full border border-border py-3 text-sm font-medium text-text hover:border-primary/30 transition-colors">
-          Browse Candidates
-        </Link>
-        <Link href="/post-job" className="flex-1 text-center rounded-full bg-primary py-3 text-sm font-semibold text-white hover:bg-primary-dark transition-colors">
-          + Post a Job
-        </Link>
       </div>
     </div>
   );

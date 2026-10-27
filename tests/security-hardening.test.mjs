@@ -83,6 +83,8 @@ before(async () => {
   await db.exec(loadSql('supabase/migrations/20261026000000_remove_plan_listing_cap.sql'));
   await db.exec(loadSql('supabase/migrations/20261026190000_employer_drafts_and_benefits.sql'));
 
+  await db.exec(loadSql('supabase/migrations/20261027013119_employer_job_views.sql'));
+
   // public.users rows come from the on_auth_user_created trigger, same as
   // production -- inserting them by hand would collide with it.
   await asServiceRole();

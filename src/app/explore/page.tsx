@@ -19,6 +19,7 @@ const seekerLinks = [
 ];
 
 const employerLinks = [
+  { href: "/analytics", label: "Analytics", desc: "Applications and listing performance", Icon: BarChart3 },
   { href: "/post-job", label: "Post a Job", desc: "Create a new listing and reach job seekers", Icon: PlusCircle },
   { href: "/my-listings", label: "My Listings", desc: "Manage your active, pending, and closed jobs", Icon: List },
   { href: "/browse-candidates", label: "Browse Candidates", desc: "Find job seekers by skills and experience", Icon: Users },

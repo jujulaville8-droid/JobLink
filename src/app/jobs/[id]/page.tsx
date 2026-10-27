@@ -1,3 +1,5 @@
+import JobViewTracker from "@/components/JobViewTracker";
+import { jobViewsLaunch } from "@/lib/job-views-config";
 import { createClient } from "@/lib/supabase/server";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
@@ -328,6 +330,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50/60">
+      {jobViewsLaunch() && <JobViewTracker jobId={job.id} surface="job_page" />}
       {emitJobPosting && (
         <script
           type="application/ld+json"
