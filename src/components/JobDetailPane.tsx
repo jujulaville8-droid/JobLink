@@ -1,3 +1,5 @@
+import JobViewTracker from "@/components/JobViewTracker";
+import { jobViewsLaunch } from "@/lib/job-views-config";
 import Link from "next/link";
 import { getJobClosure } from "@/lib/job-closures";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
@@ -74,6 +76,7 @@ export default async function JobDetailPane({ jobId, backHref }: { jobId: string
 
   return (
     <section key={job.id} aria-labelledby="job-detail-heading" className={panelClass}>
+      {jobViewsLaunch() && <JobViewTracker jobId={job.id} surface="job_pane" />}
       <BackToResults href={backHref} />
 
       {closure && (
