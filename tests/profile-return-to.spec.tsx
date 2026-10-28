@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import ProfilePage from '@/app/(dashboard)/profile/page';
 
 const api = vi.hoisted(() => ({
@@ -159,4 +159,104 @@ it.each([undefined, applicationPath])('surfaces upload failures in profile/apply
   fireEvent.click(screen.getByRole('button', { name: returnTo ? 'Save and return to application' : 'Save' }));
   await waitFor(() => expect(api.save).toHaveBeenCalledTimes(2));
   expect(JSON.parse(api.save.mock.calls[1][1].body).cv_url).toBe('seeker-id/cv.pdf');
+  if (returnTo) await waitFor(() => expect(window.location.pathname).toBe(applicationPath));
+  else await screen.findByRole('heading', { name: 'About' }, { timeout: 1800 });
+});
+
+class SuccessfulUpload {
+  upload = {};
+  status = 200;
+  onload?: () => void;
+  open() {}
+  setRequestHeader() {}
+  send() { queueMicrotask(() => this.onload?.()); }
+}
+
+async function uploadResume(returnTo?: string) {
+  vi.stubGlobal('XMLHttpRequest', SuccessfulUpload);
+  if (api.profile) api.profile.cv_url = '';
+  openProfile(returnTo);
+  if (api.profile?.id) await editProfile();
+  else await screen.findByRole('heading', { name: 'Create Profile' });
+  fireEvent.change(screen.getByPlaceholderText('John'), { target: { value: 'Janet' } });
+  fireEvent.click(screen.getByRole('button', { name: '3' }));
+  api.save.mockResolvedValueOnce(Response.json({
+    path: 'seeker-id/new.docx', signedUrl: 'https://storage.test/upload',
+  }));
+  fireEvent.change(screen.getByLabelText('Upload your CV'), {
+    target: { files: [new File(['docx'], 'Resume.docx', { type: '' })] },
+  });
+}
+
+it.each([undefined, applicationPath])('auto-saves the new CV and current edits without pressing Save (%s)', async returnTo => {
+  await uploadResume(returnTo);
+  await waitFor(() => expect(api.save).toHaveBeenCalledTimes(2));
+  expect(api.save.mock.calls[1][0]).toBe('/api/profile');
+  expect(JSON.parse(api.save.mock.calls[1][1].body)).toMatchObject({
+    profile_id: 'profile-id', cv_url: 'seeker-id/new.docx', first_name: 'Janet',
+  });
+  expect(await screen.findByText('Resume uploaded and saved.')).toBeTruthy();
+  // Wait beyond the former 800 ms handoff to catch delayed view flips too.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 900)); });
+  expect(screen.getByText('Resume uploaded and saved.')).toBeTruthy();
+  expect(screen.getByLabelText('Upload your CV')).toBeTruthy();
+  expect(screen.getByRole('heading', { name: 'Edit Profile' })).toBeTruthy();
+  expect(window.location.pathname).toBe('/profile');
+  expect(api.setAvatarUrl).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: returnTo ? 'Save and return to application' : 'Save' }));
+  if (returnTo) await waitFor(() => expect(window.location.pathname).toBe(applicationPath));
+  else await screen.findByRole('heading', { name: 'About' }, { timeout: 1800 });
+  expect(JSON.parse(api.save.mock.calls[2][1].body).cv_url).toBe('seeker-id/new.docx');
+});
+
+it.each(['server', 'network', 'unconfirmed'] as const)('keeps an unsuccessful auto-save honest and lets Save retry (%s)', async failure => {
+  if (failure === 'unconfirmed') api.profile!.id = null;
+  api.save.mockImplementation(async () => {
+    if (failure === 'network') throw new TypeError('Failed to fetch');
+    return failure === 'server'
+      ? Response.json({ error: 'Save refused' }, { status: 503 })
+      : Response.json({ success: true });
+  });
+  await uploadResume(applicationPath);
+  expect(await screen.findByText('Your resume uploaded, but saving your profile failed. Use the Save button below to retry.')).toHaveProperty('role', 'alert');
+  expect(screen.queryByText('Resume uploaded and saved.')).toBeNull();
+  expect(window.location.pathname).toBe('/profile');
+  expect((screen.getByLabelText('Upload your CV') as HTMLInputElement).disabled).toBe(false);
+  api.save.mockResolvedValue(Response.json({ profile_id: 'profile-id' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Save and return to application' }));
+  await waitFor(() => expect(window.location.pathname).toBe(applicationPath));
+  expect(JSON.parse(api.save.mock.calls[2][1].body).cv_url).toBe('seeker-id/new.docx');
+});
+
+it('keeps wizard actions busy until the uploaded resume finishes saving', async () => {
+  let resolveSave!: (response: Response) => void;
+  api.save.mockImplementation(() => new Promise<Response>(resolve => { resolveSave = resolve; }));
+  await uploadResume();
+  expect(await screen.findByText('Saving resume… please keep this page open.')).toBeTruthy();
+  expect((screen.getByRole('button', { name: 'Saving...' }) as HTMLButtonElement).disabled).toBe(true);
+  for (const name of ['Next', 'Previous', 'Save profile and build a resume instead']) {
+    expect((screen.getByRole('button', { name }) as HTMLButtonElement).disabled).toBe(true);
+  }
+  expect(screen.queryByText('Resume uploaded and saved.')).toBeNull();
+  resolveSave(Response.json({ profile_id: 'profile-id' }));
+  expect(await screen.findByText('Resume uploaded and saved.')).toBeTruthy();
+  expect(screen.getByLabelText('Upload your CV')).toBeTruthy();
+});
+
+
+it('keeps a newly created profile on step 3 after auto-save and reuses its saved ID', async () => {
+  api.profile = null;
+  await uploadResume();
+  expect(await screen.findByText('Resume uploaded and saved.')).toBeTruthy();
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 900)); });
+  expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeTruthy();
+  expect(screen.getByLabelText('Upload your CV')).toBeTruthy();
+  expect(screen.getByText('Resume uploaded and saved.')).toBeTruthy();
+  expect(api.setAvatarUrl).not.toHaveBeenCalled();
+  expect(JSON.parse(api.save.mock.calls[1][1].body).profile_id).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await screen.findByRole('heading', { name: 'About' }, { timeout: 1800 });
+  expect(JSON.parse(api.save.mock.calls[2][1].body)).toMatchObject({
+    profile_id: 'profile-id', cv_url: 'seeker-id/new.docx', first_name: 'Janet',
+  });
 });

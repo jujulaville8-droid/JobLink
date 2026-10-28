@@ -3,6 +3,7 @@
 import CvUpload from "@/components/CvUpload";
 
 import { useEffect, useState, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
@@ -821,12 +822,12 @@ function ProfileEditForm({
   const { percentage: completePct, missing } = getCompletion(profile, hasBuiltResume);
   const applicationMissing = getApplicationMissingFields(profile, hasBuiltResume);
 
-  const handleSave = useCallback(async (next?: "build-resume") => {
-    if (!userId) return;
+  const handleSave = useCallback(async (next?: "build-resume", profileToSave: ProfileData = profile, { handoff = true }: { handoff?: boolean } = {}) => {
+    if (!userId) return false;
     setSaving(true);
     setMessage(null);
 
-    const { percentage: pct } = getCompletion(profile, hasBuiltResume);
+    const { percentage: pct } = getCompletion(profileToSave, hasBuiltResume);
 
     try {
       const res = await fetch("/api/profile", {
@@ -834,20 +835,20 @@ function ProfileEditForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profile_id: profileId,
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          phone: profile.phone,
-          location: profile.location,
-          bio: profile.bio,
-          skills: profile.skills,
-          experience_years: profile.experience_years,
-          education: profile.education,
-          cv_url: profile.cv_url,
-          avatar_url: profile.avatar_url,
-          visibility: profile.visibility,
+          first_name: profileToSave.first_name,
+          last_name: profileToSave.last_name,
+          phone: profileToSave.phone,
+          location: profileToSave.location,
+          bio: profileToSave.bio,
+          skills: profileToSave.skills,
+          experience_years: profileToSave.experience_years,
+          education: profileToSave.education,
+          cv_url: profileToSave.cv_url,
+          avatar_url: profileToSave.avatar_url,
+          visibility: profileToSave.visibility,
           profile_complete_pct: pct,
-          details: profile.details,
-          sensitive: profile.sensitive,
+          details: profileToSave.details,
+          sensitive: profileToSave.sensitive,
         }),
       });
 
@@ -855,38 +856,41 @@ function ProfileEditForm({
 
       if (!res.ok) {
         setMessage({ type: "error", text: data.error || "Failed to save profile." });
+        return false;
       } else {
         const savedId = data.profile_id || profileId;
         if (!savedId) {
           setMessage({ type: "error", text: "Could not confirm your saved profile. Please try again." });
-          setSaving(false);
-          return;
+          return false;
         }
         if (data.profile_id && !profileId) {
           setProfileId(data.profile_id);
         }
-        const missingForApplication = getApplicationMissingFields(profile, hasBuiltResume);
+        const missingForApplication = getApplicationMissingFields(profileToSave, hasBuiltResume);
         setMessage({
           type: "success",
           text: applicationReturnTo && missingForApplication.length > 0
             ? `Profile saved. Still needed to apply: ${missingForApplication.join(", ")}.`
             : "Profile saved successfully!",
         });
+        if (!handoff) return true;
         if (next === "build-resume") {
           window.location.href = applicationReturnTo
             ? `/profile/cv?returnTo=${encodeURIComponent(applicationReturnTo)}`
             : "/profile/cv";
         } else if (applicationReturnTo) {
-          onSaved(profile, savedId);
+          onSaved(profileToSave, savedId);
         } else {
-          setTimeout(() => onSaved(profile, savedId), 800);
+          setTimeout(() => onSaved(profileToSave, savedId), 800);
         }
+        return true;
       }
     } catch {
       setMessage({ type: "error", text: "Network error. Please check your connection." });
+      return false;
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }, [userId, profile, profileId, onSaved, hasBuiltResume, applicationReturnTo]);
 
   const addSkill = () => {
@@ -1203,7 +1207,17 @@ function ProfileEditForm({
             <CvUpload
               hasCv={!!profile.cv_url}
               onBusy={setUploading}
-              onUploaded={(path) => setProfile((prev) => ({ ...prev, cv_url: path }))}
+              onUploaded={async (path) => {
+                let updatedProfile!: ProfileData;
+                // Flush the functional merge before saving its snapshot; React may batch updates.
+                flushSync(() => {
+                  setProfile(previous => {
+                    updatedProfile = { ...previous, cv_url: path };
+                    return updatedProfile;
+                  });
+                });
+                return handleSave(undefined, updatedProfile, { handoff: false });
+              }}
             />
             <button
               type="button"
