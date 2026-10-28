@@ -13,7 +13,7 @@ export const CV_NETWORK_ERROR = 'Resume upload failed. Check your internet conne
 
 export function cvExtension(name: string): CvExtension | null {
   const ext = name.trim().replace(/ \(\d+\)$/, '').split('.').pop()?.toLowerCase() || ''
-  return Object.hasOwn(CV_TYPES, ext) ? ext as CvExtension : null
+  return Object.prototype.hasOwnProperty.call(CV_TYPES, ext) ? ext as CvExtension : null
 }
 
 export function validateCvFile(file: { name: string; size: number; type?: string }) {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import CvUpload from '@/components/CvUpload'
 import { CV_TYPES, CV_FALLBACK, MAX_CV_BYTES, ownedCvPath, validateCvFile } from '@/lib/cv-upload'
 
@@ -107,4 +107,86 @@ it.each(['Resume.pdf ', 'CV.pdf (1)', 'resume.unknown', 'resume.pdf.exe'])('acce
 })
 it.each(['Resume.pdf ', 'CV.pdf (1)'])('extracts the extension from noisy filename %s without MIME', name => {
   expect(validateCvFile({ name, size: 100 })).toMatchObject({ extension: 'pdf' })
+})
+
+it.each([
+  ['resume.docx', '', 'docx'],
+  ['resume.docx', 'application/octet-stream', 'docx'],
+  ['resume.pdf', 'application/octet-stream', 'pdf'],
+  ['resume.DOCX', '', 'docx'],
+  ['Resume (1).docx', '', 'docx'],
+  ['resume', CV_TYPES.docx, 'docx'],
+  ['resume.doc', '', 'doc'],
+] as const)('validates Samsung document %s (%s)', (name, type, extension) => {
+  const descriptor = Object.getOwnPropertyDescriptor(Object, 'hasOwn')!
+  let result
+  try {
+    Reflect.deleteProperty(Object, 'hasOwn')
+    result = validateCvFile({ name, type, size: 123 })
+  } finally {
+    Object.defineProperty(Object, 'hasOwn', descriptor)
+  }
+  expect(result).toEqual({ extension, contentType: CV_TYPES[extension] })
+})
+
+it('uploads without AbortSignal.timeout on older Android browsers', async () => {
+  let timeoutOwner = AbortSignal
+  while (!Object.prototype.hasOwnProperty.call(timeoutOwner, 'timeout')) timeoutOwner = Object.getPrototypeOf(timeoutOwner)
+  const descriptor = Object.getOwnPropertyDescriptor(timeoutOwner, 'timeout')
+  try {
+    Reflect.deleteProperty(timeoutOwner, 'timeout')
+    expect(AbortSignal.timeout).toBeUndefined()
+    const { choose, saved, input } = setup()
+    choose(new File(['docx'], 'Resume (1).docx', { type: '' }))
+    await waitFor(() => expect(UploadRequest.latest.send).toHaveBeenCalled())
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
+    expect(UploadRequest.latest.setRequestHeader).toHaveBeenCalledWith('Content-Type', CV_TYPES.docx)
+    UploadRequest.latest.onload?.()
+    await waitFor(() => expect(saved).toHaveBeenCalledWith('u/new.pdf'))
+    expect(await screen.findByText('Resume uploaded. Save your profile to finish.')).toBeTruthy()
+    expect(input.disabled).toBe(false)
+  } finally {
+    if (descriptor) Object.defineProperty(timeoutOwner, 'timeout', descriptor)
+  }
+})
+
+
+it.each(['resolve', 'reject', 'timeout', 'body-timeout', 'body-reject'] as const)('cleans up the authorization timer after %s', async outcome => {
+  vi.useFakeTimers()
+  try {
+    if (outcome === 'reject') fetchMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    if (outcome === 'timeout') fetchMock.mockImplementation((_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+    }))
+    if (outcome === 'body-timeout' || outcome === 'body-reject') fetchMock.mockImplementation(async (_url, options) => ({
+      ok: true,
+      json: () => outcome === 'body-reject'
+        ? Promise.reject(new SyntaxError('Invalid JSON'))
+        : new Promise((_resolve, reject) => {
+          options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+        }),
+    }))
+    const { choose, saved, input } = setup()
+    await act(async () => { choose() })
+    const signal = fetchMock.mock.calls[0][1].signal as AbortSignal
+    await act(async () => { await vi.advanceTimersByTimeAsync(29_999) })
+    expect(signal.aborted).toBe(false)
+    if (outcome === 'body-timeout') {
+      expect(input.disabled).toBe(true)
+      expect(screen.queryByRole('alert')).toBeNull()
+    }
+    await act(async () => { await vi.advanceTimersByTimeAsync(1) })
+    expect(signal.aborted).toBe(outcome === 'timeout' || outcome === 'body-timeout')
+    if (outcome === 'resolve') {
+      await act(async () => { UploadRequest.latest.onload?.() })
+      expect(saved).toHaveBeenCalledWith('u/new.pdf')
+    } else {
+      expect(screen.getByRole('alert').textContent).toContain('Check your internet connection')
+      expect(saved).not.toHaveBeenCalled()
+    }
+    expect(input.disabled).toBe(false)
+    expect(vi.getTimerCount()).toBe(0)
+  } finally {
+    vi.useRealTimers()
+  }
 })
