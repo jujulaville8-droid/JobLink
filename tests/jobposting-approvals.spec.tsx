@@ -892,3 +892,46 @@ describe.each([
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
+
+describe.each([
+  ["03cdd5df-68aa-4463-a367-04ccd83753ea", "eda48543-634b-4687-9947-3aa970d46e97", "COLIBRI", "Chef de Partie", "2026-10-28"],
+  ["4f55fb36-11b3-4f25-92b5-cb0bec5072e5", "eda48543-634b-4687-9947-3aa970d46e97", "COLIBRI", "Receptionist", "2026-10-28"],
+  ["94783ec0-1666-46c8-8269-2dda50f59de6", "eda48543-634b-4687-9947-3aa970d46e97", "COLIBRI", "Waitstaff", "2026-10-28"],
+])('%s November 3 vacancy-scoped approval (COLIBRI)', (jobId, companyId, companyName, title, attestedOn) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-03T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn, evidenceReference: '__PR_URL__',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});

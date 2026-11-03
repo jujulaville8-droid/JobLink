@@ -45,6 +45,33 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Chef de Partie vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "03cdd5df-68aa-4463-a367-04ccd83753ea": {
+    companyId: "eda48543-634b-4687-9947-3aa970d46e97",
+    companyName: "COLIBRI",
+    attestedOn: "2026-10-28",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Receptionist vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "4f55fb36-11b3-4f25-92b5-cb0bec5072e5": {
+    companyId: "eda48543-634b-4687-9947-3aa970d46e97",
+    companyName: "COLIBRI",
+    attestedOn: "2026-10-28",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Waitstaff vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "94783ec0-1666-46c8-8269-2dda50f59de6": {
+    companyId: "eda48543-634b-4687-9947-3aa970d46e97",
+    companyName: "COLIBRI",
+    attestedOn: "2026-10-28",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
   // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Cashier vacancy only.
   // Full Time is an unconfirmed placeholder; no public deadline.
   "0f309f2c-015e-4317-a127-0fb35602c5cd": {

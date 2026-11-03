@@ -387,3 +387,22 @@ None of these listings states a public deadline, so no `validThrough` is
 emitted and no closure entry is added (no automatic job closing). Stored
 listing content, status and the application route are unchanged; no database
 writes.
+
+## November 3, 2026 vacancy-scoped employer approval (COLIBRI)
+
+[This PR](__PR_URL__) records employer approvals on record in the JobLink outreach
+log, on the dates shown. Each covers the listed vacancies only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No contact details or message content are recorded.
+COLIBRI's employer approval recorded Oct 28 reached the site owner directly; it is kept in a separate commit for review.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| COLIBRI — Chef de Partie | `03cdd5df-68aa-4463-a367-04ccd83753ea` | `eda48543-634b-4687-9947-3aa970d46e97` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| COLIBRI — Receptionist | `4f55fb36-11b3-4f25-92b5-cb0bec5072e5` | `eda48543-634b-4687-9947-3aa970d46e97` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| COLIBRI — Waitstaff | `94783ec0-1666-46c8-8269-2dda50f59de6` | `eda48543-634b-4687-9947-3aa970d46e97` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+None of these listings states a public deadline, so no `validThrough` is
+emitted and no closure entry is added (no automatic job closing). Stored
+listing content, status and the application route are unchanged; no database
+writes.
