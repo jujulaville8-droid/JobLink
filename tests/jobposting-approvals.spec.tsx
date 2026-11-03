@@ -839,3 +839,99 @@ describe.each([
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
+
+describe.each([
+  ["0f309f2c-015e-4317-a127-0fb35602c5cd", "4f1f3752-7453-40d1-bf45-853d1264cba5", "Crab Hole Liquors Antigua", "Cashier", "2026-10-26"],
+  ["89d89568-533e-4578-bdc6-d7ecd32e9af6", "4f1f3752-7453-40d1-bf45-853d1264cba5", "Crab Hole Liquors Antigua", "Shelfpacker", "2026-10-26"],
+  ["d1c6f9db-534b-44c6-85aa-5fd3042e4d92", "4f1f3752-7453-40d1-bf45-853d1264cba5", "Crab Hole Liquors Antigua", "Retail Sales Associate", "2026-10-26"],
+  ["ea373994-ba6d-466a-8fc7-d7c636c1278a", "4f1f3752-7453-40d1-bf45-853d1264cba5", "Crab Hole Liquors Antigua", "Merchandising Specialist", "2026-10-26"],
+  ["21b4965b-27a8-4a6c-a93a-c1bcf9ad08c5", "68fada5b-040a-4c46-ba37-245c37f1bef9", "CMW Enterprise", "Italian-Speaking Tour Guide", "2026-10-28"],
+  ["2322e19f-df88-4daa-aebf-73e6df279a7f", "c22443ac-bdb9-4702-81dd-9783ec08dd23", "Salt & Sun Antigua", "Café Assistants", "2026-10-23"],
+  ["2a9263d9-3dd7-4361-b4a8-9c0411f41cb7", "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b", "Leianna's Bar Restaurant and Jazz Lounge", "Experienced Chef", "2026-10-24"],
+  ["2f7f41ac-cfc3-4503-8d74-abdbe83dc469", "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b", "Leianna's Bar Restaurant and Jazz Lounge", "Experienced Bartender", "2026-10-24"],
+  ["6fa21ae1-82d9-4657-999c-3aaa794e82ce", "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b", "Leianna's Bar Restaurant and Jazz Lounge", "Line Cook", "2026-10-24"],
+  ["67fb31e8-fa90-4238-ab9d-1d09007d30f3", "8f39a6e7-bcc5-4dca-ac72-9d2a4222edd3", "Hamam Spa", "Spa Attendant", "2026-10-21"],
+  ["7018747d-7e04-4328-9d22-2b3ea59bcc67", "97537be2-d7e4-479f-9d7e-7682ade82a59", "Dove Cove Comfort Suites", "Housekeeper", "2026-10-21"],
+  ["74e0d726-fd41-4071-84fe-ac75b49f3342", "97537be2-d7e4-479f-9d7e-7682ade82a59", "Dove Cove Comfort Suites", "Handyman", "2026-10-21"],
+  ["fe95bdf0-1745-41b2-bd27-03b6025b3473", "fab263c5-baf0-48db-88de-276172542634", "Premier Cru", "Sales Associate", "2026-10-28"],
+])('%s November 3 vacancy-scoped approval (Nov 3 batch)', (jobId, companyId, companyName, title, attestedOn) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-03T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn, evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/120',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+describe.each([
+  ["03cdd5df-68aa-4463-a367-04ccd83753ea", "eda48543-634b-4687-9947-3aa970d46e97", "COLIBRI", "Chef de Partie", "2026-10-28"],
+  ["4f55fb36-11b3-4f25-92b5-cb0bec5072e5", "eda48543-634b-4687-9947-3aa970d46e97", "COLIBRI", "Receptionist", "2026-10-28"],
+  ["94783ec0-1666-46c8-8269-2dda50f59de6", "eda48543-634b-4687-9947-3aa970d46e97", "COLIBRI", "Waitstaff", "2026-10-28"],
+])('%s November 3 vacancy-scoped approval (COLIBRI)', (jobId, companyId, companyName, title, attestedOn) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-03T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, attestedOn, evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/120',
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});

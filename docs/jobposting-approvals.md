@@ -359,3 +359,50 @@ claimed. No contact details or email content beyond the approval are recorded.
 Neither live listing shows a deadline, so no `validThrough` is emitted and no
 closure entry is added (no automatic job closing). Stored listing content,
 status and the application route are unchanged; no database writes.
+
+## November 3, 2026 vacancy-scoped employer approvals (Crab Hole Liquors, CMW Enterprise, Salt & Sun, Leianna's, Hamam Spa, Dove Cove, Premier Cru)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/120) records employer approvals on record in the JobLink outreach
+log, on the dates shown. Each covers the listed vacancies only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No contact details or message content are recorded.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| Crab Hole Liquors Antigua — Cashier | `0f309f2c-015e-4317-a127-0fb35602c5cd` | `4f1f3752-7453-40d1-bf45-853d1264cba5` | 2026-10-26 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Crab Hole Liquors Antigua — Shelfpacker | `89d89568-533e-4578-bdc6-d7ecd32e9af6` | `4f1f3752-7453-40d1-bf45-853d1264cba5` | 2026-10-26 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Crab Hole Liquors Antigua — Retail Sales Associate | `d1c6f9db-534b-44c6-85aa-5fd3042e4d92` | `4f1f3752-7453-40d1-bf45-853d1264cba5` | 2026-10-26 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Crab Hole Liquors Antigua — Merchandising Specialist | `ea373994-ba6d-466a-8fc7-d7c636c1278a` | `4f1f3752-7453-40d1-bf45-853d1264cba5` | 2026-10-26 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| CMW Enterprise — Italian-Speaking Tour Guide | `21b4965b-27a8-4a6c-a93a-c1bcf9ad08c5` | `68fada5b-040a-4c46-ba37-245c37f1bef9` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Salt & Sun Antigua — Café Assistants | `2322e19f-df88-4daa-aebf-73e6df279a7f` | `c22443ac-bdb9-4702-81dd-9783ec08dd23` | 2026-10-23 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Leianna's Bar Restaurant and Jazz Lounge — Experienced Chef | `2a9263d9-3dd7-4361-b4a8-9c0411f41cb7` | `86f178fc-7b3d-48cb-aa25-19bfd6d55d4b` | 2026-10-24 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Leianna's Bar Restaurant and Jazz Lounge — Experienced Bartender | `2f7f41ac-cfc3-4503-8d74-abdbe83dc469` | `86f178fc-7b3d-48cb-aa25-19bfd6d55d4b` | 2026-10-24 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Leianna's Bar Restaurant and Jazz Lounge — Line Cook | `6fa21ae1-82d9-4657-999c-3aaa794e82ce` | `86f178fc-7b3d-48cb-aa25-19bfd6d55d4b` | 2026-10-24 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Hamam Spa — Spa Attendant | `67fb31e8-fa90-4238-ab9d-1d09007d30f3` | `8f39a6e7-bcc5-4dca-ac72-9d2a4222edd3` | 2026-10-21 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Dove Cove Comfort Suites — Housekeeper | `7018747d-7e04-4328-9d22-2b3ea59bcc67` | `97537be2-d7e4-479f-9d7e-7682ade82a59` | 2026-10-21 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Dove Cove Comfort Suites — Handyman | `74e0d726-fd41-4071-84fe-ac75b49f3342` | `97537be2-d7e4-479f-9d7e-7682ade82a59` | 2026-10-21 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| Premier Cru — Sales Associate | `fe95bdf0-1745-41b2-bd27-03b6025b3473` | `fab263c5-baf0-48db-88de-276172542634` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+None of these listings states a public deadline, so no `validThrough` is
+emitted and no closure entry is added (no automatic job closing). Stored
+listing content, status and the application route are unchanged; no database
+writes.
+
+## November 3, 2026 vacancy-scoped employer approval (COLIBRI)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/120) records employer approvals on record in the JobLink outreach
+log, on the dates shown. Each covers the listed vacancies only and lives in
+`EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
+claimed. No contact details or message content are recorded.
+COLIBRI's employer approval recorded Oct 28 reached the site owner directly; it is kept in a separate commit for review.
+
+| Job | Job ID | Company ID | Attested on | Employment type |
+| --- | --- | --- | --- | --- |
+| COLIBRI — Chef de Partie | `03cdd5df-68aa-4463-a367-04ccd83753ea` | `eda48543-634b-4687-9947-3aa970d46e97` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| COLIBRI — Receptionist | `4f55fb36-11b3-4f25-92b5-cb0bec5072e5` | `eda48543-634b-4687-9947-3aa970d46e97` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+| COLIBRI — Waitstaff | `94783ec0-1666-46c8-8269-2dda50f59de6` | `eda48543-634b-4687-9947-3aa970d46e97` | 2026-10-28 | Full Time is an unconfirmed placeholder, so `employmentType` is omitted |
+
+None of these listings states a public deadline, so no `validThrough` is
+emitted and no closure entry is added (no automatic job closing). Stored
+listing content, status and the application route are unchanged; no database
+writes.
