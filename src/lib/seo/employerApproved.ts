@@ -45,6 +45,123 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Cashier vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "0f309f2c-015e-4317-a127-0fb35602c5cd": {
+    companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
+    companyName: "Crab Hole Liquors Antigua",
+    attestedOn: "2026-10-26",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Shelfpacker vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "89d89568-533e-4578-bdc6-d7ecd32e9af6": {
+    companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
+    companyName: "Crab Hole Liquors Antigua",
+    attestedOn: "2026-10-26",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Retail Sales Associate vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "d1c6f9db-534b-44c6-85aa-5fd3042e4d92": {
+    companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
+    companyName: "Crab Hole Liquors Antigua",
+    attestedOn: "2026-10-26",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Merchandising Specialist vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "ea373994-ba6d-466a-8fc7-d7c636c1278a": {
+    companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
+    companyName: "Crab Hole Liquors Antigua",
+    attestedOn: "2026-10-26",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // CMW Enterprise: employer approval recorded 2026-10-28 (ET) for this Italian-Speaking Tour Guide vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "21b4965b-27a8-4a6c-a93a-c1bcf9ad08c5": {
+    companyId: "68fada5b-040a-4c46-ba37-245c37f1bef9",
+    companyName: "CMW Enterprise",
+    attestedOn: "2026-10-28",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Salt & Sun Antigua: employer approval recorded 2026-10-23 (ET) for this Café Assistants vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "2322e19f-df88-4daa-aebf-73e6df279a7f": {
+    companyId: "c22443ac-bdb9-4702-81dd-9783ec08dd23",
+    companyName: "Salt & Sun Antigua",
+    attestedOn: "2026-10-23",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Leianna's Bar Restaurant and Jazz Lounge: employer approval recorded 2026-10-24 (ET) for this Experienced Chef vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "2a9263d9-3dd7-4361-b4a8-9c0411f41cb7": {
+    companyId: "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b",
+    companyName: "Leianna's Bar Restaurant and Jazz Lounge",
+    attestedOn: "2026-10-24",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Leianna's Bar Restaurant and Jazz Lounge: employer approval recorded 2026-10-24 (ET) for this Experienced Bartender vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "2f7f41ac-cfc3-4503-8d74-abdbe83dc469": {
+    companyId: "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b",
+    companyName: "Leianna's Bar Restaurant and Jazz Lounge",
+    attestedOn: "2026-10-24",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Leianna's Bar Restaurant and Jazz Lounge: employer approval recorded 2026-10-24 (ET) for this Line Cook vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "6fa21ae1-82d9-4657-999c-3aaa794e82ce": {
+    companyId: "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b",
+    companyName: "Leianna's Bar Restaurant and Jazz Lounge",
+    attestedOn: "2026-10-24",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Hamam Spa: employer approval recorded 2026-10-21 (ET) for this Spa Attendant vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "67fb31e8-fa90-4238-ab9d-1d09007d30f3": {
+    companyId: "8f39a6e7-bcc5-4dca-ac72-9d2a4222edd3",
+    companyName: "Hamam Spa",
+    attestedOn: "2026-10-21",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Dove Cove Comfort Suites: employer approval recorded 2026-10-21 (ET) for this Housekeeper vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "7018747d-7e04-4328-9d22-2b3ea59bcc67": {
+    companyId: "97537be2-d7e4-479f-9d7e-7682ade82a59",
+    companyName: "Dove Cove Comfort Suites",
+    attestedOn: "2026-10-21",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Dove Cove Comfort Suites: employer approval recorded 2026-10-21 (ET) for this Handyman vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "74e0d726-fd41-4071-84fe-ac75b49f3342": {
+    companyId: "97537be2-d7e4-479f-9d7e-7682ade82a59",
+    companyName: "Dove Cove Comfort Suites",
+    attestedOn: "2026-10-21",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
+  // Premier Cru: employer approval recorded 2026-10-28 (ET) for this Sales Associate vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "fe95bdf0-1745-41b2-bd27-03b6025b3473": {
+    companyId: "fab263c5-baf0-48db-88de-276172542634",
+    companyName: "Premier Cru",
+    attestedOn: "2026-10-28",
+    evidenceReference: "__PR_URL__",
+    employmentTypeUnconfirmed: true,
+  },
   // The Massage Goddess replied yes on 2026-10-19 (ET) by email reply to the JobLink
   // inbox to posting this Nail Technician vacancy. Full Time is an unconfirmed placeholder.
   "d00f5ff5-29cf-4110-9828-a2f84e49245f": {
