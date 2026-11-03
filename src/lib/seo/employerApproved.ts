@@ -51,7 +51,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "eda48543-634b-4687-9947-3aa970d46e97",
     companyName: "COLIBRI",
     attestedOn: "2026-10-28",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Receptionist vacancy only.
@@ -60,7 +60,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "eda48543-634b-4687-9947-3aa970d46e97",
     companyName: "COLIBRI",
     attestedOn: "2026-10-28",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Waitstaff vacancy only.
@@ -69,7 +69,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "eda48543-634b-4687-9947-3aa970d46e97",
     companyName: "COLIBRI",
     attestedOn: "2026-10-28",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Cashier vacancy only.
@@ -78,7 +78,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
     companyName: "Crab Hole Liquors Antigua",
     attestedOn: "2026-10-26",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Shelfpacker vacancy only.
@@ -87,7 +87,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
     companyName: "Crab Hole Liquors Antigua",
     attestedOn: "2026-10-26",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Retail Sales Associate vacancy only.
@@ -96,7 +96,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
     companyName: "Crab Hole Liquors Antigua",
     attestedOn: "2026-10-26",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Crab Hole Liquors Antigua: employer approval recorded 2026-10-26 (ET) for this Merchandising Specialist vacancy only.
@@ -105,7 +105,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "4f1f3752-7453-40d1-bf45-853d1264cba5",
     companyName: "Crab Hole Liquors Antigua",
     attestedOn: "2026-10-26",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // CMW Enterprise: employer approval recorded 2026-10-28 (ET) for this Italian-Speaking Tour Guide vacancy only.
@@ -114,7 +114,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "68fada5b-040a-4c46-ba37-245c37f1bef9",
     companyName: "CMW Enterprise",
     attestedOn: "2026-10-28",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Salt & Sun Antigua: employer approval recorded 2026-10-23 (ET) for this Café Assistants vacancy only.
@@ -123,7 +123,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "c22443ac-bdb9-4702-81dd-9783ec08dd23",
     companyName: "Salt & Sun Antigua",
     attestedOn: "2026-10-23",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Leianna's Bar Restaurant and Jazz Lounge: employer approval recorded 2026-10-24 (ET) for this Experienced Chef vacancy only.
@@ -132,7 +132,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b",
     companyName: "Leianna's Bar Restaurant and Jazz Lounge",
     attestedOn: "2026-10-24",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Leianna's Bar Restaurant and Jazz Lounge: employer approval recorded 2026-10-24 (ET) for this Experienced Bartender vacancy only.
@@ -141,7 +141,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b",
     companyName: "Leianna's Bar Restaurant and Jazz Lounge",
     attestedOn: "2026-10-24",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Leianna's Bar Restaurant and Jazz Lounge: employer approval recorded 2026-10-24 (ET) for this Line Cook vacancy only.
@@ -150,7 +150,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "86f178fc-7b3d-48cb-aa25-19bfd6d55d4b",
     companyName: "Leianna's Bar Restaurant and Jazz Lounge",
     attestedOn: "2026-10-24",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Hamam Spa: employer approval recorded 2026-10-21 (ET) for this Spa Attendant vacancy only.
@@ -159,7 +159,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "8f39a6e7-bcc5-4dca-ac72-9d2a4222edd3",
     companyName: "Hamam Spa",
     attestedOn: "2026-10-21",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Dove Cove Comfort Suites: employer approval recorded 2026-10-21 (ET) for this Housekeeper vacancy only.
@@ -168,7 +168,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "97537be2-d7e4-479f-9d7e-7682ade82a59",
     companyName: "Dove Cove Comfort Suites",
     attestedOn: "2026-10-21",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Dove Cove Comfort Suites: employer approval recorded 2026-10-21 (ET) for this Handyman vacancy only.
@@ -177,7 +177,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "97537be2-d7e4-479f-9d7e-7682ade82a59",
     companyName: "Dove Cove Comfort Suites",
     attestedOn: "2026-10-21",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // Premier Cru: employer approval recorded 2026-10-28 (ET) for this Sales Associate vacancy only.
@@ -186,7 +186,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "fab263c5-baf0-48db-88de-276172542634",
     companyName: "Premier Cru",
     attestedOn: "2026-10-28",
-    evidenceReference: "__PR_URL__",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/120",
     employmentTypeUnconfirmed: true,
   },
   // The Massage Goddess replied yes on 2026-10-19 (ET) by email reply to the JobLink

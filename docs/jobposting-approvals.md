@@ -362,7 +362,7 @@ status and the application route are unchanged; no database writes.
 
 ## November 3, 2026 vacancy-scoped employer approvals (Crab Hole Liquors, CMW Enterprise, Salt & Sun, Leianna's, Hamam Spa, Dove Cove, Premier Cru)
 
-[This PR](__PR_URL__) records employer approvals on record in the JobLink outreach
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/120) records employer approvals on record in the JobLink outreach
 log, on the dates shown. Each covers the listed vacancies only and lives in
 `EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
 claimed. No contact details or message content are recorded.
@@ -390,7 +390,7 @@ writes.
 
 ## November 3, 2026 vacancy-scoped employer approval (COLIBRI)
 
-[This PR](__PR_URL__) records employer approvals on record in the JobLink outreach
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/120) records employer approvals on record in the JobLink outreach
 log, on the dates shown. Each covers the listed vacancies only and lives in
 `EMPLOYER_APPROVED_JOBS`, bound to both IDs. No company-wide permission is
 claimed. No contact details or message content are recorded.

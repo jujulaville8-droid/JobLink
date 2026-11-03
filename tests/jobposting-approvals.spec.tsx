@@ -868,7 +868,7 @@ describe.each([
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
-      companyId, attestedOn, evidenceReference: '__PR_URL__',
+      companyId, attestedOn, evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/120',
     });
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
@@ -911,7 +911,7 @@ describe.each([
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
-      companyId, attestedOn, evidenceReference: '__PR_URL__',
+      companyId, attestedOn, evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/120',
     });
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
