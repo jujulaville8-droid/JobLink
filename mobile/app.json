@@ -17,17 +17,39 @@
     "android": {
       "package": "com.joblinkantigua.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/joblink-icon.png",
+        "foregroundImage": "./assets/joblink-adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
     "plugins": [
       "expo-secure-store",
       "expo-web-browser",
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/joblink-mark.png",
+          "imageWidth": 120,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAF8F5"
+        }
+      ]
     ],
     "web": {
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b27ceb08-a310-4e89-8203-ccb08420e61a"
+      }
+    },
+    "owner": "thejuujmeisters-team"
   }
 }

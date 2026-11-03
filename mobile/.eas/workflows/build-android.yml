@@ -1,0 +1,16 @@
+name: Build Android
+on:
+  workflow_dispatch: {}
+jobs:
+  build_android_preview:
+    name: Build Android (preview APK)
+    type: build
+    params:
+      platform: android
+      profile: preview
+  build_android_production:
+    name: Build Android (production AAB)
+    type: build
+    params:
+      platform: android
+      profile: production

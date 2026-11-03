@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
@@ -188,27 +188,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send confirmation + new-applicant emails
-    await sendEmail({
-      to: user.email!,
-      type: 'application_confirmation',
-      data: {
-        job_title: job.title,
-        company_name: companyName,
-        dashboard_url: `${BASE_URL}/applications`,
-      },
-    })
-
+    // Look up the employer here, while the request's client is in scope.
+    let employerEmail: string | null = null
     if (company?.user_id) {
       const { data: employerUser } = await supabase
         .from('users')
         .select('email')
         .eq('id', company.user_id)
         .single()
+      employerEmail = employerUser?.email ?? null
+    }
 
-      if (employerUser?.email) {
+    // The application and its thread are stored, so reply now and send the emails
+    // afterwards. after() keeps the function alive for them; sendEmail logs its own failures.
+    const applicantEmail = user.email!
+    after(async () => {
+      await sendEmail({
+        to: applicantEmail,
+        type: 'application_confirmation',
+        data: {
+          job_title: job.title,
+          company_name: companyName,
+          dashboard_url: `${BASE_URL}/applications`,
+        },
+      })
+
+      if (employerEmail) {
         await sendEmail({
-          to: employerUser.email,
+          to: employerEmail,
           type: 'new_applicant',
           data: {
             applicant_name: seekerName,
@@ -217,7 +224,7 @@ export async function POST(request: NextRequest) {
           },
         })
       }
-    }
+    })
 
     return NextResponse.json({
       success: true,

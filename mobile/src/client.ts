@@ -8,6 +8,24 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL
 const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
 export const configured = !!url && !!key
 
+export const TIMEOUT_MESSAGE = "That's taking too long. Check your connection and try again."
+export const OFFLINE_MESSAGE = 'Could not connect. Check your connection and try again.'
+export const SLOW_TIMEOUT = 45000
+const READ_TIMEOUT = 15000
+/** Prefer the timeout wording when a lower layer wraps it (postgrest prefixes the message). */
+export const friendly = (message: string | undefined, fallback: string) => message?.includes(TIMEOUT_MESSAGE) ? TIMEOUT_MESSAGE : fallback
+const timedFetch = (ms: number): typeof fetch => async (input, init) => {
+  const controller = new AbortController()
+  let timedOut = false
+  const timer = setTimeout(() => { timedOut = true; controller.abort() }, ms)
+  const outer = init?.signal
+  if (outer?.aborted) controller.abort()
+  else outer?.addEventListener('abort', () => controller.abort())
+  try { return await fetch(input, { ...init, signal: controller.signal }) }
+  catch (e) { throw timedOut ? new Error(TIMEOUT_MESSAGE) : e }
+  finally { clearTimeout(timer) }
+}
+
 // Session JSON can exceed a Keychain value's size limit. Write small chunks,
 // then atomically switch the manifest so an interrupted write can't mix tokens.
 const memory = new Map<string, string>()
@@ -49,20 +67,21 @@ const secureStorage = {
 
 export const db = createClient(url || 'https://example.supabase.co', key || 'unconfigured', {
   auth: { storage: secureStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, lock: processLock },
+  global: { fetch: timedFetch(READ_TIMEOUT) },
 })
 if (Platform.OS !== 'web') {
   if (AppState.currentState === 'active') db.auth.startAutoRefresh()
   AppState.addEventListener('change', state => state === 'active' ? db.auth.startAutoRefresh() : db.auth.stopAutoRefresh())
 }
 
-export async function api<T = Record<string, unknown>>(path: string, body: unknown): Promise<T> {
+export async function api<T = Record<string, unknown>>(path: string, body: unknown, timeout = READ_TIMEOUT): Promise<T> {
   const { data: { session } } = await db.auth.getSession()
   if (!session) throw new Error('Please sign in first.')
-  const response = await fetch(`${SITE}/api/${path}`, {
+  const response = await timedFetch(timeout)(`${SITE}/api/${path}`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
     body: JSON.stringify(body),
-  })
-  const data = await response.json()
-  if (!response.ok) throw new Error(data.error || 'Something went wrong. Please try again.')
+  }).catch((e: Error) => { throw new Error(friendly(e.message, OFFLINE_MESSAGE)) })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw Object.assign(new Error(data.error || 'Something went wrong. Please try again.'), { status: response.status })
   return data as T
 }

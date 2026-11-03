@@ -40,6 +40,8 @@ export const RateLimits = {
   checkout: { limit: 10, windowSeconds: 3600 },
   /** Bulk outreach and admin email blasts. */
   bulkEmail: { limit: 5, windowSeconds: 3600 },
+  /** Account deletion: room to retry a failure, nothing more. */
+  accountDelete: { limit: 5, windowSeconds: 3600 },
 } as const satisfies Record<string, RateLimitRule>
 
 export interface RateLimitResult {
