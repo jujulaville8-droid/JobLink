@@ -7,6 +7,7 @@ import type { CvFull } from '@/lib/types'
 import { resumeSections } from '@/lib/resume-document'
 import { resumeFilename } from '@/lib/resume-filename'
 import { applicantCvPath } from '@/lib/applicant-notifications'
+import { cvExtension } from '@/lib/cv-upload'
 import { captureDocumentQuality, verifyAttachmentBytes, type AttachmentDescriptor, type Snapshot, type FrozenDocumentQuality } from './index'
 import { validateMinimizedExtraction } from './privacy'
 import { assessResumeDocumentQuality } from './quality'
@@ -59,6 +60,9 @@ export async function captureApplicationResume(applicationId: string, userId: st
     if (source.cv_url) {
       const path = applicantCvPath(source.cv_url, userId)
       if (!path) return null // Never substitute a different source for an invalid uploaded CV.
+      // Uploads may be DOC/DOCX/images since #118; screening capture is PDF-only,
+      // so other formats are skipped before any private storage read.
+      if (cvExtension(path) !== 'pdf') return null
       const downloaded = await deps.download(path, { signal: controller.signal, deadline })
       if (!withinBudget() || !isPdf(downloaded)) return null
       bytes = Uint8Array.from(downloaded)
