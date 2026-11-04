@@ -20,7 +20,7 @@ const tabs = [
   { id: 'jobs', label: 'Find jobs', icon: 'search-outline', activeIcon: 'search' },
   { id: 'saved', label: 'Saved', icon: 'bookmark-outline', activeIcon: 'bookmark' },
   { id: 'applications', label: 'Applications', icon: 'paper-plane-outline', activeIcon: 'paper-plane' },
-  { id: 'account', label: 'Account', icon: 'person-circle-outline', activeIcon: 'person-circle' },
+  { id: 'account', label: 'Profile', icon: 'person-circle-outline', activeIcon: 'person-circle' },
 ] as const
 type TabId = (typeof tabs)[number]['id']
 
@@ -73,7 +73,7 @@ function OptInCard({ visible }: { visible: boolean }) {
     } else if (result.status === 'denied') {
       await push.setDecision('declined')
       setShow(false)
-      toast('Alerts are off. You can turn them on any time in the Account tab.')
+      toast('Alerts are off. You can turn them on any time in the Profile tab.')
     } else if (result.status === 'unavailable') {
       await push.setDecision('declined')
       setShow(false)
@@ -89,7 +89,7 @@ function OptInCard({ visible }: { visible: boolean }) {
   return <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
     <View style={s.card}>
       <Text style={s.cardTitle}>Job alerts</Text>
-      <Text style={s.body}>Get a notification when new jobs are posted. You can turn this off any time in your Account tab.</Text>
+      <Text style={s.body}>Get a notification when new jobs are posted. You can turn this off any time in your Profile tab.</Text>
       <Button title="Enable" busy={busy} onPress={enable} />
       <Button secondary title="Not now" disabled={busy} onPress={notNow} />
     </View>

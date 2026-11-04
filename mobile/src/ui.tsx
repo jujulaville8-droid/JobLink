@@ -1,7 +1,7 @@
 import { Children, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode, type Ref } from 'react'
 import { ActivityIndicator, Animated, AppState, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View, type PressableProps, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-export const C = { bg: '#FAF8F5', teal: '#095355', bright: '#0D7377', ink: '#172D2E', muted: '#5E7272', line: '#E0E8E5', amber: '#E8973E', white: '#FFFFFF', wash: '#EAF4F1', red: '#A32A2A', amberWash: '#FFF1DD', amberText: '#8A5310', grey: '#EEF1F0' }
+export const C = { bg: '#FAF8F5', teal: '#095355', bright: '#0D7377', ink: '#172D2E', muted: '#5E7272', line: '#E0E8E5', amber: '#E8973E', white: '#FFFFFF', wash: '#EAF4F1', red: '#A32A2A', amberWash: '#FFF1DD', amberText: '#8A5310', grey: '#EEF1F0', green: '#177245', greenWash: '#E5F4EA' }
 type IconName = ComponentProps<typeof Ionicons>['name']
 export function Icon({ name, color = C.teal, size = 22 }: { name: IconName; color?: string; size?: number }) {
   return <Ionicons name={name} color={color} size={size} />

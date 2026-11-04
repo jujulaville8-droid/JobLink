@@ -25,6 +25,13 @@
       "expo-secure-store",
       "expo-web-browser",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "JobLinks uses your photo library so you can set a profile photo."
+        }
+      ],
+      "expo-document-picker",
+      [
         "expo-notifications",
         {
           "icon": "./assets/joblink-mark.png",
