@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "JobLinks",
+    "slug": "joblinks-antigua",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "joblinks",
+    "icon": "./assets/joblink-icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.joblinkantigua.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.joblinkantigua.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/joblink-adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/joblink-mark.png",
+          "color": "#095355",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/joblink-splash.png",
+          "imageWidth": 300,
+          "resizeMode": "contain",
+          "backgroundColor": "#FAF8F5"
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b27ceb08-a310-4e89-8203-ccb08420e61a"
+      }
+    },
+    "owner": "thejuujmeisters-team"
+  }
+}
