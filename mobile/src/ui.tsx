@@ -64,10 +64,13 @@ export function Skeletons() {
   }, [pulse])
   const bone = { backgroundColor: C.wash, borderRadius: 8 }
   return <Animated.View accessibilityLabel="Loading" style={{ opacity: pulse, gap: 12 }}>
-    {[0, 1, 2, 3].map(i => <View key={i} style={s.card}>
-      <View style={s.row}><View style={[bone, { width: 44, height: 44, borderRadius: 12 }]} />
-        <View style={{ flex: 1, gap: 8 }}><View style={[bone, { height: 16, width: '75%' }]} /><View style={[bone, { height: 12, width: '50%' }]} /></View></View>
-      <View style={[bone, { height: 26, width: 88, borderRadius: 30 }]} />
+    {[0, 1, 2, 3].map(i => <View key={i} style={[s.card, { padding: 20, gap: 12, borderRadius: 20 }]}>
+      <View style={s.row}><View style={[bone, { width: 52, height: 52, borderRadius: 14 }]} />
+        <View style={[bone, { height: 22, width: 64, borderRadius: 30 }]} />
+        <View style={{ flex: 1 }} />
+        <View style={[bone, { width: 22, height: 22, borderRadius: 6 }]} /></View>
+      <View style={{ gap: 8 }}><View style={[bone, { height: 18, width: '85%' }]} /><View style={[bone, { height: 18, width: '55%' }]} /><View style={[bone, { height: 13, width: '40%' }]} /></View>
+      <View style={s.row}><View style={[bone, { height: 26, width: 120, borderRadius: 30 }]} /><View style={[bone, { height: 26, width: 88, borderRadius: 30 }]} /></View>
     </View>)}
   </Animated.View>
 }

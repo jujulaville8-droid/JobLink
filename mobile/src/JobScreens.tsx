@@ -17,6 +17,16 @@ function Pill({ label, color = C.wash, text = C.teal }: { label: string; color?:
 }
 const featured = { color: C.amberWash, text: C.amberText }
 const closed = { color: C.grey, text: C.muted }
+const freshBadge = { color: '#F9E3EC', text: '#9C2B4E' }
+const urgentBadge = { color: '#FDECEA', text: C.red }
+
+/** Indeed-style fact pill: a check and a label on a tinted wash. */
+function CheckPill({ label, color = C.greenWash, text = C.green }: { label: string; color?: string; text?: string }) {
+  return <View style={[s.pill, { backgroundColor: color, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+    <Icon name="checkmark" size={14} color={text} />
+    <Text style={[s.pillText, { color: text }]}>{label}</Text>
+  </View>
+}
 
 /** A fixed tile, so a slow logo fades in over colour and a failed one falls back to the icon. */
 function Logo({ company, size = 44, radius = 12 }: { company: Job['company']; size?: number; radius?: number }) {
@@ -36,24 +46,65 @@ function applyBy(job: Job) {
   return `Apply by ${MONTHS[date.getMonth()]} ${date.getDate()}`
 }
 
+const DAY_MS = 86400000
+/** Posted within the last 48 hours. */
+function isFresh(job: Job) {
+  const age = Date.now() - new Date(job.created_at).getTime()
+  return Number.isFinite(age) && age >= 0 && age < 2 * DAY_MS
+}
+/** Open, with a valid closing date inside the next 3 days. */
+function isClosingSoon(job: Job) {
+  if (!job.expires_at || isClosed(job)) return false
+  const left = new Date(job.expires_at).getTime() - Date.now()
+  return Number.isFinite(left) && left > 0 && left <= 3 * DAY_MS
+}
+
 export const JobCard = memo(function JobCard({ job, open, status }: { job: Job; open: (job: Job) => void; status?: string }) {
   const marks = useMarks()
+  const { session } = useAccount()
+  const toast = useToast()
+  const [saving, setSaving] = useState(false)
   const pill = status ? statuses[status] ?? { label: status, color: C.line, text: C.ink } : marks.applied.has(job.id) ? statuses.applied : null
   const company = job.company?.company_name || 'Employer'
   const location = job.location?.trim()
   const closes = applyBy(job)
-  return <Pressable accessibilityRole="button" accessibilityLabel={`View ${job.title} at ${company}`} onPress={() => open(job)} style={({ pressed }) => [s.card, { padding: 20, gap: 14 }, pressed && { backgroundColor: C.wash }]}>
-    <View style={[s.row, { alignItems: 'flex-start' }]}>
+  const saved = marks.saved.has(job.id)
+  const fresh = isFresh(job)
+  const closingSoon = isClosingSoon(job)
+  async function toggleSave() {
+    if (!session) { toast('Sign in to save this job'); return }
+    // Until we know what this seeker has saved, a tap could undo a save.
+    if (marks.status !== 'ready' || saving) return
+    setSaving(true)
+    try {
+      const result = await api<{ saved?: boolean }>('jobs/save', { job_id: job.id, saved: !saved })
+      marks.markSaved(job.id, !!result.saved)
+      toast(result.saved ? 'Saved for later' : 'Removed from saved')
+    } catch (e) { toast((e as Error).message) }
+    finally { setSaving(false) }
+  }
+  return <Pressable accessibilityRole="button" accessibilityLabel={`View ${job.title} at ${company}`} onPress={() => open(job)} style={({ pressed }) => [s.card, { padding: 20, gap: 12, borderRadius: 20 }, pressed && { backgroundColor: C.wash }]}>
+    <View style={[s.row, { alignItems: 'center' }]}>
       <Logo company={job.company} size={52} radius={14} />
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={s.cardTitle} numberOfLines={2}>{job.title}</Text>
-        <Text style={s.small} numberOfLines={1}>{location ? `${company} · ${location}` : company}</Text>
-        {hasSalary(job) && <Text style={{ marginTop: 2, fontWeight: '700', fontSize: 15, lineHeight: 20, color: C.teal }}>{salary(job)}</Text>}
+      <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {fresh && <Pill label="New" {...freshBadge} />}
+        {closingSoon && <Pill label="Closing soon" {...urgentBadge} />}
       </View>
-      {marks.saved.has(job.id) && <Icon name="bookmark" size={20} />}
+      <Press accessibilityLabel={saved ? 'Remove from saved jobs' : 'Save for later'} accessibilityState={{ selected: saved, busy: saving }} onPress={() => void toggleSave()} style={{ padding: 4 }}>
+        {saving ? <ActivityIndicator color={C.teal} size="small" /> : <Icon name={saved ? 'bookmark' : 'bookmark-outline'} size={24} color={saved ? C.teal : C.ink} />}
+      </Press>
+    </View>
+    <View style={{ gap: 2 }}>
+      <Text style={{ fontSize: 20, lineHeight: 25, fontWeight: '800', letterSpacing: -.4, color: C.ink }} numberOfLines={2}>{job.title}</Text>
+      <Text style={{ fontSize: 15, lineHeight: 20, color: C.muted }} numberOfLines={1}>{company}</Text>
+      {!!location && <Text style={{ fontSize: 15, lineHeight: 20, color: C.muted }} numberOfLines={1}>{location}</Text>}
     </View>
     <View style={[s.row, { flexWrap: 'wrap', gap: 8 }]}>
-      <Pill label={types[job.job_type] || job.job_type} />
+      {hasSalary(job) && <CheckPill label={salary(job)} />}
+      <CheckPill label={types[job.job_type] || job.job_type} />
+      {!!job.category && <Pill label={job.category} color={C.grey} text={C.muted} />}
+    </View>
+    <View style={[s.row, { flexWrap: 'wrap', gap: 8 }]}>
       {job.is_featured && <Pill label="Featured" {...featured} />}
       {pill && <Pill {...pill} />}
       {isClosed(job) && <Pill label="Closed" {...closed} />}
