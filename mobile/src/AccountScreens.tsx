@@ -9,6 +9,7 @@ import { useAccount, useMarks } from './Auth'
 import { fields, type Job } from './jobs'
 import { JobCard } from './JobScreens'
 import { Button, C, CardGap, Empty, Field, Group, HEADER_HEIGHT, Icon, KeyboardArea, Press, Row, s, Skeletons, useStaleRefresh, useToast } from './ui'
+import { loadResume, ResumeFullModal, ResumePreviewCard, type CvData } from './ResumePreview'
 import * as push from './notifications'
 import { signInWithGoogle } from './oauth'
 
@@ -67,11 +68,11 @@ export const LibraryScreen = memo(function LibraryScreen({ mode, open, signIn, b
   const icon = saved ? 'bookmark-outline' : 'paper-plane-outline'
   if (loading) return <View style={s.list}><Skeletons /></View>
   if (!session) return <Empty icon={icon} title={title} body="Sign in with your JobLinks account to keep your hiring journey in one place."><Button title="Sign in" onPress={signIn} /></Empty>
-  if (account?.role === 'employer') return <Empty title="Your employer workspace" body="Review your vacancies and manage hiring from the Profile tab." />
   if (!account && accountError) return <Empty icon="cloud-offline-outline" title="We couldn't check your account" body={accountError}><Button title="Try again" onPress={() => { void refresh() }} /></Empty>
   const waiting = busy || !account
   const needsProfile = !saved && marks.status === 'ready' && !marks.profileId
   return <FlatList ref={list} data={items} keyExtractor={item => item.id} renderItem={renderItem} contentContainerStyle={s.list} ItemSeparatorComponent={CardGap}
+    initialNumToRender={6} maxToRenderPerBatch={5} windowSize={7} removeClippedSubviews
     refreshing={pulling} onRefresh={() => { setPulling(true); setReload(x => x + 1) }}
     ListHeaderComponent={<View style={{ gap: 8, marginBottom: 16 }}><Text style={s.eyebrow}>{saved ? 'SAVED JOBS' : 'APPLICATIONS'}</Text><Text style={s.h1}>{title}</Text>
       <Text style={s.body}>{saved ? 'The opportunities you want to come back to.' : 'Track the latest status shared by each employer.'}</Text>
@@ -122,6 +123,65 @@ function InfoRows() {
     <Row icon="mail-outline" label="Contact JobLinks" onPress={contact} />
   </Group>
 }
+/**
+ * Employer accounts get one notice screen instead of the seeker app: hiring
+ * tools live on the website. Account essentials (privacy, terms, contact,
+ * sign out, delete) stay here because an employer may only ever open the app.
+ */
+export function EmployerNotice() {
+  const { session } = useAccount()
+  const insets = useSafeAreaInsets()
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleteText, setDeleteText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [signingOut, setSigningOut] = useState(false)
+  const [error, setError] = useState('')
+  async function signOut() {
+    setSigningOut(true); setError('')
+    // Stop pushes to this device while the session can still update its own row.
+    await push.disableCurrentDevice()
+    const { error } = await db.auth.signOut()
+    setSigningOut(false)
+    if (error) setError(friendly(error.message, 'Could not sign you out. Please try again.'))
+  }
+  async function deleteAccount() {
+    setDeleting(true); setDeleteError('')
+    try {
+      await api('account/delete', {}, SLOW_TIMEOUT)
+    } catch (e) {
+      setDeleteError((e as Error).message); setDeleting(false)
+      return
+    }
+    // The account is gone from here on, so a local sign-out failure is not a deletion failure.
+    const { error } = await db.auth.signOut({ scope: 'local' })
+    setDeleting(false)
+    Alert.alert('Account deleted', error ? 'Your JobLinks account has been permanently deleted. Please close and reopen the app.' : 'Your JobLinks account has been permanently deleted.')
+  }
+  const deleteBlock = !confirmingDelete
+    ? <Press onPress={() => setConfirmingDelete(true)} style={{ alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 16 }}><Text style={{ color: C.red, fontSize: 16 }}>Delete account</Text></Press>
+    : <View style={s.card}>
+      <Text style={s.h2}>Delete your account?</Text>
+      <Text style={s.body}>This permanently deletes your account, company, vacancies, and the applications and messages attached to them. This cannot be undone.</Text>
+      <Field label="Type DELETE to confirm" value={deleteText} onChangeText={setDeleteText} autoCapitalize="characters" autoCorrect={false} autoComplete="off" />
+      {!!deleteError && <Text accessibilityRole="alert" style={s.error}>{deleteError}</Text>}
+      <Button danger title="Permanently delete my account" busy={deleting} disabled={deleteText.trim() !== 'DELETE'} onPress={deleteAccount} />
+      <Button secondary title="Keep my account" disabled={deleting} onPress={() => { setConfirmingDelete(false); setDeleteText(''); setDeleteError('') }} />
+    </View>
+  return <KeyboardArea offset={insets.top + HEADER_HEIGHT}><ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+    <Image source={require('../assets/joblink-mark.png')} style={{ alignSelf: 'center', width: 76, height: 95, marginTop: 8 }} resizeMode="contain" accessibilityLabel="JobLinks" />
+    <Text style={[s.h1, { textAlign: 'center' }]}>JobLinks for employers lives on the website</Text>
+    <Text style={[s.body, { textAlign: 'center' }]}>The JobLinks app is for job seekers. On the website you can post jobs, manage your listings, and review applicants, all with this same account.</Text>
+    {!!session?.user.email && <Text style={[s.small, { textAlign: 'center' }]}>{session.user.email}</Text>}
+    {!!error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
+    <Button title="Open joblinkantigua.com" onPress={() => website('/employers')} />
+    <Text style={[s.small, { textAlign: 'center' }]}>You may need to sign in there separately.</Text>
+    <InfoRows />
+    <Group><Row icon="log-out-outline" label="Sign out" plain busy={signingOut} onPress={signOut} /></Group>
+    {deleteBlock}
+    <Text style={[s.small, { textAlign: 'center' }]}>JobLinks · Made for Antigua & Barbuda</Text>
+  </ScrollView></KeyboardArea>
+}
 export const AccountScreen = memo(function AccountScreen({ active, top }: { active: boolean; top: number }) {
   const { session, account, loading, error: accountError, refresh } = useAccount()
   const marks = useMarks()
@@ -137,15 +197,15 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
   const [profile, setProfile] = useState<Profile>(blank)
   const [profileReady, setProfileReady] = useState(false)
   const [skillsText, setSkillsText] = useState('')
-  const [hasBuiltResume, setHasBuiltResume] = useState(false)
-  const [essentialsOnly, setEssentialsOnly] = useState(false)
+  const [resume, setResume] = useState<CvData | null>(null)
+  const [resumeOpen, setResumeOpen] = useState(false)
+  const [cvUploadedAt, setCvUploadedAt] = useState<string | null>(null)
   const [section, setSection] = useState<'resume' | 'preferences'>('resume')
   const sectionInit = useRef(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [visOpen, setVisOpen] = useState(false)
   const [avatarBusy, setAvatarBusy] = useState(false)
   const [cvBusy, setCvBusy] = useState(false)
-  const [listings, setListings] = useState<{ id: string; title: string; status: string }[]>([])
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleteText, setDeleteText] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -158,33 +218,36 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
   const passwordInput = useRef<TextInput>(null)
   useEffect(() => {
     let live = true
-    setProfile(blank); setSkillsText(''); setProfileReady(false); setListings([]); setError(''); setLoadFailed(false)
+    setProfile(blank); setSkillsText(''); setProfileReady(false); setError(''); setLoadFailed(false)
     setConfirmingDelete(false); setDeleteText(''); setDeleteError('')
-    setHasBuiltResume(false); setEssentialsOnly(false); setMenuOpen(false); setVisOpen(false); sectionInit.current = false
+    setResume(null); setResumeOpen(false); setCvUploadedAt(null); setMenuOpen(false); setVisOpen(false); sectionInit.current = false
     if (!session || !account) return
     void (async () => {
-      if (account.role === 'employer') {
-        const company = await db.from('companies').select('id').eq('user_id', session.user.id).maybeSingle()
-        if (company.error) throw new Error(friendly(company.error.message, 'Could not load your company.'))
-        if (!company.data) return
-        const result = await db.from('job_listings').select('id,title,status').eq('company_id', company.data.id).order('created_at', { ascending: false }).limit(50)
-        if (result.error) throw new Error(friendly(result.error.message, 'Could not load your listings.'))
-        if (live) setListings(result.data)
-      } else {
-        const result = await db.from('seeker_profiles').select('id,first_name,last_name,phone,location,bio,skills,experience_years,education,cv_url,avatar_url,visibility').eq('user_id', session.user.id).maybeSingle()
-        if (result.error) throw new Error(friendly(result.error.message, 'Could not load your profile. Please try again.'))
-        const built = await db.from('cv_profiles').select('id').eq('user_id', session.user.id).maybeSingle()
-        if (live && !built.error && built.data) setHasBuiltResume(true)
-        if (!result.data) {
-          // No seeker profile: an account that runs a company gets the plain
-          // account essentials instead of the seeker hub.
-          const company = await db.from('companies').select('id').eq('user_id', session.user.id).maybeSingle()
-          if (live && !company.error && company.data) { setEssentialsOnly(true); setProfileReady(true) }
-          else if (live) { setProfile(blank); setSkillsText(''); setProfileReady(true) }
-          return
-        }
-        if (live) { const loaded = { ...blank, ...result.data }; setProfile(loaded); setSkillsText(loaded.skills.join(', ')); setProfileReady(true) }
+      const result = await db.from('seeker_profiles').select('id,first_name,last_name,phone,location,bio,skills,experience_years,education,cv_url,avatar_url,visibility').eq('user_id', session.user.id).maybeSingle()
+      if (result.error) throw new Error(friendly(result.error.message, 'Could not load your profile. Please try again.'))
+      // The built resume previews in the Resume tab; contact details come
+      // from the seeker profile and the account email, as on the website.
+      const full = await loadResume(session.user.id, {
+        first_name: result.data?.first_name ?? null, last_name: result.data?.last_name ?? null,
+        phone: result.data?.phone ?? null, location: result.data?.location ?? null, email: session.user.email ?? '',
+      })
+      if (live && full) setResume(full)
+      // The uploaded file's own storage date, when the CV is a bucket path.
+      const storedCv = result.data?.cv_url
+      if (live && storedCv && !/^https?:\/\//i.test(storedCv)) {
+        try {
+          const fileName = decodeURIComponent(storedCv.split('/').pop() || '')
+          const listing = await db.storage.from('cvs').list(session.user.id, { search: fileName })
+          const hit = (listing.data ?? []).find(f => f.name === fileName)
+          if (live && hit?.created_at) setCvUploadedAt(new Date(hit.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))
+        } catch { /* The date is decoration; the card works without it. */ }
       }
+      if (!result.data) {
+        // No seeker profile yet: a blank profile, and the hub opens on the form.
+        if (live) { setProfile(blank); setSkillsText(''); setProfileReady(true) }
+        return
+      }
+      if (live) { const loaded = { ...blank, ...result.data }; setProfile(loaded); setSkillsText(loaded.skills.join(', ')); setProfileReady(true) }
     })().catch(e => { if (live) { setError(e.message); setLoadFailed(true) } })
     return () => { live = false }
   }, [session?.user.id, account?.role, reload])
@@ -273,6 +336,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
       if (!token) throw new Error('Could not authorize your CV upload. Please try again.')
       const uploaded = await db.storage.from('cvs').uploadToSignedUrl(grant.path, token, bytes, { contentType: grant.contentType })
       if (uploaded.error) throw new Error(friendly(uploaded.error.message, 'Your CV upload failed. Please try again.'))
+      setCvUploadedAt(new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }))
       await persist({ ...profile, skills: parseSkills(skillsText), cv_url: grant.path }, 'CV uploaded')
     } catch (e) { setError((e as Error).message) }
     finally { setCvBusy(false) }
@@ -328,12 +392,21 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
     setDeleting(false)
     Alert.alert('Account deleted', error ? 'Your JobLinks account has been permanently deleted. Please close and reopen the app.' : 'Your JobLinks account has been permanently deleted.')
   }
-  const isEmployer = account?.role === 'employer'
-  const hub = !!session && !isEmployer && profileReady && !essentialsOnly
+  const hub = !!session && profileReady
+  const hasBuiltResume = !!resume
   const missing = missingDetails(profile, hasBuiltResume)
+  // The sheet's contact line follows the profile fields as they are edited.
+  const sheetCv: CvData | null = resume && session ? {
+    ...resume,
+    contact: {
+      first_name: profile.first_name || resume.contact.first_name, last_name: profile.last_name || resume.contact.last_name,
+      phone: profile.phone || resume.contact.phone, location: profile.location || resume.contact.location, email: session.user.email ?? resume.contact.email,
+    },
+  } : null
   const fullName = `${profile.first_name} ${profile.last_name}`.trim()
   const initials = `${profile.first_name?.[0] ?? ''}${profile.last_name?.[0] ?? ''}`.toUpperCase()
   const cvName = profile.cv_url ? decodeURIComponent(profile.cv_url.split('/').pop() || 'Your CV') : ''
+  const cvExt = cvName.includes('.') ? (cvName.split('.').pop() || '').toUpperCase().slice(0, 4) : ''
   const pill = VISIBILITY_PILL[profile.visibility]
   const pillColor = pill.tone === 'green' ? C.green : pill.tone === 'teal' ? C.teal : C.muted
   const alertsBlock = push.PUSH_ENABLED ? <Group>
@@ -347,12 +420,10 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
     </View>
   </Group> : null
   const deleteBlock = !confirmingDelete
-    ? (isEmployer || essentialsOnly) ? <Press onPress={() => setConfirmingDelete(true)} style={{ alignSelf: 'center', paddingVertical: 8 }}><Text style={{ color: C.red, fontSize: 16 }}>Delete account</Text></Press> : null
+    ? null
     : <View style={s.card}>
       <Text style={s.h2}>Delete your account?</Text>
-      <Text style={s.body}>{isEmployer
-        ? 'This permanently deletes your account, company, vacancies, and the applications and messages attached to them. This cannot be undone.'
-        : 'This permanently deletes your account, profile, CV, applications, saved jobs, and messages. This cannot be undone.'}</Text>
+      <Text style={s.body}>This permanently deletes your account, profile, CV, applications, saved jobs, and messages. This cannot be undone.</Text>
       <Field label="Type DELETE to confirm" value={deleteText} onChangeText={setDeleteText} autoCapitalize="characters" autoCorrect={false} autoComplete="off" />
       {!!deleteError && <Text accessibilityRole="alert" style={s.error}>{deleteError}</Text>}
       <Button danger title="Permanently delete my account" busy={deleting} disabled={deleteText.trim() !== 'DELETE'} onPress={deleteAccount} />
@@ -363,7 +434,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
       <Text style={s.h1}>Profile</Text>
       <Press accessibilityRole="button" accessibilityLabel="Profile menu" onPress={() => setMenuOpen(o => !o)} style={{ padding: 8 }}><Icon name="menu" size={26} color={C.ink} /></Press>
     </View> : <>
-      <Text style={s.eyebrow}>YOUR JOBLINKS</Text><Text style={s.h1}>{session ? isEmployer ? 'Your hiring hub.' : 'Make it yours.' : 'Welcome to JobLinks.'}</Text>
+      <Text style={s.eyebrow}>YOUR JOBLINKS</Text><Text style={s.h1}>{session ? 'Make it yours.' : 'Welcome to JobLinks.'}</Text>
     </>}
     {hub && menuOpen && <Group>
       <Row icon="chatbubbles-outline" label="Messages" external onPress={() => { setMenuOpen(false); website('/messages') }} />
@@ -394,30 +465,11 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
           <Text style={{ color: C.ink, fontWeight: '700', fontSize: 16 }}>Continue with Google</Text>
         </View>}
       </Press>
-      <Press accessibilityRole="link" onPress={() => website('/forgot-password')} style={{ alignSelf: 'center', paddingVertical: 4 }}><Text style={{ color: C.bright, fontSize: 16 }}>Forgot your password?</Text></Press>
+      <Press accessibilityRole="link" onPress={() => website('/forgot-password')} style={{ alignSelf: 'center', paddingVertical: 8 }}><Text style={{ color: C.bright, fontSize: 16 }}>Forgot your password?</Text></Press>
       <Button secondary title="Create an account on JobLinks" onPress={() => website('/signup')} />
       <Text style={s.small}>Account creation and password recovery open the secure JobLinks website. After verifying your email, return here to sign in.</Text>
       <InfoRows />
-    </> : isEmployer ? <>
-      <Text style={s.body}>{session.user.email}</Text>
-      <Text style={s.body}>Your vacancies, connected to the same employer account you use on the website.</Text>
-      {listings.map(item => <View key={item.id} style={s.card}><Text style={s.cardTitle}>{item.title}</Text><Text style={s.pillText}>{item.status.replaceAll('_', ' ')}</Text></View>)}
-      <Button title="Manage vacancies and applicants" onPress={() => website('/my-listings')} />
-      <Text style={s.small}>Hiring tools open on the website. You may need to sign in there separately.</Text>
-      <Group>
-        <Row icon="megaphone-outline" label="Send us a vacancy" external onPress={() => website('/employers/hiring-help')} />
-        <Row icon="chatbubbles-outline" label="Messages" external onPress={() => website('/messages')} />
-      </Group>
-      {alertsBlock}
-      <InfoRows />
-      <Group><Row icon="log-out-outline" label="Sign out" plain busy={signingOut} onPress={signOut} /></Group>
-      {deleteBlock}
-    </> : !profileReady ? (!accountError && !loadFailed ? <ActivityIndicator color={C.teal} /> : null) : essentialsOnly ? <>
-      <Text style={s.body}>{session.user.email}</Text>
-      <InfoRows />
-      <Group><Row icon="log-out-outline" label="Sign out" plain busy={signingOut} onPress={signOut} /></Group>
-      {deleteBlock}
-    </> : <>
+    </> : !profileReady ? (!accountError && !loadFailed ? <ActivityIndicator color={C.teal} /> : null) : <>
       <View style={{ alignItems: 'center', gap: 10 }}>
         <Press accessibilityRole="button" accessibilityLabel="Change your profile photo" disabled={avatarBusy} onPress={pickAvatar} style={{ width: 120, height: 120 }}>
           {profile.avatar_url
@@ -429,7 +481,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
         </Press>
         <View style={[s.row, { gap: 8 }]}>
           <Text style={s.h2}>{fullName || 'Your name'}</Text>
-          <Press accessibilityRole="button" accessibilityLabel="Edit your details" onPress={() => setSection('preferences')} style={{ padding: 4 }}><Icon name="pencil" size={18} color={C.muted} /></Press>
+          <Press accessibilityRole="button" accessibilityLabel="Edit your details" onPress={() => setSection('preferences')} style={{ padding: 10 }}><Icon name="pencil" size={18} color={C.muted} /></Press>
         </View>
         {!!profile.location && <Text style={[s.body, { textAlign: 'center' }]}>{profile.location}</Text>}
         <Text style={[s.small, { textAlign: 'center', fontSize: 14 }]}>{[profile.phone, session.user.email].filter(Boolean).join('  ·  ')}</Text>
@@ -454,14 +506,40 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
         </Press>)}
       </View>
       {section === 'resume' ? <>
-        {hasBuiltResume && <View style={s.card}>
+        {sheetCv ? <View style={{ gap: 10 }}>
+          <View style={[s.row, { justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={s.cardTitle}>JobLinks Resume</Text>
+              <Text style={s.small}>Built with the JobLinks resume builder</Text>
+            </View>
+            <Press accessibilityRole="button" accessibilityLabel="Edit your resume on the website" onPress={() => website('/profile')} style={{ paddingVertical: 8, paddingLeft: 12 }}>
+              <Text style={{ color: C.bright, fontWeight: '600', fontSize: 15 }}>Edit on website</Text>
+            </Press>
+          </View>
+          <Press accessibilityRole="button" accessibilityLabel="View your full JobLinks Resume" onPress={() => setResumeOpen(true)} style={{ borderRadius: 8, overflow: 'hidden' }}>
+            <ResumePreviewCard cv={sheetCv} />
+          </Press>
+          <Button secondary title="View full resume" onPress={() => setResumeOpen(true)} />
+        </View> : <View style={s.card}>
           <Text style={s.cardTitle}>JobLinks Resume</Text>
-          <Text style={s.small}>Built with the JobLinks resume builder</Text>
-          <Button secondary title="View on the website" onPress={() => website('/profile')} />
+          <Text style={s.small}>Build a resume with the JobLinks builder and a preview of it will appear here.</Text>
+          <Button secondary title="Build your JobLinks Resume" onPress={() => website('/profile')} />
         </View>}
         <View style={s.card}>
-          <Text style={s.cardTitle}>{profile.cv_url ? cvName : 'Your CV'}</Text>
-          <Text style={s.small}>{profile.cv_url ? 'Employers receive this file with your applications.' : 'You have not added a CV yet. Add one so employers can see it.'}</Text>
+          <View style={[s.row, { alignItems: 'flex-start' }]}>
+            <View style={{ width: 52, height: 52, borderRadius: 12, backgroundColor: C.wash, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="document-text" size={26} />
+              {!!profile.cv_url && !!cvExt && <View style={{ position: 'absolute', right: -5, bottom: -5, backgroundColor: C.teal, borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1.5, borderWidth: 1.5, borderColor: C.white }}>
+                <Text style={{ color: C.white, fontSize: 8, fontWeight: '800', letterSpacing: 0.4 }}>{cvExt}</Text>
+              </View>}
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={s.cardTitle} numberOfLines={1}>{profile.cv_url ? cvName : 'Your CV'}</Text>
+              <Text style={s.small}>{profile.cv_url
+                ? `${cvUploadedAt ? `Uploaded ${cvUploadedAt}. ` : ''}Employers receive this file with your applications.`
+                : 'You have not added a CV yet. Add one so employers can see it.'}</Text>
+            </View>
+          </View>
           {profile.cv_url ? <>
             <Button secondary title="View CV" onPress={viewCv} />
             <Button secondary title="Replace CV" busy={cvBusy} onPress={pickCv} />
@@ -500,5 +578,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
       {deleteBlock}
     </>}
     <Text style={[s.small, { textAlign: 'center' }]}>JobLinks · Made for Antigua & Barbuda</Text>
-  </ScrollView></KeyboardArea>
+  </ScrollView>
+  {sheetCv && <ResumeFullModal cv={sheetCv} visible={resumeOpen} onClose={() => setResumeOpen(false)} onEdit={() => { setResumeOpen(false); website('/profile') }} />}
+  </KeyboardArea>
 })

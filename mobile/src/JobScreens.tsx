@@ -28,12 +28,16 @@ function CheckPill({ label, color = C.greenWash, text = C.green }: { label: stri
   </View>
 }
 
+// Logos that failed once stay failed for the session: a recycled card must not
+// retry the same broken URL and flicker between the image and the fallback.
+const failedLogos = new Set<string>()
 /** A fixed tile, so a slow logo fades in over colour and a failed one falls back to the icon. */
 function Logo({ company, size = 44, radius = 12 }: { company: Job['company']; size?: number; radius?: number }) {
-  const [failed, setFailed] = useState(false)
   const uri = company?.logo_url
+  const [failedUri, setFailedUri] = useState<string | null>(null)
+  const failed = !!uri && (failedLogos.has(uri) || failedUri === uri)
   return <View style={{ height: size, width: size, borderRadius: radius, overflow: 'hidden', backgroundColor: C.wash, alignItems: 'center', justifyContent: 'center' }}>
-    {uri && !failed ? <Image source={{ uri }} style={{ height: size, width: size }} resizeMode="contain" onError={() => setFailed(true)} /> : <Icon name="business-outline" />}
+    {uri && !failed ? <Image source={{ uri }} style={{ height: size, width: size }} resizeMode="contain" onError={() => { failedLogos.add(uri); setFailedUri(uri) }} /> : <Icon name="business-outline" />}
   </View>
 }
 
@@ -59,7 +63,19 @@ function isClosingSoon(job: Job) {
   return Number.isFinite(left) && left > 0 && left <= 3 * DAY_MS
 }
 
-export const JobCard = memo(function JobCard({ job, open, status }: { job: Job; open: (job: Job) => void; status?: string }) {
+type JobCardProps = { job: Job; open: (job: Job) => void; status?: string }
+/** Compares only what the card renders, so a background refresh that returns the
+ * same rows does not repaint every visible card. Saved and applied state comes
+ * through context, which still re-renders the card on its own. */
+function sameCard(prev: JobCardProps, next: JobCardProps) {
+  const a = prev.job; const b = next.job
+  return prev.open === next.open && prev.status === next.status
+    && a.id === b.id && a.title === b.title && a.location === b.location && a.job_type === b.job_type
+    && a.category === b.category && a.status === b.status && a.created_at === b.created_at && a.expires_at === b.expires_at
+    && a.is_featured === b.is_featured && a.salary_min === b.salary_min && a.salary_max === b.salary_max && a.salary_visible === b.salary_visible
+    && (a.company?.company_name ?? null) === (b.company?.company_name ?? null) && (a.company?.logo_url ?? null) === (b.company?.logo_url ?? null)
+}
+export const JobCard = memo(function JobCard({ job, open, status }: JobCardProps) {
   const marks = useMarks()
   const { session } = useAccount()
   const toast = useToast()
@@ -90,7 +106,7 @@ export const JobCard = memo(function JobCard({ job, open, status }: { job: Job; 
         {fresh && <Pill label="New" {...freshBadge} />}
         {closingSoon && <Pill label="Closing soon" {...urgentBadge} />}
       </View>
-      <Press accessibilityLabel={saved ? 'Remove from saved jobs' : 'Save for later'} accessibilityState={{ selected: saved, busy: saving }} onPress={() => void toggleSave()} style={{ padding: 4 }}>
+      <Press accessibilityLabel={saved ? 'Remove from saved jobs' : 'Save for later'} accessibilityState={{ selected: saved, busy: saving }} onPress={() => void toggleSave()} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
         {saving ? <ActivityIndicator color={C.teal} size="small" /> : <Icon name={saved ? 'bookmark' : 'bookmark-outline'} size={24} color={saved ? C.teal : C.ink} />}
       </Press>
     </View>
@@ -112,7 +128,7 @@ export const JobCard = memo(function JobCard({ job, open, status }: { job: Job; 
       {closes && <Text style={s.small}>{closes}</Text>}
     </View>
   </Pressable>
-})
+}, sameCard)
 
 /** Owns the typed text so a keystroke re-renders this bar and not the list. */
 function SearchBar({ onSearch, onClear }: { onSearch: (term: string) => void; onClear: () => void }) {
@@ -120,10 +136,10 @@ function SearchBar({ onSearch, onClear }: { onSearch: (term: string) => void; on
   const [focused, setFocused] = useState(false)
   function submit() { Keyboard.dismiss(); onSearch(text.trim()) }
   return <View style={[s.input, s.row, { paddingVertical: 0, paddingHorizontal: 12, gap: 8, minHeight: 48 }, focused && { borderColor: C.teal }]}>
-    <Press accessibilityLabel="Search" onPress={submit}><Icon name="search" size={20} color={C.muted} /></Press>
+    <Press accessibilityLabel="Search" onPress={submit} style={{ padding: 6 }}><Icon name="search" size={20} color={C.muted} /></Press>
     <TextInput accessibilityLabel="Search jobs" value={text} onChangeText={setText} placeholder="Role, company or keyword" placeholderTextColor={C.muted} returnKeyType="search" onSubmitEditing={submit}
       onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={{ flex: 1, paddingVertical: 12, fontSize: 16, color: C.ink }} />
-    {!!text && <Press accessibilityLabel="Clear search" onPress={() => { setText(''); onClear() }}><Icon name="close-circle" size={20} color={C.muted} /></Press>}
+    {!!text && <Press accessibilityLabel="Clear search" onPress={() => { setText(''); onClear() }} style={{ padding: 6 }}><Icon name="close-circle" size={20} color={C.muted} /></Press>}
   </View>
 }
 
@@ -197,14 +213,14 @@ export const JobsScreen = memo(function JobsScreen({ open, active, top, home }: 
     <View style={{ gap: 8, paddingTop: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
       <View style={{ paddingHorizontal: 16 }}><SearchBar key={resetSearch} onSearch={search} onClear={() => setQuery('')} /></View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingHorizontal: 16 }}>
-        {[['', 'All jobs'], ...Object.entries(types)].map(([value, label]) => <Press key={value} accessibilityState={{ selected: value === type }} onPress={() => setType(value)} style={[s.pill, { paddingVertical: 10, overflow: 'hidden' }, value === type && { backgroundColor: C.teal }]}><Text style={[s.pillText, value === type && { color: C.white }]}>{label}</Text></Press>)}
+        {[['', 'All jobs'], ...Object.entries(types)].map(([value, label]) => <Press key={value} accessibilityState={{ selected: value === type }} onPress={() => setType(value)} style={[s.pill, { paddingVertical: 12, overflow: 'hidden' }, value === type && { backgroundColor: C.teal }]}><Text style={[s.pillText, value === type && { color: C.white }]}>{label}</Text></Press>)}
       </ScrollView>
     </View>
     <FlatList ref={list} data={jobs} keyExtractor={j => j.id} renderItem={renderJob}
       style={loading === 'replace' && jobs.length ? { opacity: .5 } : undefined}
       contentContainerStyle={s.list} ItemSeparatorComponent={CardGap}
       keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-      initialNumToRender={6} maxToRenderPerBatch={5} windowSize={7}
+      initialNumToRender={6} maxToRenderPerBatch={5} windowSize={7} removeClippedSubviews
       refreshing={loading === 'pull'} onRefresh={() => load('pull')}
       onEndReachedThreshold={.5} onEndReached={() => { if (active && !inFlight.current && hasMore && !moreError && !error) void load('more') }}
       ListHeaderComponent={<View style={{ gap: 12, marginBottom: 16 }}>
@@ -280,9 +296,9 @@ export function JobDetail({ job, close, signIn, viewApplications, onChanged }: {
     } finally { setBusy('') }
   }
   const header = <View style={[s.row, { paddingHorizontal: 12, paddingVertical: 8, justifyContent: 'space-between' }]}>
-    {step === 'apply' ? <Press accessibilityLabel="Back to job details" onPress={() => { setStep('view'); setError('') }} style={{ padding: 8 }}><Icon name="arrow-back" /></Press>
-      : <Press accessibilityLabel="Close job details" onPress={close} style={{ padding: 8 }}><Icon name="close" /></Press>}
-    <Press accessibilityLabel="Share job" style={{ padding: 8 }} onPress={() => Share.share({ message: `${shown.title} at ${shown.company?.company_name || 'JobLinks'} — ${SITE}/jobs/${shown.id}`, url: `${SITE}/jobs/${shown.id}` }).catch(() => setError('Could not open sharing.'))}><Icon name="share-outline" /></Press>
+    {step === 'apply' ? <Press accessibilityLabel="Back to job details" onPress={() => { setStep('view'); setError('') }} style={{ padding: 11 }}><Icon name="arrow-back" /></Press>
+      : <Press accessibilityLabel="Close job details" onPress={close} style={{ padding: 11 }}><Icon name="close" /></Press>}
+    <Press accessibilityLabel="Share job" style={{ padding: 11 }} onPress={() => Share.share({ message: `${shown.title} at ${shown.company?.company_name || 'JobLinks'} — ${SITE}/jobs/${shown.id}`, url: `${SITE}/jobs/${shown.id}` }).catch(() => setError('Could not open sharing.'))}><Icon name="share-outline" /></Press>
   </View>
   const errorBox = !!error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>
   return <Modal visible={!!job} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { if (step === 'apply') setStep('view'); else close() }}>
@@ -313,9 +329,8 @@ export function JobDetail({ job, close, signIn, viewApplications, onChanged }: {
             {!!shown.expires_at && <Fact icon="calendar-outline" text={`Closing date: ${new Date(shown.expires_at).toLocaleDateString(undefined, { timeZone: 'UTC' })}`} />}
           </View>
           <Text style={s.h2}>About the role</Text><Text selectable style={[s.body, { color: C.ink }]}>{shown.description}</Text>
-          {account?.role === 'employer' && <><Text style={s.body}>You’re signed in as an employer. Use a job-seeker account to apply.</Text>{errorBox}</>}
         </ScrollView>
-        {account?.role !== 'employer' && <View style={{ gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.line }}>
+        <View style={{ gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12 + insets.bottom, backgroundColor: C.white, borderTopWidth: 1, borderTopColor: C.line }}>
           {errorBox}
           {lookupFailed && <View style={[s.row, { justifyContent: 'space-between' }]}><Text accessibilityRole="alert" style={[s.small, { flex: 1, color: C.red }]}>Could not check your saved jobs and applications.</Text>
             <Press onPress={() => { void (account ? marks.reload() : refresh()) }}><Text style={{ color: C.bright, fontWeight: '600' }}>Try again</Text></Press></View>}
@@ -327,7 +342,7 @@ export function JobDetail({ job, close, signIn, viewApplications, onChanged }: {
               {busy === 'save' ? <ActivityIndicator color={C.teal} /> : <Icon name={saved ? 'bookmark' : 'bookmark-outline'} />}
             </Press>
           </View>
-        </View>}
+        </View>
       </>}
       <ToastHost bottom={88 + insets.bottom} />
     </SafeAreaView>

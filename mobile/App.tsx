@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
-import { BackHandler, Image, Keyboard, Platform, Text, View } from 'react-native'
+import { BackHandler, Image, Keyboard, Text, View } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import * as SecureStore from 'expo-secure-store'
 import * as SplashScreen from 'expo-splash-screen'
 import { Ionicons } from '@expo/vector-icons'
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Auth, useAccount } from './src/Auth'
 import { configured } from './src/client'
 import { JobsScreen, JobDetail } from './src/JobScreens'
-import { AccountScreen, LibraryScreen } from './src/AccountScreens'
-import { EmployerHome } from './src/EmployerScreens'
+import { AccountScreen, EmployerNotice, LibraryScreen } from './src/AccountScreens'
 import { Button, C, Empty, Icon, Press, s, ToastHost, ToastProvider, useToast } from './src/ui'
 import * as push from './src/notifications'
 import type { Job } from './src/jobs'
@@ -96,52 +94,33 @@ function OptInCard({ visible }: { visible: boolean }) {
   </View>
 }
 
-type Mode = 'seeker' | 'employer'
-const MODE_KEY = 'app-mode'
-const modeMemory = new Map<string, string>()
-async function loadMode(): Promise<Mode> {
-  try {
-    const value = Platform.OS === 'web' ? modeMemory.get(MODE_KEY) : await SecureStore.getItemAsync(MODE_KEY)
-    return value === 'employer' ? 'employer' : 'seeker'
-  } catch { return 'seeker' }
-}
-function saveMode(next: Mode) {
-  modeMemory.set(MODE_KEY, next)
-  if (Platform.OS !== 'web') void SecureStore.setItemAsync(MODE_KEY, next).catch(() => {})
-}
-
 function Shell() {
   useLaunch()
-  const { session } = useAccount()
+  const { session, account } = useAccount()
   const insets = useSafeAreaInsets()
   const [tab, setTab] = useState<TabId>('jobs')
   const [job, setJob] = useState<Job | null>(null)
   const [revision, setRevision] = useState(0)
   const [top, setTop] = useState(0) // Bumped by re-tapping the active tab: that screen scrolls to top.
   const [home, setHome] = useState(0)
-  const [mode, setModeState] = useState<Mode>('seeker')
-  useEffect(() => { let live = true; void loadMode().then(saved => { if (live) setModeState(saved) }); return () => { live = false } }, [])
-  const displayMode: Mode = session ? mode : 'seeker' // Signed out always shows the seeker app.
+  const isEmployer = !!session && account?.role === 'employer' // Employer accounts get the website notice, not the seeker app.
   // Tabs mount on first visit, then stay mounted so search, scroll and edits survive switching.
   const visited = useRef(new Set<TabId>())
   visited.current.add(tab)
-  const employerVisited = useRef(false)
-  if (displayMode === 'employer') employerVisited.current = true
   const goToAccount = useCallback(() => setTab('account'), [])
   const goToJobs = useCallback(() => setTab('jobs'), [])
   const goHome = useCallback(() => { Keyboard.dismiss(); setJob(null); setTab('jobs'); setHome(v => v + 1) }, [])
   const onChanged = useCallback(() => setRevision(v => v + 1), [])
   const closeJob = useCallback(() => setJob(null), [])
-  const chooseMode = useCallback((next: Mode) => { Keyboard.dismiss(); setJob(null); setModeState(next); saveMode(next) }, [])
   useEffect(() => {
     const back = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (displayMode === 'employer') { chooseMode('seeker'); return true }
+      if (isEmployer) return false // The notice screen has no tabs behind it; let the press leave the app.
       if (tab === 'jobs') return false
       setTab('jobs')
       return true
     })
     return () => back.remove()
-  }, [tab, displayMode, chooseMode])
+  }, [tab, isEmployer])
   function pressTab(id: TabId) {
     Keyboard.dismiss()
     if (id === tab) setTop(v => v + 1)
@@ -161,30 +140,21 @@ function Shell() {
         </View>
       </Press>
       <View style={{ flex: 1 }} />
-      <View style={{ flexDirection: 'row', backgroundColor: C.wash, borderRadius: 30, padding: 3, alignSelf: 'center' }}>
-        <Press accessibilityRole="tab" accessibilityState={{ selected: displayMode === 'seeker' }} onPress={() => chooseMode('seeker')} hitSlop={2} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 30, backgroundColor: displayMode === 'seeker' ? C.teal : 'transparent' }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: displayMode === 'seeker' ? C.white : C.teal }}>Job seeker</Text>
-        </Press>
-        <Press accessibilityRole="tab" accessibilityState={{ selected: displayMode === 'employer' }} onPress={() => chooseMode('employer')} hitSlop={2} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 30, backgroundColor: displayMode === 'employer' ? C.teal : 'transparent' }}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: displayMode === 'employer' ? C.white : C.teal }}>Employer</Text>
-        </Press>
-      </View>
     </View>
     <View style={{ flex: 1 }}>
-      {!configured ? <Empty title="Connect your JobLinks app" body="Add the public Supabase URL and publishable key to the app environment. Never use a service-role key." /> : <>
-        <View style={{ flex: 1, display: displayMode === 'seeker' ? 'flex' : 'none' }}>
-          <OptInCard visible={tab === 'jobs' && displayMode === 'seeker'} />
+      {!configured ? <Empty title="Connect your JobLinks app" body="Add the public Supabase URL and publishable key to the app environment. Never use a service-role key." /> : isEmployer ? <EmployerNotice /> : <>
+        <View style={{ flex: 1 }}>
+          <OptInCard visible={tab === 'jobs'} />
           {pane('jobs', <JobsScreen open={setJob} active={tab === 'jobs'} top={top} home={home} />)}
           {pane('saved', <LibraryScreen mode="saved" open={setJob} signIn={goToAccount} browse={goToJobs} revision={revision} active={tab === 'saved'} top={top} />)}
           {pane('applications', <LibraryScreen mode="applications" open={setJob} signIn={goToAccount} browse={goToJobs} revision={revision} active={tab === 'applications'} top={top} />)}
           {pane('account', <AccountScreen active={tab === 'account'} top={top} />)}
         </View>
-        {employerVisited.current && <View style={{ flex: 1, display: displayMode === 'employer' ? 'flex' : 'none' }}><EmployerHome active={displayMode === 'employer'} signIn={goToAccount} /></View>}
       </>}
       <ToastHost />
     </View>
     {/* The tab bar owns the bottom inset, so white runs to the edge of the screen. */}
-    {displayMode === 'seeker' && <View accessibilityRole="tablist" style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.white, paddingTop: 8, paddingBottom: 8 + insets.bottom }}>
+    {!isEmployer && <View accessibilityRole="tablist" style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.white, paddingTop: 8, paddingBottom: 8 + insets.bottom }}>
       {tabs.map(item => <Press key={item.id} hitSlop={0} accessibilityRole="tab" accessibilityState={{ selected: tab === item.id }} onPress={() => pressTab(item.id)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 48 }}>
         <Icon name={tab === item.id ? item.activeIcon : item.icon} color={tab === item.id ? C.teal : C.muted} /><Text style={{ fontSize: 11, fontWeight: tab === item.id ? '800' : '500', color: tab === item.id ? C.teal : C.muted }}>{item.label}</Text>
       </Press>)}

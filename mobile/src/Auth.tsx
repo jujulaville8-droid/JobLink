@@ -75,6 +75,7 @@ export function Auth({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const generation = useRef(0)
+  const identity = useRef<string | null>(null)
   async function refresh() {
     const version = ++generation.current
     setError('')
@@ -114,13 +115,25 @@ export function Auth({ children }: { children: ReactNode }) {
       } else setError(error.message)
     })
       .catch(() => { if (active) setLoading(false) }) // Unreadable storage counts as signed out; don't hold the splash.
-    const { data: { subscription } } = db.auth.onAuthStateChange((_event, next) => { if (active) { generation.current++; setSession(next) } })
+    const { data: { subscription } } = db.auth.onAuthStateChange((_event, next) => {
+      if (!active) return
+      // Only a change of signed-in user cancels the account check in flight. A
+      // token refresh for the same user must not: the read stays valid across
+      // it, and the session effect keys on the user id, so a cancelled check
+      // would never be re-issued and account would sit null until the watchdog.
+      const id = next?.user.id ?? null
+      if (id !== identity.current) { identity.current = id; generation.current++ }
+      setSession(next)
+    })
     Linking.getInitialURL().then(url => { if (url) void completeOAuthFromUrl(url).catch(() => {}) }).catch(() => {})
     const linkSub = Linking.addEventListener('url', event => { void completeOAuthFromUrl(event.url).catch(() => {}) })
     return () => { active = false; subscription.unsubscribe(); linkSub.remove() }
   }, [])
   useEffect(() => {
     setAccount(null)
+    // Record the identity here too, so whichever of getSession or the auth
+    // event lands first is the one later same-user events are compared against.
+    identity.current = session?.user.id ?? null
     if (session) void refresh()
     return () => { generation.current++ }
   }, [session?.user.id])
