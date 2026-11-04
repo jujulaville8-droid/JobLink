@@ -19,22 +19,37 @@ const featured = { color: C.amberWash, text: C.amberText }
 const closed = { color: C.grey, text: C.muted }
 
 /** A fixed tile, so a slow logo fades in over colour and a failed one falls back to the icon. */
-function Logo({ company }: { company: Job['company'] }) {
+function Logo({ company, size = 44, radius = 12 }: { company: Job['company']; size?: number; radius?: number }) {
   const [failed, setFailed] = useState(false)
   const uri = company?.logo_url
-  return <View style={{ height: 44, width: 44, borderRadius: 12, overflow: 'hidden', backgroundColor: C.wash, alignItems: 'center', justifyContent: 'center' }}>
-    {uri && !failed ? <Image source={{ uri }} style={{ height: 44, width: 44 }} resizeMode="contain" onError={() => setFailed(true)} /> : <Icon name="business-outline" />}
+  return <View style={{ height: size, width: size, borderRadius: radius, overflow: 'hidden', backgroundColor: C.wash, alignItems: 'center', justifyContent: 'center' }}>
+    {uri && !failed ? <Image source={{ uri }} style={{ height: size, width: size }} resizeMode="contain" onError={() => setFailed(true)} /> : <Icon name="business-outline" />}
   </View>
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+/** 'Apply by Nov 20' for an open job with a valid future closing date, otherwise null. */
+function applyBy(job: Job) {
+  if (!job.expires_at || isClosed(job)) return null
+  const date = new Date(job.expires_at)
+  if (!(date.getTime() > Date.now())) return null // Also false for an unparseable date (NaN).
+  return `Apply by ${MONTHS[date.getMonth()]} ${date.getDate()}`
 }
 
 export const JobCard = memo(function JobCard({ job, open, status }: { job: Job; open: (job: Job) => void; status?: string }) {
   const marks = useMarks()
   const pill = status ? statuses[status] ?? { label: status, color: C.line, text: C.ink } : marks.applied.has(job.id) ? statuses.applied : null
   const company = job.company?.company_name || 'Employer'
-  return <Pressable accessibilityRole="button" accessibilityLabel={`View ${job.title} at ${company}`} onPress={() => open(job)} style={({ pressed }) => [s.card, pressed && { backgroundColor: C.wash }]}>
+  const location = job.location?.trim()
+  const closes = applyBy(job)
+  return <Pressable accessibilityRole="button" accessibilityLabel={`View ${job.title} at ${company}`} onPress={() => open(job)} style={({ pressed }) => [s.card, { padding: 20, gap: 14 }, pressed && { backgroundColor: C.wash }]}>
     <View style={[s.row, { alignItems: 'flex-start' }]}>
-      <Logo company={job.company} />
-      <View style={{ flex: 1, gap: 2 }}><Text style={s.cardTitle} numberOfLines={2}>{job.title}</Text><Text style={s.small} numberOfLines={1}>{company} · {job.location}</Text></View>
+      <Logo company={job.company} size={52} radius={14} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={s.cardTitle} numberOfLines={2}>{job.title}</Text>
+        <Text style={s.small} numberOfLines={1}>{location ? `${company} · ${location}` : company}</Text>
+        {hasSalary(job) && <Text style={{ marginTop: 2, fontWeight: '700', fontSize: 15, lineHeight: 20, color: C.teal }}>{salary(job)}</Text>}
+      </View>
       {marks.saved.has(job.id) && <Icon name="bookmark" size={20} />}
     </View>
     <View style={[s.row, { flexWrap: 'wrap', gap: 8 }]}>
@@ -42,8 +57,8 @@ export const JobCard = memo(function JobCard({ job, open, status }: { job: Job; 
       {job.is_featured && <Pill label="Featured" {...featured} />}
       {pill && <Pill {...pill} />}
       {isClosed(job) && <Pill label="Closed" {...closed} />}
-      {hasSalary(job) && <Text style={s.small}>{salary(job)}</Text>}
       <Text style={s.small}>{posted(job.created_at)}</Text>
+      {closes && <Text style={s.small}>{closes}</Text>}
     </View>
   </Pressable>
 })
