@@ -79,28 +79,40 @@ export function Auth({ children }: { children: ReactNode }) {
     const version = ++generation.current
     setError('')
     try {
-      const { data: { session: current } } = await db.auth.getSession()
+      // Reuse the session already in state: a second getSession() here can stall
+      // behind the client's own background refresh of the very same session.
+      const current = session ?? (await db.auth.getSession()).data.session
       if (!current) { setAccount(null); return }
       const read = () => db.from('users').select('role,is_banned,email_verified').eq('id', current.user.id).maybeSingle()
       const first = await read()
       if (version !== generation.current) return
       if (first.error) throw new Error(friendly(first.error.message, 'Could not check your account. Please try again.'))
       if (first.data) setAccount(first.data)
-      if (first.data?.email_verified) return
+      if (first.data?.email_verified) { setError(''); return }
       // Only an unverified or missing row needs the website: this route also creates a missing row.
       try { await api('auth/sync-verification', {}) }
-      catch (e) { if (first.data) return; throw e }
+      catch (e) { if (first.data) { setError(''); return } throw e }
       const second = await read()
       if (version !== generation.current) return
       if (second.data) setAccount(second.data)
       else if (!first.data) throw new Error('Could not check your account. Please try again.')
+      setError('') // Resolved; also clears a watchdog error raised while this ran slowly.
     } catch (e) {
       if (version === generation.current) setError((e as Error).message)
     }
   }
   useEffect(() => {
     let active = true
-    db.auth.getSession().then(({ data, error }) => { if (active) { setSession(data.session); setLoading(false); if (error) setError(error.message) } })
+    db.auth.getSession().then(({ data, error }) => {
+      if (!active) return
+      setSession(data.session); setLoading(false)
+      if (!error) return
+      if (/refresh token/i.test(error.message)) {
+        // The persisted session is unrecoverable. Drop it locally so the app
+        // starts signed out instead of wedging on the same dead token again.
+        void db.auth.signOut({ scope: 'local' }).catch(() => {})
+      } else setError(error.message)
+    })
       .catch(() => { if (active) setLoading(false) }) // Unreadable storage counts as signed out; don't hold the splash.
     const { data: { subscription } } = db.auth.onAuthStateChange((_event, next) => { if (active) { generation.current++; setSession(next) } })
     Linking.getInitialURL().then(url => { if (url) void completeOAuthFromUrl(url).catch(() => {}) }).catch(() => {})
@@ -112,5 +124,13 @@ export function Auth({ children }: { children: ReactNode }) {
     if (session) void refresh()
     return () => { generation.current++ }
   }, [session?.user.id])
+  // Watchdog: if a live session's account read has not settled within 20s,
+  // surface the standard account error (whose buttons re-run refresh) instead
+  // of leaving the account-gated screens on skeletons and spinners forever.
+  useEffect(() => {
+    if (!session || account || error) return
+    const timer = setTimeout(() => setError('Could not check your account. Please try again.'), 20000)
+    return () => clearTimeout(timer)
+  }, [session?.user.id, account, error])
   return <Context.Provider value={{ session, account, loading, error, refresh }}><MarksProvider>{children}</MarksProvider></Context.Provider>
 }

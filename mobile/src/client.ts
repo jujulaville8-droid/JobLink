@@ -2,7 +2,7 @@ import 'react-native-url-polyfill/auto'
 import { AppState, Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
 import * as ExpoCrypto from 'expo-crypto'
-import { createClient, processLock } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 export const SITE = process.env.EXPO_PUBLIC_SITE_URL || 'https://joblinkantigua.com'
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL
@@ -77,8 +77,14 @@ if (!webCrypto.subtle) {
 }
 ;(globalThis as { crypto?: unknown }).crypto = webCrypto
 
+// auth-js's process lock can deadlock in React Native when the persisted
+// session's refresh token has gone stale: the bootstrap promise never settles
+// and every account-gated screen spins forever without an error. A no-op lock
+// is the standard React Native workaround; this client serves one user at a time.
+const noopLock = <T,>(_name: string, _acquireTimeout: number, fn: () => Promise<T>): Promise<T> => fn()
+
 export const db = createClient(url || 'https://example.supabase.co', key || 'unconfigured', {
-  auth: { storage: secureStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, lock: processLock, flowType: 'pkce' },
+  auth: { storage: secureStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, lock: noopLock, flowType: 'pkce' },
   global: { fetch: timedFetch(READ_TIMEOUT) },
 })
 if (Platform.OS !== 'web') {
