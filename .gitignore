@@ -54,3 +54,7 @@ redesign-homepage-full.png
 
 # Local claim-flow browser evidence
 /output/playwright/
+
+# Agent tooling (local only, never shipped)
+.agents/
+.claude/
