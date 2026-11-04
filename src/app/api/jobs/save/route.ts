@@ -39,7 +39,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { job_id } = body
+    // `saved` is optional: true/false sets that state so retries can't flip it,
+    // and leaving it out keeps the toggle the website uses.
+    const { job_id, saved: desired } = body
 
     if (!job_id) {
       return NextResponse.json({ error: 'job_id is required' }, { status: 400 })
@@ -54,12 +56,20 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existing) {
+      if (desired === true) {
+        return NextResponse.json({ saved: true })
+      }
+
       // Unsave
       await supabase
         .from('saved_jobs')
         .delete()
         .eq('id', existing.id)
 
+      return NextResponse.json({ saved: false })
+    }
+
+    if (desired === false) {
       return NextResponse.json({ saved: false })
     }
 

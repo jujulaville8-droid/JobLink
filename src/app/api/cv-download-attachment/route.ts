@@ -19,19 +19,24 @@ export async function GET(request: NextRequest) {
   if ('error' in auth) return auth.error;
   const { user } = auth;
 
+  // Files live under `${ownerId}/`, so the first segment identifies the owner.
+  // Dot segments, backslashes, tabs and newlines are rejected because URL parsing
+  // would resolve them to a different folder when the path is signed.
+  const ownerId = path.split("/")[0];
+  if (
+    !ownerId ||
+    /[\\\t\r\n]/.test(path) ||
+    path.split("/").some((segment) => /^(\.|%2e){1,2}$/i.test(segment))
+  ) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+  }
+
   // Use admin client for authorization lookups to bypass RLS
   const { createAdminClient } = await import("@/lib/supabase/admin");
   const adminClient = createAdminClient();
 
-  // Check 1: Is the user the owner of this CV?
-  const { data: ownProfile } = await adminClient
-    .from("seeker_profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("cv_url", path)
-    .maybeSingle();
-
-  if (!ownProfile) {
+  // Check 1: Does the file sit in the user's own folder?
+  if (ownerId !== user.id) {
     // Check 2: Is the user an employer/admin who has an applicant with this CV?
     const { data: userData } = await adminClient
       .from("users")
@@ -50,11 +55,15 @@ export async function GET(request: NextRequest) {
     if (isAdmin) {
       // Admins can access any CV — skip relationship check
     } else {
-      // Verify this employer is a participant in a conversation containing this attachment
+      // Verify this employer is a participant in a conversation where the
+      // file's OWNER sent this attachment. Requiring sender = owner stops an
+      // employer from forging the check by posting the victim's path as an
+      // attachment in a thread of their own (RLS pins sender_id to the caller).
       const { data: hasMessage } = await adminClient
         .from("messages")
         .select("id, conversation:conversations!inner(id, conversation_participants!inner(user_id))")
         .eq("attachment_url", path)
+        .eq("sender_id", ownerId)
         .eq("conversation.conversation_participants.user_id", user.id)
         .limit(1)
         .maybeSingle();
@@ -74,7 +83,7 @@ export async function GET(request: NextRequest) {
         const { data: profile } = await adminClient
           .from("seeker_profiles")
           .select("id")
-          .eq("cv_url", path)
+          .eq("user_id", ownerId)
           .maybeSingle();
 
         if (!profile) {
