@@ -4,12 +4,31 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 // Buckets the site uploads to, all keyed `${userId}/<file>`.
-const USER_FILE_BUCKETS = ['cvs', 'avatars', 'company-logos']
+const USER_FILE_BUCKETS = ['cvs', 'avatars', 'company-logos', 'cover-letters']
 const LIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due']
 const PAGE_SIZE = 1000
 
 function check({ error }: { error: unknown }) {
   if (error) throw error
+}
+
+// list() is not recursive: subfolders come back as entries with a null id.
+async function listFiles(
+  admin: ReturnType<typeof createAdminClient>,
+  bucket: string,
+  folder: string
+): Promise<string[]> {
+  const paths: string[] = []
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data: entries, error } = await admin.storage.from(bucket).list(folder, { limit: PAGE_SIZE, offset })
+    if (error) throw error
+    for (const entry of entries ?? []) {
+      const path = `${folder}/${entry.name}`
+      if (entry.id === null) paths.push(...await listFiles(admin, bucket, path))
+      else paths.push(path)
+    }
+    if (!entries || entries.length < PAGE_SIZE) return paths
+  }
 }
 
 /**
@@ -32,11 +51,30 @@ export async function POST(request: NextRequest) {
     // authenticates the caller and rejects banned accounts.
     const auth = await requireUser()
     if ('error' in auth) return auth.error
-    const { user, isAdmin } = auth
+    const { user } = auth
+
+    const admin = createAdminClient()
+
+    // requireUser treats a failed lookup as "not admin", so re-read the flag with
+    // the service role and refuse to continue if it cannot be confirmed.
+    const { data: caller, error: callerError } = await admin
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .maybeSingle()
+    // Fail closed on a lookup ERROR. A missing row is not an error: it cannot
+    // be an admin account, and treating it as one would trap a user whose first
+    // deletion attempt removed this row but failed before the auth user went.
+    if (callerError) {
+      return NextResponse.json(
+        { error: 'We could not verify your account. Please try again shortly.' },
+        { status: 503 }
+      )
+    }
 
     // Admin-posted jobs route applicant messages to the admin account, so
     // removing it must stay a deliberate, manual operation.
-    if (isAdmin) {
+    if (caller?.is_admin === true) {
       return NextResponse.json(
         { error: 'Admin accounts cannot be deleted from the app. Please contact support.' },
         { status: 403 }
@@ -45,8 +83,6 @@ export async function POST(request: NextRequest) {
 
     const limited = await enforceRateLimit(`account-delete:${user.id}`, RateLimits.accountDelete)
     if (limited) return limited
-
-    const admin = createAdminClient()
 
     // Role switching means one user can own both of these, so never branch on role.
     const { data: seeker, error: seekerError } = await admin
@@ -84,12 +120,9 @@ export async function POST(request: NextRequest) {
     // Files first: once the auth user is gone the caller can no longer retry,
     // so a failed removal here must stop the deletion.
     for (const bucket of USER_FILE_BUCKETS) {
-      for (;;) {
-        const { data: files, error } = await admin.storage.from(bucket).list(user.id, { limit: PAGE_SIZE })
-        if (error) throw error
-        if (!files?.length) break
-        check(await admin.storage.from(bucket).remove(files.map(file => `${user.id}/${file.name}`)))
-        if (files.length < PAGE_SIZE) break
+      const paths = await listFiles(admin, bucket, user.id)
+      for (let i = 0; i < paths.length; i += PAGE_SIZE) {
+        check(await admin.storage.from(bucket).remove(paths.slice(i, i + PAGE_SIZE)))
       }
     }
 
@@ -106,6 +139,10 @@ export async function POST(request: NextRequest) {
     // no foreign key, and cv_events only sets user_id to null.
     check(await admin.from('signup_reminder_log').delete().eq('auth_user_id', user.id))
     check(await admin.from('cv_events').delete().eq('user_id', user.id))
+    // Enquiries are keyed by email only, with no link to the user's id.
+    if (user.email) {
+      check(await admin.from('employer_enquiries').delete().eq('email', user.email))
+    }
     check(await admin.from('users').delete().eq('id', user.id))
 
     // Everything else keyed to the user (messages, CV builder rows, alerts,

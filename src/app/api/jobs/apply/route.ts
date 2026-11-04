@@ -48,6 +48,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'job_id is required' }, { status: 400 })
     }
 
+    if (cover_letter_text !== undefined && cover_letter_text !== null) {
+      if (typeof cover_letter_text !== 'string') {
+        return NextResponse.json({ error: 'Cover letter must be text.' }, { status: 400 })
+      }
+      if (cover_letter_text.length > 5000) {
+        return NextResponse.json({ error: 'Cover letter is too long (max 5000 characters).' }, { status: 400 })
+      }
+    }
+
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')

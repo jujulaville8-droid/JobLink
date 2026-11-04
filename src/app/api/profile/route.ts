@@ -59,6 +59,41 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // cv_url must point into the caller's own storage folder. null and '' both
+    // mean "no CV": the web form sends '' for a seeker who has not uploaded one.
+    // Legacy rows may hold a full Supabase storage URL instead of a bare path
+    // (see src/lib/resume-url.ts); normalize those to the bare path before the
+    // prefix test so an old value re-sent by the form does not fail validation,
+    // and store the normalized path. Dot segments are rejected: a path like
+    // `${user.id}/../<victim>/cv.pdf` starts with the caller's prefix but
+    // resolves outside their folder.
+    if (payload.cv_url !== undefined && payload.cv_url !== null && payload.cv_url !== '') {
+      if (typeof payload.cv_url !== 'string') {
+        return NextResponse.json({ error: 'Invalid CV file reference.' }, { status: 400 })
+      }
+      let cvPath: string = payload.cv_url
+      if (cvPath.startsWith('http://') || cvPath.startsWith('https://')) {
+        const match = cvPath.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/cvs\/(.+)$/)
+        if (!match) {
+          return NextResponse.json({ error: 'Invalid CV file reference.' }, { status: 400 })
+        }
+        cvPath = match[1].split('?')[0]
+        try {
+          cvPath = decodeURIComponent(cvPath)
+        } catch {
+          return NextResponse.json({ error: 'Invalid CV file reference.' }, { status: 400 })
+        }
+      }
+      if (
+        !cvPath.startsWith(`${user.id}/`) ||
+        cvPath.split('/').some((segment) => segment === '.' || segment === '..') ||
+        /[\\\t\r\n]/.test(cvPath)
+      ) {
+        return NextResponse.json({ error: 'Invalid CV file reference.' }, { status: 400 })
+      }
+      payload.cv_url = cvPath
+    }
+
     // Check if user has a built resume (for completion calc)
     const { data: cvProfile } = await supabase
       .from('cv_profiles')

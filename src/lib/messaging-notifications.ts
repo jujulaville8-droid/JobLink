@@ -1,4 +1,5 @@
 import { sendEmail } from '@/lib/email'
+import { createAdminClient } from '@/lib/supabase/admin'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 interface NotificationParams {
@@ -34,7 +35,7 @@ export async function sendMessageNotification(
 
     if (!emailEnabled) {
       // Log as skipped
-      await supabase.from('notification_log').insert({
+      await createAdminClient().from('notification_log').insert({
         user_id: recipientId,
         conversation_id: conversationId,
         channel: 'email',
@@ -58,7 +59,7 @@ export async function sendMessageNotification(
 
     if (recentNotif) {
       // Within cooldown — skip
-      await supabase.from('notification_log').insert({
+      await createAdminClient().from('notification_log').insert({
         user_id: recipientId,
         conversation_id: conversationId,
         channel: 'email',
@@ -89,7 +90,7 @@ export async function sendMessageNotification(
     })
 
     // Log as sent
-    await supabase.from('notification_log').insert({
+    await createAdminClient().from('notification_log').insert({
       user_id: recipientId,
       conversation_id: conversationId,
       channel: 'email',
@@ -99,7 +100,7 @@ export async function sendMessageNotification(
     console.error('[sendMessageNotification] error:', err)
     // Log as failed
     try {
-      await supabase.from('notification_log').insert({
+      await createAdminClient().from('notification_log').insert({
         user_id: recipientId,
         conversation_id: conversationId,
         channel: 'email',

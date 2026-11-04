@@ -35,17 +35,20 @@ export async function POST() {
     // Check if user row exists
     const { data: existingUser } = await admin
       .from('users')
-      .select('id, role')
+      .select('id, role, is_admin')
       .eq('id', user.id)
       .single()
 
     let finalRole = role
 
     if (existingUser) {
-      finalRole = existingUser.role || role
+      // A role of 'admin' without the server-managed flag is not a real admin,
+      // so reset it to the allowlisted role. Real admins are left untouched.
+      const normalizeRole = existingUser.role === 'admin' && existingUser.is_admin !== true
+      finalRole = normalizeRole ? role : existingUser.role || role
       const { error: updateError } = await admin
         .from('users')
-        .update({ email_verified: true })
+        .update(normalizeRole ? { email_verified: true, role } : { email_verified: true })
         .eq('id', user.id)
 
       if (updateError) {

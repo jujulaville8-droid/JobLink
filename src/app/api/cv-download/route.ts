@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'CV not found' }, { status: 404 })
   }
 
-  const isAdmin = caller.is_admin === true || caller.role === 'admin'
+  const isAdmin = caller.is_admin === true
 
   if (!isAdmin) {
     if (caller.role === 'seeker') {
