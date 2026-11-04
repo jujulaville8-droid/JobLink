@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Alert, FlatList, Linking, ScrollView, Switch, Text, View, type TextInput } from 'react-native'
+import { ActivityIndicator, Alert, FlatList, Image, Linking, ScrollView, Switch, Text, View, type TextInput } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as WebBrowser from 'expo-web-browser'
 import { api, db, friendly, OFFLINE_MESSAGE, SITE, SLOW_TIMEOUT, TIMEOUT_MESSAGE } from './client'
@@ -217,6 +217,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
     {loadFailed && <Button secondary title="Try again" onPress={() => setReload(x => x + 1)} />}
     {!!accountError && <><Text accessibilityRole="alert" style={s.error}>{accountError}</Text><Button secondary title="Check account again" onPress={() => { void refresh() }} /></>}
     {loading ? null : !session ? <>
+      <Image source={require('../assets/joblink-mark.png')} style={{ alignSelf: 'center', width: 76, height: 95, marginTop: 8 }} resizeMode="contain" accessibilityLabel="JobLinks" />
       <Text style={s.body}>Your existing JobLinks account works here too.</Text>
       <Field label="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => passwordInput.current?.focus()} />
       <Field label="Password" inputRef={passwordInput} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="current-password" textContentType="password" returnKeyType="go" onSubmitEditing={signIn} />
