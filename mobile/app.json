@@ -44,7 +44,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/joblink-splash.png",
-          "imageWidth": 300,
+          "imageWidth": 288,
           "resizeMode": "contain",
           "backgroundColor": "#FAF8F5"
         }

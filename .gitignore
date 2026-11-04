@@ -51,3 +51,7 @@ redesign-homepage-full.png
 
 # Local MCP server config (contains a per-machine extension token)
 .mcp.json
+
+# Agent tooling (local only, never shipped)
+.agents/
+.claude/
