@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Linking } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { api, db, friendly } from './client'
+import { completeOAuthFromUrl } from './oauth'
 import { useStaleRefresh } from './ui'
 type Account = { role: string; is_banned: boolean; email_verified: boolean }
 type State = { session: Session | null; account: Account | null; loading: boolean; error: string; refresh: () => Promise<void> }
@@ -101,7 +103,9 @@ export function Auth({ children }: { children: ReactNode }) {
     db.auth.getSession().then(({ data, error }) => { if (active) { setSession(data.session); setLoading(false); if (error) setError(error.message) } })
       .catch(() => { if (active) setLoading(false) }) // Unreadable storage counts as signed out; don't hold the splash.
     const { data: { subscription } } = db.auth.onAuthStateChange((_event, next) => { if (active) { generation.current++; setSession(next) } })
-    return () => { active = false; subscription.unsubscribe() }
+    Linking.getInitialURL().then(url => { if (url) void completeOAuthFromUrl(url).catch(() => {}) }).catch(() => {})
+    const linkSub = Linking.addEventListener('url', event => { void completeOAuthFromUrl(event.url).catch(() => {}) })
+    return () => { active = false; subscription.unsubscribe(); linkSub.remove() }
   }, [])
   useEffect(() => {
     setAccount(null)

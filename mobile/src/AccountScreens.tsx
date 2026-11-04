@@ -1,12 +1,14 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Alert, FlatList, Linking, ScrollView, Text, View, type TextInput } from 'react-native'
+import { ActivityIndicator, Alert, FlatList, Linking, ScrollView, Switch, Text, View, type TextInput } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as WebBrowser from 'expo-web-browser'
 import { api, db, friendly, OFFLINE_MESSAGE, SITE, SLOW_TIMEOUT, TIMEOUT_MESSAGE } from './client'
 import { useAccount, useMarks } from './Auth'
 import { fields, type Job } from './jobs'
 import { JobCard } from './JobScreens'
-import { Button, C, CardGap, Empty, Field, Group, HEADER_HEIGHT, KeyboardArea, Press, Row, s, Skeletons, useStaleRefresh, useToast } from './ui'
+import { Button, C, CardGap, Empty, Field, Group, HEADER_HEIGHT, Icon, KeyboardArea, Press, Row, s, Skeletons, useStaleRefresh, useToast } from './ui'
+import * as push from './notifications'
+import { signInWithGoogle } from './oauth'
 
 export async function website(path: string) {
   try { await WebBrowser.openBrowserAsync(`${SITE}${path}`, { toolbarColor: C.bg, controlsColor: C.teal }) }
@@ -19,6 +21,11 @@ function signInMessage(e: Error & { code?: string }) {
   if (/rate limit|too many/i.test(e.message)) return 'Too many attempts. Please wait a moment and try again.'
   if (e.name === 'AuthRetryableFetchError' || /network|fetch|connection/i.test(e.message)) return OFFLINE_MESSAGE
   return 'Could not sign you in. Please try again.'
+}
+function googleMessage(e: Error) {
+  if (e.message === TIMEOUT_MESSAGE) return TIMEOUT_MESSAGE
+  if (/network|fetch|connection/i.test(e.message)) return OFFLINE_MESSAGE
+  return 'Could not sign you in with Google. Please try again.'
 }
 type LibraryItem = { id: string; job: Job; status?: string }
 export const LibraryScreen = memo(function LibraryScreen({ mode, open, signIn, browse, revision, active, top }: { mode: 'saved' | 'applications'; open: (job: Job) => void; signIn: () => void; browse: () => void; revision: number; active: boolean; top: number }) {
@@ -97,6 +104,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  const [googleBusy, setGoogleBusy] = useState(false)
   const [error, setError] = useState('')
   const [profile, setProfile] = useState<Profile>(blank)
   const [profileReady, setProfileReady] = useState(false)
@@ -106,6 +114,8 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [signingOut, setSigningOut] = useState(false)
+  const [alertsOn, setAlertsOn] = useState(false)
+  const [alertsBusy, setAlertsBusy] = useState(false)
   const [reload, setReload] = useState(0)
   const [loadFailed, setLoadFailed] = useState(false)
   const passwordInput = useRef<TextInput>(null)
@@ -131,7 +141,7 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
     return () => { live = false }
   }, [session?.user.id, account?.role, reload])
   async function signIn() {
-    if (busy || !email.trim() || !password) return
+    if (busy || googleBusy || !email.trim() || !password) return
     setBusy(true); setError('')
     try {
       const { error } = await db.auth.signInWithPassword({ email: email.trim(), password })
@@ -139,6 +149,15 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
       setPassword('')
     } catch (e) { setError(signInMessage(e as Error)) }
     finally { setBusy(false) }
+  }
+  async function google() {
+    if (busy || googleBusy) return
+    setGoogleBusy(true); setError('')
+    try {
+      const result = await signInWithGoogle()
+      if (result.cancelled) return
+    } catch (e) { setError(googleMessage(e as Error)) }
+    finally { setGoogleBusy(false) }
   }
   async function saveProfile() {
     setBusy(true); setError('')
@@ -150,8 +169,30 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
     } catch (e) { setError((e as Error).message) }
     finally { setBusy(false) }
   }
+  useEffect(() => {
+    if (!active || !session) return
+    if (!push.PUSH_ENABLED) return
+    let live = true
+    void push.getAlertsOn(session.user.id).then(on => { if (live) setAlertsOn(on) }).catch(() => {})
+    return () => { live = false }
+  }, [active, session?.user.id])
+  async function toggleAlerts(next: boolean) {
+    if (!session || alertsBusy) return
+    setAlertsBusy(true)
+    const problem = await push.setAlertsEnabled(session.user.id, next)
+    setAlertsBusy(false)
+    if (next) {
+      if (!problem) { await push.setDecision('enabled'); setAlertsOn(true); toast('Job alerts are on') }
+      else if (problem === 'denied') { setAlertsOn(false); toast('Notifications are turned off for JobLinks in your phone settings.') }
+      else if (problem === 'unavailable') { setAlertsOn(false); toast('This device cannot receive job alerts.') }
+      else toast('Could not turn on job alerts. Please try again.')
+    } else if (problem) toast('Could not turn off job alerts. Please try again.')
+    else { setAlertsOn(false); toast('Job alerts turned off.') }
+  }
   async function signOut() {
     setSigningOut(true); setError('')
+    // Stop pushes to this device while the session can still update its own row.
+    await push.disableCurrentDevice()
     const { error } = await db.auth.signOut()
     setSigningOut(false)
     if (error) setError(friendly(error.message, 'Could not sign you out. Please try again.'))
@@ -179,7 +220,18 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
       <Text style={s.body}>Your existing JobLinks account works here too.</Text>
       <Field label="Email address" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" returnKeyType="next" submitBehavior="submit" onSubmitEditing={() => passwordInput.current?.focus()} />
       <Field label="Password" inputRef={passwordInput} value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoComplete="current-password" textContentType="password" returnKeyType="go" onSubmitEditing={signIn} />
-      <Button title="Sign in" busy={busy} disabled={!email.trim() || !password} onPress={signIn} />
+      <Button title="Sign in" busy={busy} disabled={!email.trim() || !password || googleBusy} onPress={signIn} />
+      <View style={s.row}>
+        <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+        <Text style={{ color: C.muted, fontSize: 13 }}>or</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+      </View>
+      <Press accessibilityRole="button" disabled={busy || googleBusy} onPress={google} style={[s.button, { backgroundColor: C.white, borderWidth: 1, borderColor: C.line }]}>
+        {googleBusy ? <ActivityIndicator color={C.teal} /> : <View style={[s.row, { gap: 8 }]}>
+          <Text style={{ color: '#4285F4', fontWeight: '800', fontSize: 17 }}>G</Text>
+          <Text style={{ color: C.ink, fontWeight: '700', fontSize: 16 }}>Continue with Google</Text>
+        </View>}
+      </Press>
       <Press accessibilityRole="link" onPress={() => website('/forgot-password')} style={{ alignSelf: 'center', paddingVertical: 4 }}><Text style={{ color: C.bright, fontSize: 16 }}>Forgot your password?</Text></Press>
       <Button secondary title="Create an account on JobLinks" onPress={() => website('/signup')} />
       <Text style={s.small}>Account creation and password recovery open the secure JobLinks website. After verifying your email, return here to sign in.</Text>
@@ -208,6 +260,16 @@ export const AccountScreen = memo(function AccountScreen({ active, top }: { acti
           <Row icon="chatbubbles-outline" label="Messages" external onPress={() => website('/messages')} />
         </Group>
       </> : !accountError && !loadFailed && <ActivityIndicator color={C.teal} />}
+      {push.PUSH_ENABLED && <Group>
+        <View style={[s.row, { minHeight: 48, paddingHorizontal: 16, paddingVertical: 12 }]}>
+          <Icon name="notifications-outline" size={20} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, color: C.ink }}>Job alerts</Text>
+            <Text style={s.small}>New job notifications</Text>
+          </View>
+          <Switch value={alertsOn} disabled={alertsBusy} onValueChange={toggleAlerts} trackColor={{ false: C.line, true: C.bright }} thumbColor={C.white} ios_backgroundColor={C.line} accessibilityLabel="Job alerts" />
+        </View>
+      </Group>}
       <InfoRows />
       <Group><Row icon="log-out-outline" label="Sign out" plain busy={signingOut} onPress={signOut} /></Group>
       {!confirmingDelete ? <Press onPress={() => setConfirmingDelete(true)} style={{ alignSelf: 'center', paddingVertical: 8 }}><Text style={{ color: C.red, fontSize: 16 }}>Delete account</Text></Press> : <View style={s.card}>

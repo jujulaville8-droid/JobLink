@@ -64,7 +64,7 @@ function SearchBar({ onSearch, onClear }: { onSearch: (term: string) => void; on
 /** replace: search or filter changed. pull: user pull. more: next page. silent: background refresh of what's on screen. */
 type LoadMode = 'replace' | 'pull' | 'more' | 'silent'
 
-export const JobsScreen = memo(function JobsScreen({ open, active, top }: { open: (job: Job) => void; active: boolean; top: number }) {
+export const JobsScreen = memo(function JobsScreen({ open, active, top, home }: { open: (job: Job) => void; active: boolean; top: number; home: number }) {
   const [resetSearch, setResetSearch] = useState(0)
   const [query, setQuery] = useState('')
   const [type, setType] = useState('')
@@ -113,6 +113,12 @@ export const JobsScreen = memo(function JobsScreen({ open, active, top }: { open
     }
   }
   useEffect(() => { void load(); return () => { generation.current++ } }, [query, type])
+  // Logo tap: clear any search or filter and return to the top of the full list.
+  useEffect(() => {
+    if (!home) return
+    setResetSearch(v => v + 1); setQuery(''); setType('')
+    list.current?.scrollToOffset({ offset: 0, animated: true })
+  }, [home])
   useStaleRefresh(active, () => { if (!inFlight.current) void load('silent') })
   useEffect(() => { if (active && top) list.current?.scrollToOffset({ offset: 0, animated: true }) }, [top])
   const renderJob = useCallback(({ item }: { item: Job }) => <JobCard job={item} open={open} />, [open])

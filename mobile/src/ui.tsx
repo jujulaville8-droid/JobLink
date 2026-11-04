@@ -37,8 +37,8 @@ export function Group({ children }: { children: ReactNode }) {
     {Children.toArray(children).map((child, i) => <View key={i} style={i > 0 && { borderTopWidth: 1, borderTopColor: C.line }}>{child}</View>)}
   </View>
 }
-/** Height of the app header above the tab content: 36 logo + 24 padding + 1 border. */
-export const HEADER_HEIGHT = 61
+/** Height of the app header above the tab content: 36 logo + 2 gap + 13 country line + 22 padding + 1 border. */
+export const HEADER_HEIGHT = 74
 /**
  * Keeps inputs above the keyboard on Android, where modals and edge-to-edge make window
  * resizing unreliable. iOS scroll views use automaticallyAdjustKeyboardInsets instead.

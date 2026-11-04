@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto'
 import { AppState, Platform } from 'react-native'
 import * as SecureStore from 'expo-secure-store'
+import * as ExpoCrypto from 'expo-crypto'
 import { createClient, processLock } from '@supabase/supabase-js'
 
 export const SITE = process.env.EXPO_PUBLIC_SITE_URL || 'https://joblinkantigua.com'
@@ -65,8 +66,19 @@ const secureStorage = {
   },
 }
 
+// Hermes has no WebCrypto, and auth-js needs it to hash the PKCE challenge;
+// without this shim it falls back to a plain challenge and Math.random values.
+const webCrypto = ((globalThis as unknown as { crypto?: Record<string, unknown> }).crypto ?? {}) as Record<string, unknown>
+if (typeof webCrypto.getRandomValues !== 'function') {
+  webCrypto.getRandomValues = (array: Uint8Array) => { array.set(ExpoCrypto.getRandomBytes(array.length)); return array }
+}
+if (!webCrypto.subtle) {
+  webCrypto.subtle = { digest: (_algorithm: string, data: ArrayBuffer) => ExpoCrypto.digest(ExpoCrypto.CryptoDigestAlgorithm.SHA256, data) }
+}
+;(globalThis as { crypto?: unknown }).crypto = webCrypto
+
 export const db = createClient(url || 'https://example.supabase.co', key || 'unconfigured', {
-  auth: { storage: secureStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, lock: processLock },
+  auth: { storage: secureStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false, lock: processLock, flowType: 'pkce' },
   global: { fetch: timedFetch(READ_TIMEOUT) },
 })
 if (Platform.OS !== 'web') {

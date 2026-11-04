@@ -25,6 +25,14 @@
       "expo-secure-store",
       "expo-web-browser",
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/joblink-mark.png",
+          "color": "#095355",
+          "defaultChannel": "default"
+        }
+      ],
+      [
         "expo-font",
         {
           "fonts": [
