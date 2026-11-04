@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendMessageNotification } from '@/lib/messaging-notifications'
 import { requireUser, requireVerifiedUser } from '@/lib/api-auth'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
 
 // GET: Paginated messages for a conversation (supports cursor-based loading)
@@ -146,8 +147,11 @@ export async function POST(
       .single()
 
     if (otherPart) {
-      // Get sender name and job context for notification
-      const { data: convMeta } = await supabase.rpc('get_conversation_meta', {
+      // Get sender name and job context for notification.
+      // The meta RPC only answers for the caller's own id (C2 hardening), and
+      // this lookup is for the recipient's context, so it goes through the
+      // admin client instead of the sender's authenticated client.
+      const { data: convMeta } = await createAdminClient().rpc('get_conversation_meta', {
         p_user_id: otherPart.user_id,
         p_conversation_id: conversationId,
       })
