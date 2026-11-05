@@ -1,4 +1,4 @@
-import { MAX_CV_BYTES, CV_TYPES, cvExtension, ownedCvPath } from '@/lib/cv-upload'
+import { MAX_CV_EMAIL_ATTACHMENT_BYTES, CV_TYPES, cvExtension, ownedCvPath } from '@/lib/cv-upload'
 import { resumeFilename } from '@/lib/resume-filename'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
@@ -92,7 +92,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
     if (path) {
       try {
         const { data: file, error: downloadError } = await db.storage.from('cvs').download(path)
-        if (!downloadError && file && file.size > 0 && file.size <= MAX_CV_BYTES) {
+        if (!downloadError && file && file.size > 0 && file.size <= MAX_CV_EMAIL_ATTACHMENT_BYTES) {
           const bytes = Buffer.from(await file.arrayBuffer())
           const extension = cvExtension(path)!
           if (extension !== 'pdf' || bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
@@ -110,7 +110,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
           const { createResumeDocument } = await import('@/lib/resume-pdf')
           const { renderToBuffer } = await import('@react-pdf/renderer')
           const bytes = await renderToBuffer(createResumeDocument(cv))
-          if (bytes.length > 0 && bytes.length <= MAX_CV_BYTES) {
+          if (bytes.length > 0 && bytes.length <= MAX_CV_EMAIL_ATTACHMENT_BYTES) {
             attachments.push({ filename: resumeFilename(cv.contact.first_name, cv.contact.last_name), content: bytes, contentType: 'application/pdf' })
           }
         }
