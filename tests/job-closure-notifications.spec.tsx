@@ -236,6 +236,22 @@ it('lets the applicant claim win when the owner applied to their own listing', a
   expect(state.send.mock.calls.every(([mail]) => mail.type === 'job_closed_applicant')).toBe(true)
 })
 
+it('still emails the owner once when the listing closes with no applicants', async () => {
+  addEmployer()
+  state.tables.applications = []
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 0, employer: { sent: 1, failed: 0 } })
+  expect(state.send).toHaveBeenCalledTimes(1)
+  expect(state.send).toHaveBeenCalledWith({
+    to: 'owner@example.com', type: 'job_closed_employer', idempotencyKey: 'job-closed/closed/employer',
+    data: { job_title: 'closed', company_name: 'Island Hotel', applicant_count: 0 },
+  })
+  expect(state.tables.job_closure_notification_log).toEqual([
+    expect.objectContaining({ job_id: 'closed', user_id: 'employer', status: 'sent', message_id: 'message-id' }),
+  ])
+  expect(await notifyApplicantsOfJobClosure('closed')).toEqual({ sent: 0, failed: 0, employer: { sent: 0, failed: 0 } })
+  expect(state.send).toHaveBeenCalledTimes(1)
+})
+
 it('resolves an owner from an array-shaped company relationship', async () => {
   addEmployer()
   state.tables.job_listings[0].companies = [state.tables.job_listings[0].companies]
