@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import PrivacyAwareAnalytics from "@/components/PrivacyAwareAnalytics";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
+import TesterBanner from "@/components/TesterBanner";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import SupportButton from "@/components/SupportButton";
@@ -88,6 +89,7 @@ export default function RootLayout({
       <body className={`${bodyFont.variable} antialiased font-sans`}>
         <AuthProvider>
           <a href="#main-content" className="skip-link">Skip to main content</a>
+          <TesterBanner />
           <Navbar />
           <main id="main-content" tabIndex={-1} className="min-h-screen pb-20 md:pb-0">{children}</main>
           <Footer />
