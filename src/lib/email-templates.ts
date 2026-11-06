@@ -214,6 +214,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
     case 'job_closed_employer': {
       // Keep this update free of em dashes, including employer-provided labels.
       const copy = (value: string | undefined) => (value || '').replace(/\s*\u2014\s*/g, ', ')
+      const applicantCount = d.applicant_count ?? 0
       return {
         subject: `Your listing for ${copy(d.job_title)} has been closed`,
         html: wrapper(`
@@ -222,12 +223,17 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
             The <strong>${esc(copy(d.job_title))}</strong> role at <strong>${esc(copy(d.company_name))}</strong>
             has been closed on JobLink.
           </p>
+          ${applicantCount > 0 ? `
           <p style="color: #374151; line-height: 1.6;">
-            All ${d.applicant_count ?? 0} applicants were notified by email that the position is no longer available
+            All ${applicantCount} applicants were notified by email that the position is no longer available
             and that ${esc(copy(d.company_name))} has contacted the candidates it is moving forward with.
             Similar open roles were suggested to them.
-          </p>
+          </p>` : `
+          <p style="color: #374151; line-height: 1.6;">
+            This listing had no applicants, so there was no one to notify this time.
+          </p>`}
           <p style="color: #374151; line-height: 1.6;">Nothing further is needed from you.</p>
+          <p style="color: #374151; line-height: 1.6;">Thank you for using JobLink to hire. We appreciate you posting your role with us.</p>
           <p style="color: #374151; line-height: 1.6;">Ready to grow your team again? Post another role on JobLink.</p>
           ${btn('Post Another Role', '/post-job')}
         `),
