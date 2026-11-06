@@ -58,16 +58,20 @@ export async function notifyApplicantsOfJobClosure(jobId: string) {
       }
       if (!applications || applications.length < 500) break
     }
-    if (!recipients.size) return result
 
+    // Suggestions only matter when there are applicants to email. With none,
+    // skip the scan and fall through so the employer still gets their
+    // closure confirmation below.
     let suggestions: Job[] = []
-    for (let offset = 0; ; offset += 500) {
-      const { data: candidates, error } = await db.from('job_listings')
-        .select('id, title, category, job_type, status, location, created_at, companies(company_name)')
-        .eq('status', 'active').order('id').range(offset, offset + 499)
-      if (error) throw error
-      suggestions = selectClosureSuggestions(job, [...suggestions, ...(candidates || []) as Job[]])
-      if (!candidates || candidates.length < 500) break
+    if (recipients.size) {
+      for (let offset = 0; ; offset += 500) {
+        const { data: candidates, error } = await db.from('job_listings')
+          .select('id, title, category, job_type, status, location, created_at, companies(company_name)')
+          .eq('status', 'active').order('id').range(offset, offset + 499)
+        if (error) throw error
+        suggestions = selectClosureSuggestions(job, [...suggestions, ...(candidates || []) as Job[]])
+        if (!candidates || candidates.length < 500) break
+      }
     }
     const suggestedJobs = suggestions.map(suggestion => ({
       title: suggestion.title,
