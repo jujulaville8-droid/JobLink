@@ -937,7 +937,7 @@ describe.each([
   });
 });
 
-const NOVEMBER_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST';
+const NOVEMBER_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/122';
 
 describe.each([
   ['263be015-34e7-48aa-81ec-8e6ee8f5fc62', '67d73b3c-085c-497d-b790-8144f8e2d786', 'Hawksbill Resort', 'Beach Attendants', '2026-11-05'],

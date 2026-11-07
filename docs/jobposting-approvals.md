@@ -413,7 +413,7 @@ writes.
 
 ## November 6, 2026 vacancy-scoped allowlist (Hawksbill Resort, Fries Guys & The Side Café, Progressive Vision)
 
-[This PR](https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST) records seven vacancy-scoped entries in
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/122) records seven vacancy-scoped entries in
 `EMPLOYER_APPROVED_JOBS`, each bound to both the job ID and that job's company
 ID. No company-wide permission is claimed. No email message content is copied
 here. None of these listings states a public deadline, so no `validThrough` is

@@ -52,7 +52,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "67d73b3c-085c-497d-b790-8144f8e2d786",
     companyName: "Hawksbill Resort",
     attestedOn: "2026-11-05",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
@@ -62,7 +62,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "67d73b3c-085c-497d-b790-8144f8e2d786",
     companyName: "Hawksbill Resort",
     attestedOn: "2026-11-05",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
@@ -72,7 +72,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "67d73b3c-085c-497d-b790-8144f8e2d786",
     companyName: "Hawksbill Resort",
     attestedOn: "2026-11-05",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // Fries Guys & The Side Café: employer yes via email to JobLink on 2026-11-04 for
@@ -82,7 +82,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "6299b0b2-c4be-4499-9d4c-435d28775729",
     companyName: "Fries Guys & The Side Café",
     attestedOn: "2026-11-04",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // Fries Guys & The Side Café: employer yes via email to JobLink on 2026-11-04 for
@@ -92,7 +92,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "6299b0b2-c4be-4499-9d4c-435d28775729",
     companyName: "Fries Guys & The Side Café",
     attestedOn: "2026-11-04",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // Fries Guys & The Side Café: employer yes via email to JobLink on 2026-11-04 for
@@ -102,7 +102,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "6299b0b2-c4be-4499-9d4c-435d28775729",
     companyName: "Fries Guys & The Side Café",
     attestedOn: "2026-11-04",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // Site owner requested Google Jobs allowlist on 2026-11-06 for this already-live admin-posted listing (created 2026-11-03).
@@ -111,7 +111,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "7b03f6f7-50d6-4391-b189-dd983c32f4b0",
     companyName: "Progressive Vision",
     attestedOn: "2026-11-06",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
     employmentTypeUnconfirmed: true,
   },
   // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Chef de Partie vacancy only.
