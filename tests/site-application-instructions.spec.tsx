@@ -102,7 +102,8 @@ describe('Woodstock exact-record editorial application instructions', () => {
     db.job.description = 'Updated employer instructions: email new@example.test. Learn more: employer.example.';
     const { page, schemaDescription, metadata } = await representations();
     expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(db.job.description);
-    expect(schemaDescription).toBe(db.job.description);
+    expect(schemaDescription).toBe('Updated employer instructions: email [redacted]. Learn more: employer.example.');
+    expect(schemaDescription).not.toContain('new@example.test');
     expect(metadata.description).toContain(db.job.description);
   });
 });

@@ -5,6 +5,7 @@ import { safeJsonLd } from "@/lib/safe-sql";
 import { getPublicJobDeadline } from "@/lib/seo/public-job-deadlines";
 import { getJobClosure } from "@/lib/job-closures";
 import { jobMetaDescription } from "@/lib/seo/job-description";
+import { redactJobPostingEmails } from "@/lib/seo/jobposting-description";
 import { publicVacancyDescription } from "@/lib/public-vacancy-description";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -268,7 +269,9 @@ export default async function JobDetailPage({ params }: PageProps) {
       value: job.id,
     },
     title: job.title,
-    description: textToHtml(description),
+    // The visible description above is unchanged. Only the markup Google reads
+    // drops email addresses.
+    description: textToHtml(redactJobPostingEmails(description)),
     datePosted: job.created_at,
     ...(employmentTypeConfirmed && employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
     // Markup must match what the page shows: the company's industry, not the

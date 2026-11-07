@@ -360,7 +360,7 @@ it.each([
   'Apply before: 29 October 2026',
   'Application deadline: 30 October 2026.',
   'Applications close October 30, 2026.',
-])('keeps visible text, metadata and schema descriptions consistent while retaining source facts: %s', async deadline => {
+])('keeps the deadline out of visible text and metadata, and redacts emails only in JobPosting: %s', async deadline => {
   db.job!.description = `Work Saturdays, 8am–4pm.\n\n${deadline}\n\nEmail office@example.com to apply.`;
   const before = structuredClone(db.job);
   const expected = 'Work Saturdays, 8am–4pm.\n\nEmail office@example.com to apply.';
@@ -370,7 +370,8 @@ it.each([
   expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(expected);
   expect(html).not.toContain(deadline);
   const schema = (await schemas()).find(schema => schema['@type'] === 'JobPosting');
-  expect(schema.description).toBe('<p>Work Saturdays, 8am–4pm.</p><p>Email office@example.com to apply.</p>');
+  expect(schema.description).toBe('<p>Work Saturdays, 8am–4pm.</p><p>Email [redacted] to apply.</p>');
+  expect(schema.description).not.toContain('office@example.com');
   const metadata = await generateMetadata({ params: Promise.resolve({ id: db.job!.id }) });
   expect(metadata.description).toContain(expected.replace(/\s+/g, ' '));
   expect(metadata.description).not.toContain(deadline);
@@ -933,5 +934,151 @@ describe.each([
   it('stays live well into the future because no closure or deadline is recorded', async () => {
     vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+const NOVEMBER_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/122';
+
+describe.each([
+  ['263be015-34e7-48aa-81ec-8e6ee8f5fc62', '67d73b3c-085c-497d-b790-8144f8e2d786', 'Hawksbill Resort', 'Beach Attendants', '2026-11-05'],
+  ['39ffda6c-e9c3-4e43-94cd-3b1ba59ca2c6', '67d73b3c-085c-497d-b790-8144f8e2d786', 'Hawksbill Resort', 'Bartenders', '2026-11-05'],
+  ['8260775d-9740-42ba-9f40-dfc87cf0bfbd', '67d73b3c-085c-497d-b790-8144f8e2d786', 'Hawksbill Resort', 'Servers', '2026-11-05'],
+  ['95db04ec-fd9e-44d2-881d-385e64c3580b', '6299b0b2-c4be-4499-9d4c-435d28775729', 'Fries Guys & The Side Café', 'Customer Service Staff', '2026-11-04'],
+  ['e5e07984-4043-4a8c-a065-a99c381e4e5f', '6299b0b2-c4be-4499-9d4c-435d28775729', 'Fries Guys & The Side Café', 'Cooks', '2026-11-04'],
+  ['fb165818-e344-46b5-a3cd-c7e64d196523', '6299b0b2-c4be-4499-9d4c-435d28775729', 'Fries Guys & The Side Café', 'Barista/Bartender', '2026-11-04'],
+  ['e60b9e69-cfdb-4edb-b7b6-e21e22bb24f2', '7b03f6f7-50d6-4391-b189-dd983c32f4b0', 'Progressive Vision', 'Optometric Technician', '2026-11-06'],
+])('%s November 6 vacancy-scoped allowlist', (jobId, companyId, companyName, title, attestedOn) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-07T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+    db.job!.description = 'Hiring for this vacancy.';
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-03T15:00:00.000Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn, evidenceReference: NOVEMBER_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
+    });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema.datePosted).not.toBe(attestedOn);
+    const html = await pageHtml();
+    const page = document.createElement('div');
+    page.innerHTML = html;
+    expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(before!.description);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+describe('November 6 allowlist leaves retired approvals and the ELand exclusion alone', () => {
+  it('does not rewrite Shhatterr, Food Brokerage or Woodstock approvals', () => {
+    expect(EMPLOYER_APPROVED_JOBS['ade78a5c-e0f6-4f5f-8008-117d7a4b96ee']).toMatchObject({
+      companyId: '1b68107a-228a-4e97-b047-d4c14bd730ef',
+      attestedOn: '2026-10-08',
+      evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/38',
+      employmentTypeUnconfirmed: true,
+    });
+    expect(EMPLOYER_APPROVED_JOBS['ade78a5c-e0f6-4f5f-8008-117d7a4b96ee'].validThrough).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS['d4fdb396-a0b0-427d-aae0-ed756274375e']).toMatchObject({
+      companyId: '42e58a5e-3f56-4f2b-b829-b9b335d45b81',
+      attestedOn: '2026-10-09',
+      evidenceReference: 'https://github.com/jujulaville8-droid/JobLink/pull/38',
+    });
+    expect(EMPLOYER_APPROVED_JOBS['d4fdb396-a0b0-427d-aae0-ed756274375e'].validThrough).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS['d4fdb396-a0b0-427d-aae0-ed756274375e'].employmentTypeUnconfirmed).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS['bb1b011d-4e5c-4005-81b6-bc70c48acf4f']).toMatchObject({
+      companyId: '6dde0e9d-e04a-4d95-a9d3-50fa9ffcc961',
+      attestedOn: '2026-09-30',
+      evidenceReference: 'owner-attestation:2026-09-30:Sentinel_cace3b51c42c81919512b87c905bc49a',
+      validThrough: '2026-10-29',
+    });
+  });
+
+  it('does not allowlist the ELand General Manager vacancy', () => {
+    expect(EMPLOYER_APPROVED_JOBS).not.toHaveProperty('46e9e1c1-eb64-46cc-bf38-af6b84e0910b');
+    expect(getEmployerApproval('d3c66ca7-9066-4f4a-a87c-a307b9d63ab5', '46e9e1c1-eb64-46cc-bf38-af6b84e0910b')).toBeNull();
+  });
+});
+
+describe.each([
+  ['03cdd5df-68aa-4463-a367-04ccd83753ea', 'eda48543-634b-4687-9947-3aa970d46e97', 'COLIBRI', 'Chef de Partie', 'info@colibriantigua.com'],
+  ['21b4965b-27a8-4a6c-a93a-c1bcf9ad08c5', '68fada5b-040a-4c46-ba37-245c37f1bef9', 'CMW Enterprise', 'Italian-Speaking Tour Guide', 'touraroundantigua@gmail.com'],
+  ['7018747d-7e04-4328-9d22-2b3ea59bcc67', '97537be2-d7e4-479f-9d7e-7682ade82a59', 'Dove Cove Comfort Suites', 'Housekeeper', 'info@dovecoveantigua.com'],
+  ['74e0d726-fd41-4071-84fe-ac75b49f3342', '97537be2-d7e4-479f-9d7e-7682ade82a59', 'Dove Cove Comfort Suites', 'Handyman', 'info@dovecoveantigua.com'],
+  ['95db04ec-fd9e-44d2-881d-385e64c3580b', '6299b0b2-c4be-4499-9d4c-435d28775729', 'Fries Guys & The Side Café', 'Customer Service Staff', 'friesguys268@gmail.com'],
+  ['e5e07984-4043-4a8c-a065-a99c381e4e5f', '6299b0b2-c4be-4499-9d4c-435d28775729', 'Fries Guys & The Side Café', 'Cooks', 'friesguys268@gmail.com'],
+  ['fb165818-e344-46b5-a3cd-c7e64d196523', '6299b0b2-c4be-4499-9d4c-435d28775729', 'Fries Guys & The Side Café', 'Barista/Bartender', 'friesguys268@gmail.com'],
+])('redacts %s from JobPosting only', (jobId, companyId, companyName, title, email) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-07T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+    db.job!.posted_by_admin = true;
+    db.job!.status = 'active';
+    db.job!.description = `How to apply: email ${email}`;
+    db.job!.salary_min = 1800;
+    db.job!.salary_max = 2200;
+    db.job!.expires_at = null;
+  });
+
+  it('keeps the address on the page, in metadata and in the stored listing', async () => {
+    const before = structuredClone(db.job);
+    const html = await pageHtml();
+    const page = document.createElement('div');
+    page.innerHTML = html;
+    expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(before!.description);
+    const pane = renderToStaticMarkup(await JobDetailPane({ jobId, backHref: '/jobs' }));
+    expect(pane).toContain(email);
+    expect(pane).not.toContain('[redacted]');
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: jobId }) });
+    expect(metadata.description).toContain(email);
+    expect(metadata.description).not.toContain('[redacted]');
+    const schema = (await schemas()).find(item => item['@type'] === 'JobPosting');
+    expect(schema.description).toBe('<p>How to apply: email [redacted]</p>');
+    expect(schema.description).not.toContain(email);
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema.baseSalary.value).toMatchObject({ minValue: 1800, maxValue: 2200 });
+    expect(schema.datePosted).toBe(before!.created_at);
+    expect(db.job).toEqual(before);
   });
 });

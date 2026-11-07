@@ -10,6 +10,10 @@ Existing legitimate self-posted listings and Top Bun's existing company-wide
 approval/type correction retain their behavior. Approval never changes a job's
 status, expiry, posted date, pay, or description.
 
+`JobPosting` descriptions replace email addresses with `[redacted]` before the
+JSON-LD is emitted. The visible page, the jobs list pane, search/share metadata
+and the stored listing keep the original address.
+
 ## September 30, 2026 owner attestation
 
 The original scoped approvals enabled these exact vacancies. The site owner
@@ -406,3 +410,34 @@ None of these listings states a public deadline, so no `validThrough` is
 emitted and no closure entry is added (no automatic job closing). Stored
 listing content, status and the application route are unchanged; no database
 writes.
+
+## November 6, 2026 vacancy-scoped allowlist (Hawksbill Resort, Fries Guys & The Side Café, Progressive Vision)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/122) records seven vacancy-scoped entries in
+`EMPLOYER_APPROVED_JOBS`, each bound to both the job ID and that job's company
+ID. No company-wide permission is claimed. No email message content is copied
+here. None of these listings states a public deadline, so no `validThrough` is
+emitted and no closure entry is added. Full Time on the page is an unconfirmed
+placeholder, so `employmentType` is omitted. Stored listing content, status and
+the application route are unchanged; no database writes.
+
+Hawksbill Resort and Fries Guys & The Side Café are employer yeses. Progressive
+Vision is not: no separate employer-yes document was found. Its ledger wording
+is the site owner's request only.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Hawksbill Resort — Beach Attendants | `263be015-34e7-48aa-81ec-8e6ee8f5fc62` | `67d73b3c-085c-497d-b790-8144f8e2d786` | 2026-11-05 | Employer yes via email to JobLink on Nov 5, 2026, for Servers, Bartenders and Beach Attendants only |
+| Hawksbill Resort — Bartenders | `39ffda6c-e9c3-4e43-94cd-3b1ba59ca2c6` | `67d73b3c-085c-497d-b790-8144f8e2d786` | 2026-11-05 | Employer yes via email to JobLink on Nov 5, 2026, for Servers, Bartenders and Beach Attendants only |
+| Hawksbill Resort — Servers | `8260775d-9740-42ba-9f40-dfc87cf0bfbd` | `67d73b3c-085c-497d-b790-8144f8e2d786` | 2026-11-05 | Employer yes via email to JobLink on Nov 5, 2026, for Servers, Bartenders and Beach Attendants only |
+| Fries Guys & The Side Café — Customer Service Staff | `95db04ec-fd9e-44d2-881d-385e64c3580b` | `6299b0b2-c4be-4499-9d4c-435d28775729` | 2026-11-04 | Employer yes via email to JobLink on Nov 4, 2026, for Cooks, Barista/Bartender and Customer Service Staff |
+| Fries Guys & The Side Café — Cooks | `e5e07984-4043-4a8c-a065-a99c381e4e5f` | `6299b0b2-c4be-4499-9d4c-435d28775729` | 2026-11-04 | Employer yes via email to JobLink on Nov 4, 2026, for Cooks, Barista/Bartender and Customer Service Staff |
+| Fries Guys & The Side Café — Barista/Bartender | `fb165818-e344-46b5-a3cd-c7e64d196523` | `6299b0b2-c4be-4499-9d4c-435d28775729` | 2026-11-04 | Employer yes via email to JobLink on Nov 4, 2026, for Cooks, Barista/Bartender and Customer Service Staff |
+| Progressive Vision — Optometric Technician | `e60b9e69-cfdb-4edb-b7b6-e21e22bb24f2` | `7b03f6f7-50d6-4391-b189-dd983c32f4b0` | 2026-11-06 | Site owner requested Google Jobs allowlist on 2026-11-06 for this already-live admin-posted listing (created 2026-11-03). |
+
+The same change redacts email addresses in the `JobPosting` description only.
+Visible page text and stored descriptions are left as written. That covers
+addresses already present in live JobPosting markup (COLIBRI Chef de Partie,
+CMW Enterprise Italian-Speaking Tour Guide, Dove Cove Housekeeper and Handyman)
+and the Fries Guys apply-by-email lines, which would otherwise enter JobPosting
+once those three vacancies are allowlisted.

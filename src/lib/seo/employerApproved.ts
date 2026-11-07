@@ -45,6 +45,75 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
+  // Bartenders and Beach Attendants only. This entry is the Beach Attendants vacancy.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "263be015-34e7-48aa-81ec-8e6ee8f5fc62": {
+    companyId: "67d73b3c-085c-497d-b790-8144f8e2d786",
+    companyName: "Hawksbill Resort",
+    attestedOn: "2026-11-05",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
+  // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
+  // Bartenders and Beach Attendants only. This entry is the Bartenders vacancy.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "39ffda6c-e9c3-4e43-94cd-3b1ba59ca2c6": {
+    companyId: "67d73b3c-085c-497d-b790-8144f8e2d786",
+    companyName: "Hawksbill Resort",
+    attestedOn: "2026-11-05",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
+  // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
+  // Bartenders and Beach Attendants only. This entry is the Servers vacancy.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "8260775d-9740-42ba-9f40-dfc87cf0bfbd": {
+    companyId: "67d73b3c-085c-497d-b790-8144f8e2d786",
+    companyName: "Hawksbill Resort",
+    attestedOn: "2026-11-05",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
+  // Fries Guys & The Side Café: employer yes via email to JobLink on 2026-11-04 for
+  // Cooks, Barista/Bartender and Customer Service Staff. This entry is Customer Service Staff.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "95db04ec-fd9e-44d2-881d-385e64c3580b": {
+    companyId: "6299b0b2-c4be-4499-9d4c-435d28775729",
+    companyName: "Fries Guys & The Side Café",
+    attestedOn: "2026-11-04",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
+  // Fries Guys & The Side Café: employer yes via email to JobLink on 2026-11-04 for
+  // Cooks, Barista/Bartender and Customer Service Staff. This entry is the Cooks vacancy.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "e5e07984-4043-4a8c-a065-a99c381e4e5f": {
+    companyId: "6299b0b2-c4be-4499-9d4c-435d28775729",
+    companyName: "Fries Guys & The Side Café",
+    attestedOn: "2026-11-04",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
+  // Fries Guys & The Side Café: employer yes via email to JobLink on 2026-11-04 for
+  // Cooks, Barista/Bartender and Customer Service Staff. This entry is the Barista/Bartender vacancy.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "fb165818-e344-46b5-a3cd-c7e64d196523": {
+    companyId: "6299b0b2-c4be-4499-9d4c-435d28775729",
+    companyName: "Fries Guys & The Side Café",
+    attestedOn: "2026-11-04",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
+  // Site owner requested Google Jobs allowlist on 2026-11-06 for this already-live admin-posted listing (created 2026-11-03).
+  // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
+  "e60b9e69-cfdb-4edb-b7b6-e21e22bb24f2": {
+    companyId: "7b03f6f7-50d6-4391-b189-dd983c32f4b0",
+    companyName: "Progressive Vision",
+    attestedOn: "2026-11-06",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/122",
+    employmentTypeUnconfirmed: true,
+  },
   // COLIBRI: employer approval recorded 2026-10-28 (ET) for this Chef de Partie vacancy only.
   // Full Time is an unconfirmed placeholder; no public deadline.
   "03cdd5df-68aa-4463-a367-04ccd83753ea": {
