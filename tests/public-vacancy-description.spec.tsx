@@ -213,7 +213,8 @@ describe.each(vacancies)('$companyName verified description fallback', vacancy =
     expect(description).toBe(db.job.description);
     expect(metadata.description).toContain(db.job.description);
     const schema = schemas.find(item => item['@type'] === 'JobPosting');
-    expect(schema.description).toBe(`<p>${db.job.description}</p>`);
+    expect(schema.description).toBe('<p>Updated duties supplied by the employer. Email [redacted].</p>');
+    expect(schema.description).not.toContain('new@example.com');
     expect(db.job).toEqual(before);
   });
 });

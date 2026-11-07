@@ -198,7 +198,8 @@ describe.each(vacancies)('$companyName already-approved description fallback', v
     const before = structuredClone(db.job);
     const { page, schemaDescription, metadata } = await publicRepresentations();
     expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(db.job.description);
-    expect(schemaDescription).toBe(db.job.description);
+    expect(schemaDescription).toBe('Updated employer duties. Email [redacted].');
+    expect(schemaDescription).not.toContain('new@example.com');
     expect(metadata.description).toContain(db.job.description);
     expect(db.job).toEqual(before);
   });
