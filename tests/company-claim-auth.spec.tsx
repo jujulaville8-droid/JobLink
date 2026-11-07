@@ -6,7 +6,7 @@ import VerifyConfirmPage from '@/app/auth/verify-confirm/page'
 import AuthRedirect from '@/components/AuthRedirect'
 import ClaimCompanyButton from '@/components/claims/ClaimCompanyButton'
 import { claimReturnTo, onboardingReturnTo, safeAuthReturnTo, withReturnTo } from '@/lib/claim-links'
-import { containsClaimCredential } from '@/components/PrivacyAwareAnalytics'
+import PrivacyAwareAnalytics, { isSensitiveUrl } from '@/components/PrivacyAwareAnalytics'
 const destination = `/claim/${'T'.repeat(43)}`
 const api = vi.hoisted(() => ({ params: '', verified: false, signUp: vi.fn(), signInWithPassword: vi.fn(), signInWithOAuth: vi.fn(), getUser: vi.fn(), verifyOtp: vi.fn(), updateUser: vi.fn(), resend: vi.fn() }))
 vi.mock('next/navigation', () => {
@@ -85,9 +85,16 @@ it('blocks double submission and shows a friendly claim failure', async () => {
   expect((screen.getByRole('button') as HTMLButtonElement).disabled).toBe(false)
 })
 it('excludes bearer URLs from analytics while retaining ordinary pages', () => {
-  expect(containsClaimCredential(destination)).toBe(true)
-  expect(containsClaimCredential(withReturnTo('/signup?role=employer', destination))).toBe(true)
-  expect(containsClaimCredential('/jobs/example')).toBe(false)
+  expect(isSensitiveUrl(destination)).toBe(true)
+  expect(isSensitiveUrl(withReturnTo('/signup?role=employer', destination))).toBe(true)
+  expect(isSensitiveUrl('/api/claim/secret')).toBe(true)
+  expect(isSensitiveUrl('https://joblinkantigua.com/auth/reset-confirm?token_hash=secret&type=recovery')).toBe(true)
+  expect(isSensitiveUrl('/auth/reset-confirm/')).toBe(true)
+  expect(isSensitiveUrl('/jobs/example')).toBe(false)
+  const { beforeSend } = PrivacyAwareAnalytics().props
+  expect(beforeSend({ type: 'pageview', url: 'https://joblinkantigua.com/auth/reset-confirm?token_hash=secret&type=recovery' })).toBeNull()
+  const normalEvent = { type: 'pageview', url: 'https://joblinkantigua.com/jobs/example' }
+  expect(beforeSend(normalEvent)).toBe(normalEvent)
 })
 
 const applyDestination = '/jobs/123e4567-e89b-42d3-a456-426614174000/apply'
