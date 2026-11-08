@@ -10,9 +10,12 @@ export const postingSchema = z.object({
   job_type: z.enum(['full_time', 'part_time', 'seasonal', 'contract']),
   salary_min: salary, salary_max: salary, salary_type: z.enum(['hourly', 'weekly', 'biweekly', 'monthly', 'annually']),
   salary_visible: z.boolean(), benefits: z.array(z.string()).max(20),
+  // Opt in to widened JobPosting structured data (see lib/seo/jobposting-consent.ts).
+  // Defaulted so payloads from before the checkbox existed still parse as "no consent".
+  structured_data_consent: z.boolean().default(false),
 });
 export type PostingForm = z.infer<typeof postingSchema>;
-export const EMPTY_POSTING: PostingForm = { title: '', location: '', location_type: 'On site', category: '', description: '', job_type: 'full_time', salary_min: '', salary_max: '', salary_type: 'monthly', salary_visible: true, benefits: [] };
+export const EMPTY_POSTING: PostingForm = { title: '', location: '', location_type: 'On site', category: '', description: '', job_type: 'full_time', salary_min: '', salary_max: '', salary_type: 'monthly', salary_visible: true, benefits: [], structured_data_consent: false };
 export function postingErrors(form: PostingForm, step?: number): Record<string, string> {
   const errors: Record<string, string> = {};
   if (step === undefined || step === 0) {
@@ -35,5 +38,6 @@ export function templateDescription(form: PostingForm): string {
 export function listingFields(form: PostingForm) {
   return { title: form.title.trim(), description: form.description.trim(), category: form.category, location: form.location.trim(), job_type: form.job_type,
     salary_min: form.salary_min ? Number(form.salary_min) : null, salary_max: form.salary_max ? Number(form.salary_max) : null,
-    salary_type: form.salary_type, salary_visible: form.salary_visible, benefits: form.benefits, expires_at: null };
+    salary_type: form.salary_type, salary_visible: form.salary_visible, benefits: form.benefits, expires_at: null,
+    structured_data_consent: form.structured_data_consent };
 }

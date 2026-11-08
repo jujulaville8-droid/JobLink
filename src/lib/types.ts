@@ -114,6 +114,11 @@ export interface JobListing {
   is_featured: boolean;
   expires_at: string | null;
   created_at: string;
+  // Employer opt in to widened JobPosting structured data, recorded by the
+  // post-job form checkbox (see lib/seo/jobposting-consent.ts). Optional:
+  // rows and fixtures from before the consent column existed carry neither.
+  structured_data_consent?: boolean;
+  structured_data_consent_at?: string | null;
 }
 
 export interface JobListingWithCompany extends JobListing {

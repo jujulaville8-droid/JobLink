@@ -11,6 +11,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JOB_TYPE_LABELS, JobType, salaryTypePeriod } from "@/lib/types";
 import { getEmployerApproval } from "@/lib/seo/employerApproved";
+import {
+  canEmitWidenedFields,
+  isImportedJobListing,
+  jobBenefitsList,
+  widenedJobPostingFields,
+} from "@/lib/seo/jobposting-consent";
 import { hasUnconfirmedEmploymentType } from "@/lib/seo/unconfirmed-employment-types";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
@@ -228,9 +234,22 @@ export default async function JobDetailPage({ params }: PageProps) {
   // in the description) are otherwise skipped; the page itself stays
   // indexable. A dedicated column would be cleaner but needs a migration.
   // Non-active jobs never reach this point (they 404 above).
-  const isImportedListing =
-    !!job.posted_by_admin ||
-    /imported by JobLink from a public job post/i.test(job.description || "");
+  const isImportedListing = isImportedJobListing(job);
+
+  // Widened JobPosting fields (benefits, hiring organization description) are
+  // emitted only with permission recorded for the listing: the employer's own
+  // structured data consent from the posting form, or, for an admin posted
+  // listing that can never carry form consent, its recorded approval in
+  // employerApproved.ts (the same record that gates its base markup above).
+  // Listings with neither keep exactly the base markup.
+  const widenedFields = canEmitWidenedFields(job, employerApproval)
+    ? widenedJobPostingFields(job, company)
+    : {};
+
+  // The benefits list and the company description are rendered visibly on
+  // this page (Benefits card, About the Company card), so the JobPosting
+  // markup above never describes content a reader cannot see.
+  const visibleBenefits = jobBenefitsList(job);
 
   // Preserve the employer's original date-only deadline even when it is no
   // longer displayed. Never infer renewed permission or a new cutoff time.
@@ -282,7 +301,11 @@ export default async function JobDetailPage({ params }: PageProps) {
       name: company?.company_name,
       ...(company?.logo_url ? { logo: company.logo_url } : {}),
       ...(company?.website ? { sameAs: company.website } : {}),
+      ...(widenedFields.hiringOrganizationDescription
+        ? { description: widenedFields.hiringOrganizationDescription }
+        : {}),
     },
+    ...(widenedFields.jobBenefits ? { jobBenefits: widenedFields.jobBenefits } : {}),
     jobLocation: {
       "@type": "Place",
       address: {
@@ -510,6 +533,19 @@ export default async function JobDetailPage({ params }: PageProps) {
               </div>
             </div>
 
+            {/* Benefits card: the same list the JobPosting markup carries as
+                jobBenefits when permission is recorded. */}
+            {visibleBenefits.length > 0 && (
+              <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8">
+                <h2 className="font-display text-lg text-text mb-4">Benefits</h2>
+                <ul className="flex flex-wrap gap-2">
+                  {visibleBenefits.map((benefit, index) => (
+                    <li key={`${index}-${benefit}`} className="rounded-full border border-border px-4 py-2 text-sm text-text-light">{benefit}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Actions row */}
             <div className="rounded-2xl border border-border/60 bg-white shadow-sm px-6 py-4">
               <div className="flex flex-wrap items-center gap-3">
@@ -643,6 +679,12 @@ export default async function JobDetailPage({ params }: PageProps) {
                       </div>
                     )}
                   </div>
+
+                  {company.description?.trim() && (
+                    <p className="text-sm text-text-light leading-relaxed whitespace-pre-wrap mb-4">
+                      {company.description}
+                    </p>
+                  )}
 
                   <Link
                     href={`/companies/${company.id}`}

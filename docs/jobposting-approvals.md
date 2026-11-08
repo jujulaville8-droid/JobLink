@@ -441,3 +441,23 @@ addresses already present in live JobPosting markup (COLIBRI Chef de Partie,
 CMW Enterprise Italian-Speaking Tour Guide, Dove Cove Housekeeper and Handyman)
 and the Fries Guys apply-by-email lines, which would otherwise enter JobPosting
 once those three vacancies are allowlisted.
+
+## November 7, 2026: approvals also authorize the widened fields
+
+The structured data consent build (migration
+`20261106170000_job_listings_structured_data_consent.sql` and
+`src/lib/seo/jobposting-consent.ts`) added two widened JobPosting fields:
+`jobBenefits`, from the listing's own benefits list, and
+`hiringOrganization.description`, from the company profile. For employer
+self-posted listings these are gated on the employer's own consent recorded
+through the post-job form (`job_listings.structured_data_consent`).
+
+Admin-posted listings can never carry form consent. The site owner directed
+on Nov 7, 2026 that recorded employer permission is the basis for full
+markup, so from this date a recorded approval in this ledger (per vacancy in
+`EMPLOYER_APPROVED_JOBS`, or company wide in `EMPLOYER_APPROVED_COMPANIES`)
+also authorizes the widened fields for that listing, through the same
+`getEmployerApproval` lookup that gates its base markup. The widened fields
+still emit only when the underlying data exists, and both pass through the
+same email redaction as the JobPosting description. Salary is not affected:
+it remains gated on the employer's own `salary_visible` choice.

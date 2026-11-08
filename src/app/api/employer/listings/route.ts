@@ -26,22 +26,40 @@ const requestSchema = z.object({ id: z.uuid(), action: z.enum(['draft', 'submit'
 export async function POST(request: NextRequest) {
   const auth = await requireVerifiedUser();
   if ('error' in auth) return auth.error;
-  const parsed = requestSchema.safeParse(await request.json().catch(() => null));
+  const rawBody = await request.json().catch(() => null);
+  const parsed = requestSchema.safeParse(rawBody);
   if (!parsed.success) return NextResponse.json({ error: 'Please check the listing fields.' }, { status: 400 });
   const { id, action, step, form } = parsed.data;
   if (action !== 'draft' && Object.keys(postingErrors(form)).length) return NextResponse.json({ error: 'Complete the required fields.', errors: postingErrors(form) }, { status: 400 });
   const { supabase, user } = auth;
   const { data: company, error: companyError } = await supabase.from('companies').select('id, company_name, contact_email').eq('user_id', user.id).single();
   if (companyError || !company) return NextResponse.json({ error: 'Please complete your company profile.' }, { status: 403 });
-  const { data: existing, error: lookupError } = await supabase.from('job_listings').select('id, status').eq('id', id).eq('company_id', company.id).maybeSingle();
+  const { data: existing, error: lookupError } = await supabase.from('job_listings').select('id, status, structured_data_consent, structured_data_consent_at').eq('id', id).eq('company_id', company.id).maybeSingle();
   if (lookupError) return NextResponse.json({ error: 'Could not load this listing.' }, { status: 500 });
   // Retried submissions return the committed state, without sending emails again.
   if (action === 'submit' && existing && ['pending_approval', 'active'].includes(existing.status)) return NextResponse.json({ listing: existing });
   if (action === 'edit' && (!existing || !['pending_approval', 'active'].includes(existing.status))) return NextResponse.json({ error: 'This listing cannot be edited.' }, { status: 409 });
   if (action !== 'edit' && existing && existing.status !== 'draft') return NextResponse.json({ error: 'This draft has already been submitted.' }, { status: 409 });
+  // A payload that omits the consent field entirely (a client from before
+  // the checkbox existed) keeps the listing's recorded consent; only an
+  // explicit false withdraws it. Zod defaults an absent field to false, so
+  // presence is checked on the raw body.
+  const consentFieldProvided = !!rawBody && typeof rawBody === 'object' && 'form' in rawBody
+    && !!rawBody.form && typeof rawBody.form === 'object' && 'structured_data_consent' in rawBody.form;
+  const consent = !consentFieldProvided && existing
+    ? existing.structured_data_consent === true
+    : form.structured_data_consent;
+  const effectiveForm = consent === form.structured_data_consent ? form : { ...form, structured_data_consent: consent };
+  // Consent timestamp: stamp it when consent is first given, keep the original
+  // time while consent stands, and clear it when consent is withdrawn.
+  const structuredDataConsentAt = !consent
+    ? null
+    : existing?.structured_data_consent && existing.structured_data_consent_at
+      ? existing.structured_data_consent_at
+      : new Date().toISOString();
   const fields = action === 'draft'
-    ? { ...listingFields(form), description: '', draft_data: { form, step } }
-    : { ...listingFields(form), draft_data: { location_type: form.location_type } };
+    ? { ...listingFields(effectiveForm), structured_data_consent_at: structuredDataConsentAt, description: '', draft_data: { form: effectiveForm, step } }
+    : { ...listingFields(effectiveForm), structured_data_consent_at: structuredDataConsentAt, draft_data: { location_type: form.location_type } };
   const query = existing
     ? supabase.from('job_listings').update({ ...fields, ...(action === 'submit' ? { status: 'pending_approval' } : {}) }).eq('id', id).eq('company_id', company.id).eq('status', existing.status)
     : supabase.from('job_listings').insert({ ...fields, id, company_id: company.id, requires_work_permit: false, status: action === 'draft' ? 'draft' : 'pending_approval' });
