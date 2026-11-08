@@ -90,3 +90,41 @@ it('loads only the owner’s draft and returns setup for a missing company', asy
   state.company = false;
   expect(await (await GET(new NextRequest('https://joblinkantigua.com/api/employer/listings'))).json()).toEqual({ setup: true });
 });
+
+const setExisting = (row: Record<string, unknown>) => { state.existing = row as { id: string; status: string }; };
+const ORIGINAL_STAMP = '2026-11-01T10:00:00.000Z';
+it('stamps the consent time when structured data consent is first given', async () => {
+  setExisting({ id, status: 'draft', structured_data_consent: false, structured_data_consent_at: null });
+  expect((await send('submit', { ...form, structured_data_consent: true })).status).toBe(200);
+  expect(state.writes[0].structured_data_consent).toBe(true);
+  expect(typeof state.writes[0].structured_data_consent_at).toBe('string');
+  expect(state.writes[0].structured_data_consent_at).not.toBe(ORIGINAL_STAMP);
+});
+it('keeps the original consent time while consent stands', async () => {
+  setExisting({ id, status: 'draft', structured_data_consent: true, structured_data_consent_at: ORIGINAL_STAMP });
+  expect((await send('submit', { ...form, structured_data_consent: true })).status).toBe(200);
+  expect(state.writes[0].structured_data_consent_at).toBe(ORIGINAL_STAMP);
+});
+it('clears the consent time when consent is withdrawn', async () => {
+  setExisting({ id, status: 'active', structured_data_consent: true, structured_data_consent_at: ORIGINAL_STAMP });
+  expect((await send('edit', { ...form, structured_data_consent: false })).status).toBe(200);
+  expect(state.writes[0].structured_data_consent).toBe(false);
+  expect(state.writes[0].structured_data_consent_at).toBeNull();
+});
+it('keeps recorded consent when the payload omits the consent field entirely', async () => {
+  setExisting({ id, status: 'active', structured_data_consent: true, structured_data_consent_at: ORIGINAL_STAMP });
+  const omitted = { ...form } as Partial<typeof form>;
+  delete omitted.structured_data_consent;
+  expect((await send('edit', omitted as typeof form)).status).toBe(200);
+  expect(state.writes[0].structured_data_consent).toBe(true);
+  expect(state.writes[0].structured_data_consent_at).toBe(ORIGINAL_STAMP);
+});
+it('keeps recorded consent in the saved draft when the payload omits the field', async () => {
+  setExisting({ id, status: 'draft', structured_data_consent: true, structured_data_consent_at: ORIGINAL_STAMP });
+  const omitted = { ...form } as Partial<typeof form>;
+  delete omitted.structured_data_consent;
+  expect((await send('draft', omitted as typeof form)).status).toBe(200);
+  expect(state.writes[0].structured_data_consent).toBe(true);
+  expect(state.writes[0].structured_data_consent_at).toBe(ORIGINAL_STAMP);
+  expect((state.writes[0].draft_data as { form: { structured_data_consent: boolean } }).form.structured_data_consent).toBe(true);
+});
