@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import PrivacyAwareAnalytics from "@/components/PrivacyAwareAnalytics";
+import ChunkLoadRecovery from "@/components/ChunkLoadRecovery";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import TesterBanner from "@/components/TesterBanner";
@@ -96,6 +97,7 @@ export default function RootLayout({
           <BottomNav />
           <SupportButton />
         </AuthProvider>
+        <ChunkLoadRecovery />
         <PrivacyAwareAnalytics />
       </body>
     </html>

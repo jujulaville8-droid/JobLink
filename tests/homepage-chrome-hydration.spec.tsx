@@ -77,12 +77,12 @@ function expectHomeChrome(container: HTMLElement) {
   expect(within(container).getByRole('navigation', { name: 'Footer navigation' })).toBeTruthy();
 }
 
-function expectOrdinaryChrome(container: HTMLElement, footer: boolean, hidden = false) {
+function expectOrdinaryChrome(container: HTMLElement, footer: boolean, hidden = false, bottomNavHidden = hidden) {
   expect(container.querySelector('.home-header')).toBeNull();
   expect(container.querySelector('.home-footer')).toBeNull();
   expect(container.querySelector('header') !== null).toBe(!hidden);
   expect(container.querySelector('footer') !== null).toBe(footer);
-  expect(container.querySelector('.dashboard-bottom-nav-link') !== null).toBe(!hidden);
+  expect(container.querySelector('.dashboard-bottom-nav-link') !== null).toBe(!bottomNavHidden);
 }
 
 beforeEach(() => {
@@ -132,19 +132,21 @@ describe('homepage chrome server rendering and hydration', () => {
   });
 
   it.each([
-    ['/jobs', 'jobs', true, false],
-    ['/login', '(auth)', true, false],
-    ['/dashboard', '(dashboard)', false, false],
-    ['/profile/cv', '(dashboard)', false, true],
-    ['/index', '_not-found', true, false],
-  ] as const)('preserves the existing chrome on %s, including non-home route groups and not-found pages', async (pathname, segment, footer, hidden) => {
+    ['/jobs', 'jobs', true, false, false],
+    ['/login', '(auth)', true, false, false],
+    ['/dashboard', '(dashboard)', false, false, false],
+    // /profile/cv: the Navbar still hides itself, but the bottom nav now
+    // stays visible so the Resume tab remains on screen (Nov 7, 2026).
+    ['/profile/cv', '(dashboard)', false, true, false],
+    ['/index', '_not-found', true, false, false],
+  ] as const)('preserves the existing chrome on %s, including non-home route groups and not-found pages', async (pathname, segment, footer, hidden, bottomNavHidden) => {
     const container = serverRender(pathname, segment);
-    expectOrdinaryChrome(container, footer, hidden);
+    expectOrdinaryChrome(container, footer, hidden, bottomNavHidden);
     const serverMain = container.querySelector('main');
     const { recoverableErrors } = await hydrate(container, pathname, segment);
     expect(recoverableErrors).toEqual([]);
     expect(container.querySelector('main')).toBe(serverMain);
-    expectOrdinaryChrome(container, footer, hidden);
+    expectOrdinaryChrome(container, footer, hidden, bottomNavHidden);
   });
 
   it('preserves the homepage chrome on the design preview route', async () => {
