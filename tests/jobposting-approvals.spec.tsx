@@ -1005,6 +1005,84 @@ describe.each([
   });
 });
 
+const NOVEMBER_9_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST';
+
+describe.each([
+  ['e184e7ee-0499-4e4e-b324-a1f78580fa93', '0b0f5276-c2ff-4626-9c2c-c4a0222bb46d', 'Tipsy Toast Cafe', 'Supervisor (Operations & Guest Experience)', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
+  ['0939b9ec-bc7a-4d0b-a9ff-ac9e85026ec0', '0b0f5276-c2ff-4626-9c2c-c4a0222bb46d', 'Tipsy Toast Cafe', 'Bartender / Barista', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
+  ['8226ba88-2ba5-46c6-be2f-acf4c429fa5d', '0b0f5276-c2ff-4626-9c2c-c4a0222bb46d', 'Tipsy Toast Cafe', 'Chef / Cook', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
+  ['defd0a66-f033-41ea-9cb0-119b06a74eac', 'db2a43e0-73d6-45a1-b15e-f29c1a444de2', 'Blends&Bitez', 'Prep Cook', 'Site owner requested Google Jobs allowlist on 2026-11-09 for this already-live admin-posted listing (created 2026-11-07).'],
+])('%s November 9 vacancy-scoped allowlist', (jobId, companyId, companyName, title, ledger) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-09T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+    db.job!.description = 'Hiring for this vacancy.';
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-07T15:00:00.000Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-09', evidenceReference: NOVEMBER_9_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
+    });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema.datePosted).not.toBe('2026-11-09');
+    const html = await pageHtml();
+    const page = document.createElement('div');
+    page.innerHTML = html;
+    expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(before!.description);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+    const source = EMPLOYER_APPROVED_JOBS[jobId];
+    expect(JSON.stringify(source)).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(ledger).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  });
+  it('records the site-owner ledger wording and no employer address', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync('src/lib/seo/employerApproved.ts', 'utf8');
+    const start = source.indexOf(`"${jobId}"`);
+    const entry = source.slice(Math.max(0, start - 500), start + 500);
+    expect(entry).toContain(ledger);
+    expect(entry).toContain('Site-owner attestation only.');
+    expect(entry).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(entry).not.toMatch(/replied yes/i);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
 describe('November 6 allowlist leaves retired approvals and the ELand exclusion alone', () => {
   it('does not rewrite Shhatterr, Food Brokerage or Woodstock approvals', () => {
     expect(EMPLOYER_APPROVED_JOBS['ade78a5c-e0f6-4f5f-8008-117d7a4b96ee']).toMatchObject({

@@ -39,4 +39,20 @@ describe('JobPosting email redaction', () => {
     expect(entry).toContain('Site owner requested Google Jobs allowlist on 2026-11-06 for this already-live admin-posted listing (created 2026-11-03).');
     expect(entry).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
   });
+
+  it.each([
+    ['e184e7ee-0499-4e4e-b324-a1f78580fa93', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
+    ['0939b9ec-bc7a-4d0b-a9ff-ac9e85026ec0', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
+    ['8226ba88-2ba5-46c6-be2f-acf4c429fa5d', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
+    ['defd0a66-f033-41ea-9cb0-119b06a74eac', 'Site owner requested Google Jobs allowlist on 2026-11-09 for this already-live admin-posted listing (created 2026-11-07).'],
+  ])('records %s as a site-owner request without an employer address', (jobId, wording) => {
+    const source = readFileSync('src/lib/seo/employerApproved.ts', 'utf8');
+    const start = source.indexOf(`"${jobId}"`);
+    const entry = source.slice(Math.max(0, start - 500), start + 500);
+    expect(start).toBeGreaterThan(-1);
+    expect(entry).toContain(wording);
+    expect(entry).toContain('Site-owner attestation only.');
+    expect(entry).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(entry).not.toMatch(/replied yes/i);
+  });
 });

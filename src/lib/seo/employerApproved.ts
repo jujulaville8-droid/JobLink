@@ -45,6 +45,46 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).
+  // This entry is the Supervisor (Operations & Guest Experience) vacancy.
+  // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
+  "e184e7ee-0499-4e4e-b324-a1f78580fa93": {
+    companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
+    companyName: "Tipsy Toast Cafe",
+    attestedOn: "2026-11-09",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    employmentTypeUnconfirmed: true,
+  },
+  // Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).
+  // This entry is the Bartender / Barista vacancy.
+  // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
+  "0939b9ec-bc7a-4d0b-a9ff-ac9e85026ec0": {
+    companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
+    companyName: "Tipsy Toast Cafe",
+    attestedOn: "2026-11-09",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    employmentTypeUnconfirmed: true,
+  },
+  // Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).
+  // This entry is the Chef / Cook vacancy.
+  // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
+  "8226ba88-2ba5-46c6-be2f-acf4c429fa5d": {
+    companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
+    companyName: "Tipsy Toast Cafe",
+    attestedOn: "2026-11-09",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    employmentTypeUnconfirmed: true,
+  },
+  // Site owner requested Google Jobs allowlist on 2026-11-09 for this already-live admin-posted listing (created 2026-11-07).
+  // This entry is the Prep Cook vacancy.
+  // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
+  "defd0a66-f033-41ea-9cb0-119b06a74eac": {
+    companyId: "db2a43e0-73d6-45a1-b15e-f29c1a444de2",
+    companyName: "Blends&Bitez",
+    attestedOn: "2026-11-09",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    employmentTypeUnconfirmed: true,
+  },
   // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
   // Bartenders and Beach Attendants only. This entry is the Beach Attendants vacancy.
   // Full Time is an unconfirmed placeholder; no public deadline.

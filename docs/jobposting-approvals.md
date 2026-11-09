@@ -461,3 +461,23 @@ also authorizes the widened fields for that listing, through the same
 still emit only when the underlying data exists, and both pass through the
 same email redaction as the JobPosting description. Salary is not affected:
 it remains gated on the employer's own `salary_visible` choice.
+
+## November 9, 2026 vacancy-scoped allowlist (Tipsy Toast Cafe, Blends&Bitez)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST) records four vacancy-scoped entries in
+`EMPLOYER_APPROVED_JOBS`, each bound to both the job ID and that job's company
+ID. No company-wide permission is claimed. No email message content is copied
+here. None of these listings states a public deadline, so no `validThrough` is
+emitted and no closure entry is added. Full Time on the page is an unconfirmed
+placeholder, so `employmentType` is omitted. Stored listing content, status and
+the application route are unchanged; no database writes.
+
+These are site-owner attestations. No employer yes is recorded for Tipsy Toast
+Cafe or Blends&Bitez. The ledger wording is the site owner's request only.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Tipsy Toast Cafe — Supervisor (Operations & Guest Experience) | `e184e7ee-0499-4e4e-b324-a1f78580fa93` | `0b0f5276-c2ff-4626-9c2c-c4a0222bb46d` | 2026-11-09 | Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07). |
+| Tipsy Toast Cafe — Bartender / Barista | `0939b9ec-bc7a-4d0b-a9ff-ac9e85026ec0` | `0b0f5276-c2ff-4626-9c2c-c4a0222bb46d` | 2026-11-09 | Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07). |
+| Tipsy Toast Cafe — Chef / Cook | `8226ba88-2ba5-46c6-be2f-acf4c429fa5d` | `0b0f5276-c2ff-4626-9c2c-c4a0222bb46d` | 2026-11-09 | Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07). |
+| Blends&Bitez — Prep Cook | `defd0a66-f033-41ea-9cb0-119b06a74eac` | `db2a43e0-73d6-45a1-b15e-f29c1a444de2` | 2026-11-09 | Site owner requested Google Jobs allowlist on 2026-11-09 for this already-live admin-posted listing (created 2026-11-07). |
