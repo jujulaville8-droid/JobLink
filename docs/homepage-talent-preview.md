@@ -1,63 +1,38 @@
-# Homepage employer talent preview
+# Homepage candidate preview
 
-Local implementation based on fetched `origin/main` at `0e09b94ee6ba662ce41b47c5a4b48d8ab49f3a4b`, on `codex/homepage-talent-preview`. No push, pull request, deployment, live database/settings change, real account creation or outreach.
+The public homepage uses anonymous abstractions: category icons, silhouette icons and skeleton shapes. It has no candidate data source, photos, names, identifiers, contacts, availability claims, ratings or counts. Removing every visual effect reveals only these abstractions. The caption reads “Create an employer account to browse candidates”.
 
-## Behavior
+Anonymous signup preserves employer intent and `/members` as the return destination. Signed-in links still go through `/members`, which checks server account state before forwarding an employer to the existing directory. Homepage auth state changes copy only. Directory permissions, candidate visibility, CV rules, email verification, company requirements and pricing are unchanged. Homepage links do not prefetch candidate routes.
 
-A single section immediately before the existing employer section shows illustrative profile cards moving behind a frosted wall. It uses the existing Magic UI `Marquee`, JobLink's typography and palette, and no new dependencies or assets. Mobile uses one row to keep the section compact; desktop uses two opposing rows.
+## Design and source
 
-Anonymous visitors get `Create employer account` linking to `/signup?role=employer&returnTo=%2Fmembers`, plus sign-in preserving the same destination. Signed-in employers get `View candidates`; other signed-in roles get `Employer access`. Both signed-in paths use `/members`, which checks server state. Client auth changes the label, never authorization. Candidate routes are not prefetched by the new links.
+The September 30 design preview uses two softly tilted opposing rows, ivory and seafoam cards, a peach accent and a stationary frosted panel. Mobile retains both rows in a compact 300px visual. JobLink’s existing serif heading and primary signup button remain the focus.
 
-The illustration has no candidate data source or record props. It contains only generic silhouette icons, skeleton lines and illustrative industry labels, with anonymous abstract cards and the employer-access caption **“Create an employer account to browse candidates”** (updated from the initial sample-label wording at the owner’s request during release verification) There are no real names, photos, IDs, CVs, contacts, availability claims, activity indicators, candidate counts or live claims. Removing every visual effect cannot expose a real candidate.
+Research references, viewed September 30, 2026:
 
-Copy and links are in initial server HTML. Animation starts only after hydration, pauses on hover or keyboard focus, and has a persistent pause/resume button. Reduced motion removes the animation and hides the unnecessary control. Without JavaScript, the illustration remains still and the signup link works. Decorative cards have no focusable children and are hidden from assistive technology.
+- [21st.dev marquee guide](https://news.21st.dev/blog/react-marquee-logo-cloud-components): compared horizontal, vertical and perspective variants; adopted the general duplicated-track, masked-edge pattern. Vertical and heavier 3D treatments were less suited to the narrow mobile preview.
+- [Ali Imam’s Marquee Card](https://21st.dev/@designali-in/components/marquee-card): public rendered example reviewed for rhythm and card treatment. A component-specific reuse license was not established, so none of its code or demo media is used.
+- [21st.dev terms](https://docs.21st.dev/terms), updated July 20, 2026: marketplace demo/media rights are separate from component-code licenses. No registry extraction, scraping, copied demo assets, accounts or purchases were used.
+- [Magic UI Marquee](https://magicui.design/docs/components/marquee): the existing repository primitive is retained. Its upstream [MIT license](https://github.com/magicuidesign/magicui/blob/main/LICENSE.md) is preserved in `src/components/magicui/LICENSE.md`, with a source comment in the component.
 
-## Existing access and privacy findings (source inspection)
+The card markup, layout and CSS treatment are original work for JobLink. Icons come from the existing `lucide-react` dependency. There are no added packages, external media, timers, animation libraries or candidate requests. Motion uses the existing CSS transform keyframe. The stationary frosted panel uses a single backdrop filter; moving cards do not animate blur or shadows.
 
-- `src/app/members/page.tsx` checks authentication, the database user row, ban state, auth email confirmation and database email verification before forwarding employers to `/browse-candidates`. Other roles see the existing employer account gate; the teaser never switches roles.
-- Both directory and candidate detail pages use `requireRole("employer")`, including verified-auth checks, and the cookie-bound Supabase client. The directory restricts results to `actively_looking`, at least 30% complete, nonempty first/last names.
-- `20260925_security_hardening_2.sql` requires an employer role and an actual company row for browsable seeker profiles, with visibility in `actively_looking` or `open`. The page applies the narrower `actively_looking` filter. Existing owner/applicant/admin policies remain untouched.
-- CV endpoints preserve the existing company, active Pro or application-relationship requirements. No pricing, approval, verification, visibility or paywall rule was changed.
-- No verified public-preview consent field or live availability evidence was established. A candidate's employer-directory visibility is not treated as permission to publish their information on the homepage. The implementation therefore uses clearly illustrative cards. A future live claim would need separately verified, authorized aggregate evidence; this change does not add a public aggregate endpoint.
+## Motion and accessibility
 
-These are repository findings, not verification of deployed database policies, production consent or current candidate availability.
+Copy and links render on the server. Animation starts after hydration so a working pause control is available; without JavaScript it stays still. Hover and keyboard focus pause both rows. A persistent pause/resume button exposes its state, has a 44px minimum target and a visible focus ring. Reduced motion removes animation and the inapplicable control. Cards and their duplicated tracks are decorative, hidden from assistive technology and contain no focusable children.
 
-## Validation
+## Validation and reproduction
 
-- TypeScript passed, both standalone and in the production build.
-- ESLint: **0 errors, 9 pre-existing warnings**. No new warning remains.
-- Unit suite: **146 passed, 1 pre-existing skip**, including 7 new teaser tests and existing Members/signup/email-verification continuity tests.
-- Node suite: **34 passed** including existing local SQL security tests.
-- Production build: **passed, 103 static pages generated**; homepage remains static with its existing 60-second revalidation.
-- Browser suite: **42 checks passed** on the production build in headless Chrome. Includes 320/390/768/1440px widths; motion/stop/resume; keyboard order and focus; reduced motion; no JavaScript; anonymous HTML/RSC and request checks; anonymous directory/CV denial; seeker denial; verified-employer navigation; unverified and banned-account gates. No browser runtime errors.
-- `git diff --check` passed.
+`npm test` covers typecheck, lint, unit and Node suites; `npm run build` checks the production bundle. `tests/browser/check-talent-preview.cjs` checks 320/390/768/1440px geometry, continuous track coverage, signup/login destinations, pause/resume and keyboard behavior, reduced motion, no JavaScript, and absence of a synthetic private-candidate canary from public HTML and requests. Screenshots are saved under `output/playwright/candidate-after-*.png`.
 
-Browser authentication uses a read-only localhost HTTP fixture and synthetic sessions, not real Supabase accounts. A synthetic private-candidate canary is absent from the public homepage and appears only after the local employer gateway flow. The fixture is **not an RLS emulator**, so browser results do not establish live RLS or identity-provider behavior. The test context bypasses CSP solely because production CSP does not permit the localhost fixture origin; production CSP is unchanged. Existing external avatar requests are blocked in tests and local Vercel analytics are stubbed. No live candidate records, services or credentials are needed.
+Local preview validation passed: production build and typecheck; 218 unit tests with one existing skip; 34 Node tests; 54 browser checks with no runtime errors; lint with zero errors and nine existing warnings. Screenshots at all four widths were visually reviewed. The accessibility tree contains the heading, copy, signup/sign-in links and pause button, with decorative cards excluded.
 
-Evidence remains locally under `output/playwright/`: `talent-preview-390.png`, `talent-preview-1440.png`, `browser-results.json`, `build.log`, `tests.log`, `final-unit.log`, `final-lint.log`, `final-typecheck.log`.
+Browser checks use a read-only localhost fixture, not live accounts or a database-policy emulator. They establish UI/gateway behavior with synthetic sessions, not deployed RLS or identity-provider behavior. Production auth, CSP and database policies are untouched.
 
-## Reproduce browser checks
+To reproduce:
 
-Use the normal installed dependencies and a Playwright installation (the existing browser scripts also use `require('playwright')`). If it is outside this repo, set `NODE_PATH` to its `node_modules` directory. No dependency or lockfile change is required.
+1. Run `node tests/browser/talent-fixture.mjs` on port 4318.
+2. Build and start on port 4319 with `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:4318`, `NEXT_PUBLIC_SUPABASE_ANON_KEY=local-fixture-anon`, `SUPABASE_SERVICE_ROLE_KEY=local-fixture-service`, and both site/app URL variables set to `http://127.0.0.1:4319`.
+3. Run `node tests/browser/check-talent-preview.cjs` with Playwright available on `NODE_PATH` if installed outside the repository.
 
-1. Run `node tests/browser/talent-fixture.mjs` (listens on `127.0.0.1:4318`).
-2. Set only local test configuration:
-
-   ```sh
-   export NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:4318
-   export NEXT_PUBLIC_SUPABASE_ANON_KEY=local-fixture-anon
-   export SUPABASE_SERVICE_ROLE_KEY=local-fixture-service
-   export NEXT_PUBLIC_SITE_URL=http://127.0.0.1:4319
-   export NEXT_PUBLIC_APP_URL=http://127.0.0.1:4319
-   npm run build
-   npm run start -- --hostname 127.0.0.1 --port 4319
-   ```
-
-3. In a separate shell, run `node tests/browser/check-talent-preview.cjs`.
-4. General validation is `npm test`. Where sandbox restrictions block `tsx`'s CLI IPC pipe, the equivalent Node command is `node --import tsx --test tests/navigation-state.test.mjs tests/dashboard-loading.test.tsx tests/button.test.tsx tests/admin-discovery-retirement.test.mjs tests/security-hardening.test.mjs`.
-
-## Integration boundaries
-
-Only three production files change: a new isolated component, its CSS module, and a component import/insertion in `HomePage.tsx`. The pending employer self-service CTA patch overlaps that homepage file; preserve both the new import/section and its separate CTA edits when reconciling. Existing homepage/header/footer CTA destinations are unchanged here. No global CSS, auth, API, SQL, SEO or claims files change. Claim-flow PR #17 remains separate and unmerged; its checkout was not modified.
-
-Review and publication remain with the parent task. No implementation blocker remains. Real live-profile claims and live access-policy verification are outside the evidence gathered here.
+PR #19 already published the positive caption and small-mobile action containment fix. The broader visual redesign is a separate preview for review and is not automatically merged. Company claim PR #17 remains separate and unmerged.

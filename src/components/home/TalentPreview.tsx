@@ -2,14 +2,19 @@
 
 import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
-import { ArrowRight, LockKeyhole, Pause, Play, UserRound } from "lucide-react"
+import { ArrowRight, BriefcaseBusiness, Coffee, Pause, Play, ShoppingBag, UserRound, UsersRound, Wrench } from "lucide-react"
 import { useAuth } from "@/components/AuthProvider"
 import { Marquee } from "@/components/magicui/marquee"
 import styles from "./TalentPreview.module.css"
 
 // These are illustrative categories, never records or aggregates from the
-// candidate directory. Removing the blur must not reveal anyone's data.
-const categories = ["Hospitality", "Office & admin", "Skilled trades", "Retail"]
+// candidate directory. Removing every visual effect reveals only abstractions.
+const categories = [
+  { label: "Hospitality", icon: Coffee },
+  { label: "Office & admin", icon: BriefcaseBusiness },
+  { label: "Skilled trades", icon: Wrench },
+  { label: "Retail", icon: ShoppingBag },
+]
 const subscribe = () => () => {}
 const clientReady = () => true
 const serverReady = () => false
@@ -60,11 +65,14 @@ export default function TalentPreview() {
           <div id="talent-preview-illustration" className={styles.illustration} aria-hidden="true">
             {[false, true].map((reverse) => (
               <Marquee key={String(reverse)} reverse={reverse} repeat={2} className={styles.row}>
-                {(reverse ? [...categories].reverse() : categories).map((category, index) => (
-                  <div key={category} className={`${styles.card} ${index % 2 ? styles.warm : ""}`}>
-                    <div className={styles.avatar}><UserRound /></div>
-                    <span className={styles.nameLine} />
-                    <span className={styles.category}>{category}</span>
+                {(reverse ? [...categories].reverse() : categories).map(({ label, icon: Icon }, index) => (
+                  <div key={label} className={`${styles.card} ${index % 2 ? styles.warm : ""}`}>
+                    <div className={styles.cardTop}><Icon /><span>JobLink</span></div>
+                    <div className={styles.profile}>
+                      <div className={styles.avatar}><UserRound /></div>
+                      <div className={styles.identity}><span className={styles.nameLine} /><span className={styles.shortLine} /></div>
+                    </div>
+                    <span className={styles.category}>{label}</span>
                     <div className={styles.lines}><span /><span /></div>
                     <div className={styles.tags}><span /><span /></div>
                   </div>
@@ -72,11 +80,11 @@ export default function TalentPreview() {
               </Marquee>
             ))}
           </div>
-          <div className={styles.frost} aria-hidden="true" />
-          <div className={styles.lock} aria-hidden="true">
-            <span><LockKeyhole /></span>
+          <div className={styles.portal} aria-hidden="true">
+            <span className={styles.portalIcon}><UsersRound /></span>
+            <small className={styles.portalEyebrow}>Your next team</small>
             <strong>Candidate profiles</strong>
-            <small>Employer access</small>
+            <span className={styles.portalDetail}>Browse with an employer account <ArrowRight /></span>
           </div>
         </div>
         <div className={styles.caption}>

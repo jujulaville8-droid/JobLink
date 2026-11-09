@@ -17,7 +17,7 @@ it('renders an honest, usable signup path in the initial server HTML', () => {
   expect(html).not.toMatch(/live profiles|online now|available now|\bmoving\b|<button/i);
 });
 
-it('never fetches or embeds candidate records, even without the visual blur', () => {
+it('never fetches or embeds candidate records, even with all visual effects removed', () => {
   const fetcher = vi.fn();
   vi.stubGlobal('fetch', fetcher);
   const { container } = render(<TalentPreview />);
