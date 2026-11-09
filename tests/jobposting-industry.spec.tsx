@@ -49,6 +49,9 @@ it.each([null, '', '   '])('falls back to the company address when the job has n
   // JobPosting keeps only addressCountry rather than a false town.
   expect(container.textContent).not.toContain('Location not provided');
   expect(posting.jobLocation.address.addressLocality).toBeUndefined();
+  expect(posting.jobLocation.address.addressRegion).toBeUndefined();
+  expect(posting.jobLocation.address.streetAddress).toBeUndefined();
+  expect(posting.jobLocation.address.postalCode).toBeUndefined();
   const bar = container.querySelector('[data-mobile-apply]')!;
   expect(bar.closest('.animate-fade-up')).toBeNull();
 });

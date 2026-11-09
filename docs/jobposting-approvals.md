@@ -461,3 +461,52 @@ also authorizes the widened fields for that listing, through the same
 still emit only when the underlying data exists, and both pass through the
 same email redaction as the JobPosting description. Salary is not affected:
 it remains gated on the employer's own `salary_visible` choice.
+
+## November 9, 2026 vacancy-scoped allowlist (Tipsy Toast Cafe, Blends&Bitez, The Massage Goddess, CRISPA)
+
+This change records seven vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
+each bound to both the job ID and that job's company ID. No company-wide
+permission is claimed. No email message content is copied here. None of these
+listings states a public deadline or a numeric salary, so no `validThrough`
+and no `baseSalary` are emitted, and no closure entry is added. Full Time on
+the page is an unconfirmed placeholder, so `employmentType` is omitted. Stored
+listing content, status and the application route are unchanged; no database
+writes.
+
+Tipsy Toast Cafe and Blends&Bitez are the site owner's 2026-11-09 direction
+that those employers gave permission to list the vacancies below. The Massage
+Goddess company is not company-wide approved: the 2026-10-19 yes still covers
+only the Nail Technician vacancy (`d00f5ff5-29cf-4110-9828-a2f84e49245f`). On
+2026-11-09 the owner directed that the later esthetician vacancy should carry
+markup because that company-wide gap left it out. A further Massage Goddess
+vacancy stays excluded until it is recorded on its own.
+
+CRISPA's two vacancies were already recorded on
+[PR #97](https://github.com/jujulaville8-droid/JobLink/pull/97) from the
+employer's 2026-10-19 email to the JobLink inbox (about 1:29 PM ET). That PR
+conflicts with main and is superseded by the entries here, so it can be closed.
+It was not closed from this change.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Tipsy Toast Cafe — Bartender / Barista | `0939b9ec-bc7a-4d0b-a9ff-ac9e85026ec0` | `0b0f5276-c2ff-4626-9c2c-c4a0222bb46d` | 2026-11-09 | Site owner: employer gave permission to list this vacancy |
+| Tipsy Toast Cafe — Chef / Cook | `8226ba88-2ba5-46c6-be2f-acf4c429fa5d` | `0b0f5276-c2ff-4626-9c2c-c4a0222bb46d` | 2026-11-09 | Site owner: employer gave permission to list this vacancy |
+| Tipsy Toast Cafe — Supervisor (Operations & Guest Experience) | `e184e7ee-0499-4e4e-b324-a1f78580fa93` | `0b0f5276-c2ff-4626-9c2c-c4a0222bb46d` | 2026-11-09 | Site owner: employer gave permission to list this vacancy |
+| Blends&Bitez — Prep Cook | `defd0a66-f033-41ea-9cb0-119b06a74eac` | `db2a43e0-73d6-45a1-b15e-f29c1a444de2` | 2026-11-09 | Site owner: employer gave permission to list this vacancy |
+| The Massage Goddess — Certified Esthetician & Nail Technician (Gel Extension Specialist) | `4708c01a-ccd2-42ee-ad4e-54c3cab98420` | `5d2c7dd8-7ff7-4dea-a3c7-22f81cf04eb3` | 2026-11-09 | Site owner: this vacancy should carry markup; company is not company-wide approved |
+| CRISPA Wholesale Distribution Company Ltd. — Sales Representative | `90a1af95-5173-43ce-a5b7-4307814ce881` | `08c982be-1421-4657-8394-c168a1f07d61` | 2026-10-19 | Employer yes via email to the JobLink inbox on 2026-10-19, folded from PR #97 |
+| CRISPA Wholesale Distribution Company Ltd. — Office Assistant | `ef5503e9-45a2-4121-92b7-aec94b440147` | `08c982be-1421-4657-8394-c168a1f07d61` | 2026-10-19 | Employer yes via email to the JobLink inbox on 2026-10-19, folded from PR #97 |
+
+The same change fills `addressCountry` (`AG`, already sent) and `addressRegion`
+when the location text names one parish or Barbuda. Examples: Redcliffe Quay,
+St. John's is Saint John; Coolidge and Paynters Estate are Saint George;
+English Harbour, Falmouth and Cobbs Cross are Saint Paul. A location that is
+only "Antigua", a road that is not one parish (Old Parham Road), or two
+parishes at once gets the country and no region. `streetAddress`, `postalCode`,
+`validThrough` and `baseSalary` are still omitted when the listing does not
+have them. Search Console can keep warning on those four.
+
+Visible job text still shows an employer email when the description contains
+one. That remains the apply instruction on the seven listings already covered
+by the JobPosting-only redaction tests. This change does not hide those
+addresses on the page.

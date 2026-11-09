@@ -45,6 +45,75 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Tipsy Toast Cafe: site owner directed on 2026-11-09 that the employer gave
+  // permission to list this Bartender / Barista vacancy. Vacancy-scoped only.
+  // Full Time on the listing is an unconfirmed placeholder; no public deadline.
+  "0939b9ec-bc7a-4d0b-a9ff-ac9e85026ec0": {
+    companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
+    companyName: "Tipsy Toast Cafe",
+    attestedOn: "2026-11-09",
+    evidenceReference: "owner-direction:2026-11-09",
+    employmentTypeUnconfirmed: true,
+  },
+  // Tipsy Toast Cafe: same 2026-11-09 permission, for this Chef / Cook vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "8226ba88-2ba5-46c6-be2f-acf4c429fa5d": {
+    companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
+    companyName: "Tipsy Toast Cafe",
+    attestedOn: "2026-11-09",
+    evidenceReference: "owner-direction:2026-11-09",
+    employmentTypeUnconfirmed: true,
+  },
+  // Tipsy Toast Cafe: same 2026-11-09 permission, for this Supervisor vacancy only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "e184e7ee-0499-4e4e-b324-a1f78580fa93": {
+    companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
+    companyName: "Tipsy Toast Cafe",
+    attestedOn: "2026-11-09",
+    evidenceReference: "owner-direction:2026-11-09",
+    employmentTypeUnconfirmed: true,
+  },
+  // Blends&Bitez: site owner directed on 2026-11-09 that the employer gave
+  // permission to list this Prep Cook vacancy. Vacancy-scoped only.
+  // Full Time is an unconfirmed placeholder; no public deadline.
+  "defd0a66-f033-41ea-9cb0-119b06a74eac": {
+    companyId: "db2a43e0-73d6-45a1-b15e-f29c1a444de2",
+    companyName: "Blends&Bitez",
+    attestedOn: "2026-11-09",
+    evidenceReference: "owner-direction:2026-11-09",
+    employmentTypeUnconfirmed: true,
+  },
+  // The Massage Goddess is not company-wide approved. The 2026-10-19 yes covers
+  // only the Nail Technician vacancy. The site owner directed on 2026-11-09 that
+  // this later vacancy should carry markup. Full Time is an unconfirmed
+  // placeholder; no public deadline.
+  "4708c01a-ccd2-42ee-ad4e-54c3cab98420": {
+    companyId: "5d2c7dd8-7ff7-4dea-a3c7-22f81cf04eb3",
+    companyName: "The Massage Goddess",
+    attestedOn: "2026-11-09",
+    evidenceReference: "owner-direction:2026-11-09",
+    employmentTypeUnconfirmed: true,
+  },
+  // CRISPA: employer yes by email to the JobLink inbox on 2026-10-19 (about
+  // 1:29 PM ET) for this Sales Representative vacancy only. Folded from PR #97,
+  // which conflicts with main. Full Time is an unconfirmed placeholder; no
+  // public deadline.
+  "90a1af95-5173-43ce-a5b7-4307814ce881": {
+    companyId: "08c982be-1421-4657-8394-c168a1f07d61",
+    companyName: "CRISPA Wholesale Distribution Company Ltd.",
+    attestedOn: "2026-10-19",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/97",
+    employmentTypeUnconfirmed: true,
+  },
+  // CRISPA: same 2026-10-19 email yes, for this Office Assistant vacancy only.
+  // Folded from PR #97. Full Time is an unconfirmed placeholder; no public deadline.
+  "ef5503e9-45a2-4121-92b7-aec94b440147": {
+    companyId: "08c982be-1421-4657-8394-c168a1f07d61",
+    companyName: "CRISPA Wholesale Distribution Company Ltd.",
+    attestedOn: "2026-10-19",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/97",
+    employmentTypeUnconfirmed: true,
+  },
   // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,
   // Bartenders and Beach Attendants only. This entry is the Beach Attendants vacancy.
   // Full Time is an unconfirmed placeholder; no public deadline.
