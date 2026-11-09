@@ -23,6 +23,7 @@ import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
 import ReportListingButton from "@/components/ReportListingButton";
 import { displayJobLocation, normalizeJobLocation } from "@/lib/job-location";
+import { jobAddressRegion } from "@/lib/seo/job-address";
 import { loadApplyState, loadJobDetail } from "@/lib/job-detail";
 
 interface PageProps {
@@ -204,6 +205,9 @@ export default async function JobDetailPage({ params }: PageProps) {
   // Only send a locality we actually have. A bare "Antigua" / "Antigua and
   // Barbuda" is the country, not a town, and a hardcoded default town/parish
   // would be false location data under Google's job posting policies.
+  // addressRegion is the parish (or Barbuda) only when the same location text
+  // names one. Street, postal code, salary and deadline stay absent unless
+  // the listing actually has them.
   // A job without its own location falls back to the company's address,
   // unless that address only says "remote", which is not a place.
   const rawLocality = displayJobLocation(job.location, company?.location);
@@ -211,6 +215,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     .replace(/,?\s*Antigua( (and|&) Barbuda)?\s*$/i, "")
     .replace(/,?\s*Barbuda\s*$/i, "")
     .trim();
+  const addressRegion = jobAddressRegion(rawLocality);
   // Remote status comes only from the listing itself, never the company address.
   const isRemoteJob = normalizeJobLocation(job.location).toLowerCase().includes("remote");
 
@@ -311,6 +316,7 @@ export default async function JobDetailPage({ params }: PageProps) {
       address: {
         "@type": "PostalAddress",
         ...(addressLocality ? { addressLocality } : {}),
+        ...(addressRegion ? { addressRegion } : {}),
         addressCountry: "AG",
       },
     },
