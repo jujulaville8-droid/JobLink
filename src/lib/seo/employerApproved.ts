@@ -52,7 +52,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
     companyName: "Tipsy Toast Cafe",
     attestedOn: "2026-11-09",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/123",
     employmentTypeUnconfirmed: true,
   },
   // Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).
@@ -62,7 +62,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
     companyName: "Tipsy Toast Cafe",
     attestedOn: "2026-11-09",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/123",
     employmentTypeUnconfirmed: true,
   },
   // Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).
@@ -72,7 +72,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "0b0f5276-c2ff-4626-9c2c-c4a0222bb46d",
     companyName: "Tipsy Toast Cafe",
     attestedOn: "2026-11-09",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/123",
     employmentTypeUnconfirmed: true,
   },
   // Site owner requested Google Jobs allowlist on 2026-11-09 for this already-live admin-posted listing (created 2026-11-07).
@@ -82,7 +82,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "db2a43e0-73d6-45a1-b15e-f29c1a444de2",
     companyName: "Blends&Bitez",
     attestedOn: "2026-11-09",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/123",
     employmentTypeUnconfirmed: true,
   },
   // Hawksbill Resort: employer yes via email to JobLink on 2026-11-05 for Servers,

@@ -1005,7 +1005,7 @@ describe.each([
   });
 });
 
-const NOVEMBER_9_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST';
+const NOVEMBER_9_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/123';
 
 describe.each([
   ['e184e7ee-0499-4e4e-b324-a1f78580fa93', '0b0f5276-c2ff-4626-9c2c-c4a0222bb46d', 'Tipsy Toast Cafe', 'Supervisor (Operations & Guest Experience)', 'Site owner requested Google Jobs allowlist on 2026-11-09 for these already-live admin-posted listings (created 2026-11-07).'],
