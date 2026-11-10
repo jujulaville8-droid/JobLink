@@ -198,7 +198,7 @@ export default async function ApplicantsPage({
         Back to My Listings
       </Link>
 
-      <h1 className="mt-4 text-2xl font-bold font-display text-primary sm:text-3xl">
+      <h1 className="mt-4 text-2xl font-semibold tracking-tight font-display text-text sm:text-3xl">
         Applicants
       </h1>
       <p className="mt-1 text-sm text-text-light">

@@ -103,22 +103,17 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
       const rect = event.currentTarget.getBoundingClientRect();
       event.currentTarget.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
       event.currentTarget.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
-    } : undefined} className={`group relative rounded-card transition-all duration-300 p-5 ${highlight ? "job-magic-card" : "hover-lift"} ${
+    } : undefined} className={`group relative rounded-card transition-[border-color,box-shadow,background-color] duration-[var(--motion-fast)] p-5 ${highlight ? "job-magic-card" : ""} ${
       isFeatured
         ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
-        : "bg-white border border-border hover:border-primary/20"
+        : "bg-white border border-border hover:border-primary/20 hover:shadow-[0_4px_16px_rgba(13,115,119,0.08)]"
     } ${
       // Selection only shows beside the detail pane (desktop); mobile lists have none open.
-      selected ? "lg:bg-none! lg:bg-primary/5! lg:border-2! lg:border-primary! lg:ring-0! lg:shadow-sm!" : ""
+      selected ? "lg:bg-none! lg:bg-primary/5! lg:border-primary! lg:ring-0! lg:shadow-[inset_3px_0_0_var(--color-primary)]" : ""
     }`}>
       {saveError && <p role="alert" className="relative z-10 mb-2 text-xs text-red-700">{saveError}</p>}
       {highlight && <div aria-hidden="true" className="job-card-spotlight" />}
       <div className="block">
-        {selected && (
-          <span className="mb-2 hidden lg:inline-block rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary-dark">
-            Selected
-          </span>
-        )}
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (
             <img

@@ -300,7 +300,7 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href={isHiringPilot ? '#vacancy' : '/signup'}
-                    className="btn-warm text-xs px-4 py-2"
+                    className="btn-primary btn-primary-sm"
                   >
                     {isHiringPilot ? 'Send us your vacancy' : 'Create Account'}
                   </Link>
@@ -450,7 +450,7 @@ export default function Navbar() {
                   <Link href="/login" className="flex-1 text-center text-sm font-medium text-text-light border border-border rounded-button py-2.5 hover:bg-surface/50 transition-all duration-200">
                     Sign In
                   </Link>
-                  <Link href={isHiringPilot ? '#vacancy' : '/signup'} className="flex-1 text-center text-sm font-semibold text-white bg-accent-warm rounded-button py-2.5 hover:bg-accent-warm-hover transition-all duration-200">
+                  <Link href={isHiringPilot ? '#vacancy' : '/signup'} className="btn-primary btn-primary-sm flex-1">
                     {isHiringPilot ? 'Send us your vacancy' : 'Create Account'}
                   </Link>
                 </div>

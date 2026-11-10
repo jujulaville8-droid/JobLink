@@ -53,7 +53,7 @@ export default async function ApplicationsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">
+      <h1 className="text-2xl font-semibold tracking-tight font-display text-text sm:text-3xl">
         My Applications
       </h1>
       <p className="mt-1 text-text-light">

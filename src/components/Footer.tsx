@@ -23,7 +23,7 @@ export default function Footer() {
   return (
     <footer className="relative bg-bg-dark text-white">
       {/* Gradient top border */}
-      <div className="h-1 bg-gradient-to-r from-primary via-accent-warm to-coral" />
+      <div className="h-1 bg-gradient-to-r from-primary via-primary-light to-primary" />
 
       {/* Grain texture */}
       <div className="grain-overlay" />
@@ -51,9 +51,9 @@ export default function Footer() {
               Job Seekers
             </h3>
             <ul className="space-y-2.5">
-              <li><Link href="/jobs" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Browse Jobs</Link></li>
-              <li><Link href="/signup" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Create Account</Link></li>
-              <li><Link href="/saved" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Saved Jobs</Link></li>
+              <li><Link href="/jobs" className="text-sm text-white/40 hover:text-white transition-colors">Browse Jobs</Link></li>
+              <li><Link href="/signup" className="text-sm text-white/40 hover:text-white transition-colors">Create Account</Link></li>
+              <li><Link href="/saved" className="text-sm text-white/40 hover:text-white transition-colors">Saved Jobs</Link></li>
             </ul>
           </div>
 
@@ -62,9 +62,9 @@ export default function Footer() {
               Employers
             </h3>
             <ul className="space-y-2.5">
-              <li><Link href="/employers/hiring-help" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Get hiring help</Link></li>
-              <li><Link href="/dashboard" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Dashboard</Link></li>
-              <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Why JobLink</Link></li>
+              <li><Link href="/employers/hiring-help" className="text-sm text-white/40 hover:text-white transition-colors">Get hiring help</Link></li>
+              <li><Link href="/dashboard" className="text-sm text-white/40 hover:text-white transition-colors">Dashboard</Link></li>
+              <li><Link href="/about" className="text-sm text-white/40 hover:text-white transition-colors">Why JobLink</Link></li>
             </ul>
           </div>
 
@@ -73,10 +73,10 @@ export default function Footer() {
               Company
             </h3>
             <ul className="space-y-2.5">
-              <li><Link href="/about" className="text-sm text-white/40 hover:text-accent-warm transition-colors">About</Link></li>
-              <li><Link href="/success-stories" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Hiring stories</Link></li>
-              <li><Link href="/privacy" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Privacy</Link></li>
-              <li><Link href="/terms" className="text-sm text-white/40 hover:text-accent-warm transition-colors">Terms</Link></li>
+              <li><Link href="/about" className="text-sm text-white/40 hover:text-white transition-colors">About</Link></li>
+              <li><Link href="/success-stories" className="text-sm text-white/40 hover:text-white transition-colors">Hiring stories</Link></li>
+              <li><Link href="/privacy" className="text-sm text-white/40 hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link href="/terms" className="text-sm text-white/40 hover:text-white transition-colors">Terms</Link></li>
             </ul>
           </div>
         </div>

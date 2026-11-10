@@ -52,7 +52,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">Saved Jobs</h1>
+      <h1 className="text-2xl font-semibold tracking-tight font-display text-text sm:text-3xl">Saved Jobs</h1>
       <p className="mt-1 text-text-light">
         Jobs you&apos;ve bookmarked for later.
       </p>

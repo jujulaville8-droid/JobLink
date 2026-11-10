@@ -156,7 +156,7 @@ export default async function JobResults({
   const selectHref = (id: string) => `/jobs?${split?.query ? `${split.query}&` : ""}job=${encodeURIComponent(id)}`;
 
   return (
-    <div className="animate-fade-up">
+    <div className={split ? undefined : "animate-fade-up"}>
       {split && <h2 className="font-display text-[1.75rem] leading-tight text-text">Job results</h2>}
       <div className={`mb-4 flex items-center justify-between gap-3 ${split ? "mt-1" : ""}`}>
         <p className="text-sm text-text-light">

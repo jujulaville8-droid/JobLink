@@ -153,7 +153,7 @@ export default function LoginPage() {
 
   return (
     <div className="animate-scale-in bg-white rounded-card shadow-md border border-border px-8 sm:px-12 py-10 sm:py-14 mx-auto max-w-lg">
-      <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-8">
+      <h1 className="font-display text-2xl sm:text-3xl text-text text-center mb-8 font-semibold tracking-tight">
         Welcome back
       </h1>
 
@@ -278,7 +278,7 @@ export default function LoginPage() {
         type="button"
         onClick={handleGoogleSignIn}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 rounded-button border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        className="w-full flex items-center justify-center gap-3 rounded-button border border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-bg-alt hover:border-primary/30 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {googleLoading ? (
           <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">

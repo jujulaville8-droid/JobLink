@@ -136,14 +136,16 @@ async function SelectedJob({ params, page, backHref }: { params: JobSearchParams
 
 function DetailSkeleton() {
   return (
-    <div className="rounded-[var(--radius-card)] border border-border bg-white p-7" aria-hidden="true">
+    <div className="rounded-[var(--radius-card)] border border-border bg-white p-5 sm:p-7 skeleton-delayed" aria-hidden="true">
       <div className="h-8 w-2/3 skeleton" />
       <div className="mt-3 h-5 w-1/3 skeleton" />
+      <div className="mt-5 flex gap-2"><div className="h-6 w-20 skeleton" /><div className="h-6 w-24 skeleton" /><div className="h-6 w-16 skeleton" /></div>
       <div className="mt-6 space-y-3">
         <div className="h-4 w-full skeleton" />
         <div className="h-4 w-full skeleton" />
         <div className="h-4 w-5/6 skeleton" />
       </div>
+      <div className="mt-6 flex gap-3"><div className="h-11 w-28 skeleton" /><div className="h-11 w-28 skeleton" /><div className="h-11 w-28 skeleton" /></div>
     </div>
   );
 }

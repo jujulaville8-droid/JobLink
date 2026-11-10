@@ -95,7 +95,7 @@ export default function HomePage({
           <span className="home-coral-stroke hero-stroke" />
           <p className="home-hero-description">
             Find work. Meet local employers. Build your future
-            <br className="home-desktop-break" /> in Antigua &amp; Barbuda.
+            in Antigua &amp; Barbuda.
           </p>
           <div className="home-role-rotate">
             Find your next role as a{" "}

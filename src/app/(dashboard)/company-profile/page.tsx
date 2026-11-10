@@ -312,7 +312,7 @@ export default function CompanyProfilePage() {
 
   if (loadError) {
     return <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-2xl font-display text-primary">Company profile</h1>
+      <h1 className="text-2xl font-display font-semibold tracking-tight text-text">Company profile</h1>
       <p role="alert" className="my-4 text-text-light">We couldn&apos;t load your company details. Please check your connection and try again.</p>
       <button type="button" className="btn-primary" onClick={() => { setLoadError(false); setLoading(true); setLoadAttempt((value) => value + 1); }}>Try again</button>
     </div>;
@@ -327,7 +327,7 @@ export default function CompanyProfilePage() {
         <li aria-hidden="true" className="h-px flex-1 bg-border" />
         <li>3. First job</li>
       </ol>}
-      <h1 className="text-2xl font-bold font-display text-primary sm:text-3xl">
+      <h1 className="text-2xl font-semibold font-display tracking-tight text-text sm:text-3xl">
         {isSetup ? 'Tell us about your company' : 'Company profile'}
       </h1>
       <p className="mt-2 text-sm text-text-light">
