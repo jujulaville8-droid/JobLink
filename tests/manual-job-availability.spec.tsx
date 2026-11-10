@@ -75,7 +75,7 @@ import sitemap from '@/app/sitemap';
 beforeEach(() => {
   db.tables = { job_listings: [], companies: [], users: [], applications: [] };
   for (const status of ['active', 'closed', 'pending_approval', 'expired']) {
-    const company = { id: `company-${status}`, company_name: `Company ${status}`, user_id: 'employer', created_at: '2020-01-01' };
+    const company = { id: `company-${status}`, company_name: `Company ${status}`, user_id: 'employer', created_at: '2020-01-01', is_confidential: false };
     db.tables.companies.push(company);
     db.tables.job_listings.push({
       id: `job-${status}`, title: `${status} legacy role`, status,

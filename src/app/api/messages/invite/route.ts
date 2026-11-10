@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer'
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendMessageNotification } from '@/lib/messaging-notifications'
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Get company info for notification
     const { data: company } = await supabase
       .from('companies')
-      .select('id, company_name')
+      .select('id, company_name, is_confidential')
       .eq('user_id', user.id)
       .single()
 
@@ -47,7 +48,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
     }
 
-    const companyName = company?.company_name || 'An employer'
+    // Shown to the invited seeker, so a confidential employer stays unnamed.
+    const companyName = publicEmployerName(company, 'An employer')
 
     // Invitations must point at one of this employer's open listings.
     const { data: listing } = await supabase

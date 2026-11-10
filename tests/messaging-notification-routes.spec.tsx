@@ -25,6 +25,7 @@ function client(queues: Record<string, Result[]>) {
     for (const method of ['select', 'eq', 'neq', 'in', 'is', 'limit']) chain[method] = vi.fn(() => chain)
     chain.insert = vi.fn((data: unknown) => { writes.push({ table, data }); return chain })
     chain.single = vi.fn(take)
+    chain.maybeSingle = vi.fn(take)
     chain.then = (yes: (value: Result) => unknown, no: (err: unknown) => unknown) => take().then(yes, no)
     return chain
   })
@@ -32,7 +33,7 @@ function client(queues: Record<string, Result[]>) {
 }
 const request = (body: unknown) => new NextRequest('https://example.invalid/api/messages', { method: 'POST', body: JSON.stringify(body) })
 const message = { id: messageId, conversation_id: thread, sender_id: sender, body: 'Hello' }
-const app = { id: appId, seeker_id: peer, job_listings: { id: 'job', title: 'Cook', companies: { id: 'company', user_id: sender, company_name: 'Company' } }, seeker_profiles: { user_id: peer, first_name: 'Test', last_name: 'Person' } }
+const app = { id: appId, seeker_id: peer, job_listings: { id: 'job', title: 'Cook', company_id: 'company' }, seeker_profiles: { user_id: peer, first_name: 'Test', last_name: 'Person' } }
 
 beforeEach(() => { vi.clearAllMocks(); mocks.rate.mockResolvedValue(null); mocks.notify.mockResolvedValue(undefined); mocks.email.mockResolvedValue(undefined) })
 
@@ -54,13 +55,13 @@ describe('persisted-message notification integration', () => {
     expect(mocks.notify).not.toHaveBeenCalled()
   })
   it('existing application conversation passes no recipient or display/body overrides', async () => {
-    const db = client({ applications: [{ data: app }], conversations: [{ data: { id: thread } }], messages: [{ data: message }] })
+    const db = client({ applications: [{ data: app }], company_owners: [{ data: { user_id: sender } }], conversations: [{ data: { id: thread } }], messages: [{ data: message }] })
     mocks.auth.mockResolvedValue({ user: { id: sender }, supabase: db })
     expect((await conversation(request({ application_id: appId, body: 'Hello' }))).status).toBe(200)
     expect(mocks.notify).toHaveBeenCalledWith(db, { messageId, conversationId: thread, senderId: sender })
   })
   it('new application conversation waits for a confirmed inserted message', async () => {
-    const db = client({ applications: [{ data: app }], conversations: [{ data: null }] })
+    const db = client({ applications: [{ data: app }], company_owners: [{ data: { user_id: sender } }], conversations: [{ data: null }] })
     const admin = client({ conversations: [{ data: { id: thread } }], conversation_participants: [{ data: null }], messages: [{ data: message }] })
     mocks.auth.mockResolvedValue({ user: { id: sender }, supabase: db }); mocks.admin.mockReturnValue(admin)
     expect((await conversation(request({ application_id: appId, body: 'Hello' }))).status).toBe(201)

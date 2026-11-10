@@ -1,3 +1,4 @@
+import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE, listingEmployerName } from "@/lib/confidential-employer";
 import JobViewTracker from "@/components/JobViewTracker";
 import { jobViewsLaunch } from "@/lib/job-views-config";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { data: job } = await supabase
     .from("job_listings")
-    .select("id, company_id, title, description, location, status, company:companies(company_name, logo_url)")
+    .select("id, company_id, title, description, location, status, is_confidential, company:companies(company_name, logo_url)")
     .eq("id", id)
     .single();
 
@@ -44,9 +45,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: { absolute: "Job Not Found | JobLink" } };
   }
 
-  const company = job.company as unknown as { company_name: string; logo_url: string | null } | null;
-  const title = `${job.title} at ${company?.company_name || "Company"} | JobLink`;
-  const description = jobMetaDescription({ ...job, companyName: company?.company_name });
+  const company = job.is_confidential
+    ? null
+    : job.company as unknown as { company_name: string; logo_url: string | null } | null;
+  const title = `${job.title} at ${listingEmployerName(job.is_confidential, company, "Company")} | JobLink`;
+  const description = jobMetaDescription({
+    ...job,
+    companyName: job.is_confidential ? CONFIDENTIAL_EMPLOYER_NAME.toLowerCase() : company?.company_name,
+  });
   // The stored id, not the route param: a case-variant URL still resolves, and
   // canonicalizing to the param would publish it as a second URL.
   const url = `https://joblinkantigua.com/jobs/${job.id}`;
@@ -134,7 +140,7 @@ function timeAgo(dateStr: string): string {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase, job, error, company } = await loadJobDetail(id);
+  const { supabase, job, error, company, confidential } = await loadJobDetail(id);
 
   // Only manual status controls availability. A non-active or missing listing
   // must return a real 404. Rendering a
@@ -164,7 +170,7 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   const jobUrl = `https://joblinkantigua.com/jobs/${job.id}`;
   const whatsappText = encodeURIComponent(
-    `Check out this job: ${job.title} at ${company?.company_name || "a company"} - ${jobUrl}`
+    `Check out this job: ${job.title} at ${company?.company_name || (confidential ? "a confidential employer" : "a company")} - ${jobUrl}`
   );
 
   // ─── Auth & application state for dynamic Apply button ───
@@ -175,7 +181,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     job.status !== "active" || !!closure,
   );
 
-  const companyInitial = company?.company_name?.charAt(0).toUpperCase() || "?";
+  const companyInitial = company?.company_name?.charAt(0).toUpperCase() || (confidential ? "C" : "?");
   const colors = [
     "bg-primary",
     "bg-accent",
@@ -443,6 +449,13 @@ export default async function JobDetailPage({ params }: PageProps) {
                       </svg>
                     )}
                   </Link>
+                ) : confidential ? (
+                  <span className="text-sm font-medium text-text-light">
+                    {CONFIDENTIAL_EMPLOYER_NAME}
+                    <span className="ml-2 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                      {CONFIDENTIAL_EMPLOYER_BADGE}
+                    </span>
+                  </span>
                 ) : (
                   <span className="text-sm text-text-light">Company</span>
                 )}
@@ -701,6 +714,17 @@ export default async function JobDetailPage({ params }: PageProps) {
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </Link>
+                </div>
+              )}
+              {confidential && (
+                <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6">
+                  <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-4">
+                    About the Employer
+                  </h3>
+                  <p className="text-sm font-semibold text-text">
+                    {CONFIDENTIAL_EMPLOYER_NAME} · {CONFIDENTIAL_EMPLOYER_BADGE}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-text-light">{CONFIDENTIAL_EMPLOYER_NOTE}</p>
                 </div>
               )}
             </div>

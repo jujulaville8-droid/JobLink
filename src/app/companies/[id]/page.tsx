@@ -18,6 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from("companies")
     .select("company_name")
     .eq("id", id)
+    .eq("is_confidential", false)
     .single();
 
   if (!company) {
@@ -56,10 +57,13 @@ export default async function CompanyPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
+  // A confidential employer has no public profile, even for its owner or an
+  // admin, whose sessions can read the row.
   const { data: company, error } = await supabase
     .from("companies")
     .select("*")
     .eq("id", id)
+    .eq("is_confidential", false)
     .single();
 
   // A missing company must be a real 404, not a 200 "not found" page.

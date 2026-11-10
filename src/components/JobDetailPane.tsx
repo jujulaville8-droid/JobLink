@@ -1,3 +1,4 @@
+import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE } from "@/lib/confidential-employer";
 import JobViewTracker from "@/components/JobViewTracker";
 import { jobViewsLaunch } from "@/lib/job-views-config";
 import Link from "next/link";
@@ -57,7 +58,7 @@ function Unavailable({ backHref }: { backHref: string }) {
 export default async function JobDetailPane({ jobId, backHref }: { jobId: string; backHref: string }) {
   if (!JOB_ID_PATTERN.test(jobId)) return <Unavailable backHref={backHref} />;
 
-  const { supabase, job, error, company } = await loadJobDetail(jobId);
+  const { supabase, job, error, company, confidential } = await loadJobDetail(jobId);
   // Same availability rule as /jobs/[id]: only active listings are shown.
   if (error || !job || job.status !== "active") return <Unavailable backHref={backHref} />;
 
@@ -71,7 +72,7 @@ export default async function JobDetailPane({ jobId, backHref }: { jobId: string
   const description = publicVacancyDescription(job);
   const location = displayJobLocation(job.location, company?.location);
   const whatsappText = encodeURIComponent(
-    `Check out this job: ${job.title} at ${company?.company_name || "a company"} - https://joblinkantigua.com/jobs/${job.id}`
+    `Check out this job: ${job.title} at ${company?.company_name || (confidential ? "a confidential employer" : "a company")} - https://joblinkantigua.com/jobs/${job.id}`
   );
 
   return (
@@ -103,6 +104,13 @@ export default async function JobDetailPane({ jobId, backHref }: { jobId: string
             >
               {company.company_name}
             </Link>
+          ) : confidential ? (
+            <p className="mt-1 text-lg text-text-light">
+              {CONFIDENTIAL_EMPLOYER_NAME}
+              <span className="ml-2 rounded-full bg-primary/10 px-2.5 py-0.5 align-middle text-xs font-semibold text-primary">
+                {CONFIDENTIAL_EMPLOYER_BADGE}
+              </span>
+            </p>
           ) : (
             <p className="mt-1 text-lg text-text-light">Company</p>
           )}
@@ -188,6 +196,15 @@ export default async function JobDetailPane({ jobId, backHref }: { jobId: string
               <path d="M5 12h14M13 5l7 7-7 7" />
             </svg>
           </Link>
+        </div>
+      )}
+      {confidential && (
+        <div className="mt-6 border-t border-border pt-6">
+          <h3 className="font-display text-2xl text-text">About the employer</h3>
+          <p className="mt-2 text-sm font-semibold text-text">
+            {CONFIDENTIAL_EMPLOYER_NAME} · {CONFIDENTIAL_EMPLOYER_BADGE}
+          </p>
+          <p className="mt-2 text-[15px] leading-relaxed text-text-light">{CONFIDENTIAL_EMPLOYER_NOTE}</p>
         </div>
       )}
 

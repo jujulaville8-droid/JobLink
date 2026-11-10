@@ -1,3 +1,4 @@
+import { listingEmployerName } from "@/lib/confidential-employer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -101,13 +102,13 @@ async function SeekerDashboard({ userId }: { userId: string }) {
   ] = await Promise.all([
     supabase
       .from("applications")
-      .select("id, status, applied_at, job_listings(id, title, companies(company_name, logo_url))")
+      .select("id, status, applied_at, job_listings(id, title, is_confidential, companies(company_name, logo_url))")
       .eq("seeker_id", profile.id)
       .order("applied_at", { ascending: false })
       .limit(5),
     supabase
       .from("job_listings")
-      .select("id, title, location, job_type, created_at, companies(company_name, logo_url)")
+      .select("id, title, location, job_type, created_at, is_confidential, companies(company_name, logo_url)")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(4),
@@ -257,7 +258,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
               {applications.map((app: Record<string, unknown>) => {
                 const job = app.job_listings as Record<string, unknown> | null;
                 const company = job?.companies as Record<string, unknown> | null;
-                const companyName = (company?.company_name as string) ?? "Unknown";
+                const companyName = listingEmployerName(job?.is_confidential as boolean | undefined, company, "Unknown");
                 const logoUrl = company?.logo_url as string | null;
                 const status = app.status as ApplicationStatus;
 
@@ -317,7 +318,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
             <div className="divide-y divide-border/30">
               {recommendedJobs.map((job: Record<string, unknown>) => {
                 const company = job.companies as Record<string, unknown> | null;
-                const companyName = (company?.company_name as string) ?? "Unknown Company";
+                const companyName = listingEmployerName(job.is_confidential as boolean | undefined, company, "Unknown Company");
                 const logoUrl = company?.logo_url as string | null;
 
                 return (
@@ -798,7 +799,7 @@ async function AdminDashboard() {
 
   const { data: activeJobsForShare } = await supabase
     .from("job_listings")
-    .select("id, title, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name)")
+    .select("id, title, location, job_type, salary_min, salary_max, salary_visible, created_at, is_confidential, companies(company_name)")
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(10);
@@ -847,7 +848,9 @@ async function AdminDashboard() {
     return {
       id: j.id as string,
       title: j.title as string,
-      company_name: (company?.company_name as string) ?? "Unknown",
+      // These are posted to Facebook, so a confidential employer stays unnamed
+      // even though an admin's session can read the real name.
+      company_name: listingEmployerName(j.is_confidential as boolean | undefined, company, "Unknown"),
       location: (j.location as string) ?? "Antigua",
       job_type: JOB_TYPE_DISPLAY[(j.job_type as string)] ?? (j.job_type as string),
       salary_min: j.salary_min as number | null,

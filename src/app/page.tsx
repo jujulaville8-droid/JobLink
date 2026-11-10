@@ -1,3 +1,4 @@
+import { listingEmployerName } from "@/lib/confidential-employer";
 import { closedJobIdFilter } from "@/lib/job-closures";
 import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
@@ -28,7 +29,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
       .select(
         `
         id, title, job_type, salary_min, salary_max, salary_type, salary_visible,
-        location, is_featured, created_at,
+        location, is_featured, is_confidential, created_at,
         company:companies ( company_name, logo_url, is_pro, location )
       `
       )
@@ -52,10 +53,13 @@ async function getFeaturedJobs(): Promise<Job[]> {
       return {
         id: job.id,
         title: job.title,
-        company_name: company?.company_name || "Company",
-        company_logo: company?.logo_url || null,
+        // The admin client reads past row security, so a confidential
+        // employer has to be masked here by hand.
+        company_name: listingEmployerName(job.is_confidential, company, "Company"),
+        company_logo: job.is_confidential ? null : company?.logo_url || null,
+        is_confidential: job.is_confidential === true,
         location: job.location,
-        company_location: company?.location ?? null,
+        company_location: job.is_confidential ? null : company?.location ?? null,
         job_type: JOB_TYPE_LABELS[job.job_type as JobType] || job.job_type,
         salary_min: job.salary_min,
         salary_max: job.salary_max,

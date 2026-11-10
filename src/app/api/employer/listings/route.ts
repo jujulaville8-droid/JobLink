@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const auth = await requireUser();
   if ('error' in auth) return auth.error;
   const { supabase, user } = auth;
-  const { data: company, error } = await supabase.from('companies').select('id, company_name, industry, location').eq('user_id', user.id).maybeSingle();
+  const { data: company, error } = await supabase.from('companies').select('id, company_name, industry, location, is_confidential').eq('user_id', user.id).maybeSingle();
   if (error) return NextResponse.json({ error: 'Could not load your company.' }, { status: 500 });
   if (!company) return NextResponse.json({ setup: true });
   const id = request.nextUrl.searchParams.get('id');

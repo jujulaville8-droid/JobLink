@@ -1,5 +1,6 @@
 "use client";
 
+import { CONFIDENTIAL_EMPLOYER_BADGE } from "@/lib/confidential-employer";
 import Link from "next/link";
 import { useSavedJob } from "@/lib/saved-job-sync";
 import { displayJobLocation } from "@/lib/job-location";
@@ -11,6 +12,8 @@ export interface Job {
   title: string;
   company_name: string;
   company_logo?: string | null;
+  /** The employer asked not to be named; company_name is already the masked label. */
+  is_confidential?: boolean;
   location: string | null;
   company_location?: string | null;
   job_type: string;
@@ -167,7 +170,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                 </span>
               )}
             </div>
-            <p className="text-text-muted text-[13px] mt-0.5">{job.company_name}</p>
+            <p className="text-text-muted text-[13px] mt-0.5">
+              {job.company_name}
+              {job.is_confidential && (
+                <span className="font-medium text-primary"> · {CONFIDENTIAL_EMPLOYER_BADGE}</span>
+              )}
+            </p>
 
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
               <span className="flex items-center gap-1 text-xs text-text-light">

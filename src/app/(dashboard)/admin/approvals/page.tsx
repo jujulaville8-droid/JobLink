@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
 import { processJobAlerts } from '@/lib/job-alert-matcher'
@@ -55,14 +56,15 @@ async function notifyJobSeekers(jobId: string) {
     // Get full job details
     const { data: job } = await admin
       .from('job_listings')
-      .select('title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name)')
+      .select('title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name, is_confidential)')
       .eq('id', jobId)
       .single()
 
     if (!job) return
 
     const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
-    const companyName = company?.company_name || 'An employer'
+    // This email goes to job seekers, so a confidential employer stays unnamed.
+    const companyName = publicEmployerName(company, 'An employer')
     const jobTitle = job.title
     const listingUrl = `${BASE_URL}/jobs/${jobId}`
 
@@ -183,6 +185,7 @@ interface PendingCompany {
   description: string | null
   is_verified: boolean
   is_pro: boolean
+  is_confidential: boolean
 }
 
 interface PendingListing {
@@ -203,7 +206,7 @@ export default async function AdminApprovalsPage() {
 
   const { data: listings, error } = await supabase
     .from('job_listings')
-    .select('id, title, description, job_type, location, salary_min, salary_max, created_at, companies(id, company_name, logo_url, industry, location, website, description, is_verified, is_pro)')
+    .select('id, title, description, job_type, location, salary_min, salary_max, created_at, companies(id, company_name, logo_url, industry, location, website, description, is_verified, is_pro, is_confidential)')
     .eq('status', 'pending_approval')
     .order('created_at', { ascending: true })
 
@@ -296,6 +299,14 @@ export default async function AdminApprovalsPage() {
                           <h3 className="text-sm font-semibold text-text truncate">
                             {listing.title}
                           </h3>
+                          {company?.is_confidential && (
+                            <span
+                              className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20"
+                              title="Shown publicly as “Confidential employer · Verified by JobLink”. Confirm this is a legitimate employer, and that the description does not name them, before approving."
+                            >
+                              Confidential: verify employer
+                            </span>
+                          )}
                           <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/40">
                             Pending
                           </span>

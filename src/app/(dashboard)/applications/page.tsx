@@ -1,3 +1,4 @@
+import { listingEmployerName } from "@/lib/confidential-employer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +44,7 @@ export default async function ApplicationsPage() {
   const { data: applications } = await supabase
     .from("applications")
     .select(
-      "id, status, applied_at, cover_letter_text, job_listings(id, title, location, job_type, companies(company_name, logo_url))"
+      "id, status, applied_at, cover_letter_text, job_listings(id, title, location, job_type, is_confidential, companies(company_name, logo_url))"
     )
     .eq("seeker_id", profile.id)
     .order("applied_at", { ascending: false });
@@ -105,7 +106,7 @@ export default async function ApplicationsPage() {
                         {(job?.title as string) ?? "Untitled Position"}
                       </Link>
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-light">
-                        <span>{(company?.company_name as string) ?? "Unknown Company"}</span>
+                        <span>{listingEmployerName(job?.is_confidential as boolean | undefined, company, "Unknown Company")}</span>
                         {(job?.location as string) ? (
                           <>
                             <span className="hidden sm:inline">&middot;</span>
