@@ -6,6 +6,7 @@ const db = vi.hoisted(() => ({
   select: vi.fn(),
 }));
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({
+  auth: { getUser: async () => ({ data: { user: null } }) },
   from: () => ({ select: db.select.mockImplementation(() => ({
     eq: () => ({ single: async () => ({ data: db.job }) }),
   })) }),
