@@ -114,6 +114,11 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
       {saveError && <p role="alert" className="relative z-10 mb-2 text-xs text-red-700">{saveError}</p>}
       {highlight && <div aria-hidden="true" className="job-card-spotlight" />}
       <div className="block">
+        {selected && (
+          <span className="mb-2 hidden lg:inline-block rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary-dark">
+            Selected
+          </span>
+        )}
         <div className="flex items-start gap-3.5">
           {job.company_logo ? (
             <img
