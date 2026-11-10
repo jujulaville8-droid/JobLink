@@ -85,7 +85,7 @@ const btnPrimary =
   "inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20";
 
 const btnOutline =
-  "inline-flex items-center gap-2 rounded-xl border-2 border-border bg-surface px-5 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-all duration-200";
+  "inline-flex items-center gap-2 rounded-xl border border-border bg-surface px-5 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-all duration-200";
 
 export default function ApplyPage() {
   const params = useParams();
@@ -499,7 +499,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
 
               <Link
                 href={`/profile?returnTo=${encodeURIComponent(`/jobs/${jobId}/apply`)}`}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-600 transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-amber-500/20"
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-dark transition-all duration-200 hover:-translate-y-px hover:shadow-md hover:shadow-primary/20"
               >
                 <HugeiconsIcon icon={UserIcon} size={14} />
                 Complete Profile
@@ -772,7 +772,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       >
         {/* Page heading */}
         <motion.div variants={item}>
-          <h1 className="font-display text-2xl font-bold text-text">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-text">
             Submit Your Application
           </h1>
           <p className="mt-1 text-sm text-text-muted">
@@ -922,9 +922,9 @@ function ApplicationForm({ jobId }: { jobId: string }) {
             <motion.button
               type="submit"
               disabled={state === "submitting"}
-              whileHover={{ y: -2 }}
+              whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
-              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-accent-warm px-6 py-3.5 text-base font-semibold text-white hover:bg-accent-warm-hover transition-all duration-200 hover:shadow-lg hover:shadow-accent-warm/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-white hover:bg-primary-dark transition-[background-color,box-shadow] duration-200 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
             >
               {state === "submitting" ? (
                 <>

@@ -255,7 +255,7 @@ body {
 @keyframes fade-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -298,11 +298,19 @@ body {
 
 /* ── Animation utility classes ── */
 .animate-fade-up {
-  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-up 240ms var(--motion-ease-out) both;
 }
 
 .animate-fade-in {
-  animation: fade-in 0.4s ease both;
+  animation: fade-in var(--motion-page) var(--motion-ease-out) both;
+}
+
+.animate-pane-in {
+  animation: fade-in var(--motion-fast) var(--motion-ease-out) both;
+}
+
+.skeleton-delayed {
+  animation: fade-in 150ms ease-out 200ms both;
 }
 
 .animate-slide-in-left {
@@ -354,16 +362,17 @@ body {
 /* ── Stagger children ── */
 .stagger-children > * {
   opacity: 0;
-  animation: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fade-up 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 480ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 560ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 30ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 90ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 210ms; }
+.stagger-children > *:nth-child(n+9) { animation-delay: 210ms; }
 
 /* ── Hover lift effect ── */
 .hover-lift {
@@ -438,15 +447,21 @@ body {
     transform 180ms var(--motion-ease-out),
     background-color 180ms var(--motion-ease-out),
     box-shadow 180ms var(--motion-ease-out);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .btn-primary:hover {
   background: var(--color-primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(13, 115, 119, 0.25);
+  box-shadow: 0 1px 2px rgba(13, 115, 119, 0.20), 0 6px 14px rgba(13, 115, 119, 0.14);
 }
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.97);
   box-shadow: none;
+}
+
+.btn-primary-sm {
+  font-size: 13px;
+  padding: 8px 16px;
 }
 
 /* ── Warm accent button (gold) ── */

@@ -37,7 +37,7 @@ function formatSalary(
 }
 
 const panelClass =
-  "rounded-[var(--radius-card)] border border-border bg-white p-5 sm:p-7 animate-fade-in";
+  "rounded-[var(--radius-card)] border border-border bg-white p-5 sm:p-7 animate-pane-in";
 
 function Unavailable({ backHref }: { backHref: string }) {
   return (

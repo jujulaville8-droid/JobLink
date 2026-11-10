@@ -190,7 +190,7 @@ export default function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold font-display text-text sm:text-3xl">Settings</h1>
+      <h1 className="text-2xl font-semibold tracking-tight font-display text-text sm:text-3xl">Settings</h1>
       <p className="mt-1 text-text-light">
         Manage your account preferences.
       </p>

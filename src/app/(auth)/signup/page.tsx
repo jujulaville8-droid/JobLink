@@ -206,7 +206,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
         {role === 'employer' && <p className="mb-5 text-sm text-text-light">{claimReturnTo(returnTo) ? 'After verification, return to claim your existing company. No new company will be created.' : fromMembers ? 'After verification, continue straight to Browse Candidates.' : 'Next, add your company name and create your first job post.'}</p>}
         {error && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
         {resendMessage && <p role="status" className="mb-3 text-sm text-primary">{resendMessage}</p>}
-        <button type="button" onClick={resendVerification} disabled={resending || resendWait > 0} className="min-h-11 w-full rounded-xl border border-border px-4 py-2 text-sm font-medium text-primary disabled:opacity-60">
+        <button type="button" onClick={resendVerification} disabled={resending || resendWait > 0} className="min-h-11 w-full rounded-xl border border-border px-4 py-2 text-sm font-medium text-primary hover:bg-bg-alt transition-colors disabled:opacity-60">
           {resending ? 'Sending…' : resendWait > 0 ? `Resend email in ${resendWait}s` : 'Resend verification email'}
         </button>
         <p className="mt-4 text-xs text-text-muted">Check your spam folder too. Already verified? <a href={signInHref} className="text-primary underline">Sign in</a></p>
@@ -234,9 +234,9 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
             role="radio"
             aria-checked={role === 'seeker'}
             tabIndex={0}
-            className={`relative flex flex-col items-start rounded-2xl border-2 p-6 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+            className={`relative flex flex-col items-start rounded-2xl border p-6 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
               role === 'seeker'
-                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
+                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 shadow-[0_0_0_3px_rgba(13,115,119,0.12)]'
                 : 'border-border hover:border-primary/30 hover:shadow-md bg-white'
             }`}
           >
@@ -270,9 +270,9 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
             role="radio"
             aria-checked={role === 'employer'}
             tabIndex={0}
-            className={`relative flex flex-col items-start rounded-2xl border-2 p-6 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+            className={`relative flex flex-col items-start rounded-2xl border p-6 text-left transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
               role === 'employer'
-                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
+                ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10 shadow-[0_0_0_3px_rgba(13,115,119,0.12)]'
                 : 'border-border hover:border-primary/30 hover:shadow-md bg-white'
             }`}
           >
@@ -336,7 +336,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
           </svg>
         </button>
         <div>
-          <h1 className="font-display text-xl text-text">
+          <h1 className="font-display text-xl text-text font-semibold tracking-tight">
             {role === 'employer' ? 'Create your employer account' : 'Create your account'}
           </h1>
           <p className="text-xs text-text-light mt-0.5">
@@ -459,7 +459,7 @@ function SignupForm({ preselectedRole, returnTo }: { preselectedRole: Role | nul
         type="button"
         onClick={handleGoogleSignUp}
         disabled={googleLoading || loading}
-        className="w-full flex min-h-11 items-center justify-center gap-3 rounded-xl border-2 border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-gray-50 hover:border-primary/30 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+        className="w-full flex min-h-11 items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:bg-bg-alt hover:border-primary/30 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
       >
         {googleLoading ? <Spinner /> : <GoogleIcon />}
         Sign up with Google

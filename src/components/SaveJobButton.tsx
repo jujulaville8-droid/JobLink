@@ -21,8 +21,8 @@ export default function SaveJobButton({ jobId, initialSaved, loggedIn, large = f
       disabled={loading}
       aria-pressed={saved}
       className={large
-        ? "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-white px-4 py-2.5 text-sm font-semibold text-text hover:border-primary hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
-        : "inline-flex items-center gap-2 rounded-xl border border-border/60 bg-white px-4 py-2 text-sm font-medium text-text-light hover:text-primary hover:border-primary/30 transition-colors disabled:opacity-50 cursor-pointer"}
+        ? "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-medium text-text hover:border-primary/40 hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
+        : "inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium text-text-light hover:text-primary hover:border-primary/40 transition-colors disabled:opacity-50 cursor-pointer"}
     >
       <svg
         className={`h-4 w-4 ${saved ? "text-primary fill-primary" : ""}`}

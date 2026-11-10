@@ -520,7 +520,7 @@ export default async function JobDetailPage({ params }: PageProps) {
               </div>
 
               {/* Job title */}
-              <h1 className="font-display text-2xl sm:text-3xl lg:text-[2rem] text-text leading-tight">
+              <h1 className="font-display font-semibold tracking-tight text-2xl sm:text-3xl lg:text-[2rem] text-text leading-tight">
                 {job.title}
               </h1>
 
@@ -590,7 +590,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           <div className="flex-1 min-w-0 space-y-6">
             {/* Job Description card */}
             <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8">
-              <h2 className="font-display text-lg text-text mb-5 flex items-center gap-2">
+              <h2 className="font-display font-semibold text-lg text-text mb-5 flex items-center gap-2">
                 <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -609,7 +609,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 jobBenefits when permission is recorded. */}
             {visibleBenefits.length > 0 && (
               <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8">
-                <h2 className="font-display text-lg text-text mb-4">Benefits</h2>
+                <h2 className="font-display font-semibold text-lg text-text mb-4">Benefits</h2>
                 <ul className="flex flex-wrap gap-2">
                   {visibleBenefits.map((benefit, index) => (
                     <li key={`${index}-${benefit}`} className="rounded-full border border-border px-4 py-2 text-sm text-text-light">{benefit}</li>
@@ -626,7 +626,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                   href={`https://wa.me/?text=${whatsappText}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-white px-4 py-2 text-sm font-medium text-text-light hover:text-green-600 hover:border-green-200 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm font-medium text-text-light hover:text-green-600 hover:border-green-200 transition-colors"
                 >
                   <svg
                     className="h-4 w-4 text-green-600 shrink-0"
@@ -655,7 +655,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             <div className="lg:sticky lg:top-20 space-y-5">
               {/* Apply card */}
               <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6">
-                <h2 className="font-display text-lg text-text mb-1">
+                <h2 className="font-display font-semibold text-lg text-text mb-1">
                   Apply for this job
                 </h2>
                 <p className="text-xs text-text-muted mb-5">
@@ -760,10 +760,10 @@ export default async function JobDetailPage({ params }: PageProps) {
 
                   <Link
                     href={`/companies/${company.id}`}
-                    className="flex items-center justify-center gap-1.5 w-full rounded-xl border-2 border-border/60 px-4 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/40 transition-all"
+                    className="group flex items-center justify-center gap-1.5 w-full rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text-light hover:text-primary hover:border-primary/40 transition-colors"
                   >
                     View company profile
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </Link>

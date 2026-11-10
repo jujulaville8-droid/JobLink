@@ -129,7 +129,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl text-text sm:text-3xl">
+          <h1 className="font-display font-semibold tracking-tight text-2xl text-text sm:text-3xl">
             {firstName ? `Welcome, ${firstName}` : "Welcome"}
           </h1>
           <p className="mt-1 text-text-light text-sm">
@@ -200,11 +200,11 @@ async function SeekerDashboard({ userId }: { userId: string }) {
 
       {/* Profile Completion - hidden when 100% */}
       {completePct < 100 && (
-        <div className="mt-5 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-white p-5">
+        <div className="mt-5 rounded-2xl border border-primary/15 bg-primary/[0.03] p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
@@ -213,17 +213,17 @@ async function SeekerDashboard({ userId }: { userId: string }) {
                 <p className="text-xs text-text-muted">{completePct}% done — {missing.length} {missing.length === 1 ? "item" : "items"} left</p>
               </div>
             </div>
-            <Link href="/profile" className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+            <Link href="/profile" className="btn-primary btn-primary-sm">
               Complete
             </Link>
           </div>
-          <div className="h-2 w-full rounded-full bg-amber-100">
-            <div className="h-2 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${completePct}%` }} />
+          <div className="h-2 w-full rounded-full bg-primary/10">
+            <div className="h-2 rounded-full bg-primary transition-all duration-500" style={{ width: `${completePct}%` }} />
           </div>
           {missing.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {missing.map((item) => (
-                <span key={item} className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                <span key={item} className="text-[11px] font-medium text-text-light bg-bg-alt px-2 py-0.5 rounded-full">
                   {item}
                 </span>
               ))}
@@ -499,7 +499,7 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl text-text sm:text-3xl">
+          <h1 className="font-display font-semibold tracking-tight text-2xl text-text sm:text-3xl">
             {greetingCompanyName ? `Welcome, ${greetingCompanyName}` : "Welcome"}
           </h1>
           {claimedId === company.id && company.claimed_at && <p role="status" className="mt-3 rounded-xl bg-emerald-50 p-4 text-emerald-800">You now manage {companyName}. Your existing jobs and applications are ready.</p>}
@@ -606,11 +606,11 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
 
       {/* Company Profile Completion */}
       {companyCompletePct < 100 && (
-        <div className="mt-4 rounded-2xl border border-amber-200/60 bg-gradient-to-r from-amber-50/80 to-white p-5">
+        <div className="mt-4 rounded-2xl border border-primary/15 bg-primary/[0.03] p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg className="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
               </div>
@@ -619,17 +619,17 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
                 <p className="text-xs text-text-muted">{companyCompletePct}% done — {companyMissing.length} {companyMissing.length === 1 ? "item" : "items"} left</p>
               </div>
             </div>
-            <Link href="/company-profile" className="rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white hover:bg-amber-600 transition-colors">
+            <Link href="/company-profile" className="btn-primary btn-primary-sm">
               Complete
             </Link>
           </div>
-          <div className="h-2 w-full rounded-full bg-amber-100">
-            <div className="h-2 rounded-full bg-amber-500 transition-all duration-500" style={{ width: `${companyCompletePct}%` }} />
+          <div className="h-2 w-full rounded-full bg-primary/10">
+            <div className="h-2 rounded-full bg-primary transition-all duration-500" style={{ width: `${companyCompletePct}%` }} />
           </div>
           {companyMissing.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {companyMissing.map((item) => (
-                <span key={item} className="text-[11px] font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">{item}</span>
+                <span key={item} className="text-[11px] font-medium text-text-light bg-bg-alt px-2 py-0.5 rounded-full">{item}</span>
               ))}
             </div>
           )}

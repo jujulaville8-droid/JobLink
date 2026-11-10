@@ -129,7 +129,7 @@ export default function MessagesPage() {
   return (
     <div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold font-display text-text sm:text-2xl">{pageTitle}</h1>
+        <h1 className="text-xl font-semibold tracking-tight font-display text-text sm:text-2xl">{pageTitle}</h1>
       </div>
 
       {/* Tabs */}
