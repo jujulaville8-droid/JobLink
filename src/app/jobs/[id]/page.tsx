@@ -31,6 +31,32 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+// A listing that is not active stays a real 404 for the public (see the
+// note in the page component). Its owner and JobLink admins may still open
+// it as a preview: the admin approvals screen links here, and employers
+// check their own pending listings here.
+async function canPreviewListing(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  job: { company_id: string },
+): Promise<boolean> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data: me } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (me?.role === "admin") return true;
+  const { data: owner } = await supabase
+    .from("companies")
+    .select("user_id")
+    .eq("id", job.company_id)
+    .single();
+  return owner?.user_id === user.id;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
@@ -41,7 +67,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .eq("id", id)
     .single();
 
-  if (!job || job.status !== "active") {
+  if (!job) {
+    return { title: { absolute: "Job Not Found | JobLink" } };
+  }
+  const preview = job.status !== "active" ? await canPreviewListing(supabase, job) : false;
+  if (job.status !== "active" && !preview) {
     return { title: { absolute: "Job Not Found | JobLink" } };
   }
 
@@ -62,6 +92,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     ...(closed ? { robots: { index: false, follow: true } } : {}),
+    ...(preview ? { robots: { index: false, follow: false } } : {}),
     // absolute: the root layout's "%s | JobLink" template would otherwise
     // append the suffix a second time ("... | JobLink | JobLink").
     title: { absolute: title },
@@ -146,8 +177,19 @@ export default async function JobDetailPage({ params }: PageProps) {
   // must return a real 404. Rendering a
   // "not found" body with a 200 makes it a soft 404: Google keeps the URL in
   // the index and reports it as an error in Search Console.
-  if (error || !job || job.status !== "active") {
+  if (error || !job) {
     notFound();
+  }
+
+  // A non active listing still 404s for everyone else. The owner and admins
+  // get a preview instead: no structured data, no view tracking, and a banner
+  // making clear the listing is not live.
+  let preview = false;
+  if (job.status !== "active") {
+    preview = await canPreviewListing(supabase, job);
+    if (!preview) {
+      notFound();
+    }
   }
 
   const isNew =
@@ -368,17 +410,19 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50/60">
-      {jobViewsLaunch() && <JobViewTracker jobId={job.id} surface="job_page" />}
-      {emitJobPosting && (
+      {jobViewsLaunch() && !preview && <JobViewTracker jobId={job.id} surface="job_page" />}
+      {emitJobPosting && !preview && (
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(jobPostingSchema) }}
         />
       )}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
-      />
+      {!preview && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
+        />
+      )}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10 animate-fade-up">
         {/* Back link */}
         <Link
@@ -396,6 +440,15 @@ export default async function JobDetailPage({ params }: PageProps) {
           </svg>
           Back to jobs
         </Link>
+
+        {preview && (
+          <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-5 mb-6">
+            <p className="font-semibold text-amber-900">Preview: this listing is not live yet</p>
+            <p className="mt-1 text-sm text-amber-800">
+              Only you and JobLink admins can see this page. Job seekers cannot view or apply to this listing until it is approved and live.
+            </p>
+          </div>
+        )}
 
         {closure && (
           <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-5 mb-6">
