@@ -1,6 +1,7 @@
 import { cvExtension } from '@/lib/cv-upload'
 import { getJobClosure } from '@/lib/job-closures'
 import { after, NextRequest, NextResponse } from 'next/server'
+import { listingEmployerName } from '@/lib/confidential-employer'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { sendEmail, BASE_URL } from '@/lib/email'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     // Check the job exists and is active
     const { data: job, error: jobError } = await supabase
       .from('job_listings')
-      .select('id, status, title, company_id, posted_by_admin, companies(company_name, user_id, contact_email)')
+      .select('id, status, title, company_id, posted_by_admin, is_confidential, companies(company_name, user_id, contact_email)')
       .eq('id', job_id)
       .single()
 
@@ -82,7 +83,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Prevent applying to your own company's listing
-    const jobCompany = Array.isArray(job.companies) ? job.companies[0] : job.companies
+    let jobCompany: { company_name: string; user_id: string; contact_email: string | null } | null | undefined =
+      Array.isArray(job.companies) ? job.companies[0] : job.companies
+    if (!jobCompany) {
+      // Row security hides a confidential employer's company from applicants.
+      // The owner is still needed to route the application, so read it with
+      // the service role; the name never goes back to the applicant.
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      jobCompany = (await createAdminClient().from('companies')
+        .select('company_name, user_id, contact_email').eq('id', job.company_id).maybeSingle()).data
+    }
     if (jobCompany?.user_id === user.id) {
       return NextResponse.json({ error: 'You cannot apply to your own job listing' }, { status: 403 })
     }
@@ -139,8 +149,8 @@ export async function POST(request: NextRequest) {
       } catch { console.warn('[apply] Background forwarding deferred to durable watchdog') }
     }
 
-    const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
-    const companyName = company?.company_name || 'the company'
+    const company = jobCompany
+    const companyName = listingEmployerName(job.is_confidential, company, 'the company')
 
     // Preserve the ordinary participant-authorized chat link on both paths. This
     // current uploaded CV is not the immutable screening/email capture and never

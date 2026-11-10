@@ -1,3 +1,4 @@
+import { listingEmployerName } from "@/lib/confidential-employer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -39,7 +40,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
   const { data: savedJobs, count } = await supabase
     .from("saved_jobs")
     .select(
-      "id, saved_at, job_id, job_listings(id, company_id, title, description, location, job_type, salary_min, salary_max, salary_visible, created_at, companies(company_name, logo_url))",
+      "id, saved_at, job_id, job_listings(id, company_id, title, description, location, job_type, salary_min, salary_max, salary_visible, created_at, is_confidential, companies(company_name, logo_url))",
       { count: "exact" }
     )
     .eq("seeker_id", profile.id)
@@ -89,7 +90,7 @@ export default async function SavedJobsPage({ searchParams }: PageProps) {
                       {job.title as string}
                     </h3>
                     <p className="mt-1 text-sm text-text-light">
-                      {(company?.company_name as string) ?? "Unknown Company"}
+                      {listingEmployerName(job.is_confidential as boolean | undefined, company, "Unknown Company")}
                     </p>
 
                     {description ? (

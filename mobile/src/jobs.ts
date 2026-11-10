@@ -3,11 +3,11 @@ export const PAGE_SIZE = 20
 export const types: Record<string, string> = { full_time: 'Full time', part_time: 'Part time', contract: 'Contract', seasonal: 'Seasonal' }
 export type Job = {
   id: string; title: string; description: string; category: string | null; location: string; job_type: string;
-  status: string; created_at: string; expires_at: string | null; is_featured: boolean;
+  status: string; created_at: string; expires_at: string | null; is_featured: boolean; is_confidential?: boolean;
   salary_min: number | null; salary_max: number | null; salary_visible: boolean;
   company: { company_name: string; logo_url: string | null } | null;
 }
-export const fields = 'id,title,description,category,location,job_type,status,created_at,expires_at,is_featured,salary_min,salary_max,salary_visible,company:companies(company_name,logo_url)'
+export const fields = 'id,title,description,category,location,job_type,status,created_at,expires_at,is_featured,is_confidential,salary_min,salary_max,salary_visible,company:companies(company_name,logo_url)'
 export async function getJobs(query = '', type = '', page = 0, pages = 1) {
   let request = db.from('job_listings').select(`${fields},company_search:companies()`, { count: 'exact' })
     .eq('status', 'active').or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
@@ -41,3 +41,6 @@ export function salary(job: Job) {
   return job.salary_min && job.salary_max ? `${money(job.salary_min)}–${money(job.salary_max)} / month`
     : job.salary_min ? `From ${money(job.salary_min)} / month` : `Up to ${money(job.salary_max!)} / month`
 }
+
+/** Row security returns no company for an employer who asked not to be named. */
+export const employerName = (job: Job) => job.company?.company_name || (job.is_confidential ? 'Confidential employer' : 'Employer')

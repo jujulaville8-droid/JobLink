@@ -3,7 +3,7 @@ import { ActivityIndicator, FlatList, Image, Keyboard, Modal, Pressable, ScrollV
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { api, SITE, SLOW_TIMEOUT } from './client'
 import { useAccount, useMarks } from './Auth'
-import { getJobs, hasSalary, isClosed, PAGE_SIZE, posted, salary, types, type Job } from './jobs'
+import { employerName, getJobs, hasSalary, isClosed, PAGE_SIZE, posted, salary, types, type Job } from './jobs'
 import { Button, C, CardGap, Empty, Field, Icon, KeyboardArea, Press, s, Skeletons, ToastHost, useStaleRefresh, useToast } from './ui'
 
 const statuses: Record<string, { label: string; color: string; text: string }> = {
@@ -81,7 +81,7 @@ export const JobCard = memo(function JobCard({ job, open, status }: JobCardProps
   const toast = useToast()
   const [saving, setSaving] = useState(false)
   const pill = status ? statuses[status] ?? { label: status, color: C.line, text: C.ink } : marks.applied.has(job.id) ? statuses.applied : null
-  const company = job.company?.company_name || 'Employer'
+  const company = employerName(job)
   const location = job.location?.trim()
   const closes = applyBy(job)
   const saved = marks.saved.has(job.id)
@@ -262,7 +262,7 @@ export function JobDetail({ job, close, signIn, viewApplications, onChanged }: {
   const shown = lastJob.current
   useEffect(() => { if (job) { setStep('view'); setLetter(''); setError('') } }, [job])
   if (!shown) return null
-  const company = shown.company?.company_name || 'Employer'
+  const company = employerName(shown)
   const saved = marks.saved.has(shown.id)
   const applied = marks.applied.has(shown.id)
   const ended = isClosed(shown)
@@ -298,7 +298,7 @@ export function JobDetail({ job, close, signIn, viewApplications, onChanged }: {
   const header = <View style={[s.row, { paddingHorizontal: 12, paddingVertical: 8, justifyContent: 'space-between' }]}>
     {step === 'apply' ? <Press accessibilityLabel="Back to job details" onPress={() => { setStep('view'); setError('') }} style={{ padding: 11 }}><Icon name="arrow-back" /></Press>
       : <Press accessibilityLabel="Close job details" onPress={close} style={{ padding: 11 }}><Icon name="close" /></Press>}
-    <Press accessibilityLabel="Share job" style={{ padding: 11 }} onPress={() => Share.share({ message: `${shown.title} at ${shown.company?.company_name || 'JobLinks'} — ${SITE}/jobs/${shown.id}`, url: `${SITE}/jobs/${shown.id}` }).catch(() => setError('Could not open sharing.'))}><Icon name="share-outline" /></Press>
+    <Press accessibilityLabel="Share job" style={{ padding: 11 }} onPress={() => Share.share({ message: `${shown.title} at ${shown.company?.company_name || (shown.is_confidential ? 'a confidential employer' : 'JobLinks')} — ${SITE}/jobs/${shown.id}`, url: `${SITE}/jobs/${shown.id}` }).catch(() => setError('Could not open sharing.'))}><Icon name="share-outline" /></Press>
   </View>
   const errorBox = !!error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>
   return <Modal visible={!!job} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { if (step === 'apply') setStep('view'); else close() }}>

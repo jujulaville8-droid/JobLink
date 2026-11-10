@@ -1,5 +1,6 @@
 "use client";
 
+import { CONFIDENTIAL_EMPLOYER_NAME } from "@/lib/confidential-employer";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -129,7 +130,7 @@ function ApplicationForm({ jobId }: { jobId: string }) {
       const { data: jobData, error: jobError } = await supabase
         .from("job_listings")
         .select(
-          "id, company_id, title, location, job_type, status, company:companies(company_name)"
+          "id, company_id, title, location, job_type, status, is_confidential, company:companies(company_name)"
         )
         .eq("id", jobId)
         .single();
@@ -141,7 +142,10 @@ function ApplicationForm({ jobId }: { jobId: string }) {
 
       const jobInfo: JobInfo = {
         ...jobData,
-        company: jobData.company as unknown as { company_name: string } | null,
+        // Row security returns no company for a confidential employer.
+        company: jobData.is_confidential
+          ? { company_name: CONFIDENTIAL_EMPLOYER_NAME }
+          : jobData.company as unknown as { company_name: string } | null,
       };
       setJob(jobInfo);
 

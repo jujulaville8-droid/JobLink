@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail, BASE_URL } from '@/lib/email';
 import type { AlertCriteria } from '@/lib/job-alert-criteria';
@@ -13,7 +14,7 @@ export async function processJobAlerts(jobId: string, scope?: { seekerId: string
   try {
     const db = createAdminClient();
     const { data: job, error: jobError } = await db.from('job_listings')
-      .select('id, title, description, category, job_type, status, companies(company_name)')
+      .select('id, title, description, category, job_type, status, companies(company_name, is_confidential)')
       .eq('id', jobId).single();
     if (jobError) throw jobError;
     if (!job || job.status !== 'active') return result;
@@ -55,7 +56,7 @@ export async function processJobAlerts(jobId: string, scope?: { seekerId: string
 
         const sent = await sendEmail({ to: user.email, type: 'job_alert',
           idempotencyKey: `job-alert/${jobId}/${seekerId}`,
-          data: { jobs: [{ title: job.title, company: company?.company_name || 'An employer', url: `${BASE_URL}/jobs/${job.id}` }] },
+          data: { jobs: [{ title: job.title, company: publicEmployerName(company, 'An employer'), url: `${BASE_URL}/jobs/${job.id}` }] },
         });
         if (!sent.success) { result.failed++; continue; }
         result.sent++; result.messageIds.push(sent.id);

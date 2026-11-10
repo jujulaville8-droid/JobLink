@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       .select(`
         id,
         seeker_profiles!inner ( user_id ),
-        job_listings!inner ( companies!inner ( user_id ) )
+        job_listings!inner ( company_id )
       `)
       .eq('id', applicationId)
       .single()
@@ -29,9 +29,17 @@ export async function GET(request: NextRequest) {
     }
 
     const seeker = app.seeker_profiles as unknown as { user_id: string }
-    const company = app.job_listings as unknown as { companies: { user_id: string } }
+    const job = app.job_listings as unknown as { company_id: string }
+    // The employer comes from company_owners, not companies: row security hides
+    // a confidential employer's company row from the applicant, while this view
+    // carries only the owner's id and is readable by both sides.
+    const { data: owner } = await supabase
+      .from('company_owners')
+      .select('user_id')
+      .eq('id', job.company_id)
+      .maybeSingle()
 
-    if (user.id !== seeker.user_id && user.id !== company.companies.user_id) {
+    if (!owner || (user.id !== seeker.user_id && user.id !== owner.user_id)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

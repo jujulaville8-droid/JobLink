@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
   // Get full job details
   const { data: job } = await supabase
     .from('job_listings')
-    .select('title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name)')
+    .select('title, description, location, job_type, salary_min, salary_max, salary_visible, companies(company_name, is_confidential)')
     .eq('id', job_id)
     .single()
 
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   const company = Array.isArray(job.companies) ? job.companies[0] : job.companies
-  const companyName = company?.company_name || 'An employer'
+  const companyName = publicEmployerName(company, 'An employer')
   const listingUrl = `${BASE_URL}/jobs/${job_id}`
 
   // Format salary

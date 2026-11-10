@@ -65,7 +65,8 @@ function client(kind: 'sender' | 'admin'): SupabaseClient {
 function application() { return senderRows.applications[0] }
 function seeker() { return application().seeker_profiles as Row }
 function job() { return application().job_listings as Row }
-function company() { return job().companies as Row }
+/** The employer is read from company_owners, which stays readable when the company row is confidential. */
+function company() { return senderRows.company_owners[0] }
 function notify(extra: Record<string, unknown> = {}) {
   return sendMessageNotification(client('sender'), { ...params, ...extra })
 }
@@ -85,8 +86,9 @@ beforeEach(() => {
     conversation_participants: [{ user_id: senderId, conversation_id: conversationId, is_blocked: false }],
     applications: [{ id: applicationId, seeker_id: seekerId, job_id: jobId,
       seeker_profiles: { id: seekerId, user_id: senderId },
-      job_listings: { id: jobId, title: 'Saved job title', company_id: companyId, companies: { id: companyId, user_id: recipientId } },
+      job_listings: { id: jobId, title: 'Saved job title', company_id: companyId },
     }],
+    company_owners: [{ id: companyId, user_id: recipientId }],
     users: [{ id: senderId, is_banned: false }],
     companies: [],
     seeker_profiles: [{ user_id: senderId, first_name: 'Sender', last_name: 'Name' }],
@@ -228,7 +230,7 @@ it('preserves directional blocking: the blocker can still send to their blocked 
   expect(mocks.send).toHaveBeenCalledOnce()
 })
 
-it.each(['messages', 'conversations', 'conversation_participants', 'applications', 'users', 'companies', 'seeker_profiles'])('fails closed on sender-scoped %s read errors', async table => {
+it.each(['messages', 'conversations', 'conversation_participants', 'applications', 'company_owners', 'users', 'companies', 'seeker_profiles'])('fails closed on sender-scoped %s read errors', async table => {
   errors[`sender:${table}`] = { code: 'denied' }
   await notify()
   expect(mocks.createAdmin).not.toHaveBeenCalled()

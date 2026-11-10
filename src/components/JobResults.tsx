@@ -1,3 +1,4 @@
+import { listingEmployerName } from "@/lib/confidential-employer";
 import { jobCategoryFilter, knownJobCategory } from "@/lib/job-category";
 import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
@@ -128,10 +129,11 @@ export default async function JobResults({
     return {
       id: job.id,
       title: job.title,
-      company_name: company?.company_name || "Company",
-      company_logo: company?.logo_url || null,
+      company_name: listingEmployerName(job.is_confidential, company, "Company"),
+      company_logo: job.is_confidential ? null : company?.logo_url || null,
+      is_confidential: job.is_confidential === true,
       location: job.location,
-      company_location: company?.location ?? null,
+      company_location: job.is_confidential ? null : company?.location ?? null,
       job_type: job.job_type,
       salary_min: job.salary_min,
       salary_max: job.salary_max,

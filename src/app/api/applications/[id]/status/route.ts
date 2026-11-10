@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireVerifiedUser } from '@/lib/api-auth';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -45,7 +46,7 @@ export async function PATCH(
     // Get the listing to verify ownership (include title + company for email)
     const { data: listing, error: listingError } = await supabase
       .from('job_listings')
-      .select('company_id, title, companies(company_name)')
+      .select('company_id, title, companies(company_name, is_confidential)')
       .eq('id', application.job_id)
       .single();
 
@@ -116,7 +117,7 @@ export async function PATCH(
             type: 'status_update',
             data: {
               job_title: listing.title,
-              company_name: companyInfo?.company_name || 'the employer',
+              company_name: publicEmployerName(companyInfo, 'the employer'),
               status: statusLabels[status] || status,
               dashboard_url: `${BASE_URL}/applications`,
             },
@@ -131,7 +132,7 @@ export async function PATCH(
           seekerUserId: seekerProfile.user_id,
           newStatus: status,
           jobTitle: listing.title,
-          companyName: companyData?.company_name || 'the employer',
+          companyName: publicEmployerName(companyData, 'the employer'),
           customMessage: custom_message,
         })
       }

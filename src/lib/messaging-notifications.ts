@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer'
 import 'server-only'
 import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -64,13 +65,19 @@ export async function sendMessageNotification(
     // A direct thread has no trustworthy persisted invitation/ownership link.
     if (!conversation.application_id) return
     const { data: application, error: applicationError } = await supabase.from('applications')
-      .select('id, seeker_id, job_id, seeker_profiles!inner(id, user_id), job_listings!inner(id, title, company_id, companies!inner(id, user_id))')
+      .select('id, seeker_id, job_id, seeker_profiles!inner(id, user_id), job_listings!inner(id, title, company_id)')
       .eq('id', conversation.application_id).single()
     const seeker = row(application?.seeker_profiles)
     const job = row(application?.job_listings)
-    const applicationCompany = row(job?.companies)
     if (applicationError || application?.id !== conversation.application_id ||
-      !seeker || !job || !applicationCompany || seeker.id !== application.seeker_id || job.id !== application.job_id ||
+      !seeker || !job || seeker.id !== application.seeker_id || job.id !== application.job_id ||
+      !uuid(job.company_id)) return
+    // The employer comes from company_owners, not companies: row security
+    // hides a confidential employer's company row from the applicant, while
+    // this view carries only the owner's id and is readable by both sides.
+    const { data: applicationCompany, error: ownerError } = await supabase.from('company_owners')
+      .select('id, user_id').eq('id', job.company_id).maybeSingle()
+    if (ownerError || !applicationCompany ||
       applicationCompany.id !== job.company_id || !uuid(seeker.user_id) || !uuid(applicationCompany.user_id) ||
       seeker.user_id === applicationCompany.user_id ||
       ![seeker.user_id, applicationCompany.user_id].includes(senderId)) return
@@ -84,9 +91,10 @@ export async function sendMessageNotification(
     // Keep company-first display naming, including accounts that also retain
     // a seeker profile. Only sender-owned names are used, never the peer's RPC.
     const { data: company, error: companyError } = await supabase.from('companies')
-      .select('user_id, company_name').eq('user_id', senderId).maybeSingle()
+      .select('user_id, company_name, is_confidential').eq('user_id', senderId).maybeSingle()
     if (companyError || (company && company.user_id !== senderId)) return
-    let senderName = label(company?.company_name)
+    // An employer who asked not to be named stays unnamed in the email too.
+    let senderName = label(company ? publicEmployerName(company, '') : null)
     if (!senderName) {
       const { data: profile, error: profileError } = await supabase.from('seeker_profiles')
         .select('user_id, first_name, last_name').eq('user_id', senderId).maybeSingle()

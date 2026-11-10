@@ -15,6 +15,7 @@ interface CompanyForm {
   logo_url: string;
   is_verified: boolean;
   is_pro: boolean;
+  is_confidential: boolean;
 }
 
 export default function CompanyProfilePage() {
@@ -41,6 +42,7 @@ export default function CompanyProfilePage() {
     logo_url: '',
     is_verified: false,
     is_pro: false,
+    is_confidential: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -79,6 +81,7 @@ export default function CompanyProfilePage() {
           logo_url: company.logo_url ?? '',
           is_verified: company.is_verified ?? false,
           is_pro: company.is_pro ?? false,
+          is_confidential: company.is_confidential ?? false,
         });
       }
       setLoading(false);
@@ -250,6 +253,7 @@ export default function CompanyProfilePage() {
         description: form.description.trim(),
         website: normalizedWebsite(),
         logo_url: form.logo_url,
+        is_confidential: form.is_confidential,
       };
 
       if (companyId) {
@@ -499,6 +503,27 @@ export default function CompanyProfilePage() {
         </div>
           </div>
         </details>
+
+        {/* Confidential posting */}
+        <div className="rounded-lg border border-border p-4">
+          <label htmlFor="is_confidential" className="flex items-start gap-3">
+            <input
+              id="is_confidential"
+              type="checkbox"
+              className="mt-1"
+              checked={form.is_confidential}
+              onChange={(e) => updateField('is_confidential', e.target.checked)}
+              aria-describedby="is_confidential-note"
+            />
+            <span className="text-sm font-medium text-text">Keep my business name confidential</span>
+          </label>
+          <p id="is_confidential-note" className="mt-2 text-xs leading-relaxed text-text-light">
+            Your jobs show &ldquo;Confidential employer · Verified by JobLink&rdquo; in place of your name, logo and
+            company profile, and applicants are not told who you are. JobLink still knows who you are and reviews
+            every job before it goes live. You choose when to tell a candidate, for example when you invite them to
+            interview. Leave your business name and address out of your job descriptions.
+          </p>
+        </div>
 
         {/* Submit */}
         <button

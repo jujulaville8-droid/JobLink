@@ -1,3 +1,4 @@
+import { publicEmployerName } from '@/lib/confidential-employer'
 import 'server-only'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
@@ -41,7 +42,7 @@ export async function notifyApplicantsOfJobClosure(jobId: string) {
   try {
     const db = createAdminClient()
     const { data: job, error: jobError } = await db.from('job_listings')
-      .select('id, title, category, job_type, status, companies(company_name, user_id)').eq('id', jobId).single()
+      .select('id, title, category, job_type, status, companies(company_name, user_id, is_confidential)').eq('id', jobId).single()
     if (jobError) throw jobError
     if (!job || job.status !== 'closed') return result
 
@@ -66,7 +67,7 @@ export async function notifyApplicantsOfJobClosure(jobId: string) {
     if (recipients.size) {
       for (let offset = 0; ; offset += 500) {
         const { data: candidates, error } = await db.from('job_listings')
-          .select('id, title, category, job_type, status, location, created_at, companies(company_name)')
+          .select('id, title, category, job_type, status, location, created_at, companies(company_name, is_confidential)')
           .eq('status', 'active').order('id').range(offset, offset + 499)
         if (error) throw error
         suggestions = selectClosureSuggestions(job, [...suggestions, ...(candidates || []) as Job[]])
@@ -75,7 +76,7 @@ export async function notifyApplicantsOfJobClosure(jobId: string) {
     }
     const suggestedJobs = suggestions.map(suggestion => ({
       title: suggestion.title,
-      company: first(suggestion.companies)?.company_name || 'An employer',
+      company: publicEmployerName(first(suggestion.companies), 'An employer'),
       location: suggestion.location || 'Antigua & Barbuda',
       url: `https://joblinkantigua.com/jobs/${suggestion.id}`,
     }))
@@ -98,7 +99,7 @@ export async function notifyApplicantsOfJobClosure(jobId: string) {
           idempotencyKey: `job-closed/${jobId}/${userId}`,
           data: {
             applicant_name: firstName, job_title: job.title,
-            company_name: first(job.companies)?.company_name || 'The company',
+            company_name: publicEmployerName(first(job.companies), 'The company'),
             suggested_jobs: suggestedJobs,
           },
         })

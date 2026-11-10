@@ -36,11 +36,16 @@ export async function loadJobDetail(id: string) {
     .eq("id", id)
     .single();
 
+  // A confidential employer is never named on the public listing, including
+  // to its owner and to admins, whose sessions can read the company row.
+  const confidential = job?.is_confidential === true;
+
   return {
     supabase,
     job,
     error,
-    company: (job?.company ?? null) as unknown as JobDetailCompany | null,
+    confidential,
+    company: (confidential ? null : job?.company ?? null) as unknown as JobDetailCompany | null,
   };
 }
 

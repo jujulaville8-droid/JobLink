@@ -30,8 +30,7 @@ export async function POST(request: NextRequest) {
         id,
         seeker_id,
         job_listings!inner (
-          id, title,
-          companies!inner ( id, user_id, company_name )
+          id, title, company_id
         ),
         seeker_profiles!inner ( user_id, first_name, last_name )
       `)
@@ -42,9 +41,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }
 
-    const job = app.job_listings as unknown as { id: string; title: string; companies: { id: string; user_id: string; company_name: string } }
+    const job = app.job_listings as unknown as { id: string; title: string; company_id: string }
     const seeker = app.seeker_profiles as unknown as { user_id: string; first_name: string; last_name: string }
-    const employerUserId = job.companies.user_id
+    // The employer comes from company_owners, not companies: row security hides
+    // a confidential employer's company row from the applicant, while this view
+    // carries only the owner's id and is readable by both sides.
+    const { data: owner } = await supabase
+      .from('company_owners')
+      .select('user_id')
+      .eq('id', job.company_id)
+      .maybeSingle()
+    if (!owner) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    }
+    const employerUserId: string = owner.user_id
     const seekerUserId = seeker.user_id
 
     // Verify the current user is either the seeker or the employer
