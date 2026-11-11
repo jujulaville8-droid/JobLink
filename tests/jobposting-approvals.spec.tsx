@@ -1169,3 +1169,65 @@ describe.each([
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   });
 });
+
+const MAMMA_MIA_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST';
+
+describe.each([
+  ['59c908d2-3c33-4c3d-be61-2a37bce19823', '766725b8-2f44-435c-b93b-4a4122f211f8', 'Mamma Mia Restaurant & Sunset on the Shore', 'Line Chef', '2026-11-11'],
+])('%s November 11 vacancy-scoped allowlist', (jobId, companyId, companyName, title, attestedOn) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-11T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+    db.job!.description = 'Hiring for this vacancy.';
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-10T21:46:04.074Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn, evidenceReference: MAMMA_MIA_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
+    });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema.datePosted).not.toBe(attestedOn);
+    const html = await pageHtml();
+    const page = document.createElement('div');
+    page.innerHTML = html;
+    expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(before!.description);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
