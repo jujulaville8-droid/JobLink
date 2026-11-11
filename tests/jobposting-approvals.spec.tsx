@@ -1170,7 +1170,7 @@ describe.each([
   });
 });
 
-const MAMMA_MIA_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST';
+const MAMMA_MIA_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/130';
 
 describe.each([
   ['59c908d2-3c33-4c3d-be61-2a37bce19823', '766725b8-2f44-435c-b93b-4a4122f211f8', 'Mamma Mia Restaurant & Sunset on the Shore', 'Line Chef', '2026-11-11'],

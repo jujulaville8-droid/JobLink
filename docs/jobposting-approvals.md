@@ -513,7 +513,7 @@ addresses on the page.
 
 ## November 11, 2026 vacancy-scoped allowlist (Mamma Mia Restaurant & Sunset on the Shore)
 
-[This PR](https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST) records one vacancy-scoped entry in
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/130) records one vacancy-scoped entry in
 `EMPLOYER_APPROVED_JOBS`, bound to both the job ID and that job's company ID.
 No company-wide permission is claimed. This entry records the site owner's
 request only. No email addresses are included. The listing states no public

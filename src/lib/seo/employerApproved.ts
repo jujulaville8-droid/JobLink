@@ -51,7 +51,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "766725b8-2f44-435c-b93b-4a4122f211f8",
     companyName: "Mamma Mia Restaurant & Sunset on the Shore",
     attestedOn: "2026-11-11",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/130",
     employmentTypeUnconfirmed: true,
   },
   // Tipsy Toast Cafe: site owner directed on 2026-11-09 that the employer gave
