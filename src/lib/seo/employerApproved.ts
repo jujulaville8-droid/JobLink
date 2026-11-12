@@ -45,6 +45,23 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12).
+  // Site-owner attestation only. The listing states full-time. No public deadline.
+  "71dcc48c-5fd4-40de-a604-e6b83ba11ad9": {
+    companyId: "0a924e3c-b468-4418-83fe-b23a5c86e7fd",
+    companyName: "Deep Blue Antigua",
+    attestedOn: "2026-11-12",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+  },
+  // Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12).
+  // Site-owner attestation only. The public company name is "Private Employer — Chef".
+  // The listing states full-time. No public deadline.
+  "a8cb7222-575a-458d-aa03-286efb1494e7": {
+    companyId: "b403485a-07d3-40e8-aa66-f9aecaa5636b",
+    companyName: "Private Employer — Chef",
+    attestedOn: "2026-11-12",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+  },
   // Tipsy Toast Cafe: site owner directed on 2026-11-09 that the employer gave
   // permission to list this Bartender / Barista vacancy. Vacancy-scoped only.
   // Full Time on the listing is an unconfirmed placeholder; no public deadline.

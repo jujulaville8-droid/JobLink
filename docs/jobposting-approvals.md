@@ -510,3 +510,34 @@ Visible job text still shows an employer email when the description contains
 one. That remains the apply instruction on the seven listings already covered
 by the JobPosting-only redaction tests. This change does not hide those
 addresses on the page.
+
+## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST) records two vacancy-scoped entries in
+`EMPLOYER_APPROVED_JOBS`, each bound to both the job ID and that job's company
+ID. No company-wide permission is claimed. These entries record the site
+owner's request only. No email addresses are included. No closure entry is
+added. Stored listing content, status and the application route are unchanged;
+no database writes.
+
+Each stored description says the role is full-time, and `job_type` is
+`full_time`, so `employmentType` is `FULL_TIME`. Neither listing has a salary
+or a deadline (`expires_at` is null), so no `baseSalary` and no `validThrough`
+are emitted.
+
+Created dates, both still 2026-11-12 in America/Antigua:
+
+- Deep Blue Antigua — Waiter / Bartender: `2026-11-12 14:38:12.823809+00`
+- Private Employer — Chef — Chef: `2026-11-12 14:17:23.790696+00`
+
+The Chef listing is not confidential. Its public company name is
+`Private Employer — Chef`, and that is the `hiringOrganization` name. Logo,
+website and company description are absent, so those organization fields are
+omitted. Deep Blue Antigua's location is English Harbour, Antigua, so the
+address is English Harbour, Saint Paul, AG. The Chef location is Antigua only,
+so the address is the country AG with no locality or region.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Deep Blue Antigua — Waiter / Bartender | `71dcc48c-5fd4-40de-a604-e6b83ba11ad9` | `0a924e3c-b468-4418-83fe-b23a5c86e7fd` | 2026-11-12 | Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12). |
+| Private Employer — Chef — Chef | `a8cb7222-575a-458d-aa03-286efb1494e7` | `b403485a-07d3-40e8-aa66-f9aecaa5636b` | 2026-11-12 | Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12). |
