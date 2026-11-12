@@ -1170,7 +1170,7 @@ describe.each([
   });
 });
 
-const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST';
+const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/131';
 
 describe.each([
   ['71dcc48c-5fd4-40de-a604-e6b83ba11ad9', '0a924e3c-b468-4418-83fe-b23a5c86e7fd', 'Deep Blue Antigua', 'Waiter / Bartender', '2026-11-12', '2026-11-12T14:38:12.823809Z', 'Deep Blue Antigua is hiring a Waiter / Bartender on a full-time basis in English Harbour, Antigua.', 'English Harbour, Antigua', 'English Harbour', 'Saint Paul'],

@@ -51,7 +51,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "0a924e3c-b468-4418-83fe-b23a5c86e7fd",
     companyName: "Deep Blue Antigua",
     attestedOn: "2026-11-12",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/131",
   },
   // Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12).
   // Site-owner attestation only. The public company name is "Private Employer — Chef".
@@ -60,7 +60,7 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     companyId: "b403485a-07d3-40e8-aa66-f9aecaa5636b",
     companyName: "Private Employer — Chef",
     attestedOn: "2026-11-12",
-    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/131",
   },
   // Tipsy Toast Cafe: site owner directed on 2026-11-09 that the employer gave
   // permission to list this Bartender / Barista vacancy. Vacancy-scoped only.

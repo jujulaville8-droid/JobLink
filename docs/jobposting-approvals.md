@@ -513,7 +513,7 @@ addresses on the page.
 
 ## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
 
-[This PR](https://github.com/jujulaville8-droid/JobLink/pull/PENDING-ALLOWLIST) records two vacancy-scoped entries in
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/131) records two vacancy-scoped entries in
 `EMPLOYER_APPROVED_JOBS`, each bound to both the job ID and that job's company
 ID. No company-wide permission is claimed. These entries record the site
 owner's request only. No email addresses are included. No closure entry is
