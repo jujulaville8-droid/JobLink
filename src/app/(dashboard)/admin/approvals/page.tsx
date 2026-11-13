@@ -272,7 +272,6 @@ export default async function AdminApprovalsPage() {
               ? (Array.isArray(rawCompany) ? rawCompany[0] : rawCompany)
               : null
             const companyName = company?.company_name || 'Unknown Company'
-            const initials = companyName.charAt(0).toUpperCase()
 
             return (
               <details
@@ -290,9 +289,7 @@ export default async function AdminApprovalsPage() {
                           className="h-10 w-10 shrink-0 rounded-xl object-cover border border-border"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white">
-                          {initials}
-                        </div>
+                        <img src="/logo-icon.png" alt="" className="h-10 w-10 shrink-0 rounded-xl object-contain border border-border bg-white p-1" />
                       )}
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -372,9 +369,7 @@ export default async function AdminApprovalsPage() {
                         {company.logo_url ? (
                           <img src={company.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover border border-border" />
                         ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-white font-bold">
-                            {initials}
-                          </div>
+                          <img src="/logo-icon.png" alt="" className="h-12 w-12 shrink-0 rounded-xl object-contain border border-border bg-white p-1" />
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">

@@ -271,9 +271,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
                     {logoUrl ? (
                       <img src={logoUrl} alt="" className="shrink-0 h-9 w-9 rounded-lg object-cover border border-border" />
                     ) : (
-                      <div className="shrink-0 h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
-                        {companyName.charAt(0)}
-                      </div>
+                      <img src="/logo-icon.png" alt="" className="shrink-0 h-9 w-9 rounded-lg object-contain border border-border bg-white p-0.5" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text truncate">
@@ -330,9 +328,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
                     {logoUrl ? (
                       <img src={logoUrl} alt="" className="shrink-0 h-9 w-9 rounded-lg object-cover border border-border" />
                     ) : (
-                      <div className="shrink-0 h-9 w-9 rounded-lg bg-primary flex items-center justify-center text-white font-semibold text-xs">
-                        {companyName.charAt(0)}
-                      </div>
+                      <img src="/logo-icon.png" alt="" className="shrink-0 h-9 w-9 rounded-lg object-contain border border-border bg-white p-0.5" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text truncate">{job.title as string}</p>

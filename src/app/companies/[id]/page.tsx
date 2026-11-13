@@ -101,21 +101,6 @@ export default async function CompanyPage({ params }: PageProps) {
     };
   });
 
-  // Deterministic color from company name
-  const colors = [
-    "bg-primary",
-    "bg-accent",
-    "bg-emerald-600",
-    "bg-violet-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  const colorIndex =
-    company.company_name
-      .split("")
-      .reduce((a: number, c: string) => a + c.charCodeAt(0), 0) %
-    colors.length;
-  const initial = company.company_name.charAt(0).toUpperCase();
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
@@ -139,7 +124,7 @@ export default async function CompanyPage({ params }: PageProps) {
       {/* Company header card */}
       <div className="rounded-card border border-border bg-white p-6 sm:p-8 mb-8">
         <div className="flex flex-col sm:flex-row items-start gap-5">
-          {/* Logo / initial */}
+          {/* Logo */}
           {company.logo_url ? (
             <img
               src={company.logo_url}
@@ -147,11 +132,11 @@ export default async function CompanyPage({ params }: PageProps) {
               className="shrink-0 h-20 w-20 rounded-xl object-cover"
             />
           ) : (
-            <div
-              className={`shrink-0 h-20 w-20 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-3xl`}
-            >
-              {initial}
-            </div>
+            <img
+              src="/logo-icon.png"
+              alt=""
+              className="shrink-0 h-20 w-20 rounded-xl object-contain border border-border bg-white p-1.5"
+            />
           )}
 
           <div className="flex-1 min-w-0">
