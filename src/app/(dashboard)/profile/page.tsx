@@ -1172,7 +1172,7 @@ function ProfileEditForm({
         {step === 3 && (
           <div className="space-y-5">
             <h2 className="text-base font-semibold font-display text-text">Resume / CV</h2>
-            <p className="text-sm text-text-light">Upload a document or photo of your resume (up to 50 MB).</p>
+            <p className="text-sm text-text-light">Upload a document or photo of your resume (up to 20 MB).</p>
             {hasBuiltResume && (
               <p className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700">
                 Your built resume meets the resume requirement. Uploading another CV is optional.

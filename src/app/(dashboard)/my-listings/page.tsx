@@ -73,8 +73,11 @@ async function getListings(
   const { data, error } = await query;
 
   if (error || !data) return [];
+  // Filtered here rather than in the query so the page keeps working if the
+  // employer_hidden_at column has not been migrated yet.
+  const visible = data.filter((listing) => !listing.employer_hidden_at);
 
-  return data.map((listing: Record<string, unknown>) => {
+  return visible.map((listing: Record<string, unknown>) => {
     const apps = listing.applications as { count: number }[] | undefined;
     return {
       ...listing,
@@ -364,15 +367,27 @@ function DeleteListing({ listingId }: { listingId: string }) {
       .single();
     if (!listing) return;
 
-    // Use admin client to bypass RLS (no DELETE policies exist)
-    // Ownership already verified above. CASCADE handles applications & conversations.
+    // Deleting a listing cascades to its applications, conversations and any
+    // documents shared with them. A listing nobody applied to can simply go;
+    // one with applications is closed and hidden from this list instead.
     const { createAdminClient } = await import('@/lib/supabase/admin');
     const adminDb = createAdminClient();
+    const { count, error: countError } = await adminDb
+      .from('applications')
+      .select('id', { count: 'exact', head: true })
+      .eq('job_id', listingId);
+    if (countError) return;
 
-    await adminDb
-      .from('job_listings')
-      .delete()
-      .eq('id', listingId);
+    if (count === 0) {
+      await adminDb.from('job_listings').delete().eq('id', listingId);
+    } else {
+      await closeJobListing(supabase, listingId, company.id);
+      await adminDb
+        .from('job_listings')
+        .update({ employer_hidden_at: new Date().toISOString() })
+        .eq('id', listingId)
+        .eq('company_id', company.id);
+    }
 
     redirect('/my-listings');
   }
