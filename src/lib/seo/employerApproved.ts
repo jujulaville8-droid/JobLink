@@ -62,6 +62,15 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     attestedOn: "2026-11-12",
     evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/131",
   },
+  // Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10).
+  // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
+  "59c908d2-3c33-4c3d-be61-2a37bce19823": {
+    companyId: "766725b8-2f44-435c-b93b-4a4122f211f8",
+    companyName: "Mamma Mia Restaurant & Sunset on the Shore",
+    attestedOn: "2026-11-11",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/130",
+    employmentTypeUnconfirmed: true,
+  },
   // Tipsy Toast Cafe: site owner directed on 2026-11-09 that the employer gave
   // permission to list this Bartender / Barista vacancy. Vacancy-scoped only.
   // Full Time on the listing is an unconfirmed placeholder; no public deadline.

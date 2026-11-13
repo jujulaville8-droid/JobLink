@@ -511,6 +511,24 @@ one. That remains the apply instruction on the seven listings already covered
 by the JobPosting-only redaction tests. This change does not hide those
 addresses on the page.
 
+## November 11, 2026 vacancy-scoped allowlist (Mamma Mia Restaurant & Sunset on the Shore)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/130) records one vacancy-scoped entry in
+`EMPLOYER_APPROVED_JOBS`, bound to both the job ID and that job's company ID.
+No company-wide permission is claimed. This entry records the site owner's
+request only. No email addresses are included. The listing states no public
+deadline, so no `validThrough` is emitted and no closure entry is added. Full
+Time on the page is an unconfirmed placeholder, so `employmentType` is omitted.
+Stored listing content, status and the application route are unchanged; no
+database writes.
+
+The stored `created_at` is 2026-11-10 21:46:04 UTC, which is still 2026-11-10
+in America/Antigua, so the creation date in the evidence line stands.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Mamma Mia Restaurant & Sunset on the Shore — Line Chef | `59c908d2-3c33-4c3d-be61-2a37bce19823` | `766725b8-2f44-435c-b93b-4a4122f211f8` | 2026-11-11 | Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10). |
+
 ## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
 
 [This PR](https://github.com/jujulaville8-droid/JobLink/pull/131) records two vacancy-scoped entries in
