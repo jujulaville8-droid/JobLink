@@ -70,7 +70,6 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
     e.stopPropagation();
     if (loggedIn) void toggle();
   }
-  const initial = job.company_name.charAt(0).toUpperCase();
   const salary =
     job.salary_visible !== false
       ? formatSalary(job.salary_min, job.salary_max)
@@ -78,18 +77,6 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
   // Listings created before salary_type existed carry no period, so show none
   // rather than the "/mo" this card used to hardcode onto every figure.
   const salaryPeriod = salaryTypeSuffix(job.salary_type);
-
-  const colors = [
-    "bg-primary",
-    "bg-primary-dark",
-    "bg-emerald-600",
-    "bg-violet-600",
-    "bg-sky-600",
-    "bg-purple-600",
-  ];
-  const colorIndex =
-    job.company_name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) %
-    colors.length;
 
   const whatsappText = encodeURIComponent(
     `Check out this job: ${job.title} at ${job.company_name} — https://joblinkantigua.com/jobs/${job.id}`
@@ -127,11 +114,11 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
               className="shrink-0 h-11 w-11 rounded-xl object-cover border border-border"
             />
           ) : (
-            <div
-              className={`shrink-0 h-11 w-11 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-semibold text-sm`}
-            >
-              {initial}
-            </div>
+            <img
+              src="/logo-icon.png"
+              alt=""
+              className="shrink-0 h-11 w-11 rounded-xl object-contain border border-border bg-white p-1"
+            />
           )}
 
           <div className="min-w-0 flex-1">
