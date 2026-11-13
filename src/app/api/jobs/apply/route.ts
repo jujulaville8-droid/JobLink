@@ -9,6 +9,8 @@ import { applicantCvPath, notifyNewApplicant } from '@/lib/applicant-notificatio
 import { applicationDependencies, screeningApplicationEnabled, ScreeningSubmissionError, submitScreeningApplication } from '@/lib/employer-screening/application'
 import { hasCurrentScreeningNotice } from '@/lib/employer-screening/notice'
 import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
+import { parseShareChoice, recordShare } from '@/lib/verification/sharing'
+import { verificationEnabled } from '@/lib/verification/server'
 
 // Deployment must support after() and this timeout before any readiness gates are enabled.
 export const maxDuration = 180
@@ -136,6 +138,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
       }
       application = saved
+    }
+
+    // JobLink Verified: the application has gone through exactly as it would
+    // without Verified. If the applicant ticked "Send my verified documents",
+    // record what this application carries, from their own valid verification
+    // only. Recorded before the employer is notified so the email can say so.
+    let documentsShared = false
+    const shareChoice = verificationEnabled() ? parseShareChoice(body.verified_documents) : null
+    if (shareChoice) {
+      const { createAdminClient } = await import('@/lib/supabase/admin')
+      documentsShared = await recordShare(createAdminClient(), application.id, seekerProfile.id, shareChoice)
     }
 
     if (deliveryPath === 'screening' && process.env.EMPLOYER_OUTBOX_WORKER_ENABLED === 'true') {
@@ -297,6 +310,7 @@ export async function POST(request: NextRequest) {
       success: true,
       application,
       conversation_id: conversationId,
+      documents_shared: documentsShared,
     }, { status: 201 })
   } catch {
     // Database/provider errors may include cover letters, contact data or CV paths.

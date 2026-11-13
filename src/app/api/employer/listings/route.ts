@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireUser, requireVerifiedUser } from '@/lib/api-auth';
 import { listingFields, postingErrors, postingSchema } from '@/lib/job-posting';
 import { sendEmail } from '@/lib/email';
+import { verificationEnabled } from '@/lib/verification/server';
 
 export async function GET(request: NextRequest) {
   const auth = await requireUser();
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   } else query = query.eq('status', 'draft').order('updated_at', { ascending: false }).limit(1);
   const result = await query.maybeSingle();
   if (result.error || (id && !result.data)) return NextResponse.json({ error: 'Could not load your listing.' }, { status: 404 });
-  return NextResponse.json({ company, listing: result.data });
+  return NextResponse.json({ company, listing: result.data, policeRecordOption: verificationEnabled() });
 }
 
 const requestSchema = z.object({ id: z.uuid(), action: z.enum(['draft', 'submit', 'edit']), step: z.number().int().min(0).max(4), form: postingSchema });
@@ -57,9 +58,12 @@ export async function POST(request: NextRequest) {
     : existing?.structured_data_consent && existing.structured_data_consent_at
       ? existing.structured_data_consent_at
       : new Date().toISOString();
+  // The column only exists once the Verified migration is applied, so it is
+  // written only when Verified is switched on.
+  const policeRecord = verificationEnabled() ? { police_record_required: form.police_record_required === true } : {};
   const fields = action === 'draft'
-    ? { ...listingFields(effectiveForm), structured_data_consent_at: structuredDataConsentAt, description: '', draft_data: { form: effectiveForm, step } }
-    : { ...listingFields(effectiveForm), structured_data_consent_at: structuredDataConsentAt, draft_data: { location_type: form.location_type } };
+    ? { ...listingFields(effectiveForm), ...policeRecord, structured_data_consent_at: structuredDataConsentAt, description: '', draft_data: { form: effectiveForm, step } }
+    : { ...listingFields(effectiveForm), ...policeRecord, structured_data_consent_at: structuredDataConsentAt, draft_data: { location_type: form.location_type } };
   const query = existing
     ? supabase.from('job_listings').update({ ...fields, ...(action === 'submit' ? { status: 'pending_approval' } : {}) }).eq('id', id).eq('company_id', company.id).eq('status', existing.status)
     : supabase.from('job_listings').insert({ ...fields, id, company_id: company.id, requires_work_permit: false, status: action === 'draft' ? 'draft' : 'pending_approval' });

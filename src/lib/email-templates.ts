@@ -70,7 +70,8 @@ interface EmailData {
   verification_until?: string
   verification_reasons?: string[]
   verification_notice?: boolean
-  verified_line?: string
+  verified_line?: string | null
+  verified_documents_path?: string | null
 }
 
 /** Escape HTML entities to prevent XSS in email content */
@@ -160,6 +161,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${d.applicant_phone ? `<p>Phone: ${esc(d.applicant_phone)}</p>` : ''}
           ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
           <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
+          ${d.verified_line ? `<p style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; color: #065f46; line-height: 1.6;"><strong>${esc(d.verified_line)}</strong><br>${d.verified_documents_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.verified_documents_path) ? `<a href="${SITE}${d.verified_documents_path}" style="color: #0d7377; font-weight: 600;">View documents</a> (you'll be asked to log in). ` : ''}For privacy, the police record is never sent by email.</p>` : ''}
           ${d.employer_resume_review_v2 ? resumeReviewV2EmailSection(d.employer_resume_review_v2) : d.employer_screening || d.employer_resume_quality ? employerAdvisoryEmailSection(d.employer_screening, d.employer_resume_quality) : ''}
           ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
           ${!d.employer_resume_review_v2 && !d.employer_screening && !d.employer_resume_quality ? '<p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>' : ''}

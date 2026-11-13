@@ -126,6 +126,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // JobLink Verified: the stored police record and any ID image waiting for
+    // review are encrypted files in a private folder keyed by verification id,
+    // not by user, so they are found through the records. Same rule as above:
+    // a failed removal stops the deletion. The records themselves (checks,
+    // shares, view history, audit log) go with the profile through CASCADE.
+    const verifications = await admin
+      .from('seeker_verifications')
+      .select('id, rtw_file_path, police_record_file_path')
+      .eq('user_id', user.id)
+    // Tolerated only when the Verified tables have not been migrated yet.
+    const verificationTableMissing = ['42P01', 'PGRST205'].includes(verifications.error?.code ?? '')
+    if (verifications.error && !verificationTableMissing) throw verifications.error
+    if (verifications.data?.length) {
+      const { privateVerificationStorage } = await import('@/lib/verification/files')
+      const storage = await privateVerificationStorage(admin)
+      const paths = new Set<string>()
+      for (const row of verifications.data) {
+        if (row.rtw_file_path) paths.add(row.rtw_file_path)
+        if (row.police_record_file_path) paths.add(row.police_record_file_path)
+        // Anything else left in the folder, such as a replaced upload.
+        const listed = await storage.list(row.id, { limit: 100 })
+        check(listed)
+        for (const file of listed.data ?? []) paths.add(`${row.id}/${file.name}`)
+      }
+      if (paths.size) check(await storage.remove([...paths]))
+      check(await admin.from('seeker_verifications').delete().eq('user_id', user.id))
+    }
+
     if (seeker) {
       check(await admin.from('applications').delete().eq('seeker_id', seeker.id))
       check(await admin.from('saved_jobs').delete().eq('seeker_id', seeker.id))

@@ -1,3 +1,4 @@
+import { sharedEmailLine } from '@/lib/verification/sharing'
 import { MAX_CV_EMAIL_ATTACHMENT_BYTES, CV_TYPES, cvExtension, ownedCvPath } from '@/lib/cv-upload'
 import { resumeFilename } from '@/lib/resume-filename'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -130,6 +131,9 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
           noticeVersion, resumeBytes: attachments[0].content }, inlineScreeningDependencies(db))
       } catch { inlineDiagnostic('enrichment_failed', applicationId) /* Original email still proceeds. */ }
     }
+    // A badge line and a link that needs login. The police record itself is
+    // never attached, unlike the CV.
+    const verifiedLine = await sharedEmailLine(db, application.id)
     const result = await sendEmail({
       to: recipient,
       type: 'new_applicant',
@@ -146,6 +150,8 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
         cover_letter_excerpt: typeof application.cover_letter_text === 'string'
           ? application.cover_letter_text.trim().slice(0, 1500) : '',
         cv_attached: attachments.length > 0,
+        verified_line: verifiedLine,
+        verified_documents_path: verifiedLine ? `/my-listings/${job.id}/applicants` : null,
         // Only the actual owner has this dashboard. External contacts can use
         // the attached CV and Reply-To without needing a placeholder account.
         review_path: account.valid && owner?.email_verified === true && account.email === recipient

@@ -13,9 +13,12 @@ export const postingSchema = z.object({
   // Opt in to widened JobPosting structured data (see lib/seo/jobposting-consent.ts).
   // Defaulted so payloads from before the checkbox existed still parse as "no consent".
   structured_data_consent: z.boolean().default(false),
+  // "Police record required" label on the listing (JobLink Verified). Defaulted
+  // so older payloads and saved drafts still parse.
+  police_record_required: z.boolean().default(false),
 });
 export type PostingForm = z.infer<typeof postingSchema>;
-export const EMPTY_POSTING: PostingForm = { title: '', location: '', location_type: 'On site', category: '', description: '', job_type: 'full_time', salary_min: '', salary_max: '', salary_type: 'monthly', salary_visible: true, benefits: [], structured_data_consent: false };
+export const EMPTY_POSTING: PostingForm = { title: '', location: '', location_type: 'On site', category: '', description: '', job_type: 'full_time', salary_min: '', salary_max: '', salary_type: 'monthly', salary_visible: true, benefits: [], structured_data_consent: false, police_record_required: false };
 export function postingErrors(form: PostingForm, step?: number): Record<string, string> {
   const errors: Record<string, string> = {};
   if (step === undefined || step === 0) {
