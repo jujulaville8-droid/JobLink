@@ -1231,3 +1231,103 @@ describe.each([
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
+
+const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/131';
+
+describe.each([
+  ['71dcc48c-5fd4-40de-a604-e6b83ba11ad9', '0a924e3c-b468-4418-83fe-b23a5c86e7fd', 'Deep Blue Antigua', 'Waiter / Bartender', '2026-11-12', '2026-11-12T14:38:12.823809Z', 'Deep Blue Antigua is hiring a Waiter / Bartender on a full-time basis in English Harbour, Antigua.', 'English Harbour, Antigua', 'English Harbour', 'Saint Paul'],
+  ['a8cb7222-575a-458d-aa03-286efb1494e7', 'b403485a-07d3-40e8-aa66-f9aecaa5636b', 'Private Employer — Chef', 'Chef', '2026-11-12', '2026-11-12T14:17:23.790696Z', 'A private employer is hiring a Chef on a full-time basis in Antigua.', 'Antigua', null, null],
+] as const)('%s November 12 vacancy-scoped allowlist', (jobId, companyId, companyName, title, attestedOn, createdAt, description, companyLocation, locality, region) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-12T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = companyLocation;
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+      contact_email?: string;
+      legal_name?: string;
+    };
+    company.industry = 'Food & Beverage';
+    company.contact_email = 'hidden-contact@example.com';
+    company.legal_name = 'Hidden Legal Name Ltd';
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = description;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting for only the recorded vacancy with the stated full-time type and no deadline or pay', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn, evidenceReference: NOVEMBER_12_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      employmentType: 'FULL_TIME',
+      industry: 'Food & Beverage',
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.hiringOrganization).toEqual({ '@type': 'Organization', name: companyName });
+    expect(schema.jobLocation.address.addressCountry).toBe('AG');
+    if (locality) expect(schema.jobLocation.address.addressLocality).toBe(locality);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
+    if (region) expect(schema.jobLocation.address.addressRegion).toBe(region);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.datePosted).not.toBe(attestedOn);
+    const markup = JSON.stringify(schema);
+    expect(markup).not.toContain('hidden-contact@example.com');
+    expect(markup).not.toContain('Hidden Legal Name');
+    expect(schema.description).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(schema.description).toBe(`<p>${description}</p>`);
+    const html = await pageHtml();
+    expect(html).toContain(description);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
