@@ -5,11 +5,18 @@ import { useSearchParams } from 'next/navigation'
 import { claimReturnTo, onboardingReturnTo, withReturnTo } from '@/lib/claim-links'
 import { createClient } from '@/lib/supabase/client'
 
+const expiredLinkMessage = 'This verification link has expired or has already been used. Please request a fresh verification email.'
+
 function VerifyConfirmContent() {
   const searchParams = useSearchParams()
   const startedFor = useRef<string | null>(null)
+  const verificationComplete = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string>('Verifying your email...')
+  const [email, setEmail] = useState('')
+  const [resending, setResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null)
+  const [resendError, setResendError] = useState<string | null>(null)
 
   async function verifyWithToken(supabase: ReturnType<typeof createClient>, tokenHash: string) {
     try {
@@ -24,7 +31,7 @@ function VerifyConfirmContent() {
           status: verifyError.status,
         })
 
-        // Token might be already used — check if user is already verified
+        // Token might be already used. Check if user is already verified.
         const alreadyVerified = await checkAlreadyVerified(supabase)
         if (alreadyVerified) return
 
@@ -83,7 +90,7 @@ function VerifyConfirmContent() {
       })
 
       if (user.email_confirmed_at) {
-        // User IS verified at auth level — finalize and redirect
+        // User IS verified at auth level. Finalize and redirect.
         setStatus('Email already verified! Redirecting...')
         await finalizeVerification(user)
         return true
@@ -111,7 +118,7 @@ function VerifyConfirmContent() {
     setStatus('Email verified! Setting up your account...')
 
     // Call the server API to sync email_verified in the DB.
-    // This uses the admin client server-side to bypass RLS —
+    // This uses the admin client server-side to bypass RLS.
     // the browser client can't update email_verified due to RLS policies.
     let userRole = (user.user_metadata?.role as string) || 'seeker'
     let hasProfile = false
@@ -130,7 +137,7 @@ function VerifyConfirmContent() {
           status: res.status,
           error: errData.error,
         })
-        // Don't block — the verify-email page can also attempt sync
+        // Don't block. The verify-email page can also attempt sync.
       }
     } catch (err) {
       console.error('[verify-confirm] Server sync request failed', err)
@@ -150,10 +157,20 @@ function VerifyConfirmContent() {
       await createClient().auth.updateUser({ data: { claim_return_to: null } })
     }
     if (user.user_metadata?.onboarding_return_to) await createClient().auth.updateUser({ data: { onboarding_return_to: null } })
+    verificationComplete.current = true
     window.location.href = returnTo ?? dest
   }
 
   useEffect(() => {
+    // Supabase can return errors without a token or code, including in the hash.
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    if (searchParams.has('error') || searchParams.has('error_code') ||
+        hashParams.has('error') || hashParams.has('error_code')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setError(expiredLinkMessage)
+      return
+    }
+
     // Redeem once per URL, including React Strict Mode's repeated effect setup.
     const verificationUrl = searchParams.toString()
     if (startedFor.current === verificationUrl) return
@@ -189,11 +206,52 @@ function VerifyConfirmContent() {
     }
 
     console.log('[verify-confirm] No token_hash or code, checking if already verified')
-    checkAlreadyVerified(supabase)
+    checkAlreadyVerified(supabase).then((alreadyVerified) => {
+      if (!alreadyVerified) setError(expiredLinkMessage)
+    })
     /* eslint-enable react-hooks/set-state-in-effect */
     // The verification helpers intentionally run once for this URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
+
+  // Keep the timer separate from the redemption guard so Strict Mode cleanup
+  // does not disable it when the verification effect runs a second time.
+  useEffect(() => {
+    if (error) return
+    const timeout = window.setTimeout(() => {
+      if (!verificationComplete.current) {
+        setError('Verification is taking too long. Please try signing in or request a fresh verification email.')
+      }
+    }, 15_000)
+    return () => window.clearTimeout(timeout)
+  }, [error, searchParams])
+
+  async function handleResend(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (resending) return
+    setResending(true)
+    setResendSuccess(null)
+    setResendError(null)
+
+    try {
+      const { error: resendFailure } = await createClient().auth.resend({
+        type: 'signup',
+        email: email.trim(),
+        options: {
+          emailRedirectTo: window.location.origin + '/auth/verify-confirm?type=signup',
+        },
+      })
+      if (resendFailure) {
+        setResendError('We could not send the verification email. Please check your email address and try again shortly.')
+        return
+      }
+      setResendSuccess('Verification email sent. Check your inbox and spam folder.')
+    } catch {
+      setResendError('We could not send the verification email. Please check your connection and try again.')
+    } finally {
+      setResending(false)
+    }
+  }
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -215,6 +273,30 @@ function VerifyConfirmContent() {
           </div>
           <h2 className="font-display text-xl text-text mb-2">Verification Issue</h2>
           <p className="text-sm text-text-light mb-6">{error}</p>
+          <form onSubmit={handleResend} className="space-y-3 mb-6 text-left">
+            <label htmlFor="verification-email" className="block text-sm font-medium text-text">
+              Email address
+            </label>
+            <input
+              id="verification-email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-button border border-border px-4 py-3 text-sm text-text"
+            />
+            <button
+              type="submit"
+              disabled={resending}
+              className="w-full btn-primary py-3 text-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {resending ? 'Sending...' : 'Resend verification email'}
+            </button>
+            {resendSuccess && <p role="status" className="text-sm text-green-700">{resendSuccess}</p>}
+            {resendError && <p role="alert" className="text-sm text-red-600">{resendError}</p>}
+          </form>
           <div className="space-y-3">
             <a
               href="/login"
