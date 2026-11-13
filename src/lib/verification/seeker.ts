@@ -2,8 +2,8 @@ import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { publicEmployerName } from '@/lib/confidential-employer'
 import { deleteDocuments } from './files'
-import { logVerificationEvent, type VerificationRow } from './server'
-import { badgeIsValid, type VerificationDocument } from './shared'
+import { loadVerifications, logVerificationEvent, uploadsOpen, verificationCheckoutEnabled, verificationEnabled, type VerificationRow } from './server'
+import { antiguaToday, badgeIsValid, daysBetween, longDate, type VerificationDocument } from './shared'
 
 /** What the job seeker's own page may know about a check. No paths, fingerprints or payment ids. */
 export function seekerView(row: VerificationRow | null) {
@@ -93,4 +93,35 @@ export async function endBadge(
     await logVerificationEvent(db, { verification_id: row.id, actor_id: actor.id, actor_role: actor.role, event: 'file_deleted', document: 'police_record' })
   }
   return true
+}
+
+export interface DashboardCardState { line: string; cta: string; dismissible: boolean }
+
+/**
+ * The dashboard card: one line of status. Null when there is nothing to show
+ * (Verified off, or sales paused for someone who has never started).
+ * Never throws: the dashboard must render without it.
+ */
+export async function dashboardCard(db: SupabaseClient, userId: string): Promise<DashboardCardState | null> {
+  if (!verificationEnabled()) return null
+  try {
+    const { open, badge } = await loadVerifications(db, userId)
+    if (open && open.status !== 'awaiting_payment') {
+      if (open.status === 'submitted') return { line: 'Your documents are under review. Usually within 48 hours.', cta: 'View', dismissible: false }
+      if (open.status === 'reupload_needed') return { line: 'One of your documents needs uploading again. It\u2019s free.', cta: 'Upload again', dismissible: false }
+      return (await uploadsOpen(db))
+        ? { line: 'Payment received. Upload your documents to get verified.', cta: 'Upload', dismissible: false }
+        : { line: 'Payment received. We\u2019ll email you within 24 hours when your upload is ready.', cta: 'View', dismissible: false }
+    }
+    if (badgeIsValid(badge)) {
+      const left = daysBetween(antiguaToday(), badge!.verified_until!)
+      return left <= 30
+        ? { line: `Your verified badge ends on ${longDate(badge!.verified_until!)}. Renew to keep it.`, cta: 'Renew', dismissible: false }
+        : { line: `Verified until ${longDate(badge!.verified_until!)}.`, cta: 'Manage', dismissible: true }
+    }
+    if (!verificationCheckoutEnabled()) return null
+    return { line: 'Police record and right to work, sorted before you apply. EC$40 for 6 months.', cta: 'Get verified', dismissible: true }
+  } catch {
+    return null
+  }
 }

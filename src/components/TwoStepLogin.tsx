@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 type Stage =
@@ -25,28 +25,31 @@ export default function TwoStepLogin({ destination }: { destination: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const load = useCallback(async () => {
-    const supabase = createClient();
-    const level = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (level.data?.currentLevel === 'aal2') return setStage({ name: 'done' });
+  useEffect(() => {
+    let live = true
+    const show = (next: Stage) => { if (live) setStage(next) }
+    const supabase = createClient()
+    ;(async () => {
+      const level = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (level.data?.currentLevel === 'aal2') return show({ name: 'done' })
 
-    const factors = await supabase.auth.mfa.listFactors();
-    if (factors.error) return setStage({ name: 'error', message: 'Could not load your two-step settings. Refresh and try again.' });
-    const verified = factors.data.totp.find((factor) => factor.status === 'verified');
-    if (verified) return setStage({ name: 'challenge', factorId: verified.id });
+      const factors = await supabase.auth.mfa.listFactors()
+      if (factors.error) return show({ name: 'error', message: 'Could not load your two-step settings. Refresh and try again.' })
+      const verified = factors.data.totp.find((factor) => factor.status === 'verified')
+      if (verified) return show({ name: 'challenge', factorId: verified.id })
 
-    // An abandoned enrolment leaves an unverified factor that blocks a new one.
-    for (const factor of factors.data.all.filter((item) => item.factor_type === 'totp' && item.status !== 'verified')) {
-      await supabase.auth.mfa.unenroll({ factorId: factor.id });
-    }
-    const enrolled = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: FRIENDLY_NAME });
-    if (enrolled.error || !enrolled.data) {
-      return setStage({ name: 'error', message: 'Could not start two-step setup. Refresh and try again.' });
-    }
-    setStage({ name: 'enrol', factorId: enrolled.data.id, qr: enrolled.data.totp.qr_code, secret: enrolled.data.totp.secret });
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
+      // An abandoned enrolment leaves an unverified factor that blocks a new one.
+      for (const factor of factors.data.all.filter((item) => item.factor_type === 'totp' && item.status !== 'verified')) {
+        await supabase.auth.mfa.unenroll({ factorId: factor.id })
+      }
+      const enrolled = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: FRIENDLY_NAME })
+      if (enrolled.error || !enrolled.data) {
+        return show({ name: 'error', message: 'Could not start two-step setup. Refresh and try again.' })
+      }
+      show({ name: 'enrol', factorId: enrolled.data.id, qr: enrolled.data.totp.qr_code, secret: enrolled.data.totp.secret })
+    })().catch(() => show({ name: 'error', message: 'Could not load your two-step settings. Refresh and try again.' }))
+    return () => { live = false }
+  }, [])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -88,7 +91,6 @@ export default function TwoStepLogin({ destination }: { destination: string }) {
             <li>
               <p className="font-semibold">1. Scan this code with your authenticator app</p>
               {/* Supabase returns the QR code as an SVG data URI. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={stage.qr} alt="QR code for your authenticator app" width={176} height={176} className="mt-3 rounded-lg border border-border bg-white p-2" />
               <p className="mt-3 text-xs text-text-muted">Can&apos;t scan? Enter this key by hand:</p>
               <code className="mt-1 block break-all rounded bg-bg-alt px-2 py-1.5 text-xs">{stage.secret}</code>

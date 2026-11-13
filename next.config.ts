@@ -83,6 +83,31 @@ const nextConfig: NextConfig = {
           { key: "Content-Security-Policy", value: CONTENT_SECURITY_POLICY },
         ],
       },
+      // JobLink Verified review screen: the reviewer compares the two
+      // documents side by side, so this one page may frame this one same-origin
+      // route. Everything else keeps the site-wide "no framing" rule. Later
+      // entries replace earlier ones for the same header.
+      {
+        source: "/admin/verifications",
+        headers: [{ key: "Content-Security-Policy", value: CONTENT_SECURITY_POLICY.replace("frame-src ", "frame-src 'self' ") }],
+      },
+      {
+        source: "/api/admin/verifications/:id/file",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+      // Stamped documents and the pages around them are never cached or leaked by referrer.
+      ...["/api/verification/:path*", "/api/admin/verifications/:path*", "/verification", "/verified/check/:path*"].map(source => ({
+        source,
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      })),
       ...["/claim/:path*", "/api/claim/:path*", "/api/admin/company-claims", "/signup", "/login", "/employer/:path*", "/verify-email", "/auth/:path*"].map(source => ({
         source,
         headers: [

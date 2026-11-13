@@ -3,6 +3,8 @@
 import { MessageCircle, UserPlus, MapPin, Briefcase, GraduationCap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import VerifiedBadge from "@/components/verification/VerifiedBadge"
+import type { BadgeInfo } from "@/lib/verification/shared"
 
 type ProfileCardProps = {
   id: string
@@ -17,6 +19,8 @@ type ProfileCardProps = {
   bio?: string | null
   education?: string | null
   userId?: string | null
+  /** JobLink Verified badge, while valid. */
+  verifiedBadge?: BadgeInfo | null
 }
 
 export default function CandidateProfileCard({
@@ -29,6 +33,7 @@ export default function CandidateProfileCard({
   experienceYears,
   bio,
   education,
+  verifiedBadge,
 }: ProfileCardProps) {
   const initial = name.charAt(0).toUpperCase() || "?"
 
@@ -91,6 +96,7 @@ export default function CandidateProfileCard({
         <h3 className="text-base font-semibold text-text transition-colors duration-300 group-hover:text-primary truncate">
           {name}
         </h3>
+        {verifiedBadge && <div className="mt-1.5 flex justify-center"><VerifiedBadge badge={verifiedBadge} compact /></div>}
 
         {/* Location + experience */}
         <div className="mt-1.5 flex items-center justify-center gap-3 text-sm text-text-light min-h-[20px]">

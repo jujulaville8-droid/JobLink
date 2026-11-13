@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { badgesFor } from "@/lib/verification/sharing";
 import { requireRole } from "@/lib/auth";
 import CandidateFilters from "@/components/CandidateFilters";
 import CandidateProfileCard from "@/components/ui/info-card";
@@ -64,6 +65,8 @@ async function CandidateResults({
       </div>
     );
   }
+
+  const badges = await badgesFor(supabase, (profiles || []).map((p) => p.id));
 
   // Client-side skills filter (Supabase array contains is exact match only)
   let filtered = profiles || [];
@@ -135,6 +138,7 @@ async function CandidateResults({
               bio={profile.bio}
               education={profile.education}
               userId={profile.user_id}
+              verifiedBadge={badges.get(profile.id) ?? null}
             />
           );
         })}

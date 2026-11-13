@@ -187,5 +187,7 @@ export const documentHeaders = (filename: string): HeadersInit => ({
   'X-Content-Type-Options': 'nosniff',
   'X-Robots-Tag': 'noindex, noarchive',
   'Referrer-Policy': 'no-referrer',
-  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'self'",
+  // Framing is decided in next.config.ts: only the review screen may frame the
+  // reviewer's file route. A document must never run or load anything.
+  'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'",
 })

@@ -51,6 +51,8 @@ export async function updateSession(request: NextRequest, event?: NextFetchEvent
     '/forgot-password', '/reset-password', '/verify-email',
     '/claim/', '/auth/', '/about', '/privacy', '/terms', '/explore',
     '/api/', '/companies', '/employers/hiring-help', '/jobs', '/success-stories',
+    // JobLink Verified explainer, public code check and the police record guide.
+    '/verified', '/guides/',
   ]
   // Members performs its own account checks and preserves its signup destination.
   const isPublic = pathname === '/' || pathname === '/employers' || pathname === '/members' || publicPaths.some(p => pathname.startsWith(p))

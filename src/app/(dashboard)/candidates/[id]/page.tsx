@@ -3,6 +3,8 @@ import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import InviteToApplyButton from "@/components/InviteToApplyButton";
+import VerifiedBadge from "@/components/verification/VerifiedBadge";
+import { badgesFor } from "@/lib/verification/sharing";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -23,6 +25,9 @@ export default async function CandidateProfilePage({ params }: PageProps) {
   if (!profile) {
     redirect("/browse-candidates");
   }
+
+  // The badge only. Documents are never shown here: sharing is tied to an application.
+  const verifiedBadge = (await badgesFor(supabase, [profile.id])).get(profile.id) ?? null;
 
   const { data: company } = await supabase
     .from("companies")
@@ -106,6 +111,7 @@ export default async function CandidateProfilePage({ params }: PageProps) {
               <h1 className="text-2xl sm:text-3xl font-bold font-display text-text">
                 {fullName}
               </h1>
+              {verifiedBadge && <div className="mt-2"><VerifiedBadge badge={verifiedBadge} /></div>}
 
               <div className="mt-2 flex items-center justify-center sm:justify-start gap-4 text-sm text-text-light flex-wrap">
                 {profile.location && (

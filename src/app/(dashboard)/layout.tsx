@@ -5,6 +5,8 @@ import DashboardCanvas from "@/components/DashboardCanvas";
 import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
 import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
+import { verificationEnabled } from "@/lib/verification/server";
+import { VerifiedFlagProvider } from "@/components/verification/VerifiedFlag";
 
 const seekerLinks = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
@@ -76,12 +78,24 @@ export default async function DashboardLayout({
 
   const role = (userData?.role as string) ?? (user.user_metadata?.role as string) ?? "seeker";
 
+  // JobLink Verified adds one link each for job seekers and admins, and only
+  // while it is switched on. Admins always get the two-step login page.
+  const verified = verificationEnabled();
+  const seekerNav = verified
+    ? [...seekerLinks.slice(0, 5), { href: "/verification", label: "Verified", icon: "shield" }, ...seekerLinks.slice(5)]
+    : seekerLinks;
+  const adminNav = [
+    ...adminLinks,
+    ...(verified ? [{ href: "/admin/verifications", label: "Verifications", icon: "shield" }] : []),
+    { href: "/two-step", label: "Two-step login", icon: "shield" },
+  ];
+
   const baseLinks =
     role === "admin"
-      ? adminLinks
+      ? adminNav
       : role === "employer"
         ? employerLinks
-        : seekerLinks;
+        : seekerNav;
 
   // Inject badges into sidebar links
   const decorateLink = (link: typeof adminLinks[number]) => {
@@ -90,7 +104,7 @@ export default async function DashboardLayout({
     return link;
   };
   const navLinks = baseLinks.map(decorateLink);
-  const applicationLinks = userData.is_admin === true ? adminLinks.map(decorateLink) : undefined;
+  const applicationLinks = userData.is_admin === true ? adminNav.map(decorateLink) : undefined;
 
   return (
     <>
@@ -115,7 +129,7 @@ export default async function DashboardLayout({
           </div>
         </div>
       </aside>
-    }>{children}</DashboardCanvas>
+    }><VerifiedFlagProvider enabled={verified}>{children}</VerifiedFlagProvider></DashboardCanvas>
 
       {/* Presence heartbeat */}
       <PresenceHeartbeat />

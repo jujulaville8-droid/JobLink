@@ -8,6 +8,9 @@ import type { ApplicationStatus } from '@/lib/types';
 import MessageButton from '@/components/messaging/MessageButton';
 import StatusActionButtons from '@/components/StatusActionButtons';
 import HireButton from '@/components/HireButton';
+import VerifiedBadge from '@/components/verification/VerifiedBadge';
+import { verificationEnabled } from '@/lib/verification/server';
+import { badgesFor, sharesForApplications } from '@/lib/verification/sharing';
 
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -64,10 +67,10 @@ export default async function ApplicantsPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ status?: string; sort?: string }>;
+  searchParams: Promise<{ status?: string; sort?: string; verified?: string }>;
 }) {
   const { id } = await params;
-  const { status: statusFilter, sort } = await searchParams;
+  const { status: statusFilter, sort, verified } = await searchParams;
   const user = await requireAuth();
   const supabase = await createClient();
 
@@ -141,7 +144,26 @@ export default async function ApplicantsPage({
 
   const { data: applications } = await query;
 
-  const applicants = (applications ?? []) as unknown as ApplicantData[];
+  const everyApplicant = (applications ?? []) as unknown as ApplicantData[];
+
+  // JobLink Verified. The badge shows for applicants who hold a valid one;
+  // the document buttons only where this applicant chose to share with this
+  // application. The filter narrows the list and never reorders it. The
+  // listing was confirmed above to belong to this employer.
+  const verifiedOn = verificationEnabled();
+  const verifiedOnly = verifiedOn && verified === '1';
+  const badges = verifiedOn
+    ? await badgesFor(supabase, everyApplicant.flatMap((app) => (app.seeker_profiles ? [app.seeker_profiles.id] : [])))
+    : new Map();
+  const shares = verifiedOn && everyApplicant.length
+    ? await sharesForApplications((await import('@/lib/supabase/admin')).createAdminClient(), everyApplicant.map((app) => app.id))
+    : new Map();
+  const applicants = verifiedOnly
+    ? everyApplicant.filter((app) => app.seeker_profiles && badges.has(app.seeker_profiles.id))
+    : everyApplicant;
+  const verifiedParams = new URLSearchParams({ ...(statusFilter ? { status: statusFilter } : {}), ...(sort ? { sort } : {}) });
+  if (!verifiedOnly) verifiedParams.set('verified', '1');
+  const verifiedToggleUrl = `/my-listings/${id}/applicants${verifiedParams.size ? `?${verifiedParams}` : ''}`;
   const { data: placements, error: placementsError } = await supabase.from('placements')
     .select('id, application_id').eq('employer_id', user.id);
   if (placementsError) throw new Error('Could not load confirmed hires');
@@ -247,6 +269,17 @@ export default async function ApplicantsPage({
 
         {/* Sort */}
         <div className="flex items-center gap-2">
+          {verifiedOn && (
+            <Link
+              href={verifiedToggleUrl}
+              aria-pressed={verifiedOnly}
+              className={`mr-2 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                verifiedOnly ? 'bg-emerald-50 text-emerald-800' : 'text-text-muted hover:text-text'
+              }`}
+            >
+              Verified only
+            </Link>
+          )}
           <span className="text-xs text-text-muted">Sort:</span>
           <Link
             href={buildFilterUrl(statusFilter || '', 'newest')}
@@ -317,6 +350,7 @@ export default async function ApplicantsPage({
                             {name}
                           </h3>
                           <StatusBadge status={app.status} />
+                          {seeker && badges.get(seeker.id) && <VerifiedBadge badge={badges.get(seeker.id)!} compact />}
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-text-light">
                           {seeker?.location && (
@@ -331,6 +365,23 @@ export default async function ApplicantsPage({
                           )}
                           <span>Applied {formatDate(app.applied_at)}</span>
                         </div>
+                        {seeker && badges.get(seeker.id) && shares.get(app.id) && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {shares.get(app.id)!.policeRecord && (
+                              <a href={`/api/verification/documents/${shares.get(app.id)!.shareId}?document=police_record`} target="_blank" rel="noopener noreferrer"
+                                className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
+                                View police record
+                              </a>
+                            )}
+                            {shares.get(app.id)!.rightToWork && (
+                              <a href={`/api/verification/documents/${shares.get(app.id)!.shareId}?document=rtw`} target="_blank" rel="noopener noreferrer"
+                                className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 hover:bg-emerald-100">
+                                View right to work
+                              </a>
+                            )}
+                            {badges.get(seeker.id)!.holdsWorkPermit && <span className="text-xs text-amber-800">A new employer would need to apply for a permit.</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
 

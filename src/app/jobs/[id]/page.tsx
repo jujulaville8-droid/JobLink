@@ -1,3 +1,5 @@
+import { PoliceRecordRequiredLabel } from "@/components/verification/VerifiedBadge";
+import { verificationEnabled } from "@/lib/verification/server";
 import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE, listingEmployerName } from "@/lib/confidential-employer";
 import JobViewTracker from "@/components/JobViewTracker";
 import { jobViewsLaunch } from "@/lib/job-views-config";
@@ -547,6 +549,8 @@ export default async function JobDetailPage({ params }: PageProps) {
                 <span className="inline-flex items-center rounded-full bg-primary/8 px-3 py-1 text-xs font-semibold text-primary">
                   {jobTypeLabel}
                 </span>
+
+                {verificationEnabled() && job.police_record_required === true && <PoliceRecordRequiredLabel />}
 
                 {/* Salary pill */}
                 {salary && (

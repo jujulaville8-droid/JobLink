@@ -1,3 +1,6 @@
+import VerifiedDashboardCard from "@/components/verification/DashboardCard";
+import { dashboardCard } from "@/lib/verification/seeker";
+import { verificationEnabled } from "@/lib/verification/server";
 import { listingEmployerName } from "@/lib/confidential-employer";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -124,6 +127,13 @@ async function SeekerDashboard({ userId }: { userId: string }) {
 
   const interviewCount = (applications ?? []).filter((a: Record<string, unknown>) => a.status === "interview").length;
 
+  // JobLink Verified: one line of status. Null while Verified is switched off.
+  let verifiedCard: Awaited<ReturnType<typeof dashboardCard>> = null;
+  if (verificationEnabled()) {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    verifiedCard = await dashboardCard(createAdminClient(), userId);
+  }
+
   return (
     <div className="animate-fade-up">
       {/* Header */}
@@ -146,6 +156,8 @@ async function SeekerDashboard({ userId }: { userId: string }) {
           Find Jobs
         </Link>
       </div>
+
+      {verifiedCard && <VerifiedDashboardCard {...verifiedCard} />}
 
       {/* Quick Stats */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">

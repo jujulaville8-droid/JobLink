@@ -2,6 +2,7 @@
 
 import { CONFIDENTIAL_EMPLOYER_NAME } from "@/lib/confidential-employer";
 import { useState, useEffect } from "react";
+import ApplyVerifiedDocuments, { type ApplyVerifiedContext, type VerifiedChoice } from "@/components/verification/ApplyVerifiedDocuments";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getJobClosure } from "@/lib/job-closures";
@@ -110,6 +111,9 @@ function ApplicationForm({ jobId }: { jobId: string }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [applicantUserId, setApplicantUserId] = useState<string | null>(null);
   const [draftCleanupFailed, setDraftCleanupFailed] = useState(false);
+  // JobLink Verified: which documents to send with this application, if any.
+  const [verifiedChoice, setVerifiedChoice] = useState<VerifiedChoice | null>(null);
+  const [verifiedContext, setVerifiedContext] = useState<ApplyVerifiedContext | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -250,6 +254,8 @@ function ApplicationForm({ jobId }: { jobId: string }) {
           cover_letter_text: coverLetter.trim(),
           ...(process.env.NEXT_PUBLIC_EMPLOYER_SCREENING_NOTICE_ENABLED === "true"
             ? { screening_notice_version: SCREENING_NOTICE_VERSION } : {}),
+          ...(verifiedChoice && (verifiedChoice.police_record || verifiedChoice.right_to_work)
+            ? { verified_documents: verifiedChoice } : {}),
         }),
       });
 
@@ -583,6 +589,14 @@ function ApplicationForm({ jobId }: { jobId: string }) {
             </div>
           </div>
 
+          {/* From their 2nd application, unverified job seekers see one short card. */}
+          {verifiedContext && !verifiedContext.verified && verifiedContext.canBuy && verifiedContext.priorApplications >= 1 && (
+            <div className="rounded-2xl border border-border bg-white p-4 flex items-center gap-3">
+              <p className="flex-1 text-sm text-text">Next time, send your police record in one click.</p>
+              <Link href="/verified" className="shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white">See how</Link>
+            </div>
+          )}
+
           <div className={cardBase}>
             {/* Job header with light background for both modes */}
             {job && (
@@ -900,6 +914,8 @@ function ApplicationForm({ jobId }: { jobId: string }) {
               onResume={setCoverLetter}
               disabled={state === "submitting"}
             />}
+
+            <ApplyVerifiedDocuments jobId={jobId} disabled={state === "submitting"} onChoice={setVerifiedChoice} onContext={setVerifiedContext} />
 
             {/* Consent notice */}
             <div className="flex items-start gap-3 rounded-xl bg-bg-alt/60 border border-border/30 p-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import CvUpload from "@/components/CvUpload";
+import ProfileVerifiedBadge from "@/components/verification/ProfileVerifiedBadge";
 
 import { useEffect, useState, useCallback } from "react";
 import { flushSync } from "react-dom";
@@ -416,6 +417,7 @@ function ProfileView({
               <h1 className="text-2xl font-bold font-display text-text sm:text-[28px] leading-tight">
                 {fullName}
               </h1>
+              <ProfileVerifiedBadge />
 
               <div className="mt-3 flex flex-col gap-1.5">
                 {email && (
