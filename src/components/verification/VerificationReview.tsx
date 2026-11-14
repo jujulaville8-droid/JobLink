@@ -45,10 +45,14 @@ async function api(path: string, init?: RequestInit) {
 const post = (path: string, body: unknown) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const hoursSince = (iso: string | null) => (iso ? Math.floor((Date.now() - Date.parse(iso)) / 3_600_000) : 0)
 
+type DocumentUrl = (id: string, kind: VerificationDocument) => string
+const defaultDocumentUrl: DocumentUrl = (id, kind) => `/api/admin/verifications/${id}/file?document=${kind}`
+
 const TABS = [['waiting', 'Waiting for review'], ['reupload', 'Re-upload requested'], ['decided', 'Recently decided']] as const
 type Tab = typeof TABS[number][0]
 
-export default function VerificationReview() {
+/** documentUrl is overridden only by the preview gallery, to show sample files. */
+export default function VerificationReview({ documentUrl = defaultDocumentUrl }: { documentUrl?: DocumentUrl } = {}) {
   const [queue, setQueue] = useState<Queue | null>(null)
   const [error, setError] = useState('')
   const [tab, setTab] = useState<Tab>('waiting')
@@ -68,7 +72,7 @@ export default function VerificationReview() {
   }, [])
 
   if (selected) {
-    return <ReviewScreen item={selected} onBack={() => setSelected(null)} onDone={async (text) => { setSelected(null); setMessage(text); await load() }} />
+    return <ReviewScreen item={selected} documentUrl={documentUrl} onBack={() => setSelected(null)} onDone={async (text) => { setSelected(null); setMessage(text); await load() }} />
   }
 
   return (
@@ -157,7 +161,7 @@ function UploadSwitch({ queue, onOpened }: { queue: Queue; onOpened: (message: s
   )
 }
 
-function ReviewScreen({ item, onBack, onDone }: { item: Item; onBack: () => void; onDone: (message: string) => Promise<void> }) {
+function ReviewScreen({ item, documentUrl, onBack, onDone }: { item: Item; documentUrl: DocumentUrl; onBack: () => void; onDone: (message: string) => Promise<void> }) {
   const [ticked, setTicked] = useState<string[]>([])
   const [group, setGroup] = useState<RtwGroup | ''>(item.rtw_group_claimed ?? '')
   const [documentType, setDocumentType] = useState<RtwDocumentType | ''>('')
@@ -200,11 +204,11 @@ function ReviewScreen({ item, onBack, onDone }: { item: Item; onBack: () => void
     <div className="flex min-h-0 flex-col rounded-xl border border-border bg-white">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <p className="text-sm font-semibold text-text">{title}</p>
-        {shown.includes(kind) && <a className="text-xs font-semibold text-primary underline" href={`/api/admin/verifications/${item.id}/file?document=${kind}`} target="_blank" rel="noopener noreferrer">Open in new tab</a>}
+        {shown.includes(kind) && <a className="text-xs font-semibold text-primary underline" href={documentUrl(item.id, kind)} target="_blank" rel="noopener noreferrer">Open in new tab</a>}
       </div>
       {!available ? <p className="p-4 text-sm text-text-muted">No file.</p>
         : shown.includes(kind)
-          ? <iframe title={title} src={`/api/admin/verifications/${item.id}/file?document=${kind}`} className="h-[70vh] w-full rounded-b-xl" />
+          ? <iframe title={title} src={documentUrl(item.id, kind)} className="h-[70vh] w-full rounded-b-xl" />
           : <div className="p-4"><button className={quietButton} onClick={() => setShown([...shown, kind])}>Open document</button><p className="mt-2 text-xs text-text-muted">Each open is logged against your account.</p></div>}
     </div>
   )

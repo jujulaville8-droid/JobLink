@@ -100,6 +100,19 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "private, no-store" },
         ],
       },
+      // Preview gallery (VERIFIED_PREVIEW=true, never in production): same framing
+      // allowance as the review screen, for its sample documents only.
+      {
+        source: "/preview/verified",
+        headers: [{ key: "Content-Security-Policy", value: CONTENT_SECURITY_POLICY.replace("frame-src ", "frame-src 'self' ") }],
+      },
+      {
+        source: "/api/preview/verified-sample",
+        headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'self'" },
+        ],
+      },
       // Stamped documents and the pages around them are never cached or leaked by referrer.
       ...["/api/verification/:path*", "/api/admin/verifications/:path*", "/verification", "/verified/check/:path*"].map(source => ({
         source,
