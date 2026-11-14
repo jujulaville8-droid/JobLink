@@ -559,3 +559,52 @@ so the address is the country AG with no locality or region.
 | --- | --- | --- | --- | --- |
 | Deep Blue Antigua — Waiter / Bartender | `71dcc48c-5fd4-40de-a604-e6b83ba11ad9` | `0a924e3c-b468-4418-83fe-b23a5c86e7fd` | 2026-11-12 | Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12). |
 | Private Employer — Chef — Chef | `a8cb7222-575a-458d-aa03-286efb1494e7` | `b403485a-07d3-40e8-aa66-f9aecaa5636b` | 2026-11-12 | Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12). |
+
+## November 13, 2026 vacancy-scoped allowlist (Clinical Medical Assistant, Mount Joy Service Centre)
+
+[This PR](https://github.com/jujulaville8-droid/JobLink/pull/138) records two vacancy-scoped entries in
+`EMPLOYER_APPROVED_JOBS`, each bound to both the job ID and that job's company
+ID. No company-wide permission is claimed. Site owner Julian approved both on
+2026-11-13, and each employer gave permission the same day per the team's
+records. No message content, email address, or phone number is copied here.
+No closure entry is added. Stored listing content, status and the application
+route are unchanged; no database writes.
+
+Both listings are active and admin-posted. `job_type` is `full_time`, and the
+page shows Full Time. Neither stored description states that the role is
+full-time, and this record does not add a separate employment-type
+confirmation, so `employmentType` is omitted. Neither listing has a salary or
+a deadline (`expires_at` is null; benefits are empty), so no `baseSalary`, no
+`jobBenefits` and no `validThrough` are emitted.
+
+Both stored `created_at` values are `2026-11-14 00:28:45.945975+00`. That
+instant is still 2026-11-13 in America/Antigua.
+
+The Clinical Medical Assistant listing is confidential. Its public page says
+"Confidential employer" and shows no business name, logo, or website. The
+allowlist `companyName` is that public label. The company id comes from the
+listing record; the stored business name is not written here. Existing
+job-page code sets the company to null when `is_confidential` is true, and
+JobPosting is emitted only when that company has a name. Allowlisting this
+vacancy therefore does not emit `JobPosting`. There is no
+`hiringOrganization`, logo, `sameAs`, or contact field in its JSON-LD. The
+page's other structured data remains the existing `BreadcrumbList` (Home,
+Jobs, and the job title). The company row's notification email is not
+selected by the job page and is not part of the JobPosting builder. The
+company row has no phone. The public description has no email address and no
+phone number.
+
+Mount Joy Service Centre is named on its public page, and that name is the
+`hiringOrganization` name. Logo, website and company description are absent,
+so those organization fields are omitted. The company row has a notification
+email and a phone number; neither is selected by the job page or copied into
+JobPosting, and neither appears on the public page or in the description.
+The location is Mount Joy, Antigua. Mount Joy is not a mapped parish, so the
+address is locality Mount Joy and country AG, with no region, street, or
+postal code. The industry on the page is Gas station / service centre, so
+`industry` is that text.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Confidential employer — Clinical Medical Assistant | `45b8e81c-d9b2-4604-867f-cd10835cf3a3` | `b2c41f29-5d70-4d4e-b978-38e46f20cbce` | 2026-11-13 | Site owner approved the allowlist on 2026-11-13, and the employer gave permission the same day, for this already-live admin-posted confidential listing (created 2026-11-13 in America/Antigua). |
+| Mount Joy Service Centre — Pump Attendant / Cashier | `98ab1673-6109-4e0f-af98-e3ce3a75482b` | `aa6580a8-1628-4e0e-a634-26b4736e68fd` | 2026-11-13 | Site owner approved the allowlist on 2026-11-13, and the employer gave permission the same day, for this already-live admin-posted listing (created 2026-11-13 in America/Antigua). |
