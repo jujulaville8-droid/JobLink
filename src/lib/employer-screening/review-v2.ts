@@ -93,7 +93,7 @@ const contextSchema = z.object({
 // Whole-clause exclusion, not fragment rescue: no trait or eligibility criterion
 // may become a scored professional-evidence criterion by deleting its qualifier.
 const nonDocumentCriterion = /\b(?:punctual\w*|honest\w*|trustworth\w*|personality|character|attitude|work ethic|team player|hard[- ]working|enthusias\w*|friendly|charisma\w*|cultural fit|culture fit|communication skills|communicator|interpersonal skills)\b|\b(?:be|remain|stay)\s+reliable\b|\breliable\s+(?:candidate|applicant|employee|person|team member)\b|^(?:reliable|reliability)(?:[.!]|$|\s+(?:and|is|essential|required|preferred))|\b(?:candidate|applicant|employee|person)\b.{0,25}\breliab\w*/i
-function isScorableCriterion(requirement: string): boolean {
+export function isScorableCriterion(requirement: string): boolean {
   return isSafePublishedJobClause(requirement) && !nonDocumentCriterion.test(requirement)
 }
 function unique(values: readonly string[]): boolean { return new Set(values).size === values.length }
@@ -126,10 +126,14 @@ export function validateReviewV2Context(input: ReviewV2Context): ReviewV2Context
   return context
 }
 
+// Split out so the simple fit verdict, whose whole purpose is to name a missing
+// experience, can allow exactly this one pattern. The narrative review keeps it.
+const statedGapClaim = /\b(?:applicant|candidate|person|they|he|she)\s+(?:lacks?|has no|have no|does not have|do not have|doesn't have|don't have)\b/i
 const disallowedConclusion = [
   /\b(?:hire|hiring|reject(?:ed|ion)?|shortlist(?:ed|ing)?|screen out|do not employ|should(?:n't| not) apply|should apply|must not apply|not worth|unemployable|unsuitable|unqualified|incompetent|ideal candidate|best candidate|top candidate|perfect fit|poor fit|good fit|strong candidate|weak candidate|rank(?:ing|ed)?|percentile)\b/i,
   /\b(?:recommend|advise)\b.{0,45}\b(?:interview\w*|employ\w*|offer\w*|advanc\w*|proceed\w*|declin\w*|select\w*)\b/i,
-  /\b(?:applicant|candidate|person|they|he|she)\s+(?:(?:is|are|seems?|appears?)\s+(?:not\s+)?(?:capable|able|qualified|suitable|reliable|unreliable|honest|dishonest|competent|incompetent|strong|weak|good|bad)|(?:cannot|can't|lacks?|has no|have no|does not have|do not have|doesn't have|don't have))\b/i,
+  /\b(?:applicant|candidate|person|they|he|she)\s+(?:(?:is|are|seems?|appears?)\s+(?:not\s+)?(?:capable|able|qualified|suitable|reliable|unreliable|honest|dishonest|competent|incompetent|strong|weak|good|bad)|(?:cannot|can't))\b/i,
+  statedGapClaim,
   /\b(?:personality|character|intelligence|intelligent|iq|work ethic|hard[- ]working|lazy|laziness|dishonest|honesty|trustworth\w*|punctual\w*|unreliable|reliable (?:person|candidate|applicant)|culture fit|cultural fit)\b/i,
   /\b(?:age|aged|gender|race|racial|ethnic\w*|nationality|citizenship|religio\w*|pregnan\w*|marital|disabil\w*|mental health|sexual orientation|native speaker|mother tongue|passport|criminal|immigration|work permit|legally eligible)\b/i,
   /\b(?:are you|is (?:the )?(?:candidate|applicant)|are they)\s+(?:a\s+|an\s+)?(?:citizen|married|single|divorced|widowed|pregnant|disabled)\b|\b(?:do you|does (?:the )?(?:candidate|applicant)|do they)\s+have\s+(?:any\s+)?(?:children|kids|a family|a disability)\b|\bhow old\s+(?:are you|is (?:the )?(?:candidate|applicant)|are they)\b|\bwhere\s+(?:were you|was (?:the )?(?:candidate|applicant)|were they)\s+born\b|\b(?:what|which)\s+(?:medications?|medicines?|diagnos\w*|medical conditions?)\b.{0,25}\b(?:you (?:take|have|use)|your|they (?:take|have|use))\b/i,
@@ -142,10 +146,18 @@ const disallowedConclusion = [
 ]
 /** A bounded English-language safeguard, not a complete semantic classifier. */
 export function isSafeResumeReviewText(value: string): boolean {
+  return isSafeGeneratedText(value, disallowedConclusion)
+}
+/** Same guard for the one-line fit verdict, except that stating an experience
+ * gap ("they do not have kitchen experience") is permitted there. */
+export function isSafeFitVerdictText(value: string): boolean {
+  return isSafeGeneratedText(value, disallowedConclusion.filter(pattern => pattern !== statedGapClaim))
+}
+function isSafeGeneratedText(value: string, patterns: readonly RegExp[]): boolean {
   const normalized = value.normalize('NFKC').replace(/[’‘]/g, "'")
   return value === value.trim() && !/[<>\r\n\x00-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2060-\u2069]/.test(value) &&
     !/(?:https?:\/\/|www\.|\b[\w.%+-]+@[\w.-]+\.[a-z]{2,}\b)/i.test(normalized) &&
-    !disallowedConclusion.some(pattern => pattern.test(normalized))
+    !patterns.some(pattern => pattern.test(normalized))
 }
 const prose = (maximum: number) => z.string().min(1).max(maximum).refine(isSafeResumeReviewText, 'Unsafe document-review text')
 const overviewSchema = z.object({ text: prose(320), sourceIds, criterionIds }).strict()

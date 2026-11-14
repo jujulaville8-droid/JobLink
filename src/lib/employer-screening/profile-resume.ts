@@ -1,0 +1,20 @@
+import 'server-only'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { applicantCvPath } from '../applicant-cv-path'
+import { PDF_EXTRACTION_LIMITS } from './pdf-extraction'
+
+/** The caller supplies the existing service client; paths stay bound to the applicant. */
+export async function loadProfileResume(db: SupabaseClient, userId: string, signal: AbortSignal): Promise<Uint8Array | null> {
+  const { data, error } = await db.from('seeker_profiles').select('cv_url').eq('user_id', userId).abortSignal(signal).maybeSingle()
+  if (error) throw new Error('Profile resume unavailable')
+  const path = applicantCvPath(data?.cv_url, userId)
+  if (!path || !path.toLowerCase().endsWith('.pdf')) return null
+  if (signal.aborted) throw new Error('Profile resume cancelled')
+  const { data: file, error: downloadError } = await db.storage.from('cvs').download(path)
+  if (downloadError) throw new Error('Profile resume unavailable')
+  if (signal.aborted) throw new Error('Profile resume cancelled')
+  if (!file || !file.size || file.size > PDF_EXTRACTION_LIMITS.bytes) return null
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  if (signal.aborted) throw new Error('Profile resume cancelled')
+  return Buffer.from(bytes.subarray(0, 5)).toString('ascii') === '%PDF-' ? bytes : null
+}

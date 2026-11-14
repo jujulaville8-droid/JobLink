@@ -1,4 +1,7 @@
-import { MAX_CV_EMAIL_ATTACHMENT_BYTES, CV_TYPES, cvExtension, ownedCvPath } from '@/lib/cv-upload'
+import { saveFitVerdict } from './employer-screening/fit-verdict-store'
+import { applicantCvPath } from './applicant-cv-path'
+export { applicantCvPath } from './applicant-cv-path'
+import { MAX_CV_EMAIL_ATTACHMENT_BYTES, CV_TYPES, cvExtension } from '@/lib/cv-upload'
 import { resumeFilename } from '@/lib/resume-filename'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendEmail } from '@/lib/email'
@@ -7,26 +10,6 @@ import { inlineEmployerScreening, inlineScreeningDependencies, inlineScreeningEn
 import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
 
 
-
-/** Normalize legacy storage URLs without accepting another host, bucket or owner. */
-export function applicantCvPath(value: unknown, userId: string): string | null {
-  if (typeof value !== 'string' || !value || value.length > 2000) return null
-  let path = value
-  if (/^https?:/i.test(path)) {
-    try {
-      const url = new URL(path)
-      const origin = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').origin
-      if (url.origin !== origin || url.username || url.password) return null
-      const prefix = ['/storage/v1/object/public/cvs/', '/storage/v1/object/sign/cvs/']
-        .find(marker => url.pathname.startsWith(marker))
-      if (!prefix) return null
-      path = decodeURIComponent(url.pathname.slice(prefix.length))
-    } catch { return null }
-  }
-  // Uploaded CVs belong to the seeker's auth-user folder. No nested paths,
-  // encoded separators, traversal, queries, or arbitrary URLs reach service storage.
-  return ownedCvPath(path, userId) ? path : null
-}
 
 /** Called only after a verified seeker successfully inserts an application. */
 export async function notifyNewApplicant(applicationId: string, applicantUserId: string, noticeVersion?: unknown): Promise<boolean> {
@@ -123,13 +106,14 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
       inlineDiagnostic(attachments[0] ? 'attachment_ready' : 'attachment_missing', applicationId)
       if (!inlineScreeningEnabled(noticeVersion)) inlineDiagnostic('entry_gates_disabled', applicationId)
     }
-    if (attachments[0]?.contentType === 'application/pdf' && inlineScreeningEnabled(noticeVersion)) {
+    if (inlineScreeningEnabled(noticeVersion)) {
       try {
         screening = await inlineEmployerScreening({ applicationId: application.id, applicantUserId,
           jobId: job.id, companyId: job.company_id, jobTitle: job.title,
-          noticeVersion, resumeBytes: attachments[0].content }, inlineScreeningDependencies(db))
+          noticeVersion, simpleFitVerdict: true, resumeBytes: attachments[0]?.contentType === 'application/pdf' ? attachments[0].content : new Uint8Array() }, inlineScreeningDependencies(db))
       } catch { inlineDiagnostic('enrichment_failed', applicationId) /* Original email still proceeds. */ }
     }
+    if (screening.employer_fit_verdict) await saveFitVerdict(db, application.id, screening.employer_fit_verdict)
     const result = await sendEmail({
       to: recipient,
       type: 'new_applicant',

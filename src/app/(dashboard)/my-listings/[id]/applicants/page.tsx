@@ -1,3 +1,4 @@
+import { loadFitVerdicts } from '@/lib/employer-screening/fit-verdict-store';
 import SeekerDetailsSummary from '@/components/profile/SeekerDetailsSummary';
 import { seekerDetailsFromRow } from '@/lib/seeker-details';
 import { redirect } from 'next/navigation';
@@ -142,6 +143,7 @@ export default async function ApplicantsPage({
   const { data: applications } = await query;
 
   const applicants = (applications ?? []) as unknown as ApplicantData[];
+  const fitVerdicts = await loadFitVerdicts(supabase, applicants.map(app => app.id));
   const { data: placements, error: placementsError } = await supabase.from('placements')
     .select('id, application_id').eq('employer_id', user.id);
   if (placementsError) throw new Error('Could not load confirmed hires');
@@ -317,6 +319,7 @@ export default async function ApplicantsPage({
                             {name}
                           </h3>
                           <StatusBadge status={app.status} />
+                          {fitVerdicts.has(app.id) && <p className="mt-2 rounded-lg bg-primary/5 p-3 text-sm text-text">{fitVerdicts.get(app.id)}</p>}
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-text-light">
                           {seeker?.location && (

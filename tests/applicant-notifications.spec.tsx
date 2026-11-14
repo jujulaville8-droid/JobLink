@@ -36,7 +36,7 @@ beforeEach(() => {
   mocks.from.mockImplementation((table: string) => {
     const filters: [string, unknown][] = []
     queries.push({ table, filters })
-    const q = { update: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve), select: () => q, eq: (field: string, value: unknown) => { filters.push([field, value]); return q }, single: async () => {
+    const q = { upsert: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, update: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve), select: () => q, eq: (field: string, value: unknown) => { filters.push([field, value]); return q }, single: async () => {
       const row = rows[table === 'users' ? (filters.some(([, v]) => v === 'owner') ? 'owner' : 'applicant') : table]
       return { data: row && filters.every(([k, v]) => row[k] === v) ? row : null, error: null }
     } }
@@ -88,11 +88,11 @@ it.each(['upload', 'builder'])('screens the exact %s attachment Buffer once, bef
   expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('attachment_ready'))).toBe(true)
 })
 
-it('does not run screening without an attachment, even with every inline gate enabled', async () => {
+it('runs screening with empty bytes for the profile fallback when the attachment is missing', async () => {
   INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
   mocks.download.mockResolvedValue({ data: null, error: null })
   expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
-  expect(mocks.screen).not.toHaveBeenCalled()
+  expect(mocks.screen).toHaveBeenCalledWith(expect.objectContaining({ simpleFitVerdict: true, resumeBytes: new Uint8Array() }), expect.any(Object))
   expect(mocks.send).toHaveBeenCalledOnce()
   expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('attachment_missing'))).toBe(true)
 })
@@ -266,4 +266,14 @@ it.each([
   expect(mocks.send.mock.calls[0][0].attachments).toEqual([
     { filename: `Applicant Name Resume.${extension}`, content: Buffer.from('fixture'), contentType },
   ])
+})
+
+it('persists the same fit line forwarded by email without adding fields to the application row', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.screen.mockResolvedValue({ employer_fit_verdict: { verdict: 'not_a_fit', reason: 'The supplied work is in cashier duties.', sourceIds: ['r1'], criterionIds: ['c1'], gapQuote: null } })
+  expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
+  expect(updates).toContainEqual({ table: 'application_fit_verdicts', value: { application_id: 'saved-app', verdict: 'not_a_fit', verdict_text: 'This person does not have the experience for this job.' } })
+  const html = buildEmailHtml('new_applicant', mocks.send.mock.calls[0][0].data).html
+  expect(html).toContain('This person does not have the experience for this job.')
+  expect(updates.filter(row => row.table === 'applications').every(row => !('verdict_text' in row.value))).toBe(true)
 })
