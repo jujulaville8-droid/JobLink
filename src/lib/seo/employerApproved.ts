@@ -45,6 +45,31 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
 // The original September 30 owner attestation covered only these vacancies;
 // see docs/jobposting-approvals.md for provenance and later company-wide scope.
 export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
+  // Clinical Medical Assistant: site owner Julian approved the Google Jobs allowlist
+  // on 2026-11-13, and the employer gave permission the same day. Vacancy-scoped only.
+  // The listing is confidential. The public page says "Confidential employer" and shows
+  // no business name, logo, or website. companyName here is that public label; matching
+  // is by company id. The stored name is not copied into this file. Existing job-page
+  // code nulls the company for a confidential listing, so JobPosting is not emitted.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "45b8e81c-d9b2-4604-867f-cd10835cf3a3": {
+    companyId: "b2c41f29-5d70-4d4e-b978-38e46f20cbce",
+    companyName: "Confidential employer",
+    attestedOn: "2026-11-13",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/138",
+    employmentTypeUnconfirmed: true,
+  },
+  // Mount Joy Service Centre: site owner Julian approved the Google Jobs allowlist
+  // on 2026-11-13, and the employer gave permission the same day, for this
+  // Pump Attendant / Cashier vacancy only. Full Time is the stored job type; the
+  // description does not state it. No public deadline.
+  "98ab1673-6109-4e0f-af98-e3ce3a75482b": {
+    companyId: "aa6580a8-1628-4e0e-a634-26b4736e68fd",
+    companyName: "Mount Joy Service Centre",
+    attestedOn: "2026-11-13",
+    evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/138",
+    employmentTypeUnconfirmed: true,
+  },
   // Site owner requested Google Jobs allowlist on 2026-11-12 for this already-live admin-posted listing (created 2026-11-12).
   // Site-owner attestation only. The listing states full-time. No public deadline.
   "71dcc48c-5fd4-40de-a604-e6b83ba11ad9": {

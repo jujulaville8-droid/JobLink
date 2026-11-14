@@ -1331,3 +1331,225 @@ describe.each([
     expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });
+
+const NOVEMBER_13_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/138';
+const MOUNT_JOY_DESCRIPTION = 'Mount Joy Service Centre is hiring a Pump Attendant / Cashier in Mount Joy, Antigua.\n\nApply on this JobLink Antigua page. Applications are forwarded straight to Mount Joy Service Centre.';
+const CLINICAL_DESCRIPTION = 'Position: Clinical Medical Assistant\n\nPosition Summary\nTo provide clinical, administrative, and patient care support to the medical team, ensuring efficient clinic operations and a positive patient experience.\n\nApply on this JobLink Antigua page. Applications are forwarded straight to the employer.';
+
+describe('45b8e81c-d9b2-4604-867f-cd10835cf3a3 November 13 confidential allowlist', () => {
+  const jobId = '45b8e81c-d9b2-4604-867f-cd10835cf3a3';
+  const companyId = 'b2c41f29-5d70-4d4e-b978-38e46f20cbce';
+  const sentinelName = 'Sentinel Hidden Employer';
+  const sentinelEmail = 'hidden-contact@example.com';
+  const sentinelPhone = '+1-268-555-0199';
+  const sentinelLogo = 'https://example.com/hidden-logo.png';
+  const sentinelSite = 'https://hidden-employer.example';
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-14T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = sentinelName;
+    db.job!.company.location = "St. John's, Antigua";
+    db.job!.company.website = sentinelSite;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry' | 'logo_url' | 'description'> & {
+      industry: string | null;
+      logo_url: string | null;
+      description: string | null;
+      contact_email?: string;
+      contact_phone?: string;
+      legal_name?: string;
+    };
+    company.logo_url = sentinelLogo;
+    company.description = 'Hidden company profile.';
+    company.industry = 'Healthcare';
+    company.contact_email = sentinelEmail;
+    company.contact_phone = sentinelPhone;
+    company.legal_name = 'Hidden Legal Name Ltd';
+    db.job!.title = 'Clinical Medical Assistant';
+    db.job!.location = "St. John's, Antigua" as unknown as null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = CLINICAL_DESCRIPTION;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-14T00:28:45.945975Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = true;
+  });
+
+  it('records the vacancy without emitting JobPosting or the hidden employer', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId,
+      companyName: 'Confidential employer',
+      attestedOn: '2026-11-13',
+      evidenceReference: NOVEMBER_13_ALLOWLIST_PR,
+      employmentTypeUnconfirmed: true,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const data = await schemas();
+    expect(data.map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+    const markup = JSON.stringify(data);
+    expect(markup).not.toContain('hiringOrganization');
+    expect(markup).not.toContain(sentinelName);
+    expect(markup).not.toContain(sentinelEmail);
+    expect(markup).not.toContain(sentinelPhone);
+    expect(markup).not.toContain(sentinelLogo);
+    expect(markup).not.toContain(sentinelSite);
+    expect(markup).not.toContain('Hidden Legal Name');
+    expect(markup).not.toContain('Healthcare');
+    const html = await pageHtml();
+    expect(html).toContain('Confidential employer');
+    expect(html).toContain('Clinical Medical Assistant');
+    expect(html).toContain('St. John&#x27;s, Antigua');
+    expect(html).toContain('Sign In to Apply');
+    expect(html).not.toContain(sentinelName);
+    expect(html).not.toContain(sentinelEmail);
+    expect(html).not.toContain(sentinelPhone);
+    expect(html).not.toContain(sentinelLogo);
+    expect(html).not.toContain(sentinelSite);
+    expect(html).not.toContain('tel:');
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: jobId }) });
+    expect(JSON.stringify(metadata)).not.toContain(sentinelName);
+    expect(JSON.stringify(metadata)).not.toContain(sentinelEmail);
+    expect(metadata.title).toEqual({ absolute: 'Clinical Medical Assistant at Confidential employer | JobLink' });
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays on the public page without JobPosting because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+    expect(await pageHtml()).toContain('Sign In to Apply');
+  });
+});
+
+describe('98ab1673-6109-4e0f-af98-e3ce3a75482b November 13 Mount Joy allowlist', () => {
+  const jobId = '98ab1673-6109-4e0f-af98-e3ce3a75482b';
+  const companyId = 'aa6580a8-1628-4e0e-a634-26b4736e68fd';
+  const companyName = 'Mount Joy Service Centre';
+  const sentinelEmail = 'hidden-contact@example.com';
+  const sentinelPhone = '+1-268-555-0199';
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-14T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = 'Mount Joy, Antigua';
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+      contact_email?: string;
+      contact_phone?: string;
+      legal_name?: string;
+    };
+    company.industry = 'Gas station / service centre';
+    company.contact_email = sentinelEmail;
+    company.contact_phone = sentinelPhone;
+    company.legal_name = 'Hidden Legal Name Ltd';
+    db.job!.title = 'Pump Attendant / Cashier';
+    db.job!.location = 'Mount Joy, Antigua' as unknown as null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = MOUNT_JOY_DESCRIPTION;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-14T00:28:45.945975Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+  });
+
+  it('emits JobPosting with the public organization name and no contact, pay, deadline, or employmentType', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId,
+      companyName,
+      attestedOn: '2026-11-13',
+      evidenceReference: NOVEMBER_13_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title: 'Pump Attendant / Cashier',
+      directApply: false,
+      datePosted: '2026-11-14T00:28:45.945975Z',
+      industry: 'Gas station / service centre',
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.hiringOrganization).toEqual({ '@type': 'Organization', name: companyName });
+    expect(schema.jobLocation.address).toEqual({
+      '@type': 'PostalAddress',
+      addressLocality: 'Mount Joy',
+      addressCountry: 'AG',
+    });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema).not.toHaveProperty('telephone');
+    expect(schema).not.toHaveProperty('email');
+    expect(schema.datePosted).not.toBe('2026-11-13');
+    const markup = JSON.stringify(schema);
+    expect(markup).not.toContain(sentinelEmail);
+    expect(markup).not.toContain(sentinelPhone);
+    expect(markup).not.toContain('Hidden Legal Name');
+    expect(markup).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(schema.description).not.toMatch(/\+?\d[\d\s().-]{6,}\d/);
+    expect(schema.description).toBe('<p>Mount Joy Service Centre is hiring a Pump Attendant / Cashier in Mount Joy, Antigua.</p><p>Apply on this JobLink Antigua page. Applications are forwarded straight to Mount Joy Service Centre.</p>');
+    const html = await pageHtml();
+    expect(html).toContain(MOUNT_JOY_DESCRIPTION);
+    expect(html).toContain('Sign In to Apply');
+    expect(html).not.toContain(sentinelEmail);
+    expect(html).not.toContain(sentinelPhone);
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
