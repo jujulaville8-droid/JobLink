@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { handleResumeWritingStripeEvent } from '@/lib/resume-writing-payment'
-import { VERIFICATION_PURCHASE_TYPE, handleVerificationPayment } from '@/lib/verification/payment'
+import { VERIFICATION_PURCHASE_TYPE, handleVerificationChargeEvent, handleVerificationPayment } from '@/lib/verification/payment'
 import { getResumeWritingStripe, getResumeWritingWebhookSecret, resumeWritingPolicy } from '@/lib/resume-writing-stripe'
 
 /** Helper: get current_period_end from the first subscription item */
@@ -225,6 +225,14 @@ export async function POST(req: NextRequest) {
           )
         }
 
+        break
+      }
+
+      // JobLink Verified: refunds and disputes made in Stripe itself. Ignored
+      // for any charge that is not a verification fee.
+      case 'charge.refunded':
+      case 'charge.dispute.created': {
+        await handleVerificationChargeEvent(supabase, event)
         break
       }
 

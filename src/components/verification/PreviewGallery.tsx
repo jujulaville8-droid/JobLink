@@ -273,8 +273,20 @@ export default function VerifiedPreviewGallery({ initialScene }: { initialScene?
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[15rem_1fr]">
         <nav aria-label="Screens" className="lg:sticky lg:top-4 lg:self-start">
           <h1 className="font-display text-lg font-bold text-text">JobLink Verified</h1>
+          {/* On a phone, one dropdown instead of the full list. */}
+          <label className="mt-3 block lg:hidden">
+            <span className="sr-only">Screen</span>
+            <select value={key} onChange={(event) => { setKey(event.target.value); setRun(run + 1) }}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-medium text-text">
+              {groups.map((group) => (
+                <optgroup key={group} label={group}>
+                  {SCENES.filter((item) => item.group === group).map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </label>
           {groups.map((group) => (
-            <div key={group} className="mt-4">
+            <div key={group} className="mt-4 hidden lg:block">
               <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{group}</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5 lg:flex-col lg:gap-0.5">
                 {SCENES.filter((item) => item.group === group).map((item) => (
@@ -300,7 +312,7 @@ export default function VerifiedPreviewGallery({ initialScene }: { initialScene?
             </div>
           </div>
 
-          <div className={`rounded-2xl border border-border bg-bg ${phone && scene.kind !== 'pieces' ? 'mx-auto max-w-[390px]' : ''}`}>
+          <div data-preview-screen className={`rounded-2xl border border-border bg-bg ${phone && scene.kind !== 'pieces' ? 'mx-auto max-w-[390px]' : ''}`}>
             {/* Mounted only once this scene's made-up API is in place. */}
             {ready === instance && (
               <VerifiedFlagProvider enabled>

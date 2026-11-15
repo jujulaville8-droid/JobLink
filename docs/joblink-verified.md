@@ -32,6 +32,7 @@ Applying stays free. Verified ships **switched off**.
    - Confirm the facts on `/guides/police-record` (fee, hours, what to bring) with the Criminal Records Office.
    - Apply `20261113100000_seeker_verifications.sql`.
    - Stripe: product "JobLink Verified, 6 months", one-time price XCD 40.00. Put its id in `VERIFICATION_PRICE_ID`.
+   - Stripe webhook endpoint (`/api/webhooks/stripe`): add the events `charge.refunded` and `charge.dispute.created` alongside `checkout.session.completed`.
    - Generate the file key privately (`openssl rand -base64 32`) and enter it in Vercel as `VERIFICATION_FILE_KEY`. Keep a copy somewhere safe: without it stored police records cannot be read.
    - Check `CRON_SECRET` and `NTFY_SIGNUP_TOPIC` are set in Vercel.
 3. `VERIFICATION_ENABLED=true` with checkout off. Check the pages.
@@ -48,8 +49,12 @@ Applying stays free. Verified ships **switched off**.
 - An employer can open documents only for an application to their own job, while sharing is on and the badge is valid. Every other case is the same 404.
 - No email carries a document. No storage link is ever handed out.
 
+## Refunds and disputes made in Stripe
+
+- A full refund from the Stripe dashboard deletes the files and ends the check (not approved if it was under review, withdrawn otherwise), with no email to the job seeker.
+- A partial refund or a dispute only sends you a phone alert; nothing changes until you decide.
+
 ## Not built yet
 
 - A second way to pay for people without a bank card (still an open decision).
 - The employer-screening outbox email (off in production) does not carry the badge line; the standard new-applicant email does.
-- Refunds or disputes made directly in the Stripe dashboard are not synced back to the verification record.

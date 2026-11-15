@@ -3,8 +3,9 @@ import type Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getStripe } from '@/lib/stripe'
 import { BASE_URL, sendEmail } from '@/lib/email'
+import { deleteDocuments } from './files'
 import {
-  loadVerifications, ownerAlert, seekerEmail, uploadsOpen, verificationPriceId,
+  loadVerifications, logVerificationEvent, ownerAlert, seekerEmail, uploadsOpen, verificationPriceId,
   type SeekerContext, type VerificationRow,
 } from './server'
 import { VERIFICATION_AMOUNT_CENTS, VERIFICATION_CURRENCY, antiguaToday, badgeIsValid, daysBetween } from './shared'
@@ -150,4 +151,55 @@ export async function refundVerification(verification: Pick<VerificationRow, 'id
   )
   if (!refund.id || refund.status === 'failed' || refund.status === 'canceled') throw new Error('Refund failed')
   return refund.id
+}
+
+/**
+ * A refund or dispute that happened in Stripe rather than through the review
+ * screen: someone refunded from the Stripe dashboard, or the card holder
+ * disputed the charge. Keeps the record honest instead of leaving a badge
+ * (and a stored police record) on a payment that was given back.
+ *
+ * Our own refunds come back here too, as charge.refunded; those already carry
+ * a stripe_refund_id and are left alone.
+ */
+export async function handleVerificationChargeEvent(db: SupabaseClient, event: Stripe.Event): Promise<'applied' | 'ignored' | 'flagged'> {
+  if (event.type !== 'charge.refunded' && event.type !== 'charge.dispute.created') return 'ignored'
+  const object = event.data.object as Stripe.Charge | Stripe.Dispute
+  const paymentIntent = typeof object.payment_intent === 'string' ? object.payment_intent : object.payment_intent?.id
+  if (!paymentIntent) return 'ignored'
+
+  const found = await db.from('seeker_verifications').select('*').eq('stripe_payment_intent_id', paymentIntent).maybeSingle()
+  if (found.error) throw new Error('Could not load verification')
+  const row = found.data as VerificationRow | null
+  if (!row) return 'ignored'
+
+  if (event.type === 'charge.dispute.created') {
+    await ownerAlert('JobLink Verified: a payment was disputed', 'A verification fee was disputed with the card issuer. Respond in Stripe. The badge has been left as it is.')
+    return 'flagged'
+  }
+
+  const charge = object as Stripe.Charge
+  if (row.stripe_refund_id) return 'ignored'
+  if (!charge.refunded) {
+    await ownerAlert('JobLink Verified: partial refund', 'Part of a verification fee was refunded in Stripe. Partial refunds are not applied automatically; check the verification in Admin > Verifications.')
+    return 'flagged'
+  }
+
+  const refundId = charge.refunds?.data?.[0]?.id ?? `charge:${charge.id}`
+  const now = new Date().toISOString()
+  const files = [row.rtw_file_path, row.police_record_file_path]
+  // Same rule as everywhere else: the files go before the record says they have.
+  await deleteDocuments(db, files)
+  const next = row.status === 'submitted' ? 'not_approved' : ['paid', 'reupload_needed', 'approved'].includes(row.status) ? 'withdrawn' : null
+  const update = { refunded_at: now, stripe_refund_id: refundId, rtw_file_path: null, police_record_file_path: null, sharing_notice: false, ...(next ? { status: next } : {}) }
+  const saved = await db.from('seeker_verifications').update(update).eq('id', row.id).eq('status', row.status).select('id').maybeSingle()
+  if (saved.error || !saved.data) throw new Error('Could not record refund')
+  if (row.status === 'approved') {
+    await db.from('verification_shares').update({ revoked_at: now }).eq('verification_id', row.id).is('revoked_at', null)
+  }
+  await logVerificationEvent(db, [
+    { verification_id: row.id, actor_id: null, actor_role: 'system', event: 'refunded' },
+    ...files.flatMap((path, index) => (path ? [{ verification_id: row.id, actor_id: null, actor_role: 'system' as const, event: 'file_deleted' as const, document: index === 0 ? 'rtw' as const : 'police_record' as const }] : [])),
+  ])
+  return 'applied'
 }

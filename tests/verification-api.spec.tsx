@@ -65,7 +65,7 @@ import { POST as decide } from '@/app/api/admin/verifications/[id]/route'
 import { GET as reviewFile } from '@/app/api/admin/verifications/[id]/file/route'
 import { POST as openUploads } from '@/app/api/admin/verifications/settings/route'
 import { GET as dailyJob } from '@/app/api/cron/verification-expiry/route'
-import { handleVerificationPayment } from '@/lib/verification/payment'
+import { handleVerificationChargeEvent, handleVerificationPayment } from '@/lib/verification/payment'
 import { storeDocument } from '@/lib/verification/files'
 import { recordShare, sharedEmailLine } from '@/lib/verification/sharing'
 import { CONSENT_VERSION, REVIEW_CHECKLIST, addMonths, antiguaToday } from '@/lib/verification/shared'
@@ -757,5 +757,43 @@ describe('sharing on apply', () => {
     db.tables.verification_shares[0].revoked_at = 'x'
     expect(await sharedEmailLine(db as never, 'application-1')).toBeNull()
     expect(await sharedEmailLine(db as never, 'application-none')).toBeNull()
+  })
+})
+
+describe('refunds and disputes made in Stripe', () => {
+  const refund = (overrides: Record<string, unknown> = {}) => ({
+    id: 'evt_r', type: 'charge.refunded',
+    data: { object: { id: 'ch_1', payment_intent: 'pi_1', refunded: true, refunds: { data: [{ id: 're_dash' }] }, ...overrides } },
+  }) as never
+
+  it('a full refund of an approved check deletes the record and ends the badge', async () => {
+    const db = await seed()
+    expect(await handleVerificationChargeEvent(db as never, refund())).toBe('applied')
+    expect(db.tables.seeker_verifications[0]).toMatchObject({ status: 'withdrawn', stripe_refund_id: 're_dash', police_record_file_path: null })
+    expect(db.files.size).toBe(0)
+    expect(db.tables.verification_shares[0].revoked_at).not.toBeNull()
+    as('employer-user')
+    expect((await document('police_record')).status).toBe(404)
+  })
+
+  it('a full refund during review closes it as not approved and deletes both files', async () => {
+    const db = await seed({ status: 'submitted' })
+    expect(await handleVerificationChargeEvent(db as never, refund())).toBe('applied')
+    expect(db.tables.seeker_verifications[0]).toMatchObject({ status: 'not_approved', rtw_file_path: null, police_record_file_path: null })
+    expect(db.files.size).toBe(0)
+  })
+
+  it('leaves our own refunds alone, and ignores charges that are not verification fees', async () => {
+    const db = await seed({ status: 'not_approved', police_record_file_path: null, stripe_refund_id: 're_1', refunded_at: 'x' })
+    expect(await handleVerificationChargeEvent(db as never, refund())).toBe('ignored')
+    expect(await handleVerificationChargeEvent(db as never, refund({ payment_intent: 'pi_employer_subscription' }))).toBe('ignored')
+  })
+
+  it('a partial refund or a dispute changes nothing and flags it', async () => {
+    const db = await seed()
+    expect(await handleVerificationChargeEvent(db as never, refund({ refunded: false }))).toBe('flagged')
+    expect(await handleVerificationChargeEvent(db as never, { id: 'evt_d', type: 'charge.dispute.created', data: { object: { payment_intent: 'pi_1' } } } as never)).toBe('flagged')
+    expect(db.tables.seeker_verifications[0].status).toBe('approved')
+    expect(db.files.size).toBe(1)
   })
 })
