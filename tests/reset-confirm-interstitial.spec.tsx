@@ -89,6 +89,10 @@ describe('reset confirmation interstitial', () => {
 })
 
 describe('POST reset verification', () => {
+  // The token is the capability: fetch metadata and origin headers are
+  // logged for diagnosis but never gate redemption, because mail app
+  // webviews and other legitimate clients send unusual values and the
+  // previous gate silently looped real users back to "invalid link".
   it.each<Record<string, string>>([
     { 'sec-fetch-site': 'cross-site' },
     { 'sec-fetch-site': 'same-site' },
@@ -97,20 +101,10 @@ describe('POST reset verification', () => {
     { origin: 'null' },
     { origin: 'malformed' },
     { 'sec-fetch-site': 'same-origin', origin: 'https://attacker.example' },
-  ])('rejects unsafe submission headers %j before creating a client', async headers => {
-    const response = await submit({ token_hash: tokenHash, type: 'recovery' }, headers)
-    expect(response.status).toBe(303)
-    const location = new URL(response.headers.get('location')!)
-    expect(location.pathname).toBe('/forgot-password')
-    expect(location.searchParams.get('error')).toBe('Invalid reset link. Please request a new one.')
-    expect(api.createClient).not.toHaveBeenCalled()
-  })
-
-  it.each<Record<string, string>>([
     { 'sec-fetch-site': 'same-origin', origin },
     { 'sec-fetch-site': 'none' },
     { origin },
-  ])('allows safe submission headers %j', async headers => {
+  ])('redeems the token regardless of submission headers %j', async headers => {
     const response = await submit({ token_hash: tokenHash, type: 'recovery' }, headers)
     expect(response.status).toBe(303)
     expect(response.headers.get('location')).toBe(`${origin}/reset-password`)

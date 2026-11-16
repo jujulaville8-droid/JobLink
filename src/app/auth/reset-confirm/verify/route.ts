@@ -2,29 +2,39 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 // Only an explicit form submission redeems the single-use recovery token.
+//
+// There is deliberately no sec-fetch-site / origin gate here. The token
+// itself is the capability: single use, high entropy, time limited, and
+// useless to anyone who does not already hold the emailed link. Header
+// heuristics silently rejected legitimate submissions from mail app
+// webviews and other real clients, which looped users back to the
+// "invalid link" error with no server side trace of the attempt.
 export async function POST(request: NextRequest) {
-  const { origin, host } = new URL(request.url)
+  const { origin } = new URL(request.url)
   const invalidLink = () => NextResponse.redirect(
     `${origin}/forgot-password?error=${encodeURIComponent('Invalid reset link. Please request a new one.')}`,
     303
   )
-  const fetchSite = request.headers.get('sec-fetch-site')
-  if (fetchSite !== null && fetchSite !== 'same-origin' && fetchSite !== 'none') {
-    return invalidLink()
-  }
-  const requestOrigin = request.headers.get('origin')
-  if (requestOrigin !== null) {
+
+  const originHeader = request.headers.get('origin')
+  let originHost: string | null = null
+  if (originHeader !== null) {
     try {
-      if (new URL(requestOrigin).host !== host) return invalidLink()
+      originHost = new URL(originHeader).host
     } catch {
-      return invalidLink()
+      originHost = 'malformed'
     }
   }
+  console.log('[reset-confirm] POST received', {
+    secFetchSite: request.headers.get('sec-fetch-site'),
+    originHost,
+  })
 
   let formData: FormData
   try {
     formData = await request.formData()
   } catch {
+    console.error('[reset-confirm] Could not parse form body')
     return invalidLink()
   }
   const tokenHash = formData.get('token_hash')
