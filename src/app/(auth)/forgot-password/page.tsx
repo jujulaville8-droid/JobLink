@@ -51,6 +51,7 @@ export default function ForgotPasswordPage() {
           </div>
           <p className="text-sm text-text-light mb-4">
             Check your email for a password reset link. It may take a minute to arrive.
+            Use the link in the newest email: earlier reset links stop working as soon as a new one is requested.
           </p>
           <Link
             href="/login"

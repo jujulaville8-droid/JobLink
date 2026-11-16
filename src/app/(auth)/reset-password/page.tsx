@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
         </div>
         <h2 className="font-display text-xl text-text mb-2">Reset Link Expired</h2>
         <p className="text-sm text-text-light mb-6">
-          This password reset link is no longer valid. Reset links expire after 1 hour and can only be used once.
+          This password reset link is no longer valid. Reset links expire after 24 hours and can only be used once.
         </p>
         <a
           href="/forgot-password"
