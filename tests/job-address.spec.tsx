@@ -9,6 +9,7 @@ describe('jobAddressRegion', () => {
     ["Newgate Street, St. John's, Antigua", 'Saint John'],
     ["St. John's", 'Saint John'],
     ["St. John's, Antigua", 'Saint John'],
+    ["St john's Antigua", 'Saint John'],
     ['Upland Development, Cruise Port', 'Saint John'],
     ['Upland Development, Cruise Port, Antigua', 'Saint John'],
     ['Coolidge', 'Saint George'],

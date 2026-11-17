@@ -226,6 +226,29 @@ it('keeps legitimate self-posted jobs eligible without an approval entry', async
   expect((await schemas())[0]['@type']).toBe('JobPosting');
 });
 
+it('maps a stored St john\'s Antigua location without a street or postal code', async () => {
+  db.job!.id = 'synthetic-self-posted-job';
+  db.job!.company_id = 'synthetic-self-posting-company';
+  db.job!.company.id = db.job!.company_id;
+  db.job!.posted_by_admin = false;
+  db.job!.location = "St john's Antigua" as unknown as null;
+  db.job!.company.location = 'Antigua';
+  db.job!.salary_min = null;
+  db.job!.salary_max = null;
+  db.job!.expires_at = null;
+  const address = (await schemas())[0].jobLocation.address;
+  expect(address).toEqual({
+    '@type': 'PostalAddress',
+    addressLocality: "St john's",
+    addressRegion: 'Saint John',
+    addressCountry: 'AG',
+  });
+  expect(address).not.toHaveProperty('streetAddress');
+  expect(address).not.toHaveProperty('postalCode');
+  expect((await schemas())[0]).not.toHaveProperty('baseSalary');
+  expect((await schemas())[0]).not.toHaveProperty('validThrough');
+});
+
 it('blocks unapproved imports even when the admin flag is false', async () => {
   delete EMPLOYER_APPROVED_JOBS[db.job!.id];
   delete EMPLOYER_APPROVED_COMPANIES[db.job!.company_id];
@@ -420,8 +443,8 @@ describe.each([
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({ companyId, attestedOn });
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, validThrough: '2026-10-30', directApply: false });
-    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema.description).not.toContain(deadline);
     const html = await pageHtml();
     expect(html).toContain('Sign In to Apply');
@@ -454,7 +477,7 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     db.job!.company.company_name = 'Star Times Adventure Tours';
     db.job!.title = 'Driver Guide';
   });
-  it('authorizes only the recorded vacancy without asserting the placeholder employment type', async () => {
+  it('authorizes only the recorded vacancy and emits the stored full-time type', async () => {
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
       companyId, attestedOn: '2026-10-06', employmentTypeUnconfirmed: true,
@@ -462,7 +485,7 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     });
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
   });
@@ -476,9 +499,25 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     db.job!.company.id = db.job!.company_id;
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   });
-  it('restores confirmed employmentType only when the uncertainty flag is removed', async () => {
-    EMPLOYER_APPROVED_JOBS[jobId] = { ...EMPLOYER_APPROVED_JOBS[jobId], employmentTypeUnconfirmed: false };
-    expect((await schemas())[0].employmentType).toBe('FULL_TIME');
+  it('emits the stored job type while the older uncertainty flag stays set', async () => {
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const cases = [
+      ['full_time', 'FULL_TIME'],
+      ['part_time', 'PART_TIME'],
+      ['contract', 'CONTRACTOR'],
+      ['temporary', 'TEMPORARY'],
+      ['internship', 'INTERN'],
+      ['seasonal', 'TEMPORARY'],
+    ] as const;
+    for (const [stored, schemaType] of cases) {
+      (db.job as { job_type: string }).job_type = stored;
+      expect((await schemas())[0].employmentType).toBe(schemaType);
+    }
+    (db.job as { job_type: string }).job_type = '';
+    expect((await schemas())[0]).not.toHaveProperty('employmentType');
+    (db.job as { job_type: string }).job_type = 'unknown';
+    expect((await schemas())[0]).not.toHaveProperty('employmentType');
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
   });
 });
 
@@ -495,7 +534,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without the placeholder employment type', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -504,7 +543,7 @@ describe.each([
     });
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     if (validThrough) expect(schema.validThrough).toBe(validThrough);
     else expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
@@ -589,8 +628,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema.employmentType).toBe('FULL_TIME');
     if (validThrough) expect(schema.validThrough).toBe(validThrough);
     else expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
@@ -628,7 +666,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -637,7 +675,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
@@ -714,7 +752,7 @@ describe('e080f894-4e7f-48b7-b39a-1a274f52fd97 October 16 Super Service Center v
     db.job!.title = 'Tire Technician';
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -723,7 +761,7 @@ describe('e080f894-4e7f-48b7-b39a-1a274f52fd97 October 16 Super Service Center v
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
@@ -828,8 +866,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
@@ -874,7 +911,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -883,7 +920,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(db.job).toEqual(before);
   });
@@ -917,7 +954,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -926,7 +963,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(db.job).toEqual(before);
   });
@@ -974,7 +1011,7 @@ describe.each([
     db.job!.salary_visible = true;
     db.job!.posted_by_admin = true;
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -986,7 +1023,7 @@ describe.each([
     expect(schema).toMatchObject({
       '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
     });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
     expect(schema.datePosted).not.toBe(attestedOn);
@@ -1084,7 +1121,7 @@ describe.each([
     const schema = (await schemas()).find(item => item['@type'] === 'JobPosting');
     expect(schema.description).toBe('<p>How to apply: email [redacted]</p>');
     expect(schema.description).not.toContain(email);
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema.baseSalary.value).toMatchObject({ minValue: 1800, maxValue: 2200 });
     expect(schema.datePosted).toBe(before!.created_at);
@@ -1146,7 +1183,7 @@ describe.each([
     else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
     expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
     expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
     expect(schema.datePosted).not.toBe(attestedOn);
@@ -1192,7 +1229,7 @@ describe.each([
     db.job!.salary_visible = true;
     db.job!.posted_by_admin = true;
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -1204,7 +1241,7 @@ describe.each([
     expect(schema).toMatchObject({
       '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
     });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
     expect(schema.datePosted).not.toBe(attestedOn);
