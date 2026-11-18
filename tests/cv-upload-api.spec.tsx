@@ -124,3 +124,24 @@ it('compares normalized legacy URLs with stored paths without checking storage',
     expect(state.info).not.toHaveBeenCalled()
   } finally { vi.unstubAllEnvs() }
 })
+
+it.each([
+  { cv_url: '' },
+  { cv_url: null },
+  {},
+])('preserves the stored CV when saving an empty or omitted value: %j', async extra => {
+  state.currentCv = 'user-1/saved.pdf'
+  const response = await save(req({ profile_id: 'profile-1', phone: '5551234', ...extra }))
+  expect(response.status).toBe(200)
+  expect(state.info).not.toHaveBeenCalled()
+  expect(state.writes).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+    cv_url: 'user-1/saved.pdf', phone: '5551234',
+  }))
+})
+it('replaces a stored CV with a new verified owned path', async () => {
+  state.currentCv = 'user-1/saved.pdf'
+  const response = await save(req({ profile_id: 'profile-1', cv_url: 'user-1/new.pdf' }))
+  expect(response.status).toBe(200)
+  expect(state.info).toHaveBeenCalledExactlyOnceWith('user-1/new.pdf')
+  expect(state.writes).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ cv_url: 'user-1/new.pdf' }))
+})

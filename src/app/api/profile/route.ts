@@ -76,15 +76,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Unchanged CVs must not block unrelated edits, including dangling/legacy paths.
-    if (payload.cv_url) {
-      const { data: currentProfile, error: readError } = await supabase
-        .from('seeker_profiles')
-        .select('cv_url')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      if (readError) throw readError
+    const { data: currentProfile, error: readError } = await supabase
+      .from('seeker_profiles')
+      .select('cv_url')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (readError) throw readError
 
+    // There is no CV removal flow: stale or omitted values must preserve the saved CV.
+    if ((payload.cv_url === '' || payload.cv_url == null) && currentProfile?.cv_url) {
+      payload.cv_url = currentProfile.cv_url
+    } else if (payload.cv_url) {
+      // Unchanged CVs must not block unrelated edits, including dangling/legacy paths.
       const normalizeCvUrl = (value: unknown): unknown => {
         if (typeof value === 'string' && /^https?:/i.test(value)) {
           try {

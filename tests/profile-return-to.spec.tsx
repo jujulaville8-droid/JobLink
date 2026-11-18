@@ -260,3 +260,17 @@ it('keeps a newly created profile on step 3 after auto-save and reuses its saved
     profile_id: 'profile-id', cv_url: 'seeker-id/new.docx', first_name: 'Janet',
   });
 });
+
+it('retains the uploaded CV in page state after cancelling the editor', async () => {
+  await uploadResume();
+  expect(await screen.findByText('Resume uploaded and saved.')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  await screen.findByRole('heading', { name: 'About' });
+  await editProfile();
+  fireEvent.click(screen.getByRole('button', { name: '3' }));
+  expect(screen.getByRole('button', { name: 'View current CV' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+  await waitFor(() => expect(api.save).toHaveBeenCalledTimes(3));
+  expect(JSON.parse(api.save.mock.calls[2][1].body).cv_url).toBe('seeker-id/new.docx');
+  await screen.findByRole('heading', { name: 'About' }, { timeout: 1800 });
+});
