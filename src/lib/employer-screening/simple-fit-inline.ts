@@ -41,6 +41,7 @@ export async function inlineSimpleFit(input: InlineScreeningInput, parsed: PdfRe
         const isPdf = Buffer.from(bytes.subarray(0, 5)).toString('ascii') === '%PDF-'
         const pdf = isPdf ? await (deps.extract ?? extractPdfResume)(bytes, { signal,
           onDiagnostic: event => {
+            try { deps.onDiagnostic?.(event) } catch { /* Observations cannot affect screening. */ }
             if (['pdf_capacity_unavailable', 'pdf_aborted', 'pdf_resolve_failed', 'pdf_module_failed', 'pdf_worker_failed', 'pdf_timeout'].includes(event)) sourceFailed = true
           },
           budgetMs: Math.max(1, Math.min(PDF_EXTRACTION_LIMITS.budgetMs, deadline - now())) }) : null

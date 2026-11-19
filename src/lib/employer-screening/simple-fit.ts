@@ -65,5 +65,15 @@ export function simpleFitEmailText(input: unknown): string {
 }
 export function simpleFitEmailSection(input: unknown): string {
   const text = simpleFitEmailText(input).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-  return `<section style="background:#f0fdfa;border:1px solid #99d5cf;border-radius:12px;padding:16px;margin:20px 0"><p style="margin:0">${text}</p></section>`
+  const parsed = schema.safeParse(input)
+  // Email clients need inline colours: the same Tailwind emerald/red/amber
+  // 50 backgrounds, 200 borders and 700/800 text used by the dashboard.
+  const palettes = {
+    good_fit: 'background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;',
+    not_a_fit: 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;',
+    not_enough_information: 'background:#fffbeb;color:#92400e;border:1px solid #fde68a;',
+  }
+  const unavailable = input && typeof input === 'object' && 'verdict' in input && input.verdict === 'unavailable'
+  const colours = unavailable ? 'background:#f8fafc;color:#475569;border:1px solid #cbd5e1;' : palettes[parsed.success ? parsed.data.verdict : 'not_enough_information']
+  return `<section style="${colours}border-radius:12px;padding:16px;margin:20px 0"><p style="margin:0">${text}</p></section>`
 }

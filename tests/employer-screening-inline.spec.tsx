@@ -338,3 +338,15 @@ describe('inline unique-attempt paid adapter', () => {
       p_input_tokens: 90, p_output_tokens: 20, p_evidence_id: 'resp_synthetic' })
   })
 })
+
+it('exposes document diagnostics to the forwarding outcome without changing screening', async () => {
+  const { deps } = setup()
+  const onDiagnostic = vi.fn()
+  const extract: NonNullable<InlineScreeningDependencies['extract']> = async (_bytes, options) => {
+    options.onDiagnostic?.('pdf_empty')
+    return null
+  }
+  expect(await inlineEmployerScreening(input(), { ...deps, extract, onDiagnostic })).toEqual({})
+  expect(onDiagnostic).toHaveBeenCalledWith('pdf_empty')
+  expect(await inlineEmployerScreening(input(), { ...deps, extract, onDiagnostic: () => { throw new Error('observer failed') } })).toEqual({})
+})

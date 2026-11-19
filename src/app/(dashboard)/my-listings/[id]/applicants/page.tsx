@@ -1,3 +1,4 @@
+import ApplicationScreeningVerdict from '@/components/ApplicationScreeningVerdict';
 import { loadFitVerdicts } from '@/lib/employer-screening/fit-verdict-store';
 import SeekerDetailsSummary from '@/components/profile/SeekerDetailsSummary';
 import { seekerDetailsFromRow } from '@/lib/seeker-details';
@@ -45,6 +46,7 @@ interface ApplicantData {
   id: string;
   status: ApplicationStatus;
   applied_at: string;
+  employer_forward_status?: string | null;
   cover_letter_text: string | null;
   seeker_profiles: {
     id: string;
@@ -102,6 +104,7 @@ export default async function ApplicantsPage({
       id,
       status,
       applied_at,
+      employer_forward_status,
       cover_letter_text,
       seeker_profiles!applications_seeker_id_fkey (
         id,
@@ -325,7 +328,7 @@ export default async function ApplicantsPage({
                             {name}
                           </h3>
                           <StatusBadge status={app.status} />
-                          {fitVerdicts.has(app.id) && <p className="mt-2 rounded-lg bg-primary/5 p-3 text-sm text-text">{fitVerdicts.get(app.id)}</p>}
+                          <ApplicationScreeningVerdict application={app} recorded={fitVerdicts.get(app.id)} />
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-text-light">
                           {seeker?.location && (

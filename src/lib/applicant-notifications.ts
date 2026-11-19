@@ -1,4 +1,5 @@
-import { saveFitVerdict } from './employer-screening/fit-verdict-store'
+import { NOT_SCREENED_TEXT, type NotScreenedReason } from './employer-screening/not-screened'
+import { saveFitVerdict, saveNotScreened } from './employer-screening/fit-verdict-store'
 import { applicantCvPath } from './applicant-cv-path'
 export { applicantCvPath } from './applicant-cv-path'
 import { MAX_CV_EMAIL_ATTACHMENT_BYTES, CV_TYPES, cvExtension } from '@/lib/cv-upload'
@@ -14,10 +15,19 @@ import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
 /** Called only after a verified seeker successfully inserts an application. */
 export async function notifyNewApplicant(applicationId: string, applicantUserId: string, noticeVersion?: unknown): Promise<boolean> {
   // No provider key means no private-file reads or accidental delivery in local builds.
-  if (!process.env.RESEND_API_KEY) return false
+  if (!process.env.RESEND_API_KEY) {
+    await recordNotScreened(applicationId, 'screening_unavailable')
+    await recordEmployerForward(applicationId, false)
+    return false
+  }
   const sent = await forwardApplicationToEmployer(applicationId, applicantUserId, noticeVersion)
   await recordEmployerForward(applicationId, sent)
   return sent
+}
+
+async function recordNotScreened(applicationId: string, reason: NotScreenedReason): Promise<void> {
+  try { await saveNotScreened(createAdminClient(), applicationId, reason) }
+  catch { console.warn('[applicant-notification] Not-screened outcome not recorded') }
 }
 
 /**
@@ -40,6 +50,8 @@ async function recordEmployerForward(applicationId: string, sent: boolean): Prom
 }
 
 async function forwardApplicationToEmployer(applicationId: string, applicantUserId: string, noticeVersion?: unknown): Promise<boolean> {
+  let reason: NotScreenedReason = 'screening_unavailable'
+  let outcomeRecorded = false
   try {
     const db = createAdminClient()
     const { data: application, error: applicationError } = await db.from('applications')
@@ -78,10 +90,11 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
         if (!downloadError && file && file.size > 0 && file.size <= MAX_CV_EMAIL_ATTACHMENT_BYTES) {
           const bytes = Buffer.from(await file.arrayBuffer())
           const extension = cvExtension(path)!
+          if (extension !== 'pdf') reason = 'resume_unreadable'
           if (extension !== 'pdf' || bytes.subarray(0, 5).toString('ascii') === '%PDF-') {
             attachments.push({ filename: resumeFilename(seeker.first_name, seeker.last_name, extension), content: bytes, contentType: CV_TYPES[extension] })
-          }
-        }
+          } else { reason = 'resume_unreadable' }
+        } else if (file && !downloadError) { reason = 'resume_unreadable' }
       } catch { /* Send contact details even when storage is unavailable. */ }
     } else if (!seeker.cv_url) {
       // Apply also accepts resumes made in JobLink's builder. Render the same
@@ -89,6 +102,11 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
       try {
         const { fetchFullCv } = await import('@/lib/cv-helpers')
         const cv = await fetchFullCv(applicantUserId, true)
+        if (!cv) {
+          // fetchFullCv also returns null on query failure; confirm absence explicitly.
+          const { data: profile, error } = await db.from('cv_profiles').select('id').eq('user_id', applicantUserId).maybeSingle()
+          if (!error && !profile) reason = 'no_resume'
+        }
         if (cv?.profile.user_id === applicantUserId) {
           const { createResumeDocument } = await import('@/lib/resume-pdf')
           const { renderToBuffer } = await import('@react-pdf/renderer')
@@ -110,10 +128,24 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
       try {
         screening = await inlineEmployerScreening({ applicationId: application.id, applicantUserId,
           jobId: job.id, companyId: job.company_id, jobTitle: job.title,
-          noticeVersion, simpleFitVerdict: true, resumeBytes: attachments[0]?.contentType === 'application/pdf' ? attachments[0].content : new Uint8Array() }, inlineScreeningDependencies(db))
-      } catch { inlineDiagnostic('enrichment_failed', applicationId) /* Original email still proceeds. */ }
+          noticeVersion, simpleFitVerdict: true, resumeBytes: attachments[0]?.contentType === 'application/pdf' ? attachments[0].content : new Uint8Array() }, { ...inlineScreeningDependencies(db), onDiagnostic: event => {
+          // Only document failures justify unreadable; capacity/provider failures stay generic.
+          if (['pdf_parse_failed', 'pdf_empty', 'pdf_framing_invalid', 'pdf_unsupported'].includes(event)) reason = 'resume_unreadable'
+          else if (event.startsWith('review_v2_') || event.startsWith('provider_') ||
+            ['entry_gates_disabled', 'entry_notice_missing', 'deadline_expired', 'pdf_capacity_unavailable',
+              'pdf_aborted', 'pdf_resolve_failed', 'pdf_module_failed', 'pdf_worker_failed', 'pdf_timeout'].includes(event)) {
+            reason = 'screening_unavailable'
+          }
+        } })
+      } catch { reason = 'screening_unavailable'; inlineDiagnostic('enrichment_failed', applicationId) /* Original email still proceeds. */ }
+    }
+    if (!inlineScreeningEnabled(noticeVersion)) reason = 'screening_unavailable'
+    if (screening.employer_fit_verdict?.verdict === 'unavailable') {
+      screening = { ...screening, employer_fit_verdict: undefined }
     }
     if (screening.employer_fit_verdict) await saveFitVerdict(db, application.id, screening.employer_fit_verdict)
+    else await saveNotScreened(db, application.id, reason)
+    outcomeRecorded = true
     const result = await sendEmail({
       to: recipient,
       type: 'new_applicant',
@@ -122,6 +154,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
       attachments,
       data: {
         ...screening,
+        ...(!screening.employer_fit_verdict ? { employer_not_screened: NOT_SCREENED_TEXT[reason] } : {}),
         applicant_name: name,
         applicant_email: applicantEmail.valid ? applicantEmail.email : null,
         applicant_phone: typeof seeker.phone === 'string' ? seeker.phone.trim().slice(0, 80) : null,
@@ -140,5 +173,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
   } catch {
     console.warn('[applicant-notification] Notification unavailable')
     return false
+  } finally {
+    if (!outcomeRecorded) await recordNotScreened(applicationId, reason)
   }
 }
