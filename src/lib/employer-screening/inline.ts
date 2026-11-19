@@ -49,6 +49,7 @@ export type InlineScreeningInput = Readonly<{
   resumeBytes: Uint8Array
 }>
 export type InlineScreeningDependencies = Readonly<{
+  onDiagnostic?: (event: InlineDiagnosticEvent) => void
   loadProfileResume?: (applicantUserId: string, signal: AbortSignal) => Promise<Uint8Array | null>
   loadBasicProfile?: (applicantUserId: string, signal: AbortSignal) => Promise<BasicProfessionalProfile>
   loadJob(jobId: string, signal: AbortSignal): Promise<unknown>
@@ -137,7 +138,10 @@ const jobSchema = z.object({ id: z.string(), company_id: z.string(), title: z.st
  */
 export async function inlineEmployerScreening(input: InlineScreeningInput, deps: InlineScreeningDependencies): Promise<InlineScreeningFields> {
   const env = deps.env ?? process.env
-  const diagnostic = (event: InlineDiagnosticEvent) => inlineDiagnostic(event, input.applicationId)
+  const diagnostic = (event: InlineDiagnosticEvent) => {
+    inlineDiagnostic(event, input.applicationId)
+    try { deps.onDiagnostic?.(event) } catch { /* Observations cannot affect screening. */ }
+  }
   if (!inlineScreeningEnabled(input.noticeVersion, env)) {
     diagnostic(hasCurrentScreeningNotice(input.noticeVersion) ? 'entry_gates_disabled' : 'entry_notice_missing')
     return {}
@@ -174,7 +178,7 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
     live()
     if (simpleFit && (!parsed || parsed.sourceSha256 === digest)) {
       failureEvent = 'review_v2_failed'
-      const fields = await inlineSimpleFit(input, parsed, deps, deadline, controller.signal, parseFailed)
+      const fields = await inlineSimpleFit(input, parsed, { ...deps, onDiagnostic: diagnostic }, deadline, controller.signal, parseFailed)
       return fields.employer_fit_verdict ? fields : localOnly()
     }
     if (!parsed || parsed.sourceSha256 !== digest) { diagnostic('parse_unavailable'); return localOnly() }

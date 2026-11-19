@@ -3,11 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { loadFitVerdicts, saveFitVerdict } from '../src/lib/employer-screening/fit-verdict-store'
+import { loadFitVerdicts, saveFitVerdict, saveNotScreened } from '../src/lib/employer-screening/fit-verdict-store'
+import { NOT_SCREENED_TEXT } from '../src/lib/employer-screening/not-screened'
 import { UNAVAILABLE_FIT, simpleFitEmailText } from '../src/lib/employer-screening/simple-fit'
 import { loadProfileResume } from '../src/lib/employer-screening/profile-resume'
 
 describe('fit verdict persistence', () => {
+  it.each(Object.keys(NOT_SCREENED_TEXT) as (keyof typeof NOT_SCREENED_TEXT)[])('inserts %s without overwriting an existing outcome', async reason => {
+    const upsert = vi.fn(async () => ({ error: null }))
+    await saveNotScreened({ from: () => ({ upsert }) } as unknown as SupabaseClient, 'app', reason)
+    expect(upsert).toHaveBeenCalledWith({ application_id: 'app', verdict: 'not_screened', verdict_text: NOT_SCREENED_TEXT[reason] }, { onConflict: 'application_id', ignoreDuplicates: true })
+  })
   it('stores exactly the employer email line without resume source material', async () => {
     const upsert = vi.fn(async () => ({ error: null }))
     const db = { from: vi.fn(() => ({ upsert })) } as unknown as SupabaseClient
@@ -16,10 +22,16 @@ describe('fit verdict persistence', () => {
     expect(upsert).toHaveBeenCalledWith({ application_id: 'application', verdict: 'unavailable', verdict_text: simpleFitEmailText(UNAVAILABLE_FIT) }, { onConflict: 'application_id' })
   })
   it('tolerates an absent table and reads persisted lines when present', async () => {
-    const query = vi.fn().mockResolvedValueOnce({ error: { code: '42P01' } }).mockResolvedValueOnce({ data: [{ application_id: 'app', verdict_text: 'Fit check unavailable.' }], error: null })
+    const query = vi.fn().mockResolvedValueOnce({ error: { code: '42P01' } }).mockResolvedValueOnce({ data: [{ application_id: 'app', verdict: 'unavailable', verdict_text: 'Fit check unavailable.' }], error: null })
     const db = { from: () => ({ select: () => ({ in: query }) }) } as unknown as SupabaseClient
     expect(await loadFitVerdicts(db, ['app'])).toEqual(new Map())
-    expect(await loadFitVerdicts(db, ['app'])).toEqual(new Map([['app', 'Fit check unavailable.']]))
+    expect(await loadFitVerdicts(db, ['app'])).toEqual(new Map([['app', { verdict: 'unavailable', text: 'Fit check unavailable.' }]]))
+  })
+  it.each(['good_fit', 'not_a_fit', 'not_enough_information', 'not_screened'])('loads %s with its unchanged display text', async verdict => {
+    const select = vi.fn(() => ({ in: async () => ({ data: [{ application_id: 'app', verdict, verdict_text: 'Recorded text' }], error: null }) }))
+    const db = { from: () => ({ select }) } as unknown as SupabaseClient
+    expect(await loadFitVerdicts(db, ['app'])).toEqual(new Map([['app', { verdict, text: 'Recorded text' }]]))
+    expect(select).toHaveBeenCalledWith('application_id, verdict, verdict_text')
   })
   it('restricts SQL reads to the owner and admin, and writes to service role', async () => {
     const db = new PGlite()
@@ -37,6 +49,8 @@ describe('fit verdict persistence', () => {
         insert into job_listings values ('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001');
         insert into applications values ('00000000-0000-4000-8000-000000000004','00000000-0000-4000-8000-000000000003');`)
       await db.exec(readFileSync('supabase/migrations/20261114020000_application_fit_verdicts.sql', 'utf8'))
+      await db.exec(readFileSync('supabase/migrations/20261116010000_application_not_screened.sql', 'utf8'))
+      await db.exec(`insert into application_fit_verdicts(application_id,verdict,verdict_text) values ('00000000-0000-4000-8000-000000000004','not_screened','Not screened: screening could not be completed for this application.'); delete from application_fit_verdicts;`)
       await db.exec(`set role service_role; insert into application_fit_verdicts(application_id,verdict,verdict_text) values ('00000000-0000-4000-8000-000000000004','unavailable','Fit check unavailable.'); reset role;
         set role authenticated; set test.uid = '00000000-0000-4000-8000-000000000005'; set test.admin = 'false';`)
       expect((await db.query('select * from application_fit_verdicts')).rows).toHaveLength(0)
