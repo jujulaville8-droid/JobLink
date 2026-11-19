@@ -206,6 +206,12 @@ export default async function ApplicantsPage({
       <p className="mt-1 text-sm text-text-light">
         for <span className="font-medium text-text">{listing.title}</span>
       </p>
+      <Link
+        href={`/my-listings/${id}/shortlist`}
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+      >
+        Shortlist
+      </Link>
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
