@@ -335,7 +335,7 @@ describe('exclusive Sol v2 original-email enrichment, offline provider and ledge
     expect(message.idempotencyKey).toBe(`application/${app}/employer`)
     expect(message.attachments[0].content).toEqual(pdf)
     expect(message.data.employer_fit_verdict).toMatchObject({ verdict: 'not_enough_information' })
-    expect(buildEmailHtml('new_applicant', message.data).html).toContain('Not enough information:')
+    expect(buildEmailHtml('new_applicant', message.data).html).toContain('The screener assessed this candidate\'s fit for this job, but the information within the resume was too thin.')
     expect(s.fetcher.mock.invocationCallOrder[1]).toBeLessThan(delivery.send.mock.invocationCallOrder[0])
     expect(unexpectedFetch).not.toHaveBeenCalled()
   }, 10_000)
