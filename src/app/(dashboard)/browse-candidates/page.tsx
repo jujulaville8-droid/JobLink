@@ -3,7 +3,14 @@ import { requireRole } from "@/lib/auth";
 import CandidateFilters from "@/components/CandidateFilters";
 import CandidateProfileCard from "@/components/ui/info-card";
 import { Suspense } from "react";
-import { candidateKeywordFilter, candidateMatchesSkills } from "@/lib/candidate-search";
+import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  buildCandidateHaystack,
+  candidateMatchesQuery,
+  candidateMatchesSkills,
+  tokenizeCandidateQuery,
+  type CandidateSearchCv,
+} from "@/lib/candidate-search";
 
 interface PageProps {
   searchParams: Promise<{
@@ -37,10 +44,6 @@ async function CandidateResults({
     .neq("last_name", "")
     .order("updated_at", { ascending: false });
 
-  if (searchParams.q) {
-    query = query.or(candidateKeywordFilter(searchParams.q));
-  }
-
   if (searchParams.min_exp) {
     query = query.gte("experience_years", parseInt(searchParams.min_exp));
   }
@@ -62,8 +65,63 @@ async function CandidateResults({
     );
   }
 
-  // Client-side skills filter (Supabase array contains is exact match only)
   let filtered = profiles || [];
+  const tokens = tokenizeCandidateQuery(searchParams.q ?? "");
+  if (tokens.length > 0 && filtered.length > 0) {
+    const cvByUserId = new Map<string, CandidateSearchCv>();
+    try {
+      // CV RLS is owner/admin only. Scope privileged reads to eligible profiles
+      // from the session query, and use CV text only for match/no-match.
+      const admin = createAdminClient();
+      const { data: cvProfiles, error: cvError } = await admin
+        .from("cv_profiles")
+        .select("user_id, id, job_title, summary")
+        .in("user_id", filtered.map((profile) => profile.user_id));
+      if (cvError) throw cvError;
+
+      if (cvProfiles?.length) {
+        const cvIds = cvProfiles.map((cv) => cv.id);
+        const [workResult, skillsResult] = await Promise.all([
+          admin.from("cv_work_experiences")
+            .select("cv_profile_id, job_title, company_name")
+            .in("cv_profile_id", cvIds),
+          admin.from("cv_skills")
+            .select("cv_profile_id, name")
+            .in("cv_profile_id", cvIds),
+        ]);
+        if (workResult.error) throw workResult.error;
+        if (skillsResult.error) throw skillsResult.error;
+
+        const cvById = new Map<string, CandidateSearchCv>();
+        for (const cv of cvProfiles) {
+          const text: CandidateSearchCv = {
+            job_title: cv.job_title,
+            summary: cv.summary,
+            work_experiences: [],
+            skills: [],
+          };
+          cvById.set(cv.id, text);
+          cvByUserId.set(cv.user_id, text);
+        }
+        for (const work of workResult.data ?? []) {
+          cvById.get(work.cv_profile_id)?.work_experiences?.push(work);
+        }
+        for (const skill of skillsResult.data ?? []) {
+          cvById.get(skill.cv_profile_id)?.skills?.push(skill);
+        }
+      }
+    } catch {
+      // An unavailable CV lookup must not prevent profile-only search.
+      cvByUserId.clear();
+    }
+
+    filtered = filtered.filter((profile) => candidateMatchesQuery(
+      buildCandidateHaystack(profile, cvByUserId.get(profile.user_id)),
+      tokens,
+    ));
+  }
+
+  // Client-side skills filter (Supabase array contains is exact match only)
   if (searchParams.skills) {
     const searchSkills = searchParams.skills
       .split(",")
