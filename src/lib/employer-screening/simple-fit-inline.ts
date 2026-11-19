@@ -4,14 +4,21 @@ import type { InlineScreeningDependencies, InlineScreeningFields, InlineScreenin
 import type { PdfResumeExtraction } from './pdf-extraction'
 import { extractPdfResume, PDF_EXTRACTION_LIMITS } from './pdf-extraction'
 import { projectProfessionalResume, getProfessionalResumeContext } from './professional-projection'
-import { projectBasicProfile } from './basic-profile'
 import { derivePublishedJobCriteria } from './inline-job-criteria'
 import { isSafePublishedJobClause } from './inline-job-context'
 import { isScorableCriterion, type ReviewV2Context } from './review-v2'
 import { runSolSimpleFit } from './review-v2-provider'
 import { INSUFFICIENT_FIT, UNAVAILABLE_FIT } from './simple-fit'
 
-/** Called only behind the existing inline, narrative and paid v2 gates. */
+/** Called only behind the existing inline, narrative and paid v2 gates.
+ * The verdict rests on the applicant's résumé alone: the document supplied
+ * with the application first, then the profile résumé file, in that order.
+ * Text extraction is tried first; when it yields nothing the projection can
+ * use, the vision transcription of the same document is projected instead,
+ * so the model judges the résumé's own text either way. Profile fields (bio,
+ * declared skills, builder entries) are never screening evidence: when no
+ * résumé text can be obtained at all, the outcome is
+ * not_enough_information, never a judgement of the profile. */
 export async function inlineSimpleFit(input: InlineScreeningInput, parsed: PdfResumeExtraction | null,
   deps: InlineScreeningDependencies, deadline: number, signal: AbortSignal, initialSourceFailed = false): Promise<InlineScreeningFields> {
   const env = deps.env ?? process.env, now = deps.now ?? Date.now
@@ -32,7 +39,7 @@ export async function inlineSimpleFit(input: InlineScreeningInput, parsed: PdfRe
       if (extraction?.sourceSha256 === digest) { resume = project(extraction); sourceSha256 = digest }
     } catch { live() }
   }
-  if (!resume && !sourceFailed && input.resumeBytes.byteLength) await vision(input.resumeBytes)
+  if (!resume && input.resumeBytes.byteLength) await vision(input.resumeBytes)
   if (!resume && deps.loadProfileResume) {
     try {
       const bytes = await deps.loadProfileResume(input.applicantUserId, signal)
@@ -49,13 +56,6 @@ export async function inlineSimpleFit(input: InlineScreeningInput, parsed: PdfRe
         if (pdf?.sourceSha256 === digest) { resume = project(pdf); sourceSha256 = digest }
         if (!resume) await vision(bytes)
       }
-    } catch { sourceFailed = true; live() }
-  }
-  if (!resume && deps.loadBasicProfile) {
-    try {
-      resume = projectBasicProfile(await deps.loadBasicProfile(input.applicantUserId, signal))
-      live()
-      if (resume) sourceSha256 = createHash('sha256').update(JSON.stringify(resume)).digest('hex')
     } catch { sourceFailed = true; live() }
   }
   if (!resume || !sourceSha256) return { employer_fit_verdict: sourceFailed ? UNAVAILABLE_FIT : INSUFFICIENT_FIT }
