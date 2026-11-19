@@ -1232,6 +1232,111 @@ describe.each([
   });
 });
 
+const NOVEMBER_19_EVIDENCE = 'Julian confirmed employer agreed to post, Nov 19 2026';
+
+describe.each([
+  ['c8dfdd1c-4146-4755-b8ef-d7a4e857536c', '7c6c839e-2de8-4737-94e6-2cf0a2e3c039', 'Shef Spice Restaurant & Sports Bar', 'Cook', '2026-11-19T16:10:25.137364Z', "St. Johnston's Village, Antigua", "St. Johnston's Village", null, 'Food & Beverage'],
+  ['0e8fa356-3fe7-436e-82ed-1643e81fd51f', '3477c23b-1e11-4e0d-b54c-74112b690ea1', 'Paperclips Antigua', 'Warehouse Attendant', '2026-11-19T16:34:18.253277Z', "Royal Palm Place, Friars Hill Road, St. John's, Antigua", "Royal Palm Place, Friars Hill Road, St. John's", 'Saint John', 'Retail & Trade'],
+  ['82373c72-efa7-4201-af60-4d10e60cd85e', '3477c23b-1e11-4e0d-b54c-74112b690ea1', 'Paperclips Antigua', 'Delivery Driver', '2026-11-19T16:34:44.717645Z', "Royal Palm Place, Friars Hill Road, St. John's, Antigua", "Royal Palm Place, Friars Hill Road, St. John's", 'Saint John', 'Retail & Trade'],
+  ['75e6b3e4-c64a-4caf-aee3-ada51c66eaec', '8f89c5a4-ce17-402a-8152-cde2dc9ff865', 'Tropical Adventures', 'Senior Accountant', '2026-11-19T18:44:41.599529Z', "St. John's, Antigua", "St. John's", 'Saint John', null],
+] as const)('%s November 19 vacancy-scoped allowlist', (jobId, companyId, companyName, title, createdAt, companyLocation, locality, region, industry) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-19T20:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = companyLocation;
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+      contact_email?: string;
+      contact_phone?: string;
+    };
+    company.industry = industry;
+    company.contact_email = 'hidden-contact@example.com';
+    company.contact_phone = '268-555-0100';
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = `Hiring for this ${title} vacancy.`;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting for only the recorded vacancy without a deadline, pay, or contact details', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-19', evidenceReference: NOVEMBER_19_EVIDENCE,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.hiringOrganization).not.toHaveProperty('logo');
+    expect(schema.hiringOrganization).not.toHaveProperty('sameAs');
+    expect(schema.hiringOrganization).not.toHaveProperty('description');
+    expect(schema.jobLocation.address.addressCountry).toBe('AG');
+    if (locality) expect(schema.jobLocation.address.addressLocality).toBe(locality);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
+    if (region) expect(schema.jobLocation.address.addressRegion).toBe(region);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    if (industry) expect(schema.industry).toBe(industry);
+    else expect(schema).not.toHaveProperty('industry');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.datePosted).not.toBe('2026-11-19');
+    const markup = JSON.stringify(schema);
+    expect(markup).not.toContain('hidden-contact@example.com');
+    expect(markup).not.toContain('268-555-0100');
+    expect(markup).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(schema.description).toBe(`<p>Hiring for this ${title} vacancy.</p>`);
+    const html = await pageHtml();
+    expect(html).toContain(`Hiring for this ${title} vacancy.`);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
 const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/131';
 
 describe.each([

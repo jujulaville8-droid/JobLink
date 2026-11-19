@@ -62,6 +62,46 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     attestedOn: "2026-11-12",
     evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/131",
   },
+  // Shef Spice Restaurant & Sports Bar: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Cook vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "c8dfdd1c-4146-4755-b8ef-d7a4e857536c": {
+    companyId: "7c6c839e-2de8-4737-94e6-2cf0a2e3c039",
+    companyName: "Shef Spice Restaurant & Sports Bar",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Paperclips Antigua: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Warehouse Attendant vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "0e8fa356-3fe7-436e-82ed-1643e81fd51f": {
+    companyId: "3477c23b-1e11-4e0d-b54c-74112b690ea1",
+    companyName: "Paperclips Antigua",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Paperclips Antigua: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Delivery Driver vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "82373c72-efa7-4201-af60-4d10e60cd85e": {
+    companyId: "3477c23b-1e11-4e0d-b54c-74112b690ea1",
+    companyName: "Paperclips Antigua",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Tropical Adventures: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Senior Accountant vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "75e6b3e4-c64a-4caf-aee3-ada51c66eaec": {
+    companyId: "8f89c5a4-ce17-402a-8152-cde2dc9ff865",
+    companyName: "Tropical Adventures",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
   // Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10).
   // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
   "59c908d2-3c33-4c3d-be61-2a37bce19823": {

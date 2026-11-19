@@ -529,6 +529,56 @@ in America/Antigua, so the creation date in the evidence line stands.
 | --- | --- | --- | --- | --- |
 | Mamma Mia Restaurant & Sunset on the Shore — Line Chef | `59c908d2-3c33-4c3d-be61-2a37bce19823` | `766725b8-2f44-435c-b93b-4a4122f211f8` | 2026-11-11 | Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10). |
 
+## November 19, 2026 vacancy-scoped allowlist (Shef Spice Restaurant & Sports Bar, Paperclips Antigua, Tropical Adventures)
+
+This change records four vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
+each bound to both the job ID and that job's company ID. No company-wide
+permission is claimed. Julian confirmed employer agreed to post, Nov 19 2026.
+No email address, phone number, or message content is copied here. No closure
+entry is added. Stored listing content, status and the application route are
+unchanged; no database writes.
+
+All four listings are active and admin-posted, and none is confidential. Each
+public page names the employer and links to that company profile. `job_type`
+is `full_time`, and the page shows Full Time. None of the stored descriptions
+states that the role is full-time, so each record sets
+`employmentTypeUnconfirmed`. On current main that flag omits `employmentType`.
+None has a salary amount, benefits, or a deadline (`expires_at` is null), so
+no `baseSalary`, `jobBenefits`, or `validThrough` is emitted. `datePosted`
+stays the stored `created_at`. Each of those timestamps is still 2026-11-19 in
+America/Antigua.
+
+Company ids are the ids on the live "View company profile" links, and they
+match each listing's stored `company_id`. Each company row has a notification
+email and no phone. The job page does not select either field, and neither is
+copied into JobPosting. The public descriptions have no email address and no
+phone number.
+
+Shef Spice Restaurant & Sports Bar has no logo, website, or company
+description, so those organization fields are omitted. Its industry is Food &
+Beverage. The job has no location of its own; the company address is St.
+Johnston's Village, Antigua. That place is not a mapped parish, so the address
+is locality St. Johnston's Village and country AG, with no region, street, or
+postal code.
+
+Both Paperclips Antigua vacancies share company
+`3477c23b-1e11-4e0d-b54c-74112b690ea1`. The stored logo is included as
+`hiringOrganization.logo`. There is no website or company description.
+Industry is Retail & Trade. The company address is Royal Palm Place, Friars
+Hill Road, St. John's, Antigua, so the address is that locality, region Saint
+John, and country AG, with no street or postal code split out of the text.
+
+Tropical Adventures has a stored logo and no website, industry, or company
+description. The company address is St. John's, Antigua, so the address is
+locality St. John's, region Saint John, and country AG.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Shef Spice Restaurant & Sports Bar — Cook | `c8dfdd1c-4146-4755-b8ef-d7a4e857536c` | `7c6c839e-2de8-4737-94e6-2cf0a2e3c039` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Paperclips Antigua — Warehouse Attendant | `0e8fa356-3fe7-436e-82ed-1643e81fd51f` | `3477c23b-1e11-4e0d-b54c-74112b690ea1` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Paperclips Antigua — Delivery Driver | `82373c72-efa7-4201-af60-4d10e60cd85e` | `3477c23b-1e11-4e0d-b54c-74112b690ea1` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Tropical Adventures — Senior Accountant | `75e6b3e4-c64a-4caf-aee3-ada51c66eaec` | `8f89c5a4-ce17-402a-8152-cde2dc9ff865` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+
 ## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
 
 [This PR](https://github.com/jujulaville8-droid/JobLink/pull/131) records two vacancy-scoped entries in
