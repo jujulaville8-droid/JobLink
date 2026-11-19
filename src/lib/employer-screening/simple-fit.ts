@@ -55,14 +55,13 @@ Use good_fit only when actual work evidence supports the decisive requirements; 
     },
   }
 }
-const labels = { good_fit: 'Good fit', not_a_fit: 'Not a fit', not_enough_information: 'Not enough information' }
 export function simpleFitEmailText(input: unknown): string {
   if (input && typeof input === 'object' && 'verdict' in input && input.verdict === 'unavailable') return UNAVAILABLE_FIT.reason
   const parsed = schema.safeParse(input)
   const result = parsed.success ? parsed.data : INSUFFICIENT_FIT
   if (result.verdict === 'good_fit') return `This person is a good fit because ${result.reason.charAt(0).toLowerCase()}${result.reason.slice(1)}`
   if (result.verdict === 'not_a_fit') return 'This person does not have the experience for this job.'
-  return `${labels[result.verdict]}: ${result.reason}`
+  return 'The screener assessed this candidate\'s fit for this job, but the information within the resume was too thin.'
 }
 export function simpleFitEmailSection(input: unknown): string {
   const text = simpleFitEmailText(input).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')

@@ -33,7 +33,7 @@ describe('simple fit validation and rendering', () => {
   it('canonicalizes insufficient information and safely handles invalid renderer input', () => {
     expect(validateSimpleFit(context(), { ...INSUFFICIENT_FIT, reason: 'Unknown.' })).toEqual(INSUFFICIENT_FIT)
     expect(simpleFitEmailSection({ ...good, reason: '<script>alert(1)</script>' })).not.toContain('<script>')
-    expect(simpleFitEmailText(null)).toContain('Not enough information:')
+    expect(simpleFitEmailText(null)).toBe('The screener assessed this candidate\'s fit for this job, but the information within the resume was too thin.')
   })
   it('rejects invented citations and skill-only positives while assessing safe partial job context', () => {
     expect(() => validateSimpleFit(context(), { ...good, sourceIds: ['r9'] })).toThrow('citations')
