@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth";
 import CandidateFilters from "@/components/CandidateFilters";
 import CandidateProfileCard from "@/components/ui/info-card";
 import { Suspense } from "react";
-import { ilikePattern } from "@/lib/safe-sql";
+import { candidateKeywordFilter, candidateMatchesSkills } from "@/lib/candidate-search";
 
 interface PageProps {
   searchParams: Promise<{
@@ -38,10 +38,7 @@ async function CandidateResults({
     .order("updated_at", { ascending: false });
 
   if (searchParams.q) {
-    const keyword = ilikePattern(searchParams.q);
-    query = query.or(
-      `first_name.ilike.${keyword},last_name.ilike.${keyword},bio.ilike.${keyword}`
-    );
+    query = query.or(candidateKeywordFilter(searchParams.q));
   }
 
   if (searchParams.min_exp) {
@@ -74,9 +71,7 @@ async function CandidateResults({
       .filter(Boolean);
     if (searchSkills.length > 0) {
       filtered = filtered.filter((p) =>
-        p.skills?.some((skill: string) =>
-          searchSkills.some((s) => skill.toLowerCase().includes(s))
-        )
+        candidateMatchesSkills(p, searchSkills)
       );
     }
   }
