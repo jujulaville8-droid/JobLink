@@ -21,6 +21,6 @@ export async function GET() {
 // Preserve existing order reads and fulfillment, but never create new paid-service intake.
 export async function POST(request: Request) {
   const auth = await writingOwner(); if ('error' in auth) return auth.error;
-  if (!writingSameOrigin(request)) return writingJson({ error: 'Use the JobLink consultation page.' }, 403);
-  return writingJson({ error: 'New résumé orders have been retired. Book a consultation instead.' }, 410);
+  if (!writingSameOrigin(request)) return writingJson({ error: 'Use the JobLink résumé page.' }, 403);
+  return writingJson({ error: 'New résumé orders have been retired.' }, 410);
 }

@@ -5,7 +5,7 @@ import ResumeWritingOffer from '@/components/cv/studio/ResumeWritingOffer';
 import { getApplicationReturnTo } from '@/lib/return-to';
 
 export const dynamic='force-dynamic';
-export const metadata={title:'Résumé consultation',robots:{index:false,follow:false}};
+export const metadata={title:'Résumé help',robots:{index:false,follow:false}};
 export default async function ResumeWritingPage({searchParams}:{searchParams:Promise<{order?:string;application?:string;requests?:string}>}) {
   const query=await searchParams;
   const applicationReturnTo = getApplicationReturnTo(query.application);

@@ -23,16 +23,13 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe('premium resume workspace', () => {
-  it('offers consultation without saving or losing the free builder draft', async () => {
+  it('offers résumé help without consultation booking, saving or losing the free builder draft', async () => {
     const user = userEvent.setup(); render(<ResumeStudio />);
     const summary = await screen.findByLabelText('Professional summary');
     fireEvent.change(summary, { target: { value: 'Keep my unsaved builder draft' } });
-    const call = screen.getByRole('link', { name: 'Book a consultation' });
-    expect(screen.getByRole('region', { name: 'Résumé consultation' }).compareDocumentPosition(screen.getByRole('region', { name: 'Resume editor' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Book a consultation' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Résumé help' }).compareDocumentPosition(screen.getByRole('region', { name: 'Resume editor' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole('link', { name: 'View existing résumé requests' })).toBeTruthy();
-    expect(call.getAttribute('target')).toBe('_blank');
-    call.addEventListener('click', event => event.preventDefault());
-    await user.click(call); await user.click(call);
     expect((summary as HTMLTextAreaElement).value).toBe('Keep my unsaved builder draft');
     expect(screen.getByRole('status').textContent).toContain('Unsaved changes');
     expect(vi.mocked(fetch).mock.calls.every(([url, init]) => url !== '/api/resume-writing/orders' && !init?.method)).toBe(true);
