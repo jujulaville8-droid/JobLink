@@ -1,3 +1,6 @@
+import JobCompanyCluster from "@/components/JobCompanyCluster";
+import { groupJobs, type GroupedJob } from "@/lib/job-grouping";
+import { closedJobIdFilter } from "@/lib/job-closures";
 import { listingEmployerName } from "@/lib/confidential-employer";
 import { jobCategoryFilter, knownJobCategory } from "@/lib/job-category";
 import JobCard, { Job } from "@/components/JobCard";
@@ -23,6 +26,7 @@ export default async function JobResults({
   gridClassName = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4",
   split,
 }: JobResultsProps) {
+  const groupingApplies = !!split && !searchParams.q && !searchParams.location && !searchParams.job_type && !searchParams.category;
   searchParams = { ...searchParams, category: jobCategoryFilter(searchParams.category) };
   const category = knownJobCategory(searchParams.category);
   // /jobs validates pagination before its streaming shell. Keep the protected
@@ -123,17 +127,20 @@ export default async function JobResults({
       company_name: string;
       logo_url: string | null;
       is_pro: boolean;
+      is_confidential?: boolean;
       location?: string | null;
     } | null;
 
+    const confidential = job.is_confidential === true || company?.is_confidential === true;
     return {
       id: job.id,
+      company_id: confidential ? null : company?.id ?? null,
       title: job.title,
       company_name: listingEmployerName(job.is_confidential, company, "Company"),
-      company_logo: job.is_confidential ? null : company?.logo_url || null,
-      is_confidential: job.is_confidential === true,
+      company_logo: confidential ? null : company?.logo_url || null,
+      is_confidential: confidential,
       location: job.location,
-      company_location: job.is_confidential ? null : company?.location ?? null,
+      company_location: confidential ? null : company?.location ?? null,
       job_type: job.job_type,
       salary_min: job.salary_min,
       salary_max: job.salary_max,
@@ -151,6 +158,28 @@ export default async function JobResults({
     const bPro = b.is_featured || b.is_pro_company ? 1 : 0;
     return bPro - aPro;
   });
+
+  let items: GroupedJob[] = mappedJobs.map((job) => ({ type: "job", job }));
+  if (groupingApplies) {
+    const companyIds = [...new Set(mappedJobs.flatMap((job) => job.company_id ? [job.company_id] : []))];
+    if (companyIds.length) {
+      const { data: totalsRows, error: totalsError } = await supabase
+        .from("job_listings")
+        .select("company_id")
+        .eq("status", "active")
+        .eq("is_confidential", false)
+        .in("company_id", companyIds)
+        .not("id", "in", closedJobIdFilter());
+      // Keep cards flat if totals are unavailable rather than understate a total.
+      if (!totalsError && totalsRows) {
+        const totals = new Map<string, number>();
+        for (const row of totalsRows) {
+          if (row.company_id) totals.set(row.company_id, (totals.get(row.company_id) ?? 0) + 1);
+        }
+        items = groupJobs(mappedJobs, totals);
+      }
+    }
+  }
 
   const selectedId = split ? split.selectedId ?? mappedJobs[0]?.id : undefined;
   const selectHref = (id: string) => `/jobs?${split?.query ? `${split.query}&` : ""}job=${encodeURIComponent(id)}`;
@@ -173,7 +202,15 @@ export default async function JobResults({
         />
       </div>
       <div className={`${gridClassName} stagger-children`}>
-        {mappedJobs.map((job) => (
+        {items.map((item) => {
+          if (item.type === "cluster") return (
+            <JobCompanyCluster key={item.company.id} {...item}
+              defaultExpanded={item.jobs.some((job) => job.id === selectedId)}
+              selectedId={selectedId} query={split?.query}
+              savedJobIds={[...savedJobIds]} loggedIn={!!user} />
+          );
+          const job = item.job;
+          return (
           <JobCard
             key={job.id}
             job={job}
@@ -182,7 +219,8 @@ export default async function JobResults({
             highlight
             {...(split ? { selectHref: selectHref(job.id), selected: job.id === selectedId } : {})}
           />
-        ))}
+        );
+        })}
       </div>
       <Pagination currentPage={currentPage} totalPages={totalPages} />
     </div>
