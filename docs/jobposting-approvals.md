@@ -529,22 +529,22 @@ in America/Antigua, so the creation date in the evidence line stands.
 | --- | --- | --- | --- | --- |
 | Mamma Mia Restaurant & Sunset on the Shore — Line Chef | `59c908d2-3c33-4c3d-be61-2a37bce19823` | `766725b8-2f44-435c-b93b-4a4122f211f8` | 2026-11-11 | Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10). |
 
-## November 19, 2026 vacancy-scoped allowlist (Shef Spice Restaurant & Sports Bar, Paperclips Antigua, Tropical Adventures)
+## November 19, 2026 vacancy-scoped allowlist (Shef Spice Restaurant & Sports Bar, Paperclips Antigua, Tropical Adventures, Antigua and Barbuda Football Association)
 
-This change records four vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
+This change records five vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
 each bound to both the job ID and that job's company ID. No company-wide
 permission is claimed. Julian confirmed employer agreed to post, Nov 19 2026.
 No email address, phone number, or message content is copied here. No closure
 entry is added. Stored listing content, status and the application route are
 unchanged; no database writes.
 
-All four listings are active and admin-posted, and none is confidential. Each
+All five listings are active and admin-posted, and none is confidential. Each
 public page names the employer and links to that company profile. `job_type`
 is `full_time`, and the page shows Full Time. None of the stored descriptions
 states that the role is full-time, so each record sets
 `employmentTypeUnconfirmed`. On current main that flag omits `employmentType`.
-None has a salary amount, benefits, or a deadline (`expires_at` is null), so
-no `baseSalary`, `jobBenefits`, or `validThrough` is emitted. `datePosted`
+None has a salary amount or benefits, and `expires_at` is null, so no
+`baseSalary`, `jobBenefits`, or `validThrough` is emitted. `datePosted`
 stays the stored `created_at`. Each of those timestamps is still 2026-11-19 in
 America/Antigua.
 
@@ -578,6 +578,20 @@ locality St. John's, region Saint John, and country AG.
 | Paperclips Antigua — Warehouse Attendant | `0e8fa356-3fe7-436e-82ed-1643e81fd51f` | `3477c23b-1e11-4e0d-b54c-74112b690ea1` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
 | Paperclips Antigua — Delivery Driver | `82373c72-efa7-4201-af60-4d10e60cd85e` | `3477c23b-1e11-4e0d-b54c-74112b690ea1` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
 | Tropical Adventures — Senior Accountant | `75e6b3e4-c64a-4caf-aee3-ada51c66eaec` | `8f89c5a4-ce17-402a-8152-cde2dc9ff865` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Antigua and Barbuda Football Association (ABFA) — Assistant General Secretary | `3339cbaa-e3d1-4b4c-a634-45381e48f99e` | `ceed78ec-be65-4a6e-b085-4e415991017a` | 2026-11-19 | Julian confirmed employer (ABFA General Secretary) agreed by email, Nov 19 2026 |
+
+The ABFA listing is the same kind of vacancy-scoped approval. It is active,
+admin-posted, and not confidential. `created_at` is
+`2026-11-19 21:31:33.581388+00`, still 2026-11-19 in America/Antigua. The
+stored description does not state that the role is full-time, so
+`employmentTypeUnconfirmed` is set. There is no salary amount and benefits are
+empty. `expires_at` is null, and this vacancy is not in the public-deadline
+map, so no `validThrough` is emitted. The stored description does contain an
+application-deadline sentence; that sentence is left as stored text and is not
+copied into `validThrough`. The company address is Paynters, St. George,
+Antigua, so the address is locality Paynters, St. George, region Saint George,
+and country AG. A stored logo is included. Website, industry, and company
+description are absent.
 
 ## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
 

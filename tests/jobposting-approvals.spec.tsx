@@ -1337,6 +1337,95 @@ describe.each([
   });
 });
 
+const ABFA_EVIDENCE = 'Julian confirmed employer (ABFA General Secretary) agreed by email, Nov 19 2026';
+
+describe('3339cbaa-e3d1-4b4c-a634-45381e48f99e November 19 ABFA vacancy-scoped allowlist', () => {
+  const jobId = '3339cbaa-e3d1-4b4c-a634-45381e48f99e';
+  const companyId = 'ceed78ec-be65-4a6e-b085-4e415991017a';
+  const companyName = 'Antigua and Barbuda Football Association (ABFA)';
+  const title = 'Assistant General Secretary';
+  const createdAt = '2026-11-19T21:31:33.581388Z';
+  const deadlineSentence = 'The deadline for applications is Friday, December 4, 2026 at 4:00 p.m.';
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-19T22:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = 'Paynters, St. George, Antigua';
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+    };
+    company.industry = null;
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = `ABFA is hiring an ${title}.\n\n${deadlineSentence}`;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting without validThrough while expires_at is null', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-19', evidenceReference: ABFA_EVIDENCE,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.jobLocation.address).toEqual({
+      '@type': 'PostalAddress',
+      addressLocality: 'Paynters, St. George',
+      addressRegion: 'Saint George',
+      addressCountry: 'AG',
+    });
+    expect(schema).not.toHaveProperty('industry');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.description).toContain(deadlineSentence);
+    expect(JSON.stringify(schema)).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const html = await pageHtml();
+    expect(html).toContain(deadlineSentence);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+});
+
 const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/131';
 
 describe.each([

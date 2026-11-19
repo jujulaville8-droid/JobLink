@@ -102,6 +102,17 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
     employmentTypeUnconfirmed: true,
   },
+  // Antigua and Barbuda Football Association (ABFA): vacancy-scoped approval for
+  // this Assistant General Secretary listing only. Not confidential.
+  // Full Time is the stored job type; the description does not state it.
+  // expires_at is null, so no validThrough is recorded here.
+  "3339cbaa-e3d1-4b4c-a634-45381e48f99e": {
+    companyId: "ceed78ec-be65-4a6e-b085-4e415991017a",
+    companyName: "Antigua and Barbuda Football Association (ABFA)",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer (ABFA General Secretary) agreed by email, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
   // Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10).
   // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
   "59c908d2-3c33-4c3d-be61-2a37bce19823": {
