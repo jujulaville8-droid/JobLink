@@ -7,6 +7,8 @@ import { inlineEmployerScreening, INLINE_SCREENING_GATES, INLINE_SCREENING_BUDGE
 import { SOL_REVIEW_MODEL, type SolReviewBudgetStore } from '../src/lib/employer-screening/review-v2-provider'
 import { SCREENING_NOTICE_VERSION } from '../src/lib/employer-screening/notice'
 import { reservedCostMicrousd } from '../src/lib/employer-screening/provider'
+import { extractResumeFromTranscribedPages } from '../src/lib/employer-screening/pdf-extraction'
+import { simpleFitEmailText } from '../src/lib/employer-screening/simple-fit'
 import { buildEmailHtml } from '../src/lib/email-templates'
 import { SYNTHETIC_REVIEW_PAGE, syntheticReviewContext, syntheticReviewRaw } from './fixtures/resume-review-v2'
 import { builderScreeningFixture } from './fixtures/builder-screening'
@@ -346,6 +348,45 @@ describe('simple fit inline enrichment', () => {
   const fitInput = () => ({ ...input(), simpleFitVerdict: true })
   const good = { verdict: 'good_fit', reason: 'The applicant reports customer service work relevant to this role.',
     sourceIds: ['r1'], criterionIds: ['c1'], gapQuote: null }
+  it('uses transcribed image-only applied PDF work records in the fit provider', async () => {
+    const PDFDocument = createRequire(import.meta.url)('pdfkit')
+    const doc = new PDFDocument(), chunks: Buffer[] = []
+    const ready = new Promise<Uint8Array>(resolve => {
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk))
+      doc.on('end', () => resolve(Buffer.concat(chunks)))
+    })
+    doc.rect(30, 30, 60, 60).fill('#aabbcc'); doc.end()
+    const imagePdf = await ready, s = setup(good)
+    s.deps.extract = vi.fn(async () => null)
+    s.deps.extractVision = vi.fn(async b => extractResumeFromTranscribedPages([SYNTHETIC_REVIEW_PAGE], hash(b)))
+    s.deps.loadBasicProfile = vi.fn()
+    expect(await inlineEmployerScreening({ ...fitInput(), resumeBytes: imagePdf }, s.deps)).toEqual({ employer_fit_verdict: good })
+    expect(s.deps.extractVision).toHaveBeenCalledWith(imagePdf, expect.any(AbortSignal))
+    expect(s.deps.loadBasicProfile).not.toHaveBeenCalled()
+    const request = JSON.parse(String(s.fetcher.mock.calls[1][1]!.body))
+    const context = JSON.parse(request.input[0].content[0].text)
+    expect(context.resume.records.some((row: { section: string }) => row.section === 'work')).toBe(true)
+    expect(JSON.stringify(context.resume)).toContain('customer')
+  })
+  it('keeps the basic-profile fallback and exact NEI sentence after vision failure', async () => {
+    const s = setup(good)
+    s.deps.extract = vi.fn(async () => null)
+    s.deps.extractVision = vi.fn(async () => null)
+    s.deps.loadBasicProfile = vi.fn(async () => ({}))
+    const result = await inlineEmployerScreening(fitInput(), s.deps)
+    expect(s.deps.extractVision).toHaveBeenCalledOnce()
+    expect(s.deps.loadBasicProfile).toHaveBeenCalledOnce()
+    expect(simpleFitEmailText(result.employer_fit_verdict)).toBe("The screener assessed this candidate's fit for this job, but the information within the resume was too thin.")
+    expect(s.fetcher).not.toHaveBeenCalled()
+  })
+  it.each(['%PDF-profile', '\xff\xd8\xffprofile'])('uses profile vision after text when appropriate: %s', async magic => {
+    const s = setup(good), profileBytes = Buffer.from(magic, 'latin1')
+    s.deps.extract = vi.fn(async () => null)
+    s.deps.loadProfileResume = vi.fn(async () => profileBytes)
+    s.deps.extractVision = vi.fn(async b => b === profileBytes ? extractResumeFromTranscribedPages([SYNTHETIC_REVIEW_PAGE], hash(b)) : null)
+    expect(await inlineEmployerScreening(fitInput(), s.deps)).toEqual({ employer_fit_verdict: good })
+    expect(s.deps.extract).toHaveBeenCalledTimes(magic.startsWith('%PDF-') ? 2 : 1)
+  })
   it('reuses the counted provider call and ledger for one verdict without scores', async () => {
     const s = setup(good)
     const fields = await inlineEmployerScreening(fitInput(), s.deps)

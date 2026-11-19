@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { loadProfileResume } from '../src/lib/employer-screening/profile-resume'
 import { loadBasicProfile, projectBasicProfile } from '../src/lib/employer-screening/basic-profile'
 import { INSUFFICIENT_FIT, simpleFitEmailSection, simpleFitEmailText, validateSimpleFit } from '../src/lib/employer-screening/simple-fit'
 import { buildEmailHtml } from '../src/lib/email-templates'
@@ -94,5 +95,23 @@ describe('visible work history and independent field admission', () => {
     expect(profile.records[0].text).toBe('Work history title: Chef')
     expect(profile.records).toHaveLength(21)
     expect(JSON.stringify(profile)).not.toContain('555')
+  })
+})
+
+describe('profile resume format admission', () => {
+  it.each([
+    ['pdf', '%PDF-accepted', true], ['jpg', '\xff\xd8\xffimage', true],
+    ['jpeg', '\xff\xd8\xffimage', true], ['png', '\x89PNGimage', true],
+    ['png', '%PDF-mismatch', false], ['pdf', '\xff\xd8\xffimage', false], ['docx', '%PDF-unsupported', false],
+  ])('binds %s to matching magic bytes', async (extension, magic, accepted) => {
+    const user = '11111111-1111-4111-8111-111111111111'
+    const bytes = Buffer.from(magic, 'latin1')
+    const query = { select: () => query, eq: () => query, abortSignal: () => query,
+      maybeSingle: async () => ({ data: { cv_url: `${user}/cv.${extension}` }, error: null }) }
+    const download = vi.fn(async () => ({ data: new Blob([bytes]), error: null }))
+    const db = { from: () => query, storage: { from: () => ({ download }) } } as unknown as SupabaseClient
+    const result = await loadProfileResume(db, user, new AbortController().signal)
+    expect(result).toEqual(accepted ? new Uint8Array(bytes) : null)
+    if (extension === 'docx') expect(download).not.toHaveBeenCalled()
   })
 })

@@ -599,3 +599,15 @@ export async function extractPdfResume(input: Uint8Array, options: PdfExtraction
     localPages: Object.freeze([...parsed.pages]),
   })
 }
+
+/** Local-only transcription follows exactly the same minimization as PDF text. */
+export function extractResumeFromTranscribedPages(pages: readonly string[], sourceSha256: string): PdfResumeExtraction | null {
+  const parsed = parsedPdfSchema.safeParse({ pages, sourceSha256 })
+  if (!parsed.success) return null
+  let extraction: MinimizedExtraction | null = null
+  try { extraction = minimizeResumePages(parsed.data.pages, sourceSha256) } catch { /* Preserve local pages for projection. */ }
+  return Object.freeze({
+    ...(extraction ?? { sourceSha256, evidence: [], context: [], omittedContext: true }),
+    localPages: Object.freeze([...parsed.data.pages]),
+  })
+}

@@ -10,10 +10,13 @@ export interface CvBackfillStore {
   remaining(): Promise<number>
 }
 
-export async function runCvBatch(store: CvBackfillStore) {
+export async function runCvBatch(store: CvBackfillStore, options: { now?: () => number } = {}) {
+  const now = options.now ?? Date.now
+  const started = now()
   const counts: Record<CvParseStatus, number> = { parsed: 0, no_cv: 0, unreadable: 0, empty: 0, pending: 0 }
   let skipped = 0
   for (const profile of (await store.pending()).slice(0, CV_BATCH_SIZE)) {
+    if (now() - started >= 140_000) break
     if (profile.cv_parse_status !== 'pending') { skipped++; continue }
     // Sequential extraction is below the shared extractor's concurrency limit of 2.
     const result = await parseSeekerCv(profile, store.download)

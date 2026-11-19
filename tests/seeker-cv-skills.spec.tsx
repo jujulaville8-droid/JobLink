@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import { describe, expect, it, vi } from 'vitest'
 import { parseSeekerCv, type CvSource } from '../src/lib/seeker-cv/parser'
-import { extractPdfResume, PDF_EXTRACTION_LIMITS } from '../src/lib/employer-screening/pdf-extraction'
+import { extractPdfResume, extractResumeFromTranscribedPages, PDF_EXTRACTION_LIMITS } from '../src/lib/employer-screening/pdf-extraction'
 import { runCvBatch, cvBackfillStore } from '../src/lib/seeker-cv/backfill'
 import { candidateKeywordFilter, candidateMatchesSkills } from '../src/lib/candidate-search'
 import { GET } from '../src/app/api/cron/seeker-cv-skills/route'
@@ -162,4 +162,44 @@ describe('migration, queue idempotency and Browse Candidates', () => {
     expect(candidateMatchesSkills({ skills: ['Cooking'] }, ['cook', 'excel'])).toBe(true)
     expect(candidateMatchesSkills({}, ['clean'])).toBe(false)
   })
+})
+
+const transcribed = extractResumeFromTranscribedPages([
+  'Skills\nExcel\nWork Experience\nRole: Cleaner\nCleaned guest rooms',
+], 'a'.repeat(64))!
+it.each(['pdf', 'jpg', 'jpeg', 'png'])('projects vision %s through canonical claims only', async extension => {
+  const bytes = await pdf('')
+  const vision = vi.fn(async () => ({ status: 'read' as const, extraction: transcribed }))
+  const result = await parseSeekerCv({ ...profile, cv_url: profile.cv_url!.replace('pdf', extension) },
+    async () => bytes, extractPdfResume, vision)
+  expect(result.cv_parse_status).toBe('parsed')
+  expect(result.cv_skills).toEqual(['Housekeeping', 'Microsoft Excel'])
+  expect(result.cv_roles).toEqual(['cleaner'])
+  expect(JSON.stringify(result)).not.toContain('Cleaned guest rooms')
+  expect(vision).toHaveBeenCalledExactlyOnceWith(bytes)
+})
+it.each([
+  ['pdf', 'no_text', 'empty'], ['pdf', 'unavailable', 'pending'], ['pdf', 'disabled', 'empty'],
+  ['jpg', 'no_text', 'empty'], ['jpg', 'unavailable', 'pending'], ['jpg', 'disabled', 'unreadable'],
+] as const)('maps %s vision %s to %s', async (extension, status, expected) => {
+  expect((await parseSeekerCv({ ...profile, cv_url: profile.cv_url!.replace('pdf', extension) },
+    download(''), extractPdfResume, async () => ({ status }))).cv_parse_status).toBe(expected)
+})
+it('does not invoke vision for readable or corrupt PDFs', async () => {
+  const vision = vi.fn()
+  await parseSeekerCv(profile, download('Skills\nExcel'), extractPdfResume, vision)
+  await parseSeekerCv(profile, async () => new Uint8Array([1]), extractPdfResume, vision)
+  expect(vision).not.toHaveBeenCalled()
+})
+it('stops starting profiles at the soft budget without saving remaining pending profiles', async () => {
+  let time = 0
+  const pending = Array.from({ length: 3 }, (_, id) => ({ ...profile, id: String(id) }))
+  const download = vi.fn(async () => { time += 140_000; return null })
+  const save = vi.fn(async () => true)
+  const result = await runCvBatch({ pending: async () => pending, download, save, remaining: async () => 2 }, { now: () => time })
+  expect(download).toHaveBeenCalledOnce()
+  expect(save).toHaveBeenCalledOnce()
+  expect(pending.map(p => p.cv_parse_status)).toEqual(['pending', 'pending', 'pending'])
+  expect(result.remaining).toBe(2)
+  expect(result.done).toBe(false)
 })
