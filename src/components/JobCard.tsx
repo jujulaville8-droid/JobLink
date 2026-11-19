@@ -11,6 +11,8 @@ export interface Job {
   id: string;
   title: string;
   company_name: string;
+  /** Absent for legacy consumers; null for employers that cannot be grouped. */
+  company_id?: string | null;
   company_logo?: string | null;
   /** The employer asked not to be named; company_name is already the masked label. */
   is_confidential?: boolean;
@@ -52,7 +54,7 @@ function getJobType(type: string): { color: string; label: string } {
   return JOB_TYPE_STYLES[type] ?? { color: "bg-bg-alt text-text-light border border-border", label: type };
 }
 
-export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false, selectHref, selected = false, preview = false }: {
+export default function JobCard({ job, isSaved = false, loggedIn = false, highlight = false, selectHref, selected = false, preview = false, inCluster = false }: {
   job: Job;
   isSaved?: boolean;
   loggedIn?: boolean;
@@ -62,6 +64,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
   selected?: boolean;
   /** Show a readable draft card without navigation, saving, or sharing. */
   preview?: boolean;
+  inCluster?: boolean;
 }) {
   const { saved, saving: savingBookmark, error: saveError, toggle } = useSavedJob(job.id, isSaved);
 
@@ -85,12 +88,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
   const isFeatured = job.is_featured || job.is_pro_company;
 
   return (
-    <div onPointerMove={highlight ? (event) => {
+    <div onPointerMove={highlight && !inCluster ? (event) => {
       if (event.pointerType !== "mouse" || !window.matchMedia("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)").matches) return;
       const rect = event.currentTarget.getBoundingClientRect();
       event.currentTarget.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
       event.currentTarget.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
-    } : undefined} className={`group relative rounded-card transition-[border-color,box-shadow,background-color] duration-[var(--motion-fast)] p-5 ${highlight ? "job-magic-card" : ""} ${
+    } : undefined} className={inCluster ? `group relative px-4 py-3 ${selected ? "lg:bg-primary/5! lg:shadow-[inset_3px_0_0_var(--color-primary)]" : ""}` : `group relative rounded-card transition-[border-color,box-shadow,background-color] duration-[var(--motion-fast)] p-5 ${highlight ? "job-magic-card" : ""} ${
       isFeatured
         ? "bg-gradient-to-br from-amber-50/80 to-white border-2 border-amber-300/60 shadow-md shadow-amber-100/50 ring-1 ring-amber-200/30"
         : "bg-white border border-border hover:border-primary/20 hover:shadow-[0_4px_16px_rgba(13,115,119,0.08)]"
@@ -99,7 +102,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
       selected ? "lg:bg-none! lg:bg-primary/5! lg:border-primary! lg:ring-0! lg:shadow-[inset_3px_0_0_var(--color-primary)]" : ""
     }`}>
       {saveError && <p role="alert" className="relative z-10 mb-2 text-xs text-red-700">{saveError}</p>}
-      {highlight && <div aria-hidden="true" className="job-card-spotlight" />}
+      {highlight && !inCluster && <div aria-hidden="true" className="job-card-spotlight" />}
       <div className="block">
         {selected && (
           <span className="mb-2 hidden lg:inline-block rounded-md bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary-dark">
@@ -107,7 +110,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
           </span>
         )}
         <div className="flex items-start gap-3.5">
-          {job.company_logo ? (
+          {!inCluster && (job.company_logo ? (
             <img
               src={job.company_logo}
               alt={job.company_name}
@@ -119,7 +122,7 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
               alt=""
               className="shrink-0 h-11 w-11 rounded-xl object-contain border border-border bg-white p-1"
             />
-          )}
+          ))}
 
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
@@ -157,12 +160,12 @@ export default function JobCard({ job, isSaved = false, loggedIn = false, highli
                 </span>
               )}
             </div>
-            <p className="text-text-muted text-[13px] mt-0.5">
+            {!inCluster && <p className="text-text-muted text-[13px] mt-0.5">
               {job.company_name}
               {job.is_confidential && (
                 <span className="font-medium text-primary"> · {CONFIDENTIAL_EMPLOYER_BADGE}</span>
               )}
-            </p>
+            </p>}
 
             <div className="flex flex-wrap items-center gap-2 mt-2.5">
               <span className="flex items-center gap-1 text-xs text-text-light">
