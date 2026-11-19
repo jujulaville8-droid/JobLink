@@ -33,6 +33,10 @@ export interface SeekerProfile {
   experience_years: number | null;
   education: string;
   cv_url: string;
+  cv_skills?: string[];
+  cv_roles?: string[];
+  cv_parse_status?: 'parsed' | 'no_cv' | 'unreadable' | 'empty' | 'pending';
+  cv_parsed_at?: string | null;
   visibility: VisibilityMode;
   profile_complete_pct: number;
   created_at: string;

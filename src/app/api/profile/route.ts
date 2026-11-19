@@ -104,6 +104,10 @@ export async function POST(request: NextRequest) {
       }
       payload.cv_url = normalizeCvUrl(payload.cv_url)
       if (payload.cv_url !== normalizeCvUrl(currentProfile?.cv_url)) {
+        payload.cv_parse_status = 'pending'
+        payload.cv_parsed_at = null
+        payload.cv_skills = []
+        payload.cv_roles = []
         if (!ownedCvPath(payload.cv_url, user.id)) {
           return NextResponse.json({ error: 'Invalid resume path. Upload your resume again before saving.' }, { status: 400 })
         }
