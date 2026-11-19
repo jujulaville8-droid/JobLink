@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { captureSnapshot, readSnapshot, validateAssessment, type Report } from './index'
 import { derivePublishedJobCriteria } from './inline-job-criteria'
 import { hasCurrentScreeningNotice } from './notice'
+import { readResumeWithVision } from './vision-extraction'
 import { extractPdfResume, PDF_EXTRACTION_LIMITS, type PdfExtractionOptions, type PdfResumeExtraction } from './pdf-extraction'
 import { validateMinimizedExtraction } from './privacy'
 import { createOpenAIProcessor, type ScreeningBudgetReservation, type ScreeningBudgetStore, type ScreeningUsage } from './provider'
@@ -53,6 +54,7 @@ export type InlineScreeningDependencies = Readonly<{
   loadJob(jobId: string, signal: AbortSignal): Promise<unknown>
   budget(input: { applicantUserId: string; deadline: number; signal: AbortSignal }): ScreeningBudgetStore
   reviewBudget?: (input: { applicantUserId: string; deadline: number; signal: AbortSignal }) => SolReviewBudgetStore
+  extractVision?: (bytes: Uint8Array, signal: AbortSignal) => Promise<PdfResumeExtraction | null>
   extract?: (bytes: Uint8Array, options: PdfExtractionOptions) => Promise<PdfResumeExtraction | null>
   fetch?: typeof fetch
   env?: Record<string, string | undefined>
@@ -287,6 +289,11 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
 
 export function inlineScreeningDependencies(db: SupabaseClient): InlineScreeningDependencies {
   return {
+    extractVision: async (bytes, signal) => {
+      if (!process.env.OPENAI_API_KEY) return null
+      const outcome = await readResumeWithVision(bytes, { signal })
+      return outcome.status === 'read' ? outcome.extraction : null
+    },
     loadProfileResume: (userId, signal) => loadProfileResume(db, userId, signal),
     loadBasicProfile: (userId, signal) => loadBasicProfile(db, userId, signal),
     loadJob: async (jobId, signal) => {

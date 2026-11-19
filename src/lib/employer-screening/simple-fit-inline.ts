@@ -23,19 +23,31 @@ export async function inlineSimpleFit(input: InlineScreeningInput, parsed: PdfRe
   }
   let resume = project(parsed), sourceSha256 = parsed?.sourceSha256
   let sourceFailed = initialSourceFailed
+  const vision = async (bytes: Uint8Array) => {
+    if (!deps.extractVision || signal.aborted || deadline - now() < 15_000) return
+    try {
+      const extraction = await deps.extractVision(bytes, signal)
+      live()
+      const digest = createHash('sha256').update(bytes).digest('hex')
+      if (extraction?.sourceSha256 === digest) { resume = project(extraction); sourceSha256 = digest }
+    } catch { live() }
+  }
+  if (!resume && !sourceFailed && input.resumeBytes.byteLength) await vision(input.resumeBytes)
   if (!resume && deps.loadProfileResume) {
     try {
       const bytes = await deps.loadProfileResume(input.applicantUserId, signal)
       live()
       if (bytes?.byteLength && bytes.byteLength <= PDF_EXTRACTION_LIMITS.bytes) {
-        const pdf = await (deps.extract ?? extractPdfResume)(bytes, { signal,
+        const isPdf = Buffer.from(bytes.subarray(0, 5)).toString('ascii') === '%PDF-'
+        const pdf = isPdf ? await (deps.extract ?? extractPdfResume)(bytes, { signal,
           onDiagnostic: event => {
             if (['pdf_capacity_unavailable', 'pdf_aborted', 'pdf_resolve_failed', 'pdf_module_failed', 'pdf_worker_failed', 'pdf_timeout'].includes(event)) sourceFailed = true
           },
-          budgetMs: Math.max(1, Math.min(PDF_EXTRACTION_LIMITS.budgetMs, deadline - now())) })
+          budgetMs: Math.max(1, Math.min(PDF_EXTRACTION_LIMITS.budgetMs, deadline - now())) }) : null
         live()
         const digest = createHash('sha256').update(bytes).digest('hex')
         if (pdf?.sourceSha256 === digest) { resume = project(pdf); sourceSha256 = digest }
+        if (!resume) await vision(bytes)
       }
     } catch { sourceFailed = true; live() }
   }

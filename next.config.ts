@@ -36,9 +36,12 @@ const CONTENT_SECURITY_POLICY = [
 const nextConfig: NextConfig = {
   // PDF text extraction imports the exact-pinned parser in a Node worker. Keep
   // those runtime modules available in Vercel's traced server function bundle.
-  serverExternalPackages: ["pdfjs-dist"],
+  // Vision page rendering uses the same pdfjs build plus its native canvas
+  // backend in-process; both stay external so Turbopack never bundles them.
+  serverExternalPackages: ["pdfjs-dist", "@napi-rs/canvas"],
   outputFileTracingIncludes: {
-    "/*": ["./node_modules/pdfjs-dist/legacy/build/pdf.mjs", "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs", "./node_modules/pdfjs-dist/package.json"],
+    "/*": ["./node_modules/pdfjs-dist/legacy/build/pdf.mjs", "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs", "./node_modules/pdfjs-dist/package.json",
+      "./node_modules/@napi-rs/canvas/**/*", "./node_modules/@napi-rs/canvas-linux-x64-gnu/**/*"],
   },
   images: {
     remotePatterns: [
