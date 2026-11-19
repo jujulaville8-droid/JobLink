@@ -56,11 +56,15 @@ export async function readResumeWithVision(bytes: Uint8Array, options: {
       const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
       live()
       class NoResources { async fetch(): Promise<never> { throw new Error('Vision unavailable') } }
+      // Rendering only: the bundled WASM image decoder stays enabled because
+      // scanned/image PDFs commonly embed JPEG2000 or high-resolution images;
+      // without it those pages paint blank. The pixel cap still bounds decode
+      // memory, and every other lockdown option matches the text worker.
       const documentOptions = { data: new Uint8Array(bytes), verbosity: 0, isEvalSupported: false,
-        disableFontFace: true, useSystemFonts: false, useWasm: false, enableXfa: false,
+        disableFontFace: true, useSystemFonts: false, useWasm: true, enableXfa: false,
         disableRange: true, disableStream: true, disableAutoFetch: true, stopAtErrors: true,
-        useWorkerFetch: false, isOffscreenCanvasSupported: false, isImageDecoderSupported: false,
-        maxImageSize: 6_000_000, BinaryDataFactory: NoResources }
+        useWorkerFetch: false, isOffscreenCanvasSupported: false, isImageDecoderSupported: true,
+        maxImageSize: 33_554_432, BinaryDataFactory: NoResources }
       const task = getDocument(documentOptions)
       let destroyed: Promise<void> | undefined
       const destroy = () => { destroyed ??= task.destroy().catch(() => {}) }
