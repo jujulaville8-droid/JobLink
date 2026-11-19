@@ -38,6 +38,7 @@ export async function parseSeekerCv(profile: CvSource, download: DownloadCv,
     if (!extraction) {
       if (diagnostics.includes('pdf_empty')) return readVision('empty')
       if (diagnostics.some(event => ['pdf_capacity_unavailable', 'pdf_aborted', 'pdf_module_failed', 'pdf_resolve_failed'].includes(event))) return result('pending')
+      if (!diagnostics.includes('pdf_unsupported') && diagnostics.some(event => ['pdf_timeout', 'pdf_parse_failed'].includes(event))) return readVision('unreadable')
       return result('unreadable')
     }
     if (!extraction.evidence.length && !extraction.context?.length && extraction.omittedContext) return result('unreadable')

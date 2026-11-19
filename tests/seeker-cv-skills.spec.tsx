@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import { describe, expect, it, vi } from 'vitest'
+import { projectCv } from '../src/lib/seeker-cv/projection'
 import { parseSeekerCv, type CvSource } from '../src/lib/seeker-cv/parser'
 import { extractPdfResume, extractResumeFromTranscribedPages, PDF_EXTRACTION_LIMITS } from '../src/lib/employer-screening/pdf-extraction'
 import { runCvBatch, cvBackfillStore } from '../src/lib/seeker-cv/backfill'
@@ -203,3 +204,89 @@ it('stops starting profiles at the soft budget without saving remaining pending 
   expect(result.remaining).toBe(2)
   expect(result.done).toBe(false)
 })
+
+
+describe('CV-local list and role projection', () => {
+  const extraction = (text: string) => extractResumeFromTranscribedPages([text], 'b'.repeat(64))!
+
+  it('parses Ricardo-shaped headlines and retains employment despite training and objectives', async () => {
+    const read = extraction('Professional Chef | Food Preparation (Level 1 & 2) | Culinary Arts\nTraining\nCulinary course\nWork Experience\nChef\nObjective\nCleaner')
+    const result = await parseSeekerCv(profile, async () => new Uint8Array(1), async () => read)
+    expect(result.cv_parse_status).toBe('parsed')
+    expect(result.cv_skills).toEqual(['Culinary arts', 'Food preparation'])
+    expect(result.cv_roles).toEqual(['chef'])
+  })
+
+  it('projects Angelique-shaped ampersand lists and spa employment', () => {
+    const result = projectCv(extraction('Skills:\nCustomer Service & Cash Handling\nMassage Therapy & Spa Treatments\nWork Experience\nSpa Attendant\nObjective\nMassage Therapist'))
+    expect(result.cv_skills).toEqual(['Cash handling', 'Customer service', 'Massage therapy', 'Spa treatments'])
+    expect(result.cv_roles).toEqual(['spa attendant'])
+  })
+
+  it.each([
+    'Skills\nNot Customer Service | Cash Handling',
+    'Skills\nMy supervisor: Customer Service | Cash Handling',
+    'Skills\nCustomer service including Cash handling',
+    'Skills\nWorked in Customer Service | Provided Cash Handling',
+    'Unknown headline | Culinary Arts',
+    'Summary\nCulinary Arts, Baking',
+    'Skills\nSummary\nCulinary Arts',
+  ])('rejects unsafe or weak local skill lists: %s', text => {
+    expect(projectCv(extraction(text)).cv_skills).toEqual([])
+  })
+
+  it('retains Sanique-shaped evidence skills exactly', () => {
+    const read = extraction('Skills\nCash handling\nCustomer service\nTime management')
+    expect(read.evidence).toHaveLength(3)
+    expect(projectCv(read).cv_skills).toEqual(['Cash handling', 'Customer service', 'Time management'])
+  })
+
+  it('normalises list punctuation and aliases without storing unmatched text', () => {
+    const result = projectCv(extraction('Technical Skills:\n- food prep (Level 2).; computer literacy · team work, unknown private detail\nBaking | Driving\nEducation\nMassage Therapy'))
+    expect(result.cv_skills).toEqual(['Baking', 'Digital proficiency', 'Driving', 'Food preparation', 'Teamwork'])
+  })
+
+  it.each([
+    ['• Position: Professional Chef at Hotel', 'chef'],
+    ['Job title: Spa Therapist – Hotel', 'spa therapist'],
+    ['Head Cook, Hotel', 'cook'],
+    ['Front Desk Clerk | Hotel', 'front desk agent'],
+    ['Chef de Partie (Seasonal)', 'chef de partie'],
+    ['Sous Chef 2019 - 2022', 'sous chef'],
+    ['Massage Therapist jan 2020 - present', 'massage therapist'],
+    ['Food and Beverage Server - Hotel', 'server'],
+  ])('recognises employment title shape %s', (line, title) => {
+    expect(projectCv(extraction(`Training\nRequirements example sample copied\nWork Experience\n${line}\nCareer Objective\nCleaner`)).cv_roles).toEqual([title])
+  })
+
+  it.each(['Seeking Chef', 'My supervisor: Chef', 'Not Chef', 'Never Chef', 'Future Chef'])('rejects guarded role line %s', line => {
+    expect(projectCv(extraction(`Work Experience\n${line}`)).cv_roles).toEqual([])
+  })
+})
+
+it.each(['pdf_timeout', 'pdf_parse_failed'] as const)('routes %s to vision with unreadable fallback when disabled', async diagnostic => {
+  const extractor = vi.fn<typeof extractPdfResume>(async (_bytes, options) => {
+    options?.onDiagnostic?.(diagnostic)
+    return null
+  })
+  const bytes = new Uint8Array(1)
+  const vision = vi.fn(async () => ({ status: 'read' as const, extraction: transcribed }))
+  const result = await parseSeekerCv(profile, async () => bytes, extractor, vision)
+  expect(result.cv_parse_status).toBe('parsed')
+  expect(result.cv_skills).toEqual(['Housekeeping', 'Microsoft Excel'])
+  expect(vision).toHaveBeenCalledExactlyOnceWith(bytes)
+  expect((await parseSeekerCv(profile, async () => bytes, extractor,
+    async () => ({ status: 'disabled' }))).cv_parse_status).toBe('unreadable')
+})
+
+it.each(['pdf_capacity_unavailable', 'pdf_aborted', 'pdf_module_failed', 'pdf_resolve_failed', 'pdf_unsupported'] as const)(
+  'preserves %s routing without vision', async diagnostic => {
+    const extractor: typeof extractPdfResume = async (_bytes, options) => {
+      options?.onDiagnostic?.(diagnostic)
+      return null
+    }
+    const vision = vi.fn()
+    const result = await parseSeekerCv(profile, async () => new Uint8Array(1), extractor, vision)
+    expect(result.cv_parse_status).toBe(diagnostic === 'pdf_unsupported' ? 'unreadable' : 'pending')
+    expect(vision).not.toHaveBeenCalled()
+  })
