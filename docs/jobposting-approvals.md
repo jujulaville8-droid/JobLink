@@ -529,6 +529,113 @@ in America/Antigua, so the creation date in the evidence line stands.
 | --- | --- | --- | --- | --- |
 | Mamma Mia Restaurant & Sunset on the Shore — Line Chef | `59c908d2-3c33-4c3d-be61-2a37bce19823` | `766725b8-2f44-435c-b93b-4a4122f211f8` | 2026-11-11 | Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10). |
 
+## November 19, 2026 vacancy-scoped allowlist (Shef Spice Restaurant & Sports Bar, Paperclips Antigua, Tropical Adventures, Antigua and Barbuda Football Association)
+
+This change records five vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
+each bound to both the job ID and that job's company ID. No company-wide
+permission is claimed. Julian confirmed employer agreed to post, Nov 19 2026.
+No email address, phone number, or message content is copied here. No closure
+entry is added. Stored listing content, status and the application route are
+unchanged; no database writes.
+
+All five listings are active and admin-posted, and none is confidential. Each
+public page names the employer and links to that company profile. `job_type`
+is `full_time`, and the page shows Full Time. None of the stored descriptions
+states that the role is full-time, so each record sets
+`employmentTypeUnconfirmed`. On current main that flag omits `employmentType`.
+None has a salary amount or benefits, and `expires_at` is null, so no
+`baseSalary`, `jobBenefits`, or `validThrough` is emitted. `datePosted`
+stays the stored `created_at`. Each of those timestamps is still 2026-11-19 in
+America/Antigua.
+
+Company ids are the ids on the live "View company profile" links, and they
+match each listing's stored `company_id`. Each company row has a notification
+email and no phone. The job page does not select either field, and neither is
+copied into JobPosting. The public descriptions have no email address and no
+phone number.
+
+Shef Spice Restaurant & Sports Bar has no logo, website, or company
+description, so those organization fields are omitted. Its industry is Food &
+Beverage. The job has no location of its own; the company address is St.
+Johnston's Village, Antigua. That place is not a mapped parish, so the address
+is locality St. Johnston's Village and country AG, with no region, street, or
+postal code.
+
+Both Paperclips Antigua vacancies share company
+`3477c23b-1e11-4e0d-b54c-74112b690ea1`. The stored logo is included as
+`hiringOrganization.logo`. There is no website or company description.
+Industry is Retail & Trade. The company address is Royal Palm Place, Friars
+Hill Road, St. John's, Antigua, so the address is that locality, region Saint
+John, and country AG, with no street or postal code split out of the text.
+
+Tropical Adventures has a stored logo and no website, industry, or company
+description. The company address is St. John's, Antigua, so the address is
+locality St. John's, region Saint John, and country AG.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Shef Spice Restaurant & Sports Bar — Cook | `c8dfdd1c-4146-4755-b8ef-d7a4e857536c` | `7c6c839e-2de8-4737-94e6-2cf0a2e3c039` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Paperclips Antigua — Warehouse Attendant | `0e8fa356-3fe7-436e-82ed-1643e81fd51f` | `3477c23b-1e11-4e0d-b54c-74112b690ea1` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Paperclips Antigua — Delivery Driver | `82373c72-efa7-4201-af60-4d10e60cd85e` | `3477c23b-1e11-4e0d-b54c-74112b690ea1` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Tropical Adventures — Senior Accountant | `75e6b3e4-c64a-4caf-aee3-ada51c66eaec` | `8f89c5a4-ce17-402a-8152-cde2dc9ff865` | 2026-11-19 | Julian confirmed employer agreed to post, Nov 19 2026 |
+| Antigua and Barbuda Football Association (ABFA) — Assistant General Secretary | `3339cbaa-e3d1-4b4c-a634-45381e48f99e` | `ceed78ec-be65-4a6e-b085-4e415991017a` | 2026-11-19 | Julian confirmed employer (ABFA General Secretary) agreed by email, Nov 19 2026 |
+
+The ABFA listing is the same kind of vacancy-scoped approval. It is active,
+admin-posted, and not confidential. `created_at` is
+`2026-11-19 21:31:33.581388+00`, still 2026-11-19 in America/Antigua. The
+stored description does not state that the role is full-time, so
+`employmentTypeUnconfirmed` is set. There is no salary amount and benefits are
+empty. `expires_at` is null, and this vacancy is not in the public-deadline
+map, so no `validThrough` is emitted. The stored description does contain an
+application-deadline sentence; that sentence is left as stored text and is not
+copied into `validThrough`. The company address is Paynters, St. George,
+Antigua, so the address is locality Paynters, St. George, region Saint George,
+and country AG. A stored logo is included. Website, industry, and company
+description are absent.
+
+## November 21, 2026 vacancy-scoped allowlist (Waterscaping Services, GGP Cleaning Service, Treehouse Beach Club)
+
+This change records six more vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
+each bound to both the job ID and that job's company ID. No company-wide
+permission is claimed. Evidence for each is Julian confirmed employer agreed
+to post, Nov 21 2026. No email address, phone number, or message content is
+copied here. No closure entry is added. Stored listing content, status and
+the application route are unchanged; no database writes.
+
+All six listings are active and admin-posted, and none is confidential. Each
+public page names the employer. None has a salary amount or benefits, and
+`expires_at` is null. None is in the public-deadline map, and none of these
+records sets `validThrough`, so no `validThrough` is emitted. `datePosted`
+stays the stored `created_at`.
+
+Waterscaping Services, Treehouse Beach Club Head Chef, Line Cook, and Beach
+Waiter store `full_time`, and those descriptions do not state the type, so
+`employmentTypeUnconfirmed` is set. GGP Cleaning Service stores `part_time`
+and the description says part-time, so the type is emitted as `PART_TIME`.
+The Steward listing says full-time and stores `full_time`, so the type is
+emitted as `FULL_TIME`.
+
+Waterscaping Services company id `7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf` is the
+id on the live company profile link and the listing's stored `company_id`.
+Its address is Antigua only, so the JobPosting address is country AG with no
+locality or region. It has a stored logo and no website, industry, or company
+description. GGP Cleaning Service's address is also Antigua only. Its industry
+is Cleaning & Maintenance, and it has a stored logo and no website or company
+description. The four Treehouse Beach Club vacancies share company
+`ecca22b4-0a7b-40d9-ac25-7eb453dd3617`. The company address is Fort James
+Beach, St. John's, Antigua, so the address is that locality, region Saint
+John, and country AG. Industry is Tourism & Hospitality. A stored logo and a
+stored website are included. There is no company description.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Waterscaping Services — Pool Service Technician | `2f533bba-0f7a-49e1-9d42-3d1cd2c3f37d` | `7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| GGP Cleaning Service — Part Time Cleaners | `dfbbf8f7-0146-48bb-9fcd-4afefe16bfb6` | `77d657a4-ac5a-4eca-a49b-d746fecbfbb0` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Head Chef | `f26fd928-ebcf-47e1-8304-da48cbc9621d` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Line Cook | `0b18e456-f92f-4747-a9cc-2fbf4133f837` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Beach Waiter | `215d5f56-00bb-42d7-8a1b-fec54d343ea6` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Steward (Kitchen Assistant) | `1ae4c066-16b5-46b2-a43b-3fb4710f7801` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+
 ## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
 
 [This PR](https://github.com/jujulaville8-droid/JobLink/pull/131) records two vacancy-scoped entries in

@@ -90,6 +90,115 @@ export const EMPLOYER_APPROVED_JOBS: Record<string, JobApproval> = {
     attestedOn: "2026-11-12",
     evidenceReference: "https://github.com/jujulaville8-droid/JobLink/pull/131",
   },
+  // Shef Spice Restaurant & Sports Bar: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Cook vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "c8dfdd1c-4146-4755-b8ef-d7a4e857536c": {
+    companyId: "7c6c839e-2de8-4737-94e6-2cf0a2e3c039",
+    companyName: "Shef Spice Restaurant & Sports Bar",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Paperclips Antigua: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Warehouse Attendant vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "0e8fa356-3fe7-436e-82ed-1643e81fd51f": {
+    companyId: "3477c23b-1e11-4e0d-b54c-74112b690ea1",
+    companyName: "Paperclips Antigua",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Paperclips Antigua: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Delivery Driver vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "82373c72-efa7-4201-af60-4d10e60cd85e": {
+    companyId: "3477c23b-1e11-4e0d-b54c-74112b690ea1",
+    companyName: "Paperclips Antigua",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Tropical Adventures: Julian confirmed employer agreed to post, Nov 19 2026,
+  // for this Senior Accountant vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. No public deadline.
+  "75e6b3e4-c64a-4caf-aee3-ada51c66eaec": {
+    companyId: "8f89c5a4-ce17-402a-8152-cde2dc9ff865",
+    companyName: "Tropical Adventures",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Antigua and Barbuda Football Association (ABFA): vacancy-scoped approval for
+  // this Assistant General Secretary listing only. Not confidential.
+  // Full Time is the stored job type; the description does not state it.
+  // expires_at is null, so no validThrough is recorded here.
+  "3339cbaa-e3d1-4b4c-a634-45381e48f99e": {
+    companyId: "ceed78ec-be65-4a6e-b085-4e415991017a",
+    companyName: "Antigua and Barbuda Football Association (ABFA)",
+    attestedOn: "2026-11-19",
+    evidenceReference: "Julian confirmed employer (ABFA General Secretary) agreed by email, Nov 19 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Waterscaping Services: Julian confirmed employer agreed to post, Nov 21 2026,
+  // for this Pool Service Technician vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. expires_at is null.
+  "2f533bba-0f7a-49e1-9d42-3d1cd2c3f37d": {
+    companyId: "7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf",
+    companyName: "Waterscaping Services",
+    attestedOn: "2026-11-21",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 21 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // GGP Cleaning Service: Julian confirmed employer agreed to post, Nov 21 2026,
+  // for this Part Time Cleaners vacancy only. Vacancy-scoped. Not confidential.
+  // The listing states part-time, and job_type is part_time. expires_at is null.
+  "dfbbf8f7-0146-48bb-9fcd-4afefe16bfb6": {
+    companyId: "77d657a4-ac5a-4eca-a49b-d746fecbfbb0",
+    companyName: "GGP Cleaning Service",
+    attestedOn: "2026-11-21",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 21 2026",
+  },
+  // Treehouse Beach Club: Julian confirmed employer agreed to post, Nov 21 2026,
+  // for this Head Chef vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. expires_at is null.
+  "f26fd928-ebcf-47e1-8304-da48cbc9621d": {
+    companyId: "ecca22b4-0a7b-40d9-ac25-7eb453dd3617",
+    companyName: "Treehouse Beach Club",
+    attestedOn: "2026-11-21",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 21 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Treehouse Beach Club: Julian confirmed employer agreed to post, Nov 21 2026,
+  // for this Line Cook vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. expires_at is null.
+  "0b18e456-f92f-4747-a9cc-2fbf4133f837": {
+    companyId: "ecca22b4-0a7b-40d9-ac25-7eb453dd3617",
+    companyName: "Treehouse Beach Club",
+    attestedOn: "2026-11-21",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 21 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Treehouse Beach Club: Julian confirmed employer agreed to post, Nov 21 2026,
+  // for this Beach Waiter vacancy only. Vacancy-scoped. Not confidential.
+  // Full Time is the stored job type; the description does not state it. expires_at is null.
+  "215d5f56-00bb-42d7-8a1b-fec54d343ea6": {
+    companyId: "ecca22b4-0a7b-40d9-ac25-7eb453dd3617",
+    companyName: "Treehouse Beach Club",
+    attestedOn: "2026-11-21",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 21 2026",
+    employmentTypeUnconfirmed: true,
+  },
+  // Treehouse Beach Club: Julian confirmed employer agreed to post, Nov 21 2026,
+  // for this Steward (Kitchen Assistant) vacancy only. Vacancy-scoped. Not confidential.
+  // The listing states full-time, and job_type is full_time. expires_at is null.
+  "1ae4c066-16b5-46b2-a43b-3fb4710f7801": {
+    companyId: "ecca22b4-0a7b-40d9-ac25-7eb453dd3617",
+    companyName: "Treehouse Beach Club",
+    attestedOn: "2026-11-21",
+    evidenceReference: "Julian confirmed employer agreed to post, Nov 21 2026",
+  },
   // Site owner requested Google Jobs allowlist on 2026-11-11 for this already-live admin-posted listing (created 2026-11-10).
   // Site-owner attestation only. Full Time is an unconfirmed placeholder; no public deadline.
   "59c908d2-3c33-4c3d-be61-2a37bce19823": {
