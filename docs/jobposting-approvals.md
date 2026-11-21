@@ -593,6 +593,49 @@ Antigua, so the address is locality Paynters, St. George, region Saint George,
 and country AG. A stored logo is included. Website, industry, and company
 description are absent.
 
+## November 21, 2026 vacancy-scoped allowlist (Waterscaping Services, GGP Cleaning Service, Treehouse Beach Club)
+
+This change records six more vacancy-scoped entries in `EMPLOYER_APPROVED_JOBS`,
+each bound to both the job ID and that job's company ID. No company-wide
+permission is claimed. Evidence for each is Julian confirmed employer agreed
+to post, Nov 21 2026. No email address, phone number, or message content is
+copied here. No closure entry is added. Stored listing content, status and
+the application route are unchanged; no database writes.
+
+All six listings are active and admin-posted, and none is confidential. Each
+public page names the employer. None has a salary amount or benefits, and
+`expires_at` is null. None is in the public-deadline map, and none of these
+records sets `validThrough`, so no `validThrough` is emitted. `datePosted`
+stays the stored `created_at`.
+
+Waterscaping Services, Treehouse Beach Club Head Chef, Line Cook, and Beach
+Waiter store `full_time`, and those descriptions do not state the type, so
+`employmentTypeUnconfirmed` is set. GGP Cleaning Service stores `part_time`
+and the description says part-time, so the type is emitted as `PART_TIME`.
+The Steward listing says full-time and stores `full_time`, so the type is
+emitted as `FULL_TIME`.
+
+Waterscaping Services company id `7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf` is the
+id on the live company profile link and the listing's stored `company_id`.
+Its address is Antigua only, so the JobPosting address is country AG with no
+locality or region. It has a stored logo and no website, industry, or company
+description. GGP Cleaning Service's address is also Antigua only. Its industry
+is Cleaning & Maintenance, and it has a stored logo and no website or company
+description. The four Treehouse Beach Club vacancies share company
+`ecca22b4-0a7b-40d9-ac25-7eb453dd3617`. The company address is Fort James
+Beach, St. John's, Antigua, so the address is that locality, region Saint
+John, and country AG. Industry is Tourism & Hospitality. A stored logo and a
+stored website are included. There is no company description.
+
+| Job | Job ID | Company ID | Attested on | Evidence |
+| --- | --- | --- | --- | --- |
+| Waterscaping Services — Pool Service Technician | `2f533bba-0f7a-49e1-9d42-3d1cd2c3f37d` | `7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| GGP Cleaning Service — Part Time Cleaners | `dfbbf8f7-0146-48bb-9fcd-4afefe16bfb6` | `77d657a4-ac5a-4eca-a49b-d746fecbfbb0` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Head Chef | `f26fd928-ebcf-47e1-8304-da48cbc9621d` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Line Cook | `0b18e456-f92f-4747-a9cc-2fbf4133f837` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Beach Waiter | `215d5f56-00bb-42d7-8a1b-fec54d343ea6` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+| Treehouse Beach Club — Steward (Kitchen Assistant) | `1ae4c066-16b5-46b2-a43b-3fb4710f7801` | `ecca22b4-0a7b-40d9-ac25-7eb453dd3617` | 2026-11-21 | Julian confirmed employer agreed to post, Nov 21 2026 |
+
 ## November 12, 2026 vacancy-scoped allowlist (Deep Blue Antigua, Private Employer — Chef)
 
 [This PR](https://github.com/jujulaville8-droid/JobLink/pull/131) records two vacancy-scoped entries in

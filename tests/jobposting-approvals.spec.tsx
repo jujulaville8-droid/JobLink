@@ -1426,6 +1426,98 @@ describe('3339cbaa-e3d1-4b4c-a634-45381e48f99e November 19 ABFA vacancy-scoped a
   });
 });
 
+const NOVEMBER_21_EVIDENCE = 'Julian confirmed employer agreed to post, Nov 21 2026';
+
+describe.each([
+  ['2f533bba-0f7a-49e1-9d42-3d1cd2c3f37d', '7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf', 'Waterscaping Services', 'Pool Service Technician', '2026-11-19T22:27:15.725063Z', 'full_time', true, 'Antigua', null, null, null],
+  ['dfbbf8f7-0146-48bb-9fcd-4afefe16bfb6', '77d657a4-ac5a-4eca-a49b-d746fecbfbb0', 'GGP Cleaning Service', 'Part Time Cleaners', '2026-11-20T15:20:12.859024Z', 'part_time', false, 'Antigua', null, null, 'Cleaning & Maintenance'],
+  ['f26fd928-ebcf-47e1-8304-da48cbc9621d', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Head Chef', '2026-11-20T21:54:58.350016Z', 'full_time', true, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+  ['0b18e456-f92f-4747-a9cc-2fbf4133f837', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Line Cook', '2026-11-20T21:55:25.950085Z', 'full_time', true, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+  ['215d5f56-00bb-42d7-8a1b-fec54d343ea6', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Beach Waiter', '2026-11-20T21:55:40.343406Z', 'full_time', true, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+  ['1ae4c066-16b5-46b2-a43b-3fb4710f7801', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Steward (Kitchen Assistant)', '2026-11-20T21:56:11.363485Z', 'full_time', false, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+] as const)('%s November 21 vacancy-scoped allowlist', (jobId, companyId, companyName, title, createdAt, jobType, unconfirmed, companyLocation, locality, region, industry) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-21T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = companyLocation;
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+    };
+    company.industry = industry;
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = jobType;
+    db.job!.description = `Hiring for this ${title} vacancy.`;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting for only the recorded vacancy without a deadline, pay, or contact details', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-21', evidenceReference: NOVEMBER_21_EVIDENCE,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.jobLocation.address.addressCountry).toBe('AG');
+    if (locality) expect(schema.jobLocation.address.addressLocality).toBe(locality);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
+    if (region) expect(schema.jobLocation.address.addressRegion).toBe(region);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    if (industry) expect(schema.industry).toBe(industry);
+    else expect(schema).not.toHaveProperty('industry');
+    if (!unconfirmed) expect(schema.employmentType).toBe(jobType === 'part_time' ? 'PART_TIME' : 'FULL_TIME');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.datePosted).not.toBe('2026-11-21');
+    expect(JSON.stringify(schema)).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const html = await pageHtml();
+    expect(html).toContain(`Hiring for this ${title} vacancy.`);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+});
+
 const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/131';
 
 describe.each([
