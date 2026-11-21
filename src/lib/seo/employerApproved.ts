@@ -38,7 +38,10 @@ export interface JobApproval extends Omit<EmployerApproval, "approvedOn"> {
   evidenceReference: string;
   /** Original employer date-only deadline, retained if expires_at is absent. */
   validThrough?: string;
-  /** Omit optional employmentType markup until the employer confirms it. */
+  /**
+   * Historical accuracy note on this approval. JobPosting.employmentType
+   * follows the stored job_type shown on the page and does not read this flag.
+   */
   employmentTypeUnconfirmed?: boolean;
 }
 
