@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { requireRole } from '@/lib/auth'
 import { JOB_TYPE_LABELS, JobType } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/admin'
+import CloseListingButton from '@/components/admin/CloseListingButton'
 
 async function toggleFeatured(formData: FormData) {
   'use server'
@@ -104,6 +105,7 @@ export default async function AdminFeaturedPage() {
                 <Link href={`/admin/edit-job?id=${listing.id}`} className="text-xs font-medium text-primary hover:underline">
                   Edit
                 </Link>
+                <CloseListingButton jobId={listing.id} isFeatured={true} />
                 <form action={toggleFeatured}>
                   <input type="hidden" name="job_id" value={listing.id} />
                   <input type="hidden" name="is_featured" value="true" />
@@ -146,6 +148,7 @@ export default async function AdminFeaturedPage() {
                 <Link href={`/admin/edit-job?id=${listing.id}`} className="text-xs font-medium text-primary hover:underline">
                   Edit
                 </Link>
+                <CloseListingButton jobId={listing.id} isFeatured={false} />
                 <form action={toggleFeatured}>
                   <input type="hidden" name="job_id" value={listing.id} />
                   <input type="hidden" name="is_featured" value="false" />
