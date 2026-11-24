@@ -9,6 +9,7 @@ import { calculateProfileCompletion } from "@/lib/profile-completion";
 import type { ApplicationStatus } from "@/lib/types";
 import AdminBentoDashboard from "@/components/AdminBentoDashboard";
 import DashboardNudge from "@/components/cv/DashboardNudge";
+import { loadHiringQueue } from "@/lib/shortlist/load";
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   applied: "bg-primary/10 text-primary",
@@ -283,9 +284,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
                     {logoUrl ? (
                       <img src={logoUrl} alt="" className="shrink-0 h-9 w-9 rounded-lg object-cover border border-border" />
                     ) : (
-                      <div className="shrink-0 h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-xs">
-                        {companyName.charAt(0)}
-                      </div>
+                      <img src="/logo-icon.png" alt="" className="shrink-0 h-9 w-9 rounded-lg object-contain border border-border bg-white p-0.5" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text truncate">
@@ -342,9 +341,7 @@ async function SeekerDashboard({ userId }: { userId: string }) {
                     {logoUrl ? (
                       <img src={logoUrl} alt="" className="shrink-0 h-9 w-9 rounded-lg object-cover border border-border" />
                     ) : (
-                      <div className="shrink-0 h-9 w-9 rounded-lg bg-primary flex items-center justify-center text-white font-semibold text-xs">
-                        {companyName.charAt(0)}
-                      </div>
+                      <img src="/logo-icon.png" alt="" className="shrink-0 h-9 w-9 rounded-lg object-contain border border-border bg-white p-0.5" />
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-text truncate">{job.title as string}</p>
@@ -403,6 +400,10 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
   if (!company) {
     redirect("/company-profile");
   }
+
+  // Hiring queue: jobs ranked by attention needed. Degrades to empty on any error.
+  const hiringQueueAll = (await loadHiringQueue(supabase, company.id, userId)).filter((job) => job.applicationCount > 0);
+  const hiringQueue = hiringQueueAll.slice(0, 8);
 
   const companyName = company.company_name || "your company";
   const greetingCompanyName = company.company_name?.trim();
@@ -531,6 +532,75 @@ async function EmployerDashboard({ userId, claimedId }: { userId: string; claime
         <Link href="/company-profile">Company Profile</Link>
         <Link href="/analytics">Analytics</Link>
       </nav>
+
+      {/* Hiring Queue */}
+      {hiringQueue.length > 0 && (
+        <section aria-labelledby="hiring-queue-heading" className="mt-8">
+          <h2 id="hiring-queue-heading" className="font-display text-xl font-semibold tracking-tight text-text sm:text-2xl">
+            Your hiring queue
+          </h2>
+          <p className="mt-1 text-sm text-text-light">Focus on the roles that need your attention.</p>
+          <ul className="mt-4 space-y-3">
+            {hiringQueue.map((job, index) => {
+              const highlighted = index === 0 && (job.newCount > 0 || job.strongFitCount > 0);
+              return (
+                <li
+                  key={job.jobId}
+                  className={`flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:gap-5 ${
+                    highlighted ? "border-primary/50 bg-primary/[0.06]" : "border-border bg-white"
+                  }`}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10" aria-hidden="true">
+                      <svg className="h-5 w-5 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-text">{job.title}</p>
+                      {highlighted && (
+                        <span className="mt-1 inline-flex rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
+                          Needs attention
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <span className="text-sm text-text-light">
+                      {job.applicationCount} {job.applicationCount === 1 ? "application" : "applications"}
+                    </span>
+                    {job.strongFitCount > 0 && (
+                      <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white">
+                        {job.strongFitCount} strong {job.strongFitCount === 1 ? "fit" : "fits"}
+                      </span>
+                    )}
+                    {job.newCount > 0 && (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                        {job.newCount} new
+                      </span>
+                    )}
+                  </div>
+                  <Link
+                    href={`/my-listings/${job.jobId}/shortlist`}
+                    className={`shrink-0 rounded-xl px-4 py-2 text-center text-sm font-semibold transition-colors ${
+                      highlighted
+                        ? "bg-primary text-white hover:bg-primary-dark"
+                        : "border border-primary text-primary hover:bg-primary hover:text-white"
+                    }`}
+                  >
+                    Review applications
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {hiringQueueAll.length > hiringQueue.length && (
+            <Link href="/my-listings" className="mt-3 inline-block text-sm font-medium text-primary hover:text-primary-dark">
+              See all {hiringQueueAll.length} roles in My Listings →
+            </Link>
+          )}
+        </section>
+      )}
 
       {/* Quick Stats */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">

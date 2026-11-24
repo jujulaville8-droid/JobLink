@@ -305,9 +305,9 @@ export default function AdminCompaniesPage() {
                       ) : (
                         <div
                           aria-hidden="true"
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-bg-alt text-sm font-semibold text-primary"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-bg-alt"
                         >
-                          {company.company_name.trim().charAt(0).toUpperCase() || '?'}
+                          <img src="/logo-icon.png" alt="" className="h-full w-full object-contain p-1" />
                         </div>
                       )}
                       <span className="min-w-0 flex-1">
@@ -367,9 +367,9 @@ export default function AdminCompaniesPage() {
                   ) : (
                     <div
                       aria-hidden="true"
-                      className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-bg-alt text-2xl text-primary"
+                      className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-bg-alt"
                     >
-                      {selected.company_name.trim().charAt(0).toUpperCase() || '?'}
+                      <img src="/logo-icon.png" alt="" className="h-full w-full object-contain p-1.5" />
                     </div>
                   )}
                   <div>

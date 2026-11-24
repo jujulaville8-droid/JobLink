@@ -1,3 +1,4 @@
+import { simpleFitEmailSection, type SimpleFitVerdict } from './employer-screening/simple-fit'
 import { resumeReviewV2EmailSection } from './employer-screening/review-v2-email'
 import type { ResumeReviewV2 } from './employer-screening/review-v2'
 import type { Report } from './employer-screening'
@@ -36,7 +37,9 @@ type EmailType =
   | 'verification_upload_reminder'
 
 interface EmailData {
-  /** Reserved for validated worker output; absent in the unchanged live forwarding path. */
+  /** Employer-only screening output supplied by the forwarding path. */
+  employer_not_screened?: string
+  employer_fit_verdict?: SimpleFitVerdict
   employer_resume_review_v2?: ResumeReviewV2
   employer_screening?: Report
   employer_resume_quality?: ResumeDocumentQualityResult
@@ -162,9 +165,9 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
           <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
           ${d.verified_line ? `<p style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; color: #065f46; line-height: 1.6;"><strong>${esc(d.verified_line)}</strong><br>${d.verified_documents_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.verified_documents_path) ? `<a href="${SITE}${d.verified_documents_path}" style="color: #0d7377; font-weight: 600;">View documents</a> (you'll be asked to log in). ` : ''}For privacy, the police record is never sent by email.</p>` : ''}
-          ${d.employer_resume_review_v2 ? resumeReviewV2EmailSection(d.employer_resume_review_v2) : d.employer_screening || d.employer_resume_quality ? employerAdvisoryEmailSection(d.employer_screening, d.employer_resume_quality) : ''}
+          ${d.employer_fit_verdict ? simpleFitEmailSection(d.employer_fit_verdict) : d.employer_resume_review_v2 ? resumeReviewV2EmailSection(d.employer_resume_review_v2) : d.employer_screening ? employerAdvisoryEmailSection(d.employer_screening, d.employer_resume_quality) : d.employer_not_screened ? `<p style="color: #6b7280; font-size: 14px; margin-top: 24px;">${esc(d.employer_not_screened)}</p>` : d.employer_resume_quality ? employerAdvisoryEmailSection(undefined, d.employer_resume_quality) : ''}
           ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
-          ${!d.employer_resume_review_v2 && !d.employer_screening && !d.employer_resume_quality ? '<p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>' : ''}
+          ${!d.employer_not_screened && !d.employer_fit_verdict && !d.employer_resume_review_v2 && !d.employer_screening && !d.employer_resume_quality ? '<p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>' : ''}
         `),
       }
 

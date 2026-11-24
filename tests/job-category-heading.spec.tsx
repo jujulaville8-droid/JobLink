@@ -24,6 +24,7 @@ vi.mock('@/components/JobSearchBar', () => ({ default: () => null }));
 vi.mock('@/components/JobIndustryShortcuts', () => ({ default: () => null }));
 
 import JobsPage from '@/app/jobs/page';
+import { JOBS_INDEX_H1, jobsIndexIntro } from '@/lib/seo/jobs-index';
 
 afterEach(cleanup);
 
@@ -47,10 +48,16 @@ describe('visible category page identity', () => {
     { q: 'cashier' },
     { location: 'Antigua' },
     { job_type: 'full_time' },
-  ])('keeps general browsing copy without a known category: %j', async searchParams => {
+  ])('keeps the keyword heading without a known category: %j', async searchParams => {
     render(await JobsPage({ searchParams: Promise.resolve(searchParams) }));
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Browse Jobs');
-    expect(screen.getByText('Discover opportunities across Antigua and Barbuda')).toBeDefined();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(JOBS_INDEX_H1);
+    const index = !searchParams.category && !searchParams.q && !searchParams.location && !searchParams.job_type;
+    if (index) {
+      expect(screen.getByText(jobsIndexIntro(null)[0])).toBeDefined();
+    } else {
+      expect(screen.getByText('Discover opportunities across Antigua and Barbuda')).toBeDefined();
+      expect(screen.queryByRole('heading', { name: 'Where can I find jobs in Antigua and Barbuda?' })).toBeNull();
+    }
   });
 
   it('retains category identity and the query indicator with additional filters', async () => {
@@ -78,12 +85,13 @@ describe('public jobs welcome heading', () => {
 
   it('greets a signed in seeker with only the required profile column', async () => {
     await showWelcome();
-    expectHeading('Welcome, Julian');
+    expectHeading(JOBS_INDEX_H1);
+    expect(screen.getByText('Welcome, Julian')).toBeDefined();
     expect(api.from).toHaveBeenCalledWith('seeker_profiles');
     expect(api.select).toHaveBeenCalledWith('first_name');
     expect(api.eq).toHaveBeenCalledWith('user_id', 'seeker-user');
     expect(api.maybeSingle).toHaveBeenCalledOnce();
-    expect(screen.getByText('Discover opportunities across Antigua and Barbuda')).toBeDefined();
+    expect(screen.getByText(jobsIndexIntro(null)[0])).toBeDefined();
     const label = screen.getByRole('heading', { level: 2, name: 'Jobs for you' });
     expect(label.previousElementSibling?.contains(screen.getByRole('heading', { level: 1 }))).toBe(true);
     expect(label.nextElementSibling?.className).toContain('lg:flex-row');
@@ -99,32 +107,35 @@ describe('public jobs welcome heading', () => {
   it('keeps signed out browsing public without querying profiles', async () => {
     api.getUser.mockResolvedValue({ data: { user: null }, error: null });
     await showWelcome();
-    expectHeading('Browse Jobs');
-    expect(api.from).not.toHaveBeenCalled();
+    expectHeading(JOBS_INDEX_H1);
+    expect(api.from).not.toHaveBeenCalledWith('seeker_profiles');
   });
 
   it.each([null, { first_name: null }, { first_name: '' }])('falls back for missing profile/name: %j', async data => {
     api.maybeSingle.mockResolvedValue({ data, error: null });
     await showWelcome();
-    expectHeading('Browse Jobs');
+    expectHeading(JOBS_INDEX_H1);
+    expect(screen.queryByText(/Welcome,/)).toBeNull();
   });
 
   it('falls back for a returned profile error', async () => {
     api.maybeSingle.mockResolvedValue({ data: { first_name: 'Julian' }, error: { message: 'Unavailable' } });
     await showWelcome();
-    expectHeading('Browse Jobs');
+    expectHeading(JOBS_INDEX_H1);
+    expect(screen.queryByText(/Welcome,/)).toBeNull();
   });
 
   it.each(['createClient', 'getUser', 'maybeSingle'] as const)('falls back when %s throws', async method => {
     api[method].mockRejectedValue(new Error('Unavailable'));
     await showWelcome();
-    expectHeading('Browse Jobs');
+    expectHeading(JOBS_INDEX_H1);
+    expect(screen.queryByText(/Welcome,/)).toBeNull();
   });
 
   it('skips profiles when authentication returns an error', async () => {
     api.getUser.mockResolvedValue({ data: { user: null }, error: { message: 'Unavailable' } });
     await showWelcome();
-    expectHeading('Browse Jobs');
-    expect(api.from).not.toHaveBeenCalled();
+    expectHeading(JOBS_INDEX_H1);
+    expect(api.from).not.toHaveBeenCalledWith('seeker_profiles');
   });
 });

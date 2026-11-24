@@ -4,6 +4,7 @@ import JobFilters from "@/components/JobFilters";
 import JobSearchBar from "@/components/JobSearchBar";
 import JobIndustryShortcuts from "@/components/JobIndustryShortcuts";
 import JobDetailPane from "@/components/JobDetailPane";
+import { JobsIndexFaq, JobsIndexIntro } from "@/components/JobsIndexSeo";
 import { RestoreListFocus } from "@/components/JobSplitNavigation";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
@@ -12,6 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSeekerFirstName } from "@/lib/seeker-first-name";
 import { knownJobCategory } from "@/lib/job-category";
 import { getJobResults, isJobPageOutOfRange, parseJobPage, type JobSearchParams } from "@/lib/job-results";
+import { JOBS_INDEX_H1, getJobsIndexFacts, jobsIndexDescription, jobsIndexTitle } from "@/lib/seo/jobs-index";
 
 interface PageProps {
   searchParams: Promise<JobSearchParams>;
@@ -63,21 +65,30 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const page = parseJobPage(params.page);
   if (page === null) return unavailablePageMetadata;
 
-  const results = page > 1 ? await getJobResults(params, page) : undefined;
-  if (results && (results.error || isJobPageOutOfRange(results))) return unavailablePageMetadata;
-
   const hasOtherFilters = !!(params.q || params.location || params.job_type);
   const category = knownJobCategory(params.category);
+  const index = !category && !params.category && !hasOtherFilters;
+  const [results, facts] = await Promise.all([
+    page > 1 ? getJobResults(params, page) : undefined,
+    index ? getJobsIndexFacts() : undefined,
+  ]);
+  if (results && (results.error || isJobPageOutOfRange(results))) return unavailablePageMetadata;
+
   if ((!category && params.category) || hasOtherFilters) {
     return { ...baseMetadata, robots: noindex };
   }
 
   const url = jobsUrl(category, page);
   if (!category) {
+    const openJobs = facts ? facts.openJobs : null;
+    const title = jobsIndexTitle(openJobs);
+    const description = jobsIndexDescription(openJobs);
     return {
       ...baseMetadata,
+      title,
+      description,
       alternates: { canonical: url },
-      openGraph: { ...baseMetadata.openGraph, url },
+      openGraph: { ...baseMetadata.openGraph, title: `${title} | JobLink`, description, url },
     };
   }
 
@@ -156,14 +167,19 @@ export default async function JobsPage({ searchParams }: PageProps) {
   const page = parseJobPage(params.page);
   if (page === null) notFound();
 
-  // Await before returning any Suspense shell: a late notFound() can only send
-  // a streamed 200 + noindex, not the actual 404 required for missing pages.
+  const showIndex = !category && !params.category && !params.q && !params.location && !params.job_type;
+  // Start the count before the page-2 existence check. Await that check before
+  // any Suspense shell: a late notFound() can only send a streamed 200 + noindex.
+  const factsPromise = showIndex ? getJobsIndexFacts() : null;
   const prefetchedResults = page > 1 ? await getJobResults(params, page) : undefined;
   if (prefetchedResults && isJobPageOutOfRange(prefetchedResults)) notFound();
   if (prefetchedResults?.error) throw new Error("Unable to load the requested jobs page");
 
-  const firstName = category ? null : await getSeekerFirstName();
-  const heading = category ? `${category} Jobs` : firstName ? `Welcome, ${firstName}` : "Browse Jobs";
+  const [firstName, facts] = await Promise.all([
+    category ? null : getSeekerFirstName(),
+    factsPromise,
+  ]);
+  const heading = category ? `${category} Jobs` : JOBS_INDEX_H1;
 
   const query = listQuery(params);
   const backHref = query ? `/jobs?${query}` : "/jobs";
@@ -179,11 +195,18 @@ export default async function JobsPage({ searchParams }: PageProps) {
           <h1 className="font-display text-[2.25rem] sm:text-5xl leading-[1.05] text-text">
             {heading}
           </h1>
-          <p className="mt-2 text-base sm:text-lg text-text-light">
-            {category
-              ? `Browse ${category} job listings in Antigua and Barbuda.`
-              : "Discover opportunities across Antigua and Barbuda"}
-          </p>
+          {firstName && (
+            <p className="mt-2 text-base sm:text-lg text-text-light">Welcome, {firstName}</p>
+          )}
+          {showIndex ? (
+            <JobsIndexIntro facts={facts} />
+          ) : (
+            <p className="mt-2 text-base sm:text-lg text-text-light">
+              {category
+                ? `Browse ${category} job listings in Antigua and Barbuda.`
+                : "Discover opportunities across Antigua and Barbuda"}
+            </p>
+          )}
           <div className="mt-5">
             <JobSearchBar defaultValue={params.q} defaultLocation={params.location} />
           </div>
@@ -243,6 +266,7 @@ export default async function JobsPage({ searchParams }: PageProps) {
           </Suspense>
         </div>
       </div>
+      {showIndex && <JobsIndexFaq facts={facts} className={listOnlyOnDesktop} />}
     </div>
   );
 }

@@ -124,3 +124,46 @@ it('compares normalized legacy URLs with stored paths without checking storage',
     expect(state.info).not.toHaveBeenCalled()
   } finally { vi.unstubAllEnvs() }
 })
+
+it.each([
+  { cv_url: '' },
+  { cv_url: null },
+  {},
+])('preserves the stored CV when saving an empty or omitted value: %j', async extra => {
+  state.currentCv = 'user-1/saved.pdf'
+  const response = await save(req({ profile_id: 'profile-1', phone: '5551234', ...extra }))
+  expect(response.status).toBe(200)
+  expect(state.info).not.toHaveBeenCalled()
+  expect(state.writes).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+    cv_url: 'user-1/saved.pdf', phone: '5551234',
+  }))
+})
+it('replaces a stored CV with a new verified owned path', async () => {
+  state.currentCv = 'user-1/saved.pdf'
+  const response = await save(req({ profile_id: 'profile-1', cv_url: 'user-1/new.pdf' }))
+  expect(response.status).toBe(200)
+  expect(state.info).toHaveBeenCalledExactlyOnceWith('user-1/new.pdf')
+  expect(state.writes).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ cv_url: 'user-1/new.pdf' }))
+})
+
+it('clears derived CV claims and queues parsing when the CV changes to a new path', async () => {
+  state.currentCv = 'user-1/old.pdf'
+  expect((await save(req({ profile_id: 'profile-1', cv_url: 'user-1/new.pdf' }))).status).toBe(200)
+  expect(state.writes).toHaveBeenCalledWith(expect.objectContaining({
+    cv_url: 'user-1/new.pdf', cv_parse_status: 'pending', cv_parsed_at: null, cv_skills: [], cv_roles: [],
+  }))
+})
+it.each([null, ''])('keeps the stored CV and its derived claims when the submitted CV value is %j', async cv_url => {
+  state.currentCv = 'user-1/old.pdf'
+  expect((await save(req({ profile_id: 'profile-1', cv_url }))).status).toBe(200)
+  const payload = state.writes.mock.calls[0][0]
+  expect(payload.cv_url).toBe('user-1/old.pdf')
+  for (const field of ['cv_skills', 'cv_roles', 'cv_parse_status', 'cv_parsed_at']) expect(payload).not.toHaveProperty(field)
+})
+it('does not requeue unchanged CVs or accept caller-supplied derived claims', async () => {
+  state.currentCv = 'user-1/old.pdf'
+  expect((await save(req({ profile_id: 'profile-1', cv_url: state.currentCv,
+    cv_skills: ['forged'], cv_roles: ['forged'], cv_parse_status: 'parsed', cv_parsed_at: '2026-11-16' }))).status).toBe(200)
+  const payload = state.writes.mock.calls[0][0]
+  for (const field of ['cv_skills', 'cv_roles', 'cv_parse_status', 'cv_parsed_at']) expect(payload).not.toHaveProperty(field)
+})

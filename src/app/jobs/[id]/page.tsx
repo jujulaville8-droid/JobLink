@@ -20,7 +20,7 @@ import {
   jobBenefitsList,
   widenedJobPostingFields,
 } from "@/lib/seo/jobposting-consent";
-import { hasUnconfirmedEmploymentType } from "@/lib/seo/unconfirmed-employment-types";
+import { jobPostingEmploymentType } from "@/lib/seo/jobposting-employment-type";
 import type { Metadata } from "next";
 import ApplyButton from "@/components/ApplyButton";
 import SaveJobButton from "@/components/SaveJobButton";
@@ -204,7 +204,9 @@ export default async function JobDetailPage({ params }: PageProps) {
 
   // Employer-approved imported listings (see lib/seo/employerApproved.ts).
   // A job type override there corrects both the visible label and the
-  // JobPosting markup, so the two always agree.
+  // JobPosting markup, so the two always agree. employmentType follows this
+  // stored type. An older note that the description did not restate it does
+  // not omit the type the page shows.
   const employerApproval = getEmployerApproval(company?.id ?? job.company_id, job.id);
   const jobType: string =
     employerApproval?.jobTypeOverrides?.[job.id] ?? job.job_type;
@@ -225,32 +227,8 @@ export default async function JobDetailPage({ params }: PageProps) {
     job.status !== "active" || !!closure,
   );
 
-  const companyInitial = company?.company_name?.charAt(0).toUpperCase() || (confidential ? "C" : "?");
-  const colors = [
-    "bg-primary",
-    "bg-accent",
-    "bg-emerald-600",
-    "bg-violet-600",
-    "bg-rose-600",
-    "bg-cyan-600",
-  ];
-  const colorIndex = company?.company_name
-    ? company.company_name
-        .split("")
-        .reduce((a: number, c: string) => a + c.charCodeAt(0), 0) %
-      colors.length
-    : 0;
-
   // JSON-LD: JobPosting schema for Google Jobs
-  const employmentTypeMap: Record<string, string> = {
-    full_time: "FULL_TIME",
-    part_time: "PART_TIME",
-    contract: "CONTRACTOR",
-    temporary: "TEMPORARY",
-    seasonal: "TEMPORARY",
-    internship: "INTERN",
-    volunteer: "VOLUNTEER",
-  };
+  const employmentType = jobPostingEmploymentType(jobType);
 
   // Only send a locality we actually have. A bare "Antigua" / "Antigua and
   // Barbuda" is the country, not a town, and a hardcoded default town/parish
@@ -331,9 +309,6 @@ export default async function JobDetailPage({ params }: PageProps) {
   const emitJobPosting =
     !closure && !!description.trim() && !!company?.company_name && !pastStoredDeadline && !pastApprovalDeadline && (!isImportedListing || !!employerApproval);
 
-  const employmentTypeConfirmed = !hasUnconfirmedEmploymentType(job.id, job.company_id) &&
-    !(employerApproval && "employmentTypeUnconfirmed" in employerApproval && employerApproval.employmentTypeUnconfirmed);
-
   const jobPostingSchema = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
@@ -347,7 +322,7 @@ export default async function JobDetailPage({ params }: PageProps) {
     // drops email addresses.
     description: textToHtml(redactJobPostingEmails(description)),
     datePosted: job.created_at,
-    ...(employmentTypeConfirmed && employmentTypeMap[jobType] ? { employmentType: employmentTypeMap[jobType] } : {}),
+    ...(employmentType ? { employmentType } : {}),
     // Markup must match what the page shows: the company's industry, not the
     // job's category. Omit it when the page shows no industry.
     ...(company?.industry?.trim() ? { industry: company.industry.trim() } : {}),
@@ -478,11 +453,11 @@ export default async function JobDetailPage({ params }: PageProps) {
                 className="shrink-0 h-16 w-16 rounded-xl object-cover border border-border/40"
               />
             ) : (
-              <div
-                className={`shrink-0 h-16 w-16 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-2xl shadow-sm`}
-              >
-                {companyInitial}
-              </div>
+              <img
+                src="/logo-icon.png"
+                alt=""
+                className="shrink-0 h-16 w-16 rounded-xl object-contain border border-border/40 bg-white p-1 shadow-sm"
+              />
             )}
 
             <div className="flex-1 min-w-0">
@@ -700,11 +675,11 @@ export default async function JobDetailPage({ params }: PageProps) {
                         className="shrink-0 h-11 w-11 rounded-xl object-cover border border-border/40"
                       />
                     ) : (
-                      <div
-                        className={`shrink-0 h-11 w-11 rounded-xl ${colors[colorIndex]} flex items-center justify-center text-white font-bold`}
-                      >
-                        {companyInitial}
-                      </div>
+                      <img
+                        src="/logo-icon.png"
+                        alt=""
+                        className="shrink-0 h-11 w-11 rounded-xl object-contain border border-border/40 bg-white p-1"
+                      />
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-text truncate">

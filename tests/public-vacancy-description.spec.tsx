@@ -198,8 +198,7 @@ describe.each(vacancies)('$companyName verified description fallback', vacancy =
     expect(schema.validThrough).toBe('2026-10-30');
     expect(schema.datePosted).toBe(before.created_at);
     expect(schema).not.toHaveProperty('baseSalary');
-    if (vacancy.employmentTypeUnconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(db.job).toEqual(before);
   });
 

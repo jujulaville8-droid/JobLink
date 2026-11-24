@@ -300,7 +300,6 @@ function ProfileView({
           skills: profile.skills,
           experience_years: profile.experience_years,
           education: profile.education,
-          cv_url: profile.cv_url,
           avatar_url: profile.avatar_url,
           visibility: newValue,
           profile_complete_pct: percentage,
@@ -390,7 +389,6 @@ function ProfileView({
         skills: profile.skills,
         experience_years: profile.experience_years,
         education: profile.education,
-        cv_url: profile.cv_url,
         visibility: profile.visibility,
         profile_complete_pct: percentage,
       }),
@@ -775,6 +773,7 @@ function ProfileEditForm({
   isNewProfile,
   initialStep = 1,
   onSaved,
+  onCvSaved,
   onCancel,
   hasBuiltResume,
   applicationReturnTo,
@@ -785,6 +784,7 @@ function ProfileEditForm({
   isNewProfile: boolean;
   initialStep?: number;
   onSaved: (profile: ProfileData, profileId: string) => void;
+  onCvSaved?: (path: string) => void;
   onCancel: () => void;
   hasBuiltResume: boolean;
   applicationReturnTo: string | null;
@@ -1218,7 +1218,9 @@ function ProfileEditForm({
                     return updatedProfile;
                   });
                 });
-                return handleSave(undefined, updatedProfile, { handoff: false });
+                const saved = await handleSave(undefined, updatedProfile, { handoff: false });
+                if (saved) onCvSaved?.(path);
+                return saved;
               }}
             />
             <button
@@ -1479,6 +1481,7 @@ export default function ProfilePage() {
         initialStep={editStep}
         hasBuiltResume={hasBuiltResume}
         applicationReturnTo={applicationReturnTo}
+        onCvSaved={(path) => setProfile(previous => ({ ...previous, cv_url: path }))}
         onSaved={(savedProfile, savedId) => {
           setProfile(savedProfile);
           setProfileId(savedId);

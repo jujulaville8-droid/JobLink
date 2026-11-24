@@ -43,6 +43,10 @@ describe("Magic UI homepage", () => {
     expect(markup).toContain("Employers hiring")
     expect(markup).toContain("Members")
     expect(markup).toContain("Members across Antigua &amp; Barbuda")
+    expect(markup).toMatch(/aria-label="12 jobs posted"[^>]*>12</)
+    expect(markup).toMatch(/aria-label="7 employers hiring"[^>]*>7</)
+    expect(markup).toMatch(/aria-label="73 members"[^>]*>73</)
+    expect(markup).toMatch(/aria-label="19 applications delivered"[^>]*>19</)
 
     expect(markup).toContain('id="opportunities"')
     expect(markup).toContain("Front Desk Agent")

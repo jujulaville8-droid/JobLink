@@ -1,3 +1,5 @@
+import ApplicationScreeningVerdict from '@/components/ApplicationScreeningVerdict';
+import { loadFitVerdicts } from '@/lib/employer-screening/fit-verdict-store';
 import SeekerDetailsSummary from '@/components/profile/SeekerDetailsSummary';
 import { seekerDetailsFromRow } from '@/lib/seeker-details';
 import { redirect } from 'next/navigation';
@@ -47,6 +49,7 @@ interface ApplicantData {
   id: string;
   status: ApplicationStatus;
   applied_at: string;
+  employer_forward_status?: string | null;
   cover_letter_text: string | null;
   seeker_profiles: {
     id: string;
@@ -104,6 +107,7 @@ export default async function ApplicantsPage({
       id,
       status,
       applied_at,
+      employer_forward_status,
       cover_letter_text,
       seeker_profiles!applications_seeker_id_fkey (
         id,
@@ -164,6 +168,7 @@ export default async function ApplicantsPage({
   const verifiedParams = new URLSearchParams({ ...(statusFilter ? { status: statusFilter } : {}), ...(sort ? { sort } : {}) });
   if (!verifiedOnly) verifiedParams.set('verified', '1');
   const verifiedToggleUrl = `/my-listings/${id}/applicants${verifiedParams.size ? `?${verifiedParams}` : ''}`;
+  const fitVerdicts = await loadFitVerdicts(supabase, applicants.map(app => app.id));
   const { data: placements, error: placementsError } = await supabase.from('placements')
     .select('id, application_id').eq('employer_id', user.id);
   if (placementsError) throw new Error('Could not load confirmed hires');
@@ -226,6 +231,12 @@ export default async function ApplicantsPage({
       <p className="mt-1 text-sm text-text-light">
         for <span className="font-medium text-text">{listing.title}</span>
       </p>
+      <Link
+        href={`/my-listings/${id}/shortlist`}
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+      >
+        Shortlist
+      </Link>
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -351,6 +362,7 @@ export default async function ApplicantsPage({
                           </h3>
                           <StatusBadge status={app.status} />
                           {seeker && badges.get(seeker.id) && <VerifiedBadge badge={badges.get(seeker.id)!} compact />}
+                          <ApplicationScreeningVerdict application={app} recorded={fitVerdicts.get(app.id)} />
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-text-light">
                           {seeker?.location && (

@@ -16,7 +16,6 @@ const vacancies = [
     company_id: 'e9703c50-bfef-41fb-99f1-5ba9387418c2',
     companyName: 'Star Times Adventure Tours', title: 'Driver Guide',
     location: "St. John's, Antigua", created_at: '2026-10-06T15:38:31.353822+00:00',
-    schemaEmploymentType: undefined,
     description: "Star Times Adventure Tours, based at Heritage Quay in St. John's, runs island tours, beach days and excursions for cruise and hotel guests across Antigua. They're hiring a Driver Guide.\n\nTo apply, email Ceostartimesadventuretours@gmail.com",
     expected: `Star Times Adventure Tours in St. John's, Antigua is hiring a Driver Guide.
 
@@ -45,7 +44,6 @@ How to apply: use the Apply button on this page to submit your application and C
     company_id: '1b11e815-e80b-4b35-affe-55c1d1fc16db',
     companyName: 'MOfit Gym and Fitness Centre', title: 'Gym Attendant',
     location: 'Vista, Antigua', created_at: '2026-09-29T22:08:08.998576+00:00',
-    schemaEmploymentType: 'FULL_TIME',
     description: 'MOfit Gym and Fitness Centre in Vista, Antigua is hiring a full-time Gym Attendant.\n\nHow to apply: send your CV and a short note to mofit268@outlook.com.',
     expected: `MOfit Gym and Fitness Centre in Vista, Antigua is hiring a full-time Gym Attendant.
 
@@ -72,8 +70,6 @@ How to apply: use the Apply button on this page to submit your application and C
     company_id: '9fde7fc7-70b3-4354-9d11-d520f4ec09f9',
     companyName: 'Nobu Barbuda', title: 'Executive Chef (Japanese & Peruvian cuisine)',
     location: 'Barbuda', created_at: '2026-10-05T15:07:41.000956+00:00',
-    // The stored type is an unconfirmed assumption; optional markup is omitted.
-    schemaEmploymentType: undefined,
     description: 'Executive Chef (Japanese & Peruvian cuisine)\nNobu Barbuda, Barbuda\nHow to apply: email EMANOUSOU@NOBUHOTELS.COM',
     expected: `Nobu Barbuda in Barbuda is hiring an Executive Chef (Japanese & Peruvian cuisine).
 
@@ -182,8 +178,7 @@ describe.each(vacancies)('$companyName already-approved description fallback', v
     expect(schema.datePosted).toBe(vacancy.created_at);
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
-    if (vacancy.schemaEmploymentType) expect(schema.employmentType).toBe(vacancy.schemaEmploymentType);
-    else expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(page.textContent).toContain('Sign In to Apply');
     expect(page.textContent).toContain('Full Time'); // Stored/visible type is unchanged.
     expect(EMPLOYER_APPROVED_JOBS).toEqual(originalApprovals);
@@ -205,8 +200,20 @@ describe.each(vacancies)('$companyName already-approved description fallback', v
   });
 });
 
-describe('Nobu employment-type accuracy exclusion', () => {
+describe('Nobu stored employment type', () => {
   const nobu = vacancies[2];
+
+  it('emits the stored full-time type on the recorded vacancy while the page still shows Full Time', async () => {
+    db.job = makeJob(nobu);
+    const { schema, page } = await publicRepresentations();
+    expect(hasUnconfirmedEmploymentType(nobu.id, nobu.company_id)).toBe(true);
+    expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    expect(page.textContent).toContain('Full Time');
+  });
 
   it.each([
     [nobu.id, nobu.company_id, true],

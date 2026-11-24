@@ -8,6 +8,7 @@ import { z } from 'zod'
 import { captureSnapshot, readSnapshot, validateAssessment, type Report } from './index'
 import { derivePublishedJobCriteria } from './inline-job-criteria'
 import { hasCurrentScreeningNotice } from './notice'
+import { readResumeWithVision } from './vision-extraction'
 import { extractPdfResume, PDF_EXTRACTION_LIMITS, type PdfExtractionOptions, type PdfResumeExtraction } from './pdf-extraction'
 import { validateMinimizedExtraction } from './privacy'
 import { createOpenAIProcessor, type ScreeningBudgetReservation, type ScreeningBudgetStore, type ScreeningUsage } from './provider'
@@ -16,6 +17,11 @@ import { inlineDiagnostic, JOB_MAPPING_REASON_EVENTS, reviewV2FailureEvent, type
 import { inlineResumeReviewV2 } from './review-v2-inline'
 import { SupabaseSolReviewBudgetStore, type SolReviewBudgetStore } from './review-v2-provider'
 import type { ResumeReviewV2 } from './review-v2'
+import { UNAVAILABLE_FIT, type SimpleFitVerdict } from './simple-fit'
+import { loadBasicProfile, type BasicProfessionalProfile } from './basic-profile'
+import { inlineSimpleFit } from './simple-fit-inline'
+import { loadProfileResume } from './profile-resume'
+import { hasNarrativeReviewNotice } from './notice'
 
 /** Leaves the ordinary send its existing execution time. Parsing gets at most
  * 3s; a Sol generation takes 12-15s, so the budget leaves room for the one
@@ -30,6 +36,7 @@ export function inlineScreeningEnabled(noticeVersion: unknown, env: Record<strin
   return hasCurrentScreeningNotice(noticeVersion) && INLINE_SCREENING_GATES.every(key => env[key] === 'true')
 }
 export type InlineScreeningFields = Readonly<{
+  employer_fit_verdict?: SimpleFitVerdict
   employer_resume_review_v2?: ResumeReviewV2
   employer_screening?: Report
   employer_resume_quality?: ResumeDocumentQuality
@@ -37,13 +44,18 @@ export type InlineScreeningFields = Readonly<{
 export type InlineScreeningInput = Readonly<{
   applicationId: string; applicantUserId: string; jobId: string; companyId: string; jobTitle: string
   noticeVersion: unknown
+  simpleFitVerdict?: boolean
   /** The exact existing attachment Buffer, not a second read or a re-render. */
   resumeBytes: Uint8Array
 }>
 export type InlineScreeningDependencies = Readonly<{
+  onDiagnostic?: (event: InlineDiagnosticEvent) => void
+  loadProfileResume?: (applicantUserId: string, signal: AbortSignal) => Promise<Uint8Array | null>
+  loadBasicProfile?: (applicantUserId: string, signal: AbortSignal) => Promise<BasicProfessionalProfile>
   loadJob(jobId: string, signal: AbortSignal): Promise<unknown>
   budget(input: { applicantUserId: string; deadline: number; signal: AbortSignal }): ScreeningBudgetStore
   reviewBudget?: (input: { applicantUserId: string; deadline: number; signal: AbortSignal }) => SolReviewBudgetStore
+  extractVision?: (bytes: Uint8Array, signal: AbortSignal) => Promise<PdfResumeExtraction | null>
   extract?: (bytes: Uint8Array, options: PdfExtractionOptions) => Promise<PdfResumeExtraction | null>
   fetch?: typeof fetch
   env?: Record<string, string | undefined>
@@ -126,12 +138,19 @@ const jobSchema = z.object({ id: z.string(), company_id: z.string(), title: z.st
  */
 export async function inlineEmployerScreening(input: InlineScreeningInput, deps: InlineScreeningDependencies): Promise<InlineScreeningFields> {
   const env = deps.env ?? process.env
-  const diagnostic = (event: InlineDiagnosticEvent) => inlineDiagnostic(event, input.applicationId)
+  const diagnostic = (event: InlineDiagnosticEvent) => {
+    inlineDiagnostic(event, input.applicationId)
+    try { deps.onDiagnostic?.(event) } catch { /* Observations cannot affect screening. */ }
+  }
   if (!inlineScreeningEnabled(input.noticeVersion, env)) {
     diagnostic(hasCurrentScreeningNotice(input.noticeVersion) ? 'entry_gates_disabled' : 'entry_notice_missing')
     return {}
   }
-  if (!(input.resumeBytes instanceof Uint8Array) || !input.resumeBytes.byteLength || input.resumeBytes.byteLength > PDF_EXTRACTION_LIMITS.bytes) {
+  const simpleFit = input.simpleFitVerdict === true && hasNarrativeReviewNotice(input.noticeVersion) &&
+    env.EMPLOYER_SCREENING_REVIEW_V2_ENABLED === 'true' && env.EMPLOYER_SCREENING_REVIEW_V2_PRIVACY_APPROVED === 'true' &&
+    env.EMPLOYER_SCREENING_BUDGET_APPROVED === 'true' && env.EMPLOYER_SCREENING_PAID_PROVIDER_ENABLED === 'true' &&
+    !!env.EMPLOYER_SCREENING_REVIEW_V2_BUDGET_CONFIG_ID && !!env.OPENAI_API_KEY && !!deps.reviewBudget
+  if (!simpleFit && (!(input.resumeBytes instanceof Uint8Array) || !input.resumeBytes.byteLength || input.resumeBytes.byteLength > PDF_EXTRACTION_LIMITS.bytes)) {
     diagnostic('attachment_invalid'); return {}
   }
   const now = deps.now ?? Date.now
@@ -142,18 +161,27 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
   let failureEvent: InlineDiagnosticEvent = 'parse_failed'
   // Read through a function so the catch sees assignments made inside work().
   const currentFailureEvent = (): InlineDiagnosticEvent => failureEvent
-  const localOnly = (): InlineScreeningFields => quality ? { employer_resume_quality: quality } : {}
+  const localOnly = (): InlineScreeningFields => simpleFit ? { employer_fit_verdict: UNAVAILABLE_FIT } : quality ? { employer_resume_quality: quality } : {}
   const live = () => { if (controller.signal.aborted || now() >= deadline) throw new Error('Inline screening deadline') }
   const work = async (): Promise<InlineScreeningFields> => {
     live()
     const digest = createHash('sha256').update(input.resumeBytes).digest('hex')
     diagnostic('parse_started')
-    const parsed = await (deps.extract ?? extractPdfResume)(input.resumeBytes, {
+    let parseFailed = false
+    const parsed = input.resumeBytes.byteLength && input.resumeBytes.byteLength <= PDF_EXTRACTION_LIMITS.bytes ? await (deps.extract ?? extractPdfResume)(input.resumeBytes, {
       signal: controller.signal, budgetMs: Math.max(1, Math.min(PDF_EXTRACTION_LIMITS.budgetMs, deadline - now())),
-      onDiagnostic: diagnostic,
-    })
+      onDiagnostic: event => {
+        diagnostic(event)
+        if (['pdf_capacity_unavailable', 'pdf_aborted', 'pdf_resolve_failed', 'pdf_module_failed', 'pdf_worker_failed', 'pdf_timeout'].includes(event)) parseFailed = true
+      },
+    }).catch(error => { if (!simpleFit) throw error; parseFailed = true; return null }) : null
     live()
-    if (!parsed || parsed.sourceSha256 !== digest) { diagnostic('parse_unavailable'); return {} }
+    if (simpleFit && (!parsed || parsed.sourceSha256 === digest)) {
+      failureEvent = 'review_v2_failed'
+      const fields = await inlineSimpleFit(input, parsed, { ...deps, onDiagnostic: diagnostic }, deadline, controller.signal, parseFailed)
+      return fields.employer_fit_verdict ? fields : localOnly()
+    }
+    if (!parsed || parsed.sourceSha256 !== digest) { diagnostic('parse_unavailable'); return localOnly() }
     // Choosing v2 is exclusive, including failure. Never run a paid Luna fallback
     // or relabel the old local presentation score as this narrative review.
     if (env.EMPLOYER_SCREENING_REVIEW_V2_ENABLED === 'true') {
@@ -265,6 +293,13 @@ export async function inlineEmployerScreening(input: InlineScreeningInput, deps:
 
 export function inlineScreeningDependencies(db: SupabaseClient): InlineScreeningDependencies {
   return {
+    extractVision: async (bytes, signal) => {
+      if (!process.env.OPENAI_API_KEY) return null
+      const outcome = await readResumeWithVision(bytes, { signal })
+      return outcome.status === 'read' ? outcome.extraction : null
+    },
+    loadProfileResume: (userId, signal) => loadProfileResume(db, userId, signal),
+    loadBasicProfile: (userId, signal) => loadBasicProfile(db, userId, signal),
     loadJob: async (jobId, signal) => {
       const { data, error } = await db.from('job_listings').select('id, company_id, title, description, status')
         .eq('id', jobId).abortSignal(signal).single()

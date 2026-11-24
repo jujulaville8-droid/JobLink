@@ -226,6 +226,29 @@ it('keeps legitimate self-posted jobs eligible without an approval entry', async
   expect((await schemas())[0]['@type']).toBe('JobPosting');
 });
 
+it('maps a stored St john\'s Antigua location without a street or postal code', async () => {
+  db.job!.id = 'synthetic-self-posted-job';
+  db.job!.company_id = 'synthetic-self-posting-company';
+  db.job!.company.id = db.job!.company_id;
+  db.job!.posted_by_admin = false;
+  db.job!.location = "St john's Antigua" as unknown as null;
+  db.job!.company.location = 'Antigua';
+  db.job!.salary_min = null;
+  db.job!.salary_max = null;
+  db.job!.expires_at = null;
+  const address = (await schemas())[0].jobLocation.address;
+  expect(address).toEqual({
+    '@type': 'PostalAddress',
+    addressLocality: "St john's",
+    addressRegion: 'Saint John',
+    addressCountry: 'AG',
+  });
+  expect(address).not.toHaveProperty('streetAddress');
+  expect(address).not.toHaveProperty('postalCode');
+  expect((await schemas())[0]).not.toHaveProperty('baseSalary');
+  expect((await schemas())[0]).not.toHaveProperty('validThrough');
+});
+
 it('blocks unapproved imports even when the admin flag is false', async () => {
   delete EMPLOYER_APPROVED_JOBS[db.job!.id];
   delete EMPLOYER_APPROVED_COMPANIES[db.job!.company_id];
@@ -420,8 +443,8 @@ describe.each([
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({ companyId, attestedOn });
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, validThrough: '2026-10-30', directApply: false });
-    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema.description).not.toContain(deadline);
     const html = await pageHtml();
     expect(html).toContain('Sign In to Apply');
@@ -454,7 +477,7 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     db.job!.company.company_name = 'Star Times Adventure Tours';
     db.job!.title = 'Driver Guide';
   });
-  it('authorizes only the recorded vacancy without asserting the placeholder employment type', async () => {
+  it('authorizes only the recorded vacancy and emits the stored full-time type', async () => {
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
       companyId, attestedOn: '2026-10-06', employmentTypeUnconfirmed: true,
@@ -462,7 +485,7 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     });
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
   });
@@ -476,9 +499,25 @@ describe('Star Times Driver Guide vacancy-scoped approval', () => {
     db.job!.company.id = db.job!.company_id;
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
   });
-  it('restores confirmed employmentType only when the uncertainty flag is removed', async () => {
-    EMPLOYER_APPROVED_JOBS[jobId] = { ...EMPLOYER_APPROVED_JOBS[jobId], employmentTypeUnconfirmed: false };
-    expect((await schemas())[0].employmentType).toBe('FULL_TIME');
+  it('emits the stored job type while the older uncertainty flag stays set', async () => {
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    const cases = [
+      ['full_time', 'FULL_TIME'],
+      ['part_time', 'PART_TIME'],
+      ['contract', 'CONTRACTOR'],
+      ['temporary', 'TEMPORARY'],
+      ['internship', 'INTERN'],
+      ['seasonal', 'TEMPORARY'],
+    ] as const;
+    for (const [stored, schemaType] of cases) {
+      (db.job as { job_type: string }).job_type = stored;
+      expect((await schemas())[0].employmentType).toBe(schemaType);
+    }
+    (db.job as { job_type: string }).job_type = '';
+    expect((await schemas())[0]).not.toHaveProperty('employmentType');
+    (db.job as { job_type: string }).job_type = 'unknown';
+    expect((await schemas())[0]).not.toHaveProperty('employmentType');
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
   });
 });
 
@@ -495,7 +534,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without the placeholder employment type', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -504,7 +543,7 @@ describe.each([
     });
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     if (validThrough) expect(schema.validThrough).toBe(validThrough);
     else expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
@@ -589,8 +628,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema.employmentType).toBe('FULL_TIME');
     if (validThrough) expect(schema.validThrough).toBe(validThrough);
     else expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
@@ -628,7 +666,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -637,7 +675,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
@@ -714,7 +752,7 @@ describe('e080f894-4e7f-48b7-b39a-1a274f52fd97 October 16 Super Service Center v
     db.job!.title = 'Tire Technician';
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -723,7 +761,7 @@ describe('e080f894-4e7f-48b7-b39a-1a274f52fd97 October 16 Super Service Center v
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
@@ -828,8 +866,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    if (unconfirmed) expect(schema).not.toHaveProperty('employmentType');
-    else expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(await pageHtml()).toContain('Sign In to Apply');
     expect(db.job).toEqual(before);
@@ -874,7 +911,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -883,7 +920,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(db.job).toEqual(before);
   });
@@ -917,7 +954,7 @@ describe.each([
     db.job!.title = title;
     db.job!.job_type = 'full_time';
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -926,7 +963,7 @@ describe.each([
     expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
     const schema = (await schemas())[0];
     expect(schema).toMatchObject({ '@type': 'JobPosting', identifier: { value: jobId }, directApply: false });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(db.job).toEqual(before);
   });
@@ -974,7 +1011,7 @@ describe.each([
     db.job!.salary_visible = true;
     db.job!.posted_by_admin = true;
   });
-  it('emits JobPosting for only the recorded vacancy without employmentType or deadline', async () => {
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -986,7 +1023,7 @@ describe.each([
     expect(schema).toMatchObject({
       '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
     });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
     expect(schema.datePosted).not.toBe(attestedOn);
@@ -1084,7 +1121,7 @@ describe.each([
     const schema = (await schemas()).find(item => item['@type'] === 'JobPosting');
     expect(schema.description).toBe('<p>How to apply: email [redacted]</p>');
     expect(schema.description).not.toContain(email);
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema.baseSalary.value).toMatchObject({ minValue: 1800, maxValue: 2200 });
     expect(schema.datePosted).toBe(before!.created_at);
@@ -1146,7 +1183,7 @@ describe.each([
     else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
     expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
     expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
     expect(schema.datePosted).not.toBe(attestedOn);
@@ -1167,5 +1204,675 @@ describe.each([
     db.job!.company.id = db.job!.company_id;
     expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
     expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+});
+
+const MAMMA_MIA_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/130';
+
+describe.each([
+  ['59c908d2-3c33-4c3d-be61-2a37bce19823', '766725b8-2f44-435c-b93b-4a4122f211f8', 'Mamma Mia Restaurant & Sunset on the Shore', 'Line Chef', '2026-11-11'],
+])('%s November 11 vacancy-scoped allowlist', (jobId, companyId, companyName, title, attestedOn) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-11T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.title = title;
+    db.job!.job_type = 'full_time';
+    db.job!.description = 'Hiring for this vacancy.';
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-10T21:46:04.074Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+  it('emits JobPosting for only the recorded vacancy with the stored employment type and no deadline', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn, evidenceReference: MAMMA_MIA_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting', identifier: { value: jobId }, directApply: false, datePosted: before!.created_at,
+    });
+    expect(schema.employmentType).toBe('FULL_TIME');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema.datePosted).not.toBe(attestedOn);
+    const html = await pageHtml();
+    const page = document.createElement('div');
+    page.innerHTML = html;
+    expect(page.querySelector('.whitespace-pre-wrap')?.textContent).toBe(before!.description);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+const NOVEMBER_19_EVIDENCE = 'Julian confirmed employer agreed to post, Nov 19 2026';
+
+describe.each([
+  ['c8dfdd1c-4146-4755-b8ef-d7a4e857536c', '7c6c839e-2de8-4737-94e6-2cf0a2e3c039', 'Shef Spice Restaurant & Sports Bar', 'Cook', '2026-11-19T16:10:25.137364Z', "St. Johnston's Village, Antigua", "St. Johnston's Village", null, 'Food & Beverage'],
+  ['0e8fa356-3fe7-436e-82ed-1643e81fd51f', '3477c23b-1e11-4e0d-b54c-74112b690ea1', 'Paperclips Antigua', 'Warehouse Attendant', '2026-11-19T16:34:18.253277Z', "Royal Palm Place, Friars Hill Road, St. John's, Antigua", "Royal Palm Place, Friars Hill Road, St. John's", 'Saint John', 'Retail & Trade'],
+  ['82373c72-efa7-4201-af60-4d10e60cd85e', '3477c23b-1e11-4e0d-b54c-74112b690ea1', 'Paperclips Antigua', 'Delivery Driver', '2026-11-19T16:34:44.717645Z', "Royal Palm Place, Friars Hill Road, St. John's, Antigua", "Royal Palm Place, Friars Hill Road, St. John's", 'Saint John', 'Retail & Trade'],
+  ['75e6b3e4-c64a-4caf-aee3-ada51c66eaec', '8f89c5a4-ce17-402a-8152-cde2dc9ff865', 'Tropical Adventures', 'Senior Accountant', '2026-11-19T18:44:41.599529Z', "St. John's, Antigua", "St. John's", 'Saint John', null],
+] as const)('%s November 19 vacancy-scoped allowlist', (jobId, companyId, companyName, title, createdAt, companyLocation, locality, region, industry) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-19T20:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = companyLocation;
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+      contact_email?: string;
+      contact_phone?: string;
+    };
+    company.industry = industry;
+    company.contact_email = 'hidden-contact@example.com';
+    company.contact_phone = '268-555-0100';
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = `Hiring for this ${title} vacancy.`;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting for only the recorded vacancy without a deadline, pay, or contact details', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-19', evidenceReference: NOVEMBER_19_EVIDENCE,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.hiringOrganization).not.toHaveProperty('logo');
+    expect(schema.hiringOrganization).not.toHaveProperty('sameAs');
+    expect(schema.hiringOrganization).not.toHaveProperty('description');
+    expect(schema.jobLocation.address.addressCountry).toBe('AG');
+    if (locality) expect(schema.jobLocation.address.addressLocality).toBe(locality);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
+    if (region) expect(schema.jobLocation.address.addressRegion).toBe(region);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    if (industry) expect(schema.industry).toBe(industry);
+    else expect(schema).not.toHaveProperty('industry');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.datePosted).not.toBe('2026-11-19');
+    const markup = JSON.stringify(schema);
+    expect(markup).not.toContain('hidden-contact@example.com');
+    expect(markup).not.toContain('268-555-0100');
+    expect(markup).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(schema.description).toBe(`<p>Hiring for this ${title} vacancy.</p>`);
+    const html = await pageHtml();
+    expect(html).toContain(`Hiring for this ${title} vacancy.`);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+const ABFA_EVIDENCE = 'Julian confirmed employer (ABFA General Secretary) agreed by email, Nov 19 2026';
+
+describe('3339cbaa-e3d1-4b4c-a634-45381e48f99e November 19 ABFA vacancy-scoped allowlist', () => {
+  const jobId = '3339cbaa-e3d1-4b4c-a634-45381e48f99e';
+  const companyId = 'ceed78ec-be65-4a6e-b085-4e415991017a';
+  const companyName = 'Antigua and Barbuda Football Association (ABFA)';
+  const title = 'Assistant General Secretary';
+  const createdAt = '2026-11-19T21:31:33.581388Z';
+  const deadlineSentence = 'The deadline for applications is Friday, December 4, 2026 at 4:00 p.m.';
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-19T22:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = 'Paynters, St. George, Antigua';
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+    };
+    company.industry = null;
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = `ABFA is hiring an ${title}.\n\n${deadlineSentence}`;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting without validThrough while expires_at is null', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-19', evidenceReference: ABFA_EVIDENCE,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.jobLocation.address).toEqual({
+      '@type': 'PostalAddress',
+      addressLocality: 'Paynters, St. George',
+      addressRegion: 'Saint George',
+      addressCountry: 'AG',
+    });
+    expect(schema).not.toHaveProperty('industry');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.description).toContain(deadlineSentence);
+    expect(JSON.stringify(schema)).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const html = await pageHtml();
+    expect(html).toContain(deadlineSentence);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+});
+
+const NOVEMBER_21_EVIDENCE = 'Julian confirmed employer agreed to post, Nov 21 2026';
+
+describe.each([
+  ['2f533bba-0f7a-49e1-9d42-3d1cd2c3f37d', '7850cec0-3fd7-4986-9fc4-bcf21e3dcaaf', 'Waterscaping Services', 'Pool Service Technician', '2026-11-19T22:27:15.725063Z', 'full_time', true, 'Antigua', null, null, null],
+  ['dfbbf8f7-0146-48bb-9fcd-4afefe16bfb6', '77d657a4-ac5a-4eca-a49b-d746fecbfbb0', 'GGP Cleaning Service', 'Part Time Cleaners', '2026-11-20T15:20:12.859024Z', 'part_time', false, 'Antigua', null, null, 'Cleaning & Maintenance'],
+  ['f26fd928-ebcf-47e1-8304-da48cbc9621d', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Head Chef', '2026-11-20T21:54:58.350016Z', 'full_time', true, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+  ['0b18e456-f92f-4747-a9cc-2fbf4133f837', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Line Cook', '2026-11-20T21:55:25.950085Z', 'full_time', true, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+  ['215d5f56-00bb-42d7-8a1b-fec54d343ea6', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Beach Waiter', '2026-11-20T21:55:40.343406Z', 'full_time', true, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+  ['1ae4c066-16b5-46b2-a43b-3fb4710f7801', 'ecca22b4-0a7b-40d9-ac25-7eb453dd3617', 'Treehouse Beach Club', 'Steward (Kitchen Assistant)', '2026-11-20T21:56:11.363485Z', 'full_time', false, "Fort James Beach, St. John's, Antigua", "Fort James Beach, St. John's", 'Saint John', 'Tourism & Hospitality'],
+] as const)('%s November 21 vacancy-scoped allowlist', (jobId, companyId, companyName, title, createdAt, jobType, unconfirmed, companyLocation, locality, region, industry) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-21T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = companyLocation;
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+    };
+    company.industry = industry;
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = jobType;
+    db.job!.description = `Hiring for this ${title} vacancy.`;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting for only the recorded vacancy without a deadline, pay, or contact details', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn: '2026-11-21', evidenceReference: NOVEMBER_21_EVIDENCE,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(unconfirmed ? true : undefined);
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.jobLocation.address.addressCountry).toBe('AG');
+    if (locality) expect(schema.jobLocation.address.addressLocality).toBe(locality);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
+    if (region) expect(schema.jobLocation.address.addressRegion).toBe(region);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    if (industry) expect(schema.industry).toBe(industry);
+    else expect(schema).not.toHaveProperty('industry');
+    if (!unconfirmed) expect(schema.employmentType).toBe(jobType === 'part_time' ? 'PART_TIME' : 'FULL_TIME');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.datePosted).not.toBe('2026-11-21');
+    expect(JSON.stringify(schema)).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const html = await pageHtml();
+    expect(html).toContain(`Hiring for this ${title} vacancy.`);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+});
+
+const NOVEMBER_12_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/131';
+
+describe.each([
+  ['71dcc48c-5fd4-40de-a604-e6b83ba11ad9', '0a924e3c-b468-4418-83fe-b23a5c86e7fd', 'Deep Blue Antigua', 'Waiter / Bartender', '2026-11-12', '2026-11-12T14:38:12.823809Z', 'Deep Blue Antigua is hiring a Waiter / Bartender on a full-time basis in English Harbour, Antigua.', 'English Harbour, Antigua', 'English Harbour', 'Saint Paul'],
+  ['a8cb7222-575a-458d-aa03-286efb1494e7', 'b403485a-07d3-40e8-aa66-f9aecaa5636b', 'Private Employer — Chef', 'Chef', '2026-11-12', '2026-11-12T14:17:23.790696Z', 'A private employer is hiring a Chef on a full-time basis in Antigua.', 'Antigua', null, null],
+] as const)('%s November 12 vacancy-scoped allowlist', (jobId, companyId, companyName, title, attestedOn, createdAt, description, companyLocation, locality, region) => {
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-12T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = companyLocation;
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+      contact_email?: string;
+      legal_name?: string;
+    };
+    company.industry = 'Food & Beverage';
+    company.contact_email = 'hidden-contact@example.com';
+    company.legal_name = 'Hidden Legal Name Ltd';
+    db.job!.title = title;
+    db.job!.location = null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = description;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+    db.job!.expires_at = null;
+    db.job!.created_at = createdAt;
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+  });
+
+  it('emits JobPosting for only the recorded vacancy with the stated full-time type and no deadline or pay', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId, companyName, attestedOn, evidenceReference: NOVEMBER_12_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBeUndefined();
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title,
+      directApply: false,
+      datePosted: createdAt,
+      employmentType: 'FULL_TIME',
+      industry: 'Food & Beverage',
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.hiringOrganization).toEqual({ '@type': 'Organization', name: companyName });
+    expect(schema.jobLocation.address.addressCountry).toBe('AG');
+    if (locality) expect(schema.jobLocation.address.addressLocality).toBe(locality);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressLocality');
+    if (region) expect(schema.jobLocation.address.addressRegion).toBe(region);
+    else expect(schema.jobLocation.address).not.toHaveProperty('addressRegion');
+    expect(schema.jobLocation.address).not.toHaveProperty('streetAddress');
+    expect(schema.jobLocation.address).not.toHaveProperty('postalCode');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema.datePosted).not.toBe(attestedOn);
+    const markup = JSON.stringify(schema);
+    expect(markup).not.toContain('hidden-contact@example.com');
+    expect(markup).not.toContain('Hidden Legal Name');
+    expect(schema.description).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(schema.description).toBe(`<p>${description}</p>`);
+    const html = await pageHtml();
+    expect(html).toContain(description);
+    expect(html).toContain('Sign In to Apply');
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
+  });
+});
+
+const NOVEMBER_13_ALLOWLIST_PR = 'https://github.com/jujulaville8-droid/JobLink/pull/138';
+const MOUNT_JOY_DESCRIPTION = 'Mount Joy Service Centre is hiring a Pump Attendant / Cashier in Mount Joy, Antigua.\n\nApply on this JobLink Antigua page. Applications are forwarded straight to Mount Joy Service Centre.';
+const CLINICAL_DESCRIPTION = 'Position: Clinical Medical Assistant\n\nPosition Summary\nTo provide clinical, administrative, and patient care support to the medical team, ensuring efficient clinic operations and a positive patient experience.\n\nApply on this JobLink Antigua page. Applications are forwarded straight to the employer.';
+
+describe('45b8e81c-d9b2-4604-867f-cd10835cf3a3 November 13 confidential allowlist', () => {
+  const jobId = '45b8e81c-d9b2-4604-867f-cd10835cf3a3';
+  const companyId = 'b2c41f29-5d70-4d4e-b978-38e46f20cbce';
+  const sentinelName = 'Sentinel Hidden Employer';
+  const sentinelEmail = 'hidden-contact@example.com';
+  const sentinelPhone = '+1-268-555-0199';
+  const sentinelLogo = 'https://example.com/hidden-logo.png';
+  const sentinelSite = 'https://hidden-employer.example';
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-14T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = sentinelName;
+    db.job!.company.location = "St. John's, Antigua";
+    db.job!.company.website = sentinelSite;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry' | 'logo_url' | 'description'> & {
+      industry: string | null;
+      logo_url: string | null;
+      description: string | null;
+      contact_email?: string;
+      contact_phone?: string;
+      legal_name?: string;
+    };
+    company.logo_url = sentinelLogo;
+    company.description = 'Hidden company profile.';
+    company.industry = 'Healthcare';
+    company.contact_email = sentinelEmail;
+    company.contact_phone = sentinelPhone;
+    company.legal_name = 'Hidden Legal Name Ltd';
+    db.job!.title = 'Clinical Medical Assistant';
+    db.job!.location = "St. John's, Antigua" as unknown as null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = CLINICAL_DESCRIPTION;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-14T00:28:45.945975Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = true;
+  });
+
+  it('records the vacancy without emitting JobPosting or the hidden employer', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId,
+      companyName: 'Confidential employer',
+      attestedOn: '2026-11-13',
+      evidenceReference: NOVEMBER_13_ALLOWLIST_PR,
+      employmentTypeUnconfirmed: true,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const data = await schemas();
+    expect(data.map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+    const markup = JSON.stringify(data);
+    expect(markup).not.toContain('hiringOrganization');
+    expect(markup).not.toContain(sentinelName);
+    expect(markup).not.toContain(sentinelEmail);
+    expect(markup).not.toContain(sentinelPhone);
+    expect(markup).not.toContain(sentinelLogo);
+    expect(markup).not.toContain(sentinelSite);
+    expect(markup).not.toContain('Hidden Legal Name');
+    expect(markup).not.toContain('Healthcare');
+    const html = await pageHtml();
+    expect(html).toContain('Confidential employer');
+    expect(html).toContain('Clinical Medical Assistant');
+    expect(html).toContain('St. John&#x27;s, Antigua');
+    expect(html).toContain('Sign In to Apply');
+    expect(html).not.toContain(sentinelName);
+    expect(html).not.toContain(sentinelEmail);
+    expect(html).not.toContain(sentinelPhone);
+    expect(html).not.toContain(sentinelLogo);
+    expect(html).not.toContain(sentinelSite);
+    expect(html).not.toContain('tel:');
+    const metadata = await generateMetadata({ params: Promise.resolve({ id: jobId }) });
+    expect(JSON.stringify(metadata)).not.toContain(sentinelName);
+    expect(JSON.stringify(metadata)).not.toContain(sentinelEmail);
+    expect(metadata.title).toEqual({ absolute: 'Clinical Medical Assistant at Confidential employer | JobLink' });
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays on the public page without JobPosting because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+    expect(await pageHtml()).toContain('Sign In to Apply');
+  });
+});
+
+describe('98ab1673-6109-4e0f-af98-e3ce3a75482b November 13 Mount Joy allowlist', () => {
+  const jobId = '98ab1673-6109-4e0f-af98-e3ce3a75482b';
+  const companyId = 'aa6580a8-1628-4e0e-a634-26b4736e68fd';
+  const companyName = 'Mount Joy Service Centre';
+  const sentinelEmail = 'hidden-contact@example.com';
+  const sentinelPhone = '+1-268-555-0199';
+
+  beforeEach(() => {
+    vi.setSystemTime(new Date('2026-11-14T16:00:00Z'));
+    db.job!.id = jobId;
+    db.job!.company_id = companyId;
+    db.job!.company.id = companyId;
+    db.job!.company.company_name = companyName;
+    db.job!.company.location = 'Mount Joy, Antigua';
+    db.job!.company.website = null;
+    db.job!.company.logo_url = null;
+    db.job!.company.description = null;
+    const company = db.job!.company as Omit<NonNullable<typeof db.job>['company'], 'industry'> & {
+      industry: string | null;
+      contact_email?: string;
+      contact_phone?: string;
+      legal_name?: string;
+    };
+    company.industry = 'Gas station / service centre';
+    company.contact_email = sentinelEmail;
+    company.contact_phone = sentinelPhone;
+    company.legal_name = 'Hidden Legal Name Ltd';
+    db.job!.title = 'Pump Attendant / Cashier';
+    db.job!.location = 'Mount Joy, Antigua' as unknown as null;
+    db.job!.job_type = 'full_time';
+    db.job!.description = MOUNT_JOY_DESCRIPTION;
+    db.job!.status = 'active';
+    db.job!.expires_at = null;
+    db.job!.created_at = '2026-11-14T00:28:45.945975Z';
+    db.job!.salary_min = null;
+    db.job!.salary_max = null;
+    db.job!.salary_visible = true;
+    db.job!.posted_by_admin = true;
+    const listing = db.job as NonNullable<typeof db.job> & { benefits?: string[]; is_confidential?: boolean };
+    listing.benefits = [];
+    listing.is_confidential = false;
+  });
+
+  it('emits JobPosting with the public organization name and no contact, pay, deadline, or employmentType', async () => {
+    const before = structuredClone(db.job);
+    expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
+    expect(getEmployerApproval(companyId, jobId)).toMatchObject({
+      companyId,
+      companyName,
+      attestedOn: '2026-11-13',
+      evidenceReference: NOVEMBER_13_ALLOWLIST_PR,
+    });
+    expect(EMPLOYER_APPROVED_JOBS[jobId].employmentTypeUnconfirmed).toBe(true);
+    expect(EMPLOYER_APPROVED_JOBS[jobId].validThrough).toBeUndefined();
+    const schema = (await schemas())[0];
+    expect(schema).toMatchObject({
+      '@type': 'JobPosting',
+      identifier: { value: jobId },
+      title: 'Pump Attendant / Cashier',
+      directApply: false,
+      datePosted: '2026-11-14T00:28:45.945975Z',
+      industry: 'Gas station / service centre',
+      hiringOrganization: { '@type': 'Organization', name: companyName },
+    });
+    expect(schema.hiringOrganization).toEqual({ '@type': 'Organization', name: companyName });
+    expect(schema.jobLocation.address).toEqual({
+      '@type': 'PostalAddress',
+      addressLocality: 'Mount Joy',
+      addressCountry: 'AG',
+    });
+    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema).not.toHaveProperty('validThrough');
+    expect(schema).not.toHaveProperty('baseSalary');
+    expect(schema).not.toHaveProperty('jobBenefits');
+    expect(schema).not.toHaveProperty('telephone');
+    expect(schema).not.toHaveProperty('email');
+    expect(schema.datePosted).not.toBe('2026-11-13');
+    const markup = JSON.stringify(schema);
+    expect(markup).not.toContain(sentinelEmail);
+    expect(markup).not.toContain(sentinelPhone);
+    expect(markup).not.toContain('Hidden Legal Name');
+    expect(markup).not.toMatch(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    expect(schema.description).not.toMatch(/\+?\d[\d\s().-]{6,}\d/);
+    expect(schema.description).toBe('<p>Mount Joy Service Centre is hiring a Pump Attendant / Cashier in Mount Joy, Antigua.</p><p>Apply on this JobLink Antigua page. Applications are forwarded straight to Mount Joy Service Centre.</p>');
+    const html = await pageHtml();
+    expect(html).toContain(MOUNT_JOY_DESCRIPTION);
+    expect(html).toContain('Sign In to Apply');
+    expect(html).not.toContain(sentinelEmail);
+    expect(html).not.toContain(sentinelPhone);
+    expect(db.job).toEqual(before);
+  });
+
+  it('excludes other vacancies at the same company', async () => {
+    db.job!.id = 'synthetic-other-vacancy';
+    expect(getEmployerApproval(companyId, db.job!.id)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('does not carry permission to a different company', async () => {
+    db.job!.company_id = 'synthetic-other-company';
+    db.job!.company.id = db.job!.company_id;
+    expect(getEmployerApproval(db.job!.company_id, jobId)).toBeNull();
+    expect((await schemas()).map(schema => schema['@type'])).toEqual(['BreadcrumbList']);
+  });
+
+  it('stays live well into the future because no closure or deadline is recorded', async () => {
+    vi.setSystemTime(new Date('2027-03-01T14:00:00Z'));
+    expect((await schemas()).map(schema => schema['@type'])).toContain('JobPosting');
   });
 });

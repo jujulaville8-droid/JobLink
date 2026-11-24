@@ -5,6 +5,7 @@ vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: () => ({ from: mocks
 vi.mock('@/lib/email', () => ({ sendEmail: mocks.send }))
 vi.mock('@/lib/cv-helpers', () => ({ fetchFullCv: mocks.fetchCv }))
 vi.mock('@/lib/employer-screening/inline', async importOriginal => ({ ...await importOriginal<object>(), inlineEmployerScreening: mocks.screen }))
+import { NOT_SCREENED_TEXT } from '../src/lib/employer-screening/not-screened'
 import { applicantCvPath, notifyNewApplicant } from '../src/lib/applicant-notifications'
 import { buildEmailHtml } from '../src/lib/email-templates'
 import { resumeFixture } from './fixtures/resume'
@@ -36,7 +37,7 @@ beforeEach(() => {
   mocks.from.mockImplementation((table: string) => {
     const filters: [string, unknown][] = []
     queries.push({ table, filters })
-    const q = { update: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve), select: () => q, eq: (field: string, value: unknown) => { filters.push([field, value]); return q }, single: async () => {
+    const q = { maybeSingle: async () => ({ data: rows[table] ?? null, error: null }), upsert: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, update: (value: Record<string, unknown>) => { updates.push({ table, value }); return q }, then: (resolve: (v: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve), select: () => q, eq: (field: string, value: unknown) => { filters.push([field, value]); return q }, single: async () => {
       const row = rows[table === 'users' ? (filters.some(([, v]) => v === 'owner') ? 'owner' : 'applicant') : table]
       return { data: row && filters.every(([k, v]) => row[k] === v) ? row : null, error: null }
     } }
@@ -88,11 +89,11 @@ it.each(['upload', 'builder'])('screens the exact %s attachment Buffer once, bef
   expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('attachment_ready'))).toBe(true)
 })
 
-it('does not run screening without an attachment, even with every inline gate enabled', async () => {
+it('runs screening with empty bytes for the profile fallback when the attachment is missing', async () => {
   INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
   mocks.download.mockResolvedValue({ data: null, error: null })
   expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
-  expect(mocks.screen).not.toHaveBeenCalled()
+  expect(mocks.screen).toHaveBeenCalledWith(expect.objectContaining({ simpleFitVerdict: true, resumeBytes: new Uint8Array() }), expect.any(Object))
   expect(mocks.send).toHaveBeenCalledOnce()
   expect(vi.mocked(console.info).mock.calls.some(call => String(call[1]).includes('attachment_missing'))).toBe(true)
 })
@@ -183,10 +184,12 @@ it.each([null, new Blob(['not a PDF']), new Blob(['%PDF-' + 'x'.repeat(10 * 1024
   expect(mocks.send.mock.calls[0][0]).toMatchObject({ attachments: [], data: { applicant_email: 'applicant@example.test', cv_attached: false } })
 })
 
-it('skips all database/file reads without provider key and survives storage exceptions without private logs', async () => {
+it('records an unavailable outcome without private reads when there is no provider key and survives storage exceptions without private logs', async () => {
   vi.stubEnv('RESEND_API_KEY', '')
   expect(await notifyNewApplicant('saved-app', uid)).toBe(false)
-  expect(mocks.from).not.toHaveBeenCalled()
+  expect(queries.map(q => q.table)).toEqual(['application_fit_verdicts', 'applications'])
+  expect(mocks.download).not.toHaveBeenCalled()
+  expect(mocks.fetchCv).not.toHaveBeenCalled()
   vi.stubEnv('RESEND_API_KEY', 'test-only')
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
   mocks.download.mockRejectedValue(new Error('private storage token=secret'))
@@ -228,7 +231,7 @@ it('escapes applicant content, says when CV unavailable, and hides unusable dash
 
 it('records for admins whether the application was forwarded, without recipient details', async () => {
   expect(await notifyNewApplicant('saved-app', uid)).toBe(true)
-  expect(updates).toEqual([{ table: 'applications', value: {
+  expect(updates.filter(row => row.table === 'applications')).toEqual([{ table: 'applications', value: {
     employer_forward_status: 'sent',
     employer_forward_attempted_at: expect.any(String),
     employer_forwarded_at: expect.any(String),
@@ -236,7 +239,7 @@ it('records for admins whether the application was forwarded, without recipient 
   mocks.send.mockResolvedValue({ success: false })
   updates.length = 0
   expect(await notifyNewApplicant('saved-app', uid)).toBe(false)
-  expect(updates).toEqual([{ table: 'applications', value: { employer_forward_status: 'not_sent', employer_forward_attempted_at: expect.any(String) } }])
+  expect(updates.filter(row => row.table === 'applications')).toEqual([{ table: 'applications', value: { employer_forward_status: 'not_sent', employer_forward_attempted_at: expect.any(String) } }])
 })
 
 // Offline response fixture only; the provider and transport are not called here.
@@ -266,4 +269,86 @@ it.each([
   expect(mocks.send.mock.calls[0][0].attachments).toEqual([
     { filename: `Applicant Name Resume.${extension}`, content: Buffer.from('fixture'), contentType },
   ])
+})
+
+it('persists the same fit line forwarded by email without adding fields to the application row', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.screen.mockResolvedValue({ employer_fit_verdict: { verdict: 'not_a_fit', reason: 'The supplied work is in cashier duties.', sourceIds: ['r1'], criterionIds: ['c1'], gapQuote: null } })
+  expect(await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)).toBe(true)
+  expect(updates).toContainEqual({ table: 'application_fit_verdicts', value: { application_id: 'saved-app', verdict: 'not_a_fit', verdict_text: 'This person does not have the experience for this job.' } })
+  const html = buildEmailHtml('new_applicant', mocks.send.mock.calls[0][0].data).html
+  expect(html).toContain('This person does not have the experience for this job.')
+  expect(updates.filter(row => row.table === 'applications').every(row => !('verdict_text' in row.value))).toBe(true)
+})
+
+function recordedReason(reason: keyof typeof NOT_SCREENED_TEXT) {
+  expect(updates).toContainEqual({ table: 'application_fit_verdicts', value: {
+    application_id: 'saved-app', verdict: 'not_screened', verdict_text: NOT_SCREENED_TEXT[reason],
+  } })
+  if (mocks.send.mock.calls.length) expect(mocks.send.mock.calls.at(-1)![0].data.employer_not_screened).toBe(NOT_SCREENED_TEXT[reason])
+}
+it('records confirmed absence of both uploaded and built resumes', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  rows.seeker_profiles!.cv_url = null
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  recordedReason('no_resume')
+})
+it.each(['invalid', 'non-pdf', 'oversized'])('records unreadable for a %s resume', async kind => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  if (kind === 'non-pdf') rows.seeker_profiles!.cv_url = `${uid}/cv-1.docx`
+  mocks.download.mockResolvedValue({ data: new Blob([kind === 'oversized' ? 'x'.repeat(11 * 1024 * 1024) : 'invalid']), error: null })
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  recordedReason('resume_unreadable')
+})
+it.each(['pdf_parse_failed', 'pdf_empty', 'pdf_framing_invalid', 'pdf_unsupported', 'pdf_capacity_unavailable', 'entry_gates_disabled', 'entry_notice_missing', 'provider_failed'])('uses the actual %s diagnostic', async event => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.screen.mockImplementation(async (_input, deps) => { deps.onDiagnostic(event); return {} })
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  recordedReason(['pdf_parse_failed', 'pdf_empty', 'pdf_framing_invalid', 'pdf_unsupported'].includes(event) ? 'resume_unreadable' : 'screening_unavailable')
+})
+it.each(['gates', 'enrichment', 'recipient', 'transport', 'storage', 'builder', 'unavailable-verdict'])('records a generic outcome for %s failure', async kind => {
+  if (kind !== 'gates') INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  if (kind === 'enrichment') mocks.screen.mockRejectedValue(new Error('failed'))
+  if (kind === 'recipient') rows.companies!.contact_email = 'invalid'
+  if (kind === 'transport') mocks.send.mockRejectedValue(new Error('failed'))
+  if (kind === 'storage') mocks.download.mockRejectedValue(new Error('failed'))
+  if (kind === 'builder') { rows.seeker_profiles!.cv_url = null; mocks.fetchCv.mockRejectedValue(new Error('failed')) }
+  if (kind === 'unavailable-verdict') mocks.screen.mockResolvedValue({ employer_fit_verdict: { verdict: 'unavailable' } })
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  recordedReason('screening_unavailable')
+})
+
+it('does not infer no resume when the builder existence check fails', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  rows.seeker_profiles!.cv_url = null
+  const original = mocks.from.getMockImplementation()!
+  mocks.from.mockImplementation((table: string) => table === 'cv_profiles'
+    ? { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: { code: 'unavailable' } }) }) }) }
+    : original(table))
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  recordedReason('screening_unavailable')
+})
+it('preserves a real verdict even when the document diagnostic says unreadable and forwarding fails', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.screen.mockImplementation(async (_input, deps) => {
+    deps.onDiagnostic('pdf_empty')
+    return { employer_fit_verdict: { verdict: 'not_enough_information', reason: 'Not enough information.', sourceIds: [], criterionIds: [], gapQuote: null } }
+  })
+  mocks.send.mockResolvedValue({ success: false })
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  expect(updates.filter(row => row.table === 'application_fit_verdicts')).toEqual([
+    { table: 'application_fit_verdicts', value: expect.objectContaining({ verdict: 'not_enough_information' }) },
+  ])
+  expect(mocks.send.mock.calls[0][0].data).not.toHaveProperty('employer_not_screened')
+})
+
+it('uses generic failure when profile fallback fails after an unreadable attachment', async () => {
+  INLINE_SCREENING_GATES.forEach(key => vi.stubEnv(key, 'true'))
+  mocks.screen.mockImplementation(async (_input, deps) => {
+    deps.onDiagnostic('pdf_empty')
+    deps.onDiagnostic('review_v2_failed')
+    return { employer_fit_verdict: { verdict: 'unavailable' } }
+  })
+  await notifyNewApplicant('saved-app', uid, SCREENING_NOTICE_VERSION)
+  recordedReason('screening_unavailable')
 })

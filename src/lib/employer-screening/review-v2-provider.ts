@@ -3,6 +3,7 @@
  * generation/settlement retains the full shared-ledger hold, never a refund.
  */
 import 'server-only'
+import { buildSimpleFitRequest, validateSimpleFit, type SimpleFitVerdict } from './simple-fit'
 import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import { reservedCostMicrousd, type ScreeningUsage } from './provider'
@@ -200,6 +201,14 @@ const SOL_REVIEW_RETRY_MIN_REMAINING_MS = 15_000
  * requires reviewing that commercial assumption alongside the verified rate card.
  */
 export async function runSolResumeReview(context: ReviewV2Context, options: SolReviewOptions): Promise<ResumeReviewV2> {
+  return runSolStructuredReview(context, options, buildResumeReviewV2Request, validateResumeReviewV2)
+}
+export async function runSolSimpleFit(context: ReviewV2Context, options: SolReviewOptions): Promise<SimpleFitVerdict> {
+  return runSolStructuredReview(context, options, buildSimpleFitRequest, validateSimpleFit)
+}
+async function runSolStructuredReview<T>(context: ReviewV2Context, options: SolReviewOptions,
+  build: (context: ReviewV2Context) => { instructions: string; input: unknown; schema: unknown },
+  validate: (context: ReviewV2Context, raw: unknown) => T): Promise<T> {
   if (!options.enabled || !options.apiKey || /[\r\n]/.test(options.apiKey)) throw new Error('Review disabled')
   z.uuid().parse(options.applicationId)
   z.string().regex(/^[0-9a-f]{64}$/).parse(options.sourceSha256)
@@ -209,7 +218,7 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
   const live = () => { if (options.signal.aborted || !Number.isFinite(options.deadline) || now() >= options.deadline) throw new Error('Review deadline') }
   const stage = (event: SolReviewStage) => { try { options.onStage?.(event) } catch { /* diagnostics cannot alter flow */ } }
   live()
-  const request = buildResumeReviewV2Request(context)
+  const request = build(context)
   // Exactly these token-bearing fields are shared by count and generation. No
   // conversation state, files, retrieval, tools or second-stage prompt is added.
   const shared = { model: SOL_REVIEW_MODEL, instructions: request.instructions,
@@ -265,13 +274,13 @@ export async function runSolResumeReview(context: ReviewV2Context, options: SolR
       const attemptUsage = usageFrom(raw, activeGrant)
       if (!attemptUsage) throw new Error('Review usage unavailable')
       usage = attemptUsage
-      const result = validateResumeReviewV2(context, outputFrom(raw))
+      const result = validate(context, outputFrom(raw))
       live()
       return result
     }
     // No await/log/callback between the final synchronous fence and the first
     // generation dispatch: generate() runs synchronously up to its fetch.
-    let reviewed: ReturnType<typeof validateResumeReviewV2>
+    let reviewed: T
     try {
       reviewed = await generate()
     } catch (error) {
