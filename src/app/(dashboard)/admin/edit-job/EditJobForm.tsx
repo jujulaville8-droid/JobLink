@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import CloseListingButton from '@/components/admin/CloseListingButton'
 
 interface EditableJob {
   id: string
@@ -9,6 +10,8 @@ interface EditableJob {
   category: string
   job_type: string
   location: string
+  status: string
+  is_featured: boolean
 }
 
 const inputClass = 'w-full rounded-lg border border-border bg-white px-3 py-2 text-sm'
@@ -21,6 +24,8 @@ export default function EditJobForm({ job, categories, jobTypes }: {
   const [values, setValues] = useState(job)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [saving, setSaving] = useState(false)
+  const [status, setStatus] = useState(job.status)
+  const [closedHere, setClosedHere] = useState(false)
   const set = (key: keyof EditableJob) => (event: { target: { value: string } }) =>
     setValues(current => ({ ...current, [key]: event.target.value }))
 
@@ -71,9 +76,18 @@ export default function EditJobForm({ job, categories, jobTypes }: {
         <textarea className={`${inputClass} min-h-[320px]`} value={values.description} onChange={set('description')} required />
       </label>
       {message && <p role="status" className={message.ok ? 'text-sm text-emerald-700' : 'text-sm text-red-600'}>{message.text}</p>}
-      <button type="submit" disabled={saving} className="px-5 py-2 bg-primary text-white text-sm font-medium rounded-lg disabled:opacity-60">
-        {saving ? 'Saving…' : 'Save changes'}
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="submit" disabled={saving} className="px-5 py-2 bg-primary text-white text-sm font-medium rounded-lg disabled:opacity-60">
+          {saving ? 'Saving…' : 'Save changes'}
+        </button>
+        {(status === 'active' || closedHere) && (
+          <CloseListingButton
+            jobId={job.id}
+            isFeatured={job.is_featured}
+            onClosed={() => { setStatus('closed'); setClosedHere(true) }}
+          />
+        )}
+      </div>
     </form>
   )
 }
