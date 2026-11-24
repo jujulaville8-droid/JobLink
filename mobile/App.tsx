@@ -9,7 +9,7 @@ import { Auth, useAccount } from './src/Auth'
 import { configured } from './src/client'
 import { JobsScreen, JobDetail } from './src/JobScreens'
 import { AccountScreen, LibraryScreen } from './src/AccountScreens'
-import { EmployerHome } from './src/EmployerScreens'
+import { BrowseCandidates, EmployerHome } from './src/EmployerScreens'
 import { Button, C, Empty, Icon, Press, s, ToastHost, ToastProvider, useToast } from './src/ui'
 import * as push from './src/notifications'
 import type { Job } from './src/jobs'
@@ -23,6 +23,12 @@ const tabs = [
   { id: 'account', label: 'Account', icon: 'person-circle-outline', activeIcon: 'person-circle' },
 ] as const
 type TabId = (typeof tabs)[number]['id']
+const employerTabs = [
+  { id: 'home', label: 'Home', icon: 'home-outline', activeIcon: 'home' },
+  { id: 'candidates', label: 'Candidates', icon: 'people-outline', activeIcon: 'people' },
+  { id: 'account', label: 'Account', icon: 'person-circle-outline', activeIcon: 'person-circle' },
+] as const
+type EmployerTabId = (typeof employerTabs)[number]['id']
 
 /** Holds the splash until icons and the stored session are ready, with a limit so it can't stick. */
 function useLaunch() {
@@ -115,6 +121,8 @@ function Shell() {
   const { session } = useAccount()
   const insets = useSafeAreaInsets()
   const [tab, setTab] = useState<TabId>('jobs')
+  const [employerTab, setEmployerTab] = useState<EmployerTabId>('home')
+  const [employerTop, setEmployerTop] = useState(0)
   const [job, setJob] = useState<Job | null>(null)
   const [revision, setRevision] = useState(0)
   const [top, setTop] = useState(0) // Bumped by re-tapping the active tab: that screen scrolls to top.
@@ -125,8 +133,8 @@ function Shell() {
   // Tabs mount on first visit, then stay mounted so search, scroll and edits survive switching.
   const visited = useRef(new Set<TabId>())
   visited.current.add(tab)
-  const employerVisited = useRef(false)
-  if (displayMode === 'employer') employerVisited.current = true
+  const employerVisited = useRef(new Set<EmployerTabId>())
+  if (displayMode === 'employer') employerVisited.current.add(employerTab)
   const goToAccount = useCallback(() => setTab('account'), [])
   const goToJobs = useCallback(() => setTab('jobs'), [])
   const goHome = useCallback(() => { Keyboard.dismiss(); setJob(null); setTab('jobs'); setHome(v => v + 1) }, [])
@@ -147,6 +155,13 @@ function Shell() {
     if (id === tab) setTop(v => v + 1)
     else setTab(id)
   }
+  function pressEmployerTab(id: EmployerTabId) {
+    Keyboard.dismiss()
+    if (id === employerTab) setEmployerTop(v => v + 1)
+    else setEmployerTab(id)
+  }
+  const employerPane = (id: EmployerTabId, screen: ReactNode) => employerVisited.current.has(id) && <View key={id} style={{ flex: 1, display: employerTab === id ? 'flex' : 'none' }}>{screen}</View>
+  const employerActive = (id: EmployerTabId) => displayMode === 'employer' && employerTab === id
   const pane = (id: TabId, screen: ReactNode) => visited.current.has(id) && <View key={id} style={{ flex: 1, display: tab === id ? 'flex' : 'none' }}>{screen}</View>
   return <SafeAreaView style={s.screen} edges={['top']}>
     <StatusBar style="dark" />
@@ -179,7 +194,11 @@ function Shell() {
           {pane('applications', <LibraryScreen mode="applications" open={setJob} signIn={goToAccount} browse={goToJobs} revision={revision} active={tab === 'applications'} top={top} />)}
           {pane('account', <AccountScreen active={tab === 'account'} top={top} />)}
         </View>
-        {employerVisited.current && <View style={{ flex: 1, display: displayMode === 'employer' ? 'flex' : 'none' }}><EmployerHome active={displayMode === 'employer'} signIn={goToAccount} /></View>}
+        <View style={{ flex: 1, display: displayMode === 'employer' ? 'flex' : 'none' }}>
+          {employerPane('home', <EmployerHome active={employerActive('home')} top={employerTop} signIn={goToAccount} />)}
+          {employerPane('candidates', <BrowseCandidates active={employerActive('candidates')} top={employerTop} signIn={goToAccount} />)}
+          {employerPane('account', <AccountScreen active={employerActive('account')} top={employerTop} />)}
+        </View>
       </>}
       <ToastHost />
     </View>
@@ -187,6 +206,11 @@ function Shell() {
     {displayMode === 'seeker' && <View accessibilityRole="tablist" style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.white, paddingTop: 8, paddingBottom: 8 + insets.bottom }}>
       {tabs.map(item => <Press key={item.id} hitSlop={0} accessibilityRole="tab" accessibilityState={{ selected: tab === item.id }} onPress={() => pressTab(item.id)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 48 }}>
         <Icon name={tab === item.id ? item.activeIcon : item.icon} color={tab === item.id ? C.teal : C.muted} /><Text style={{ fontSize: 11, fontWeight: tab === item.id ? '800' : '500', color: tab === item.id ? C.teal : C.muted }}>{item.label}</Text>
+      </Press>)}
+    </View>}
+    {displayMode === 'employer' && <View accessibilityRole="tablist" style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line, backgroundColor: C.white, paddingTop: 8, paddingBottom: 8 + insets.bottom }}>
+      {employerTabs.map(item => <Press key={item.id} hitSlop={0} accessibilityRole="tab" accessibilityState={{ selected: employerTab === item.id }} onPress={() => pressEmployerTab(item.id)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, minHeight: 48 }}>
+        <Icon name={employerTab === item.id ? item.activeIcon : item.icon} color={employerTab === item.id ? C.teal : C.muted} /><Text style={{ fontSize: 11, fontWeight: employerTab === item.id ? '800' : '500', color: employerTab === item.id ? C.teal : C.muted }}>{item.label}</Text>
       </Press>)}
     </View>}
     <JobDetail job={job} close={closeJob} signIn={goToAccount} viewApplications={() => setTab('applications')} onChanged={onChanged} />
