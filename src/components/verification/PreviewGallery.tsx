@@ -16,6 +16,10 @@ import VerificationReview from '@/components/verification/VerificationReview'
 import VerifiedBadge, { PoliceRecordRequiredLabel } from '@/components/verification/VerifiedBadge'
 import { VerifiedFlagProvider } from '@/components/verification/VerifiedFlag'
 import { addMonths, antiguaToday } from '@/lib/verification/shared'
+import EmployerBillingPanel from '@/components/employer-billing/EmployerBillingPanel'
+import EmployerBillingAdmin from '@/components/employer-billing/EmployerBillingAdmin'
+import ProUpgradePrompt from '@/components/employer-billing/ProUpgradePrompt'
+import type { EmployerBillingSummary } from '@/lib/employer-billing/summary'
 
 type Json = Record<string, unknown>
 const today = antiguaToday()
@@ -54,7 +58,34 @@ const queue = (uploadsOpen: boolean): Json => ({
   ] : [],
 })
 
-interface Scene { key: string; group: string; label: string; note: string; kind: 'seeker' | 'admin' | 'apply' | 'pieces'; data: () => Json; justPaid?: boolean }
+const billing = (overrides: Partial<EmployerBillingSummary>): Json => ({
+  salesOpen: true, directoryGated: false,
+  pro: { active: false, source: null, paidThrough: null, status: null, cancelAtPeriodEnd: false, manageable: false },
+  credits: [], campaigns: [],
+  jobs: [{ id: 'j1', title: 'Line Cook', booked: false }, { id: 'j2', title: 'Head Chef', booked: false }, { id: 'j3', title: 'Beach Waiter', booked: false }],
+  claimable: [], ...overrides,
+})
+const campaignRow = (status: string) => ({
+  id: `cmp-${status}`, job_id: status === 'live' ? 'j2' : 'j9', job_title: status === 'live' ? 'Head Chef' : status === 'ended' ? 'Steward' : 'Line Cook', status,
+  requested_start: inDays(2), starts_at: status === 'requested' ? null : ago(status === 'live' ? 2 : 20), ends_at: status === 'requested' ? null : status === 'live' ? new Date(Date.now() + 5 * 86_400_000).toISOString() : ago(13),
+  ended_reason: status === 'ended' ? 'completed' : null,
+})
+const adminCampaign = (id: string, status: string, overrides: Json = {}): Json => ({
+  id, status, company: 'Treehouse Beach Club', job_title: 'Line Cook', job_id: ID, job_status: 'active', requested_start: inDays(1),
+  starts_at: null, ends_at: null, ended_reason: null, website_url: null, facebook_url: null, instagram_url: null, evidence_count: 0,
+  proof_sent_at: null, edit_used_at: null, day3_checked_at: null, report_sent_at: null, needs_review: false, proof_overdue: false, day3_due: false, stats: null, ...overrides,
+})
+const billingQueue = (): Json => ({
+  directoryGated: false, gatedAt: null,
+  orders: [{ id: 'o1', offer: 'spotlight', status: 'paid', amount: 12500, customer_email: 'manager@example.com', paid_at: ago(0.2), review_reason: 'unassigned', company_id: null, company_name: null }],
+  campaigns: [
+    adminCampaign('a1', 'requested'),
+    adminCampaign('a2', 'live', { job_title: 'Head Chef', company: 'Sunrise Hotel', starts_at: ago(3.2), ends_at: new Date(Date.now() + 3.8 * 86_400_000).toISOString(), website_url: 'https://joblinkantigua.com/jobs/x', evidence_count: 1, proof_overdue: true, day3_due: true, stats: { views: 214, applications: 9 } }),
+    adminCampaign('a3', 'ended', { job_title: 'Steward', starts_at: ago(15), ends_at: ago(8), ended_reason: 'completed', proof_sent_at: ago(14), report_sent_at: ago(8), stats: { views: 402, applications: 17 } }),
+  ],
+})
+
+interface Scene { key: string; group: string; label: string; note: string; kind: 'seeker' | 'admin' | 'apply' | 'pieces' | 'billing' | 'billing-admin' | 'upgrade'; data: () => Json; justPaid?: boolean }
 
 const SCENES: Scene[] = [
   { key: 'offer', group: 'Job seeker: /verification', label: 'Not started', kind: 'seeker', note: 'What a job seeker sees before paying. "Get verified" would open Stripe; here it jumps to the next step.', data: () => seeker({}) },
@@ -74,6 +105,13 @@ const SCENES: Scene[] = [
   { key: 'apply-optional', group: 'Apply form', label: 'Verified, not required', kind: 'apply', note: 'Ticks start off on other jobs.', data: () => ({ verified: true, notice: false, holdsWorkPermit: false, policeRecordRequired: false, priorApplications: 4, canBuy: true }) },
   { key: 'apply-notice', group: 'Apply form', label: 'Verified, with notice', kind: 'apply', note: 'The notice shows first and the ticks start off, even on a job that requires a police record.', data: () => ({ verified: true, notice: true, holdsWorkPermit: false, policeRecordRequired: true, priorApplications: 4, canBuy: true }) },
   { key: 'apply-unverified', group: 'Apply form', label: 'Not verified', kind: 'apply', note: 'One line, and only on jobs marked "Police record required". Other jobs show nothing.', data: () => ({ verified: false, notice: false, holdsWorkPermit: false, policeRecordRequired: true, priorApplications: 2, canBuy: true }) },
+  { key: 'billing-free', group: 'Employer pricing', label: 'Billing: free employer', kind: 'billing', note: 'What a free employer sees on /billing. Buying opens the Stripe Payment Link; here it does nothing.', data: () => billing({}) },
+  { key: 'billing-credit', group: 'Employer pricing', label: 'Billing: Spotlight to use', kind: 'billing', note: 'After buying a Spotlight (or with a Pro month credit): pick a vacancy and a preferred start date.', data: () => billing({ credits: [{ id: 'c1', source: 'purchase', expires_at: null, created_at: ago(0) }], campaigns: [campaignRow('requested')] }) },
+  { key: 'billing-pro', group: 'Employer pricing', label: 'Billing: Employer Pro', kind: 'billing', note: 'Pro with its monthly Spotlight, which expires with the paid month.', data: () => billing({ pro: { active: true, source: 'paid', paidThrough: inDays(19), status: 'active', cancelAtPeriodEnd: false, manageable: true }, credits: [{ id: 'c2', source: 'pro_period', expires_at: inDays(19), created_at: ago(11) }], campaigns: [campaignRow('live'), campaignRow('ended')] }) },
+  { key: 'billing-cancelled', group: 'Employer pricing', label: 'Billing: Pro cancelled', kind: 'billing', note: 'Cancelled at period end: access continues until the paid-through date.', data: () => billing({ pro: { active: true, source: 'paid', paidThrough: inDays(6), status: 'active', cancelAtPeriodEnd: true, manageable: true } }) },
+  { key: 'billing-claim', group: 'Employer pricing', label: 'Billing: claim a payment', kind: 'billing', note: 'A Spotlight paid through a shared link with this employer\'s email address.', data: () => billing({ claimable: [{ id: 'o1', offer: 'spotlight', amount: 12500, paid_at: ago(1) }] }) },
+  { key: 'upgrade', group: 'Employer pricing', label: 'Directory: free employer', kind: 'upgrade', note: 'Browse Candidates once the directory is restricted to Pro.', data: () => ({}) },
+  { key: 'billing-admin', group: 'Employer pricing', label: 'Admin: billing queue', kind: 'billing-admin', note: 'Campaigns to schedule and run, payments to match, and the directory switch. Actions here change only this preview.', data: () => billingQueue() },
   { key: 'pieces', group: 'Everywhere else', label: 'Badges, cards, emails', kind: 'pieces', note: 'The smaller pieces that appear on existing pages, plus every email.', data: () => ({}) },
 ]
 
@@ -86,6 +124,25 @@ function mockApi(scene: Scene, data: Json, goTo: (key: string) => void) {
     const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, window.location.origin)
     const method = (init?.method || 'GET').toUpperCase()
     const path = url.pathname
+    if (path === '/api/admin/employer-billing') {
+      await new Promise((resolve) => setTimeout(resolve, 250))
+      if (method === 'GET') return reply(url.searchParams.has('company_q') ? { companies: [{ id: 'co1', company_name: 'Treehouse Beach Club', contact_email: 'manager@example.com' }] } : data)
+      const body = init?.body instanceof FormData ? {} : JSON.parse(String(init?.body || '{}'))
+      const campaigns = data.campaigns as Json[]
+      const target = campaigns.find((item) => item.id === body.campaign_id)
+      if (body.action === 'assign_order') data.orders = []
+      if (body.action === 'set_directory_gate') { data.directoryGated = body.gated; data.gatedAt = new Date().toISOString() }
+      if (target && body.action === 'schedule') target.status = 'scheduled'
+      if (target && body.action === 'go_live') Object.assign(target, { status: 'live', starts_at: new Date().toISOString(), ends_at: new Date(Date.now() + 168 * 3_600_000).toISOString(), stats: { views: 0, applications: 0 } })
+      if (target && body.action === 'save_proof') Object.assign(target, Object.fromEntries(Object.entries(body).filter(([key]) => key.endsWith('_url'))))
+      if (target && body.action === 'send_proof') Object.assign(target, { proof_sent_at: new Date().toISOString(), proof_overdue: false })
+      if (target && body.action === 'mark_day3') Object.assign(target, { day3_checked_at: new Date().toISOString(), day3_due: false })
+      if (target && body.action === 'mark_edit') target.edit_used_at = new Date().toISOString()
+      if (target && body.action === 'end') Object.assign(target, { status: 'ended', ended_reason: 'manual' })
+      if (target && body.action === 'cancel') data.campaigns = campaigns.filter((item) => item !== target)
+      return reply({ success: true })
+    }
+    if (path.startsWith('/api/employer/billing/')) return reply({ error: 'Payments are not taken in the preview.' }, 400)
     if (!path.startsWith('/api/verification') && !path.startsWith('/api/admin/verifications')) return null
     await new Promise((resolve) => setTimeout(resolve, 350))
 
@@ -272,7 +329,7 @@ export default function VerifiedPreviewGallery({ initialScene }: { initialScene?
       </div>
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 lg:grid-cols-[15rem_1fr]">
         <nav aria-label="Screens" className="lg:sticky lg:top-4 lg:self-start">
-          <h1 className="font-display text-lg font-bold text-text">JobLink Verified</h1>
+          <h1 className="font-display text-lg font-bold text-text">JobLink preview</h1>
           {/* On a phone, one dropdown instead of the full list. */}
           <label className="mt-3 block lg:hidden">
             <span className="sr-only">Screen</span>
@@ -327,6 +384,9 @@ export default function VerifiedPreviewGallery({ initialScene }: { initialScene?
                   </div>
                 )}
                 {scene.kind === 'pieces' && <div className="p-4"><Pieces /></div>}
+                {scene.kind === 'billing' && <EmployerBillingPanel key={instance} summary={scene.data() as unknown as EmployerBillingSummary} focusJobId={null} justPaid={false} />}
+                {scene.kind === 'billing-admin' && <EmployerBillingAdmin key={instance} />}
+                {scene.kind === 'upgrade' && <div className="p-4"><ProUpgradePrompt /></div>}
               </VerifiedFlagProvider>
             )}
           </div>

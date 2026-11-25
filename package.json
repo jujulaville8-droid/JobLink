@@ -20,7 +20,7 @@
     "test:outbox:concurrency": "node --import tsx --test tests/employer-outbox-concurrency.test.mjs",
     "test:inline-budget:concurrency": "node --import tsx --test tests/employer-inline-budget-concurrency.test.mjs",
     "test:sol-review:concurrency": "node --import tsx --test tests/employer-sol-review-budget.test.mjs",
-    "preview:verified": "VERIFIED_PREVIEW=true VERIFICATION_ENABLED=true NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=preview SUPABASE_SERVICE_ROLE_KEY=preview next dev -p 3000"
+    "preview:verified": "VERIFIED_PREVIEW=true VERIFICATION_ENABLED=true EMPLOYER_BILLING_ENABLED=true NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=preview SUPABASE_SERVICE_ROLE_KEY=preview next dev -p 3000"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.0.0",
