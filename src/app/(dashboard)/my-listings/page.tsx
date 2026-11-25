@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireAuth } from '@/lib/auth';
 import { JOB_TYPE_LABELS, type JobListing, type JobStatus, type JobType } from '@/lib/types';
 import DeleteListingButton from '@/components/DeleteListingButton';
+import { employerBillingEnabled } from '@/lib/employer-billing/config';
 
 export const maxDuration = 300;
 
@@ -93,6 +94,7 @@ export default async function MyListingsPage({
 }) {
   const user = await requireAuth();
   const supabase = await createClient();
+  const spotlightOn = employerBillingEnabled();
 
   const { data: company } = await supabase
     .from('companies')
@@ -291,6 +293,18 @@ export default async function MyListingsPage({
                       <circle cx="12" cy="12" r="3" />
                     </svg>
                     View live listing
+                  </Link>
+                )}
+
+                {listing.status === 'active' && spotlightOn && (
+                  <Link
+                    href={`/billing?spotlight=${listing.id}`}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-amber-900 transition-all duration-200 hover:bg-amber-100 hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <svg aria-hidden="true" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    {listing.is_featured ? 'Featured' : 'Spotlight this job'}
                   </Link>
                 )}
 

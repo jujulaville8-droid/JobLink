@@ -409,3 +409,15 @@ describe('the candidate directory', () => {
     assert.equal((await db.query(`SELECT id FROM public.seeker_profiles`)).rows.length, 0);
   });
 });
+
+describe('deleting a company', () => {
+  test('removes its credits and campaigns and keeps paid orders for reconciliation', async () => {
+    await actAs(null, '');
+    const orders = (await one(`SELECT count(*)::int n FROM public.employer_orders WHERE company_id = '${COMPANY}'`)).n;
+    assert.ok(orders > 0);
+    await db.exec(`DELETE FROM public.companies WHERE id = '${COMPANY}'`);
+    assert.equal((await one(`SELECT count(*)::int n FROM public.spotlight_credits WHERE company_id = '${COMPANY}'`)).n, 0);
+    assert.equal((await one(`SELECT count(*)::int n FROM public.spotlight_campaigns WHERE company_id = '${COMPANY}'`)).n, 0);
+    assert.equal((await one(`SELECT count(*)::int n FROM public.employer_orders WHERE company_id IS NULL AND status IN ('paid', 'refunded')`)).n > 0, true);
+  });
+});

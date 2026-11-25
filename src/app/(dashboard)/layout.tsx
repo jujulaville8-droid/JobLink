@@ -6,6 +6,7 @@ import PresenceHeartbeat from "@/components/messaging/PresenceHeartbeat";
 import UnreadBadge from "@/components/messaging/UnreadBadge";
 import PendingApprovalsBadge from "@/components/PendingApprovalsBadge";
 import { verificationEnabled } from "@/lib/verification/server";
+import { employerBillingEnabled } from "@/lib/employer-billing/config";
 import { VerifiedFlagProvider } from "@/components/verification/VerifiedFlag";
 
 const seekerLinks = [
@@ -84,8 +85,14 @@ export default async function DashboardLayout({
   const seekerNav = verified
     ? [...seekerLinks.slice(0, 5), { href: "/verification", label: "Verified", icon: "shield" }, ...seekerLinks.slice(5)]
     : seekerLinks;
+  // Employer pricing adds Billing for employers and the billing queue for admins.
+  const billing = employerBillingEnabled();
+  const employerNav = billing
+    ? [...employerLinks.slice(0, 3), { href: "/billing", label: "Billing", icon: "star" }, ...employerLinks.slice(3)]
+    : employerLinks;
   const adminNav = [
     ...adminLinks,
+    ...(billing ? [{ href: "/admin/employer-billing", label: "Employer billing", icon: "star" }] : []),
     ...(verified ? [{ href: "/admin/verifications", label: "Verifications", icon: "shield" }] : []),
     { href: "/two-step", label: "Two-step login", icon: "shield" },
   ];
@@ -94,7 +101,7 @@ export default async function DashboardLayout({
     role === "admin"
       ? adminNav
       : role === "employer"
-        ? employerLinks
+        ? employerNav
         : seekerNav;
 
   // Inject badges into sidebar links

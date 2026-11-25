@@ -133,7 +133,7 @@ CREATE INDEX IF NOT EXISTS spotlight_credits_company ON public.spotlight_credits
 
 CREATE TABLE IF NOT EXISTS public.spotlight_campaigns (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  credit_id uuid NOT NULL UNIQUE REFERENCES public.spotlight_credits(id) ON DELETE RESTRICT,
+  credit_id uuid NOT NULL UNIQUE REFERENCES public.spotlight_credits(id) ON DELETE CASCADE,
   company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
   job_id uuid NOT NULL REFERENCES public.job_listings(id) ON DELETE CASCADE,
   status text NOT NULL DEFAULT 'requested' CHECK (status IN ('requested', 'scheduled', 'live', 'ended', 'cancelled')),

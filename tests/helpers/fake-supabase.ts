@@ -30,6 +30,20 @@ class Query implements PromiseLike<Result> {
   insert(values: Row | Row[]) { this.action = 'insert'; this.payload = values; return this }
   delete() { this.action = 'delete'; return this }
   eq(key: string, value: unknown) { this.filters.push((row) => path(row, key) === value); return this }
+  /** Case-insensitive match; % and _ are wildcards, a backslash escapes the next character. */
+  ilike(key: string, pattern: string) {
+    let source = ''
+    for (let i = 0; i < pattern.length; i++) {
+      const char = pattern[i]
+      if (char === '\\' && i + 1 < pattern.length) source += pattern[++i].replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      else if (char === '%') source += '.*'
+      else if (char === '_') source += '.'
+      else source += char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    }
+    const re = new RegExp(`^${source}$`, 'i')
+    this.filters.push((row) => re.test(String(path(row, key) ?? '')))
+    return this
+  }
   neq(key: string, value: unknown) { this.filters.push((row) => path(row, key) !== value); return this }
   in(key: string, values: unknown[]) { this.filters.push((row) => values.includes(path(row, key))); return this }
   is(key: string, value: unknown) { this.filters.push((row) => (path(row, key) ?? null) === value); return this }
