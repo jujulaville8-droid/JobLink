@@ -392,7 +392,19 @@ function DeleteListing({ listingId }: { listingId: string }) {
       .eq('job_id', listingId);
     if (countError) return;
 
-    if (count === 0) {
+    // A listing with a Spotlight booked, running or finished is kept too, so the
+    // campaign record (and an unspent credit) is never deleted with it.
+    let hasSpotlight = false;
+    if (employerBillingEnabled()) {
+      const { count: campaigns, error: campaignError } = await adminDb
+        .from('spotlight_campaigns')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_id', listingId);
+      if (campaignError) return;
+      hasSpotlight = (campaigns ?? 0) > 0;
+    }
+
+    if (count === 0 && !hasSpotlight) {
       await adminDb.from('job_listings').delete().eq('id', listingId);
     } else {
       await closeJobListing(supabase, listingId, company.id);

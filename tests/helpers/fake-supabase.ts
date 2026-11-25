@@ -44,6 +44,12 @@ class Query implements PromiseLike<Result> {
     this.filters.push((row) => re.test(String(path(row, key) ?? '')))
     return this
   }
+  /** Only the forms the app uses: not(key, 'is', null). */
+  not(key: string, operator: string, value: unknown) {
+    if (operator !== 'is') throw new Error(`fake not(${operator}) unsupported`)
+    this.filters.push((row) => (path(row, key) ?? null) !== value)
+    return this
+  }
   neq(key: string, value: unknown) { this.filters.push((row) => path(row, key) !== value); return this }
   in(key: string, values: unknown[]) { this.filters.push((row) => values.includes(path(row, key))); return this }
   is(key: string, value: unknown) { this.filters.push((row) => (path(row, key) ?? null) === value); return this }
