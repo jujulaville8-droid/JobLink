@@ -35,6 +35,9 @@ type EmailType =
   | 'verification_expiring'
   | 'verification_expired'
   | 'verification_upload_reminder'
+  | 'spotlight_live'
+  | 'spotlight_report'
+  | 'spotlight_closed_early'
 
 interface EmailData {
   /** Employer-only screening output supplied by the forwarding path. */
@@ -75,6 +78,12 @@ interface EmailData {
   verification_notice?: boolean
   verified_line?: string | null
   verified_documents_path?: string | null
+  /** Employer pricing: Job Spotlight. Dates arrive formatted. */
+  spotlight_links?: { label: string; url: string }[]
+  spotlight_started?: string
+  spotlight_ends?: string
+  spotlight_views?: number | null
+  spotlight_applications?: number
 }
 
 /** Escape HTML entities to prevent XSS in email content */
@@ -704,6 +713,38 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;"><a href="${SITE}/guides/police-record" style="color: #0d7377;">How to get your police record in Antigua</a></p>
         `),
       }
+
+    case 'spotlight_live':
+      return {
+        subject: `Your Job Spotlight is live: ${d.job_title || 'your vacancy'}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Your Spotlight is live</h2>
+          <p style="color: #374151; line-height: 1.6;"><strong>${esc(d.job_title)}</strong> is now featured on JobLink until <strong>${esc(d.spotlight_ends)}</strong>, and has been posted on our Facebook and Instagram pages.</p>
+          <ul style="color: #374151; line-height: 1.9; padding-left: 18px;">${(d.spotlight_links || []).filter(link => /^https:\/\//.test(link.url)).map(link => `<li><a href="${esc(link.url)}" style="color: #0d7377; font-weight: 600;">${esc(link.label)}</a></li>`).join('')}</ul>
+          <p style="color: #374151; line-height: 1.6;">Screenshots of each placement are attached. We will check in on day three, and send you the results when the seven days end.</p>
+          ${btn('See your applicants', '/my-listings')}
+        `),
+      }
+    case 'spotlight_report':
+    case 'spotlight_closed_early': {
+      const early = emailType === 'spotlight_closed_early'
+      return {
+        subject: early ? `Your Job Spotlight ended when the vacancy closed: ${d.job_title || ''}` : `Your Job Spotlight results: ${d.job_title || 'your vacancy'}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">${early ? 'Your Spotlight has ended' : 'Your Spotlight results'}</h2>
+          <p style="color: #374151; line-height: 1.6;">${early
+            ? `<strong>${esc(d.job_title)}</strong> was closed, so we stopped directing applicants to it and ended the Spotlight.`
+            : `The seven-day Spotlight for <strong>${esc(d.job_title)}</strong> ran from ${esc(d.spotlight_started)} to ${esc(d.spotlight_ends)}. The vacancy stays open until its usual closing date.`}</p>
+          <table style="border-collapse: collapse; margin: 16px 0; color: #374151;">
+            ${typeof d.spotlight_views === 'number' ? `<tr><td style="padding: 6px 16px 6px 0;">Views of the vacancy on JobLink</td><td style="padding: 6px 0; font-weight: 700;">${d.spotlight_views}</td></tr>` : ''}
+            <tr><td style="padding: 6px 16px 6px 0;">Applications received on JobLink</td><td style="padding: 6px 0; font-weight: 700;">${d.spotlight_applications ?? 0}</td></tr>
+          </table>
+          <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">Totals recorded for this vacancy during the Spotlight, in Antigua time. Views and applications are counted separately; a person can view more than once.</p>
+          <p style="color: #374151; line-height: 1.6;">How many of these applicants would you like to interview? Reply to this email and let us know.</p>
+          ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review applicants', d.review_path) : ''}
+        `),
+      }
+    }
 
     default:
       return {

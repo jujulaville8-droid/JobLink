@@ -8,6 +8,7 @@ import Pagination from "@/components/Pagination";
 import AlertToggle from "@/components/AlertToggle";
 import Link from "next/link";
 import { getJobResults, JOBS_PER_PAGE, type JobResultsData, type JobSearchParams } from "@/lib/job-results";
+import { proCompanyFeatured } from "@/lib/featured";
 
 interface JobResultsProps {
   searchParams: JobSearchParams;
@@ -148,7 +149,7 @@ export default async function JobResults({
       salary_visible: job.salary_visible,
       created_at: job.created_at,
       is_featured: job.is_featured,
-      is_pro_company: company?.is_pro ?? false,
+      is_pro_company: proCompanyFeatured(company),
     };
   });
 

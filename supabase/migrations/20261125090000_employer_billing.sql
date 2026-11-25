@@ -152,6 +152,9 @@ CREATE TABLE IF NOT EXISTS public.spotlight_campaigns (
   day3_checked_at timestamptz,
   report_sent_at timestamptz,
   needs_review boolean NOT NULL DEFAULT false,
+  -- Whether the listing was already featured editorially when this went live,
+  -- so ending the campaign never removes an editorial feature.
+  was_featured boolean,
   requested_by uuid REFERENCES public.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -178,7 +181,7 @@ CREATE TABLE IF NOT EXISTS public.employer_billing_events (
 -- ----------------------------------------------------------------------------
 ALTER TABLE public.job_listings ADD COLUMN IF NOT EXISTS spotlight_until timestamptz;
 COMMENT ON COLUMN public.job_listings.spotlight_until IS
-  'End of the live paid Spotlight window. Written only by the server. Featured while now() < spotlight_until.';
+  'End of the live paid Spotlight window. Written only by the server. While it is set, is_featured is on because of a Spotlight; is_featured with no spotlight_until is an editorial feature.';
 
 CREATE OR REPLACE FUNCTION public.guard_listing_spotlight()
 RETURNS trigger
@@ -618,8 +621,10 @@ BEGIN
   IF EXISTS (SELECT 1 FROM spotlight_credits WHERE id = campaign.credit_id AND status <> 'redeemed') THEN
     RAISE EXCEPTION 'credit_not_redeemed';
   END IF;
-  UPDATE spotlight_campaigns SET status = 'live', starts_at = now(), ends_at = ends WHERE id = campaign.id;
-  UPDATE job_listings SET spotlight_until = ends WHERE id = campaign.job_id;
+  UPDATE spotlight_campaigns SET status = 'live', starts_at = now(), ends_at = ends,
+    was_featured = (SELECT is_featured FROM job_listings WHERE id = campaign.job_id) WHERE id = campaign.id;
+  -- is_featured is what every page and the mobile app already sort and badge by.
+  UPDATE job_listings SET spotlight_until = ends, is_featured = true WHERE id = campaign.job_id;
   RETURN jsonb_build_object('endsAt', ends);
 END $$;
 
@@ -637,7 +642,9 @@ BEGIN
   IF campaign.status <> 'live' THEN RETURN jsonb_build_object('outcome', 'not_live'); END IF;
   UPDATE spotlight_campaigns SET status = 'ended', ended_reason = p_reason,
     ends_at = CASE WHEN p_reason = 'completed' THEN ends_at ELSE least(ends_at, now()) END WHERE id = campaign.id;
-  UPDATE job_listings SET spotlight_until = NULL WHERE id = campaign.job_id AND spotlight_until IS NOT NULL;
+  UPDATE job_listings SET spotlight_until = NULL,
+    is_featured = CASE WHEN coalesce(campaign.was_featured, false) THEN is_featured ELSE false END
+  WHERE id = campaign.job_id AND spotlight_until IS NOT NULL;
   RETURN jsonb_build_object('outcome', 'ended');
 END $$;
 

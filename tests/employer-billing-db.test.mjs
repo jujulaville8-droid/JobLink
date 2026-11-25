@@ -313,6 +313,7 @@ describe('the campaign window', () => {
     const row = await one(`SELECT c.starts_at, c.ends_at, j.spotlight_until FROM public.spotlight_campaigns c JOIN public.job_listings j ON j.id = c.job_id WHERE c.id = '${campaignId}'`);
     assert.equal(new Date(row.ends_at) - new Date(row.starts_at), 168 * 3_600_000);
     assert.equal(new Date(row.spotlight_until).toISOString(), new Date(row.ends_at).toISOString());
+    assert.equal((await one(`SELECT is_featured FROM public.job_listings WHERE id = '${JOB}'`)).is_featured, true);
     await assert.rejects(() => one(`SELECT public.start_spotlight_campaign('${campaignId}')`), /campaign_not_startable/);
   });
 
@@ -328,7 +329,19 @@ describe('the campaign window', () => {
     await one(`SELECT public.end_spotlight_campaign('${campaignId}', 'job_closed')`);
     const row = await one(`SELECT c.status, c.ended_reason, j.spotlight_until FROM public.spotlight_campaigns c JOIN public.job_listings j ON j.id = c.job_id WHERE c.id = '${campaignId}'`);
     assert.deepEqual([row.status, row.ended_reason, row.spotlight_until], ['ended', 'job_closed', null]);
+    assert.equal((await one(`SELECT is_featured FROM public.job_listings WHERE id = '${JOB}'`)).is_featured, false);
     await rejected(`UPDATE public.spotlight_campaigns SET status = 'live' WHERE id = '${campaignId}'`, /cannot be reopened/);
+  });
+
+  test('ending a Spotlight never removes an editorial feature', async () => {
+    await asServer();
+    await db.exec(`UPDATE public.job_listings SET is_featured = true WHERE id = '${JOB_2}'`);
+    const { id } = await one(`INSERT INTO public.spotlight_credits (company_id, source, granted_by) VALUES ('${COMPANY}', 'manual', '${ADMIN}') RETURNING id`);
+    const { r } = await one(`SELECT public.redeem_spotlight_credit('${id}', '${COMPANY}', '${JOB_2}', current_date, '${OWNER}') AS r`);
+    await one(`SELECT public.start_spotlight_campaign('${r.campaignId}')`);
+    await one(`SELECT public.end_spotlight_campaign('${r.campaignId}', 'completed')`);
+    assert.equal((await one(`SELECT is_featured FROM public.job_listings WHERE id = '${JOB_2}'`)).is_featured, true);
+    await db.exec(`UPDATE public.job_listings SET is_featured = false WHERE id = '${JOB_2}'`);
   });
 
   test('cancelling before go-live returns the credit', async () => {

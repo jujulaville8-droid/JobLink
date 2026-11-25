@@ -14,6 +14,7 @@ import { getSeekerFirstName } from "@/lib/seeker-first-name";
 import { knownJobCategory } from "@/lib/job-category";
 import { getJobResults, isJobPageOutOfRange, parseJobPage, type JobSearchParams } from "@/lib/job-results";
 import { JOBS_INDEX_H1, getJobsIndexFacts, jobsIndexDescription, jobsIndexTitle } from "@/lib/seo/jobs-index";
+import { proCompanyFeatured } from "@/lib/featured";
 
 interface PageProps {
   searchParams: Promise<JobSearchParams>;
@@ -139,7 +140,7 @@ async function SelectedJob({ params, page, backHref }: { params: JobSearchParams
   const { jobs } = await getJobResults(params, page);
   const first = jobs?.find((job) => {
     const company = job.company as unknown as { is_pro?: boolean } | null;
-    return job.is_featured || company?.is_pro;
+    return job.is_featured || proCompanyFeatured(company);
   }) ?? jobs?.[0];
   if (!first) return null;
   return <JobDetailPane key={first.id} jobId={first.id} backHref={backHref} />;
