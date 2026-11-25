@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   NOT_APPROVED_REASONS, REUPLOAD_REASONS, REVIEW_CHECKLIST, RTW_DOCUMENT_TYPES, RTW_GROUPS, RTW_GROUP_KEYS,
-  antiguaToday, decisionReasonText, longDate, verifiedUntil, type RtwDocumentType, type RtwGroup, type VerificationDocument,
+  antiguaToday, decisionReasonText, longDate, verifiedUntil, type RtwDocumentType, type RtwGroup,
 } from '@/lib/verification/shared'
 
 interface Item {
@@ -16,10 +16,8 @@ interface Item {
   submitted_at: string | null
   reviewed_at: string | null
   decision_reason: string | null
-  reupload_documents: VerificationDocument[]
   refunded: boolean
-  has_rtw_file: boolean
-  has_police_record_file: boolean
+  has_file: boolean
 }
 interface Queue {
   uploadsOpen: boolean
@@ -45,8 +43,8 @@ async function api(path: string, init?: RequestInit) {
 const post = (path: string, body: unknown) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 const hoursSince = (iso: string | null) => (iso ? Math.floor((Date.now() - Date.parse(iso)) / 3_600_000) : 0)
 
-type DocumentUrl = (id: string, kind: VerificationDocument) => string
-const defaultDocumentUrl: DocumentUrl = (id, kind) => `/api/admin/verifications/${id}/file?document=${kind}`
+type DocumentUrl = (id: string) => string
+const defaultDocumentUrl: DocumentUrl = (id) => `/api/admin/verifications/${id}/file`
 
 const TABS = [['waiting', 'Waiting for review'], ['reupload', 'Re-upload requested'], ['decided', 'Recently decided']] as const
 type Tab = typeof TABS[number][0]
@@ -79,7 +77,7 @@ export default function VerificationReview({ documentUrl = defaultDocumentUrl }:
     <div className="mx-auto max-w-4xl space-y-5 px-4 py-6">
       <header>
         <h1 className="font-display text-2xl font-bold text-text">Verifications</h1>
-        <p className="mt-1 text-sm text-text-light">Check that documents are genuine, recent and belong to the person. What a police record says never decides the outcome.</p>
+        <p className="mt-1 text-sm text-text-light">Check that each right-to-work document is genuine, current and belongs to the person.</p>
       </header>
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
       {message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">{message}</p>}
@@ -166,52 +164,34 @@ function ReviewScreen({ item, documentUrl, onBack, onDone }: { item: Item; docum
   const [group, setGroup] = useState<RtwGroup | ''>(item.rtw_group_claimed ?? '')
   const [documentType, setDocumentType] = useState<RtwDocumentType | ''>('')
   const [expires, setExpires] = useState('')
-  const [issued, setIssued] = useState('')
-  const [notice, setNotice] = useState(false)
   const [mode, setMode] = useState<'approve' | 'reupload' | 'not_approved'>('approve')
-  const [redo, setRedo] = useState<VerificationDocument[]>([])
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   // Loaded on demand, so opening the screen alone does not log a file open.
-  const [shown, setShown] = useState<VerificationDocument[]>([])
+  const [shown, setShown] = useState(false)
 
   const types = group ? RTW_GROUPS[group].documentTypes as readonly RtwDocumentType[] : []
   const allTicked = REVIEW_CHECKLIST.every((entry) => ticked.includes(entry.id))
-  const until = issued ? verifiedUntil(issued, expires || null) : ''
-  const approveReady = allTicked && !!group && !!documentType && !!issued && (group !== 'work_permit' || !!expires)
-  const ready = mode === 'approve' ? approveReady : mode === 'reupload' ? redo.length > 0 && !!reason : !!reason
+  const until = verifiedUntil(antiguaToday(), expires || null)
+  const approveReady = allTicked && !!group && !!documentType && (group !== 'work_permit' || !!expires)
+  const ready = mode === 'approve' ? approveReady : !!reason
 
   async function decide() {
     const summary = mode === 'approve' ? `Approve ${item.name}? Their badge will run until ${longDate(until)}.`
-      : mode === 'reupload' ? `Ask ${item.name} to upload again?`
-        : `Mark ${item.name} as not approved and refund EC$40 now?`
+      : mode === 'reupload' ? `Ask ${item.name} to send their document again?` : `Mark ${item.name} as not approved?`
     if (!confirm(summary)) return
     setBusy(true); setError('')
     try {
       const body = mode === 'approve'
-        ? { decision: 'approve', rtw_group: group, rtw_document_type: documentType, rtw_document_expires_on: expires || null, police_record_issued_on: issued, sharing_notice: notice, checklist: ticked }
-        : mode === 'reupload' ? { decision: 'reupload', documents: redo, reason } : { decision: 'not_approved', reason }
+        ? { decision: 'approve', rtw_group: group, rtw_document_type: documentType, rtw_document_expires_on: expires || null, checklist: ticked }
+        : { decision: mode, reason }
       const result = await post(`/api/admin/verifications/${item.id}`, body)
-      const text = mode === 'approve' ? `${item.name} approved. The ID image has been deleted.`
-        : mode === 'reupload' ? `${item.name} was asked to upload again.` : `${item.name} not approved. EC$40 refunded and files deleted.`
-      await onDone(result.filesRemoved === false ? `${text} A file could not be removed straight away; tonight's job will remove it.` : text)
+      const text = mode === 'approve' ? `${item.name} approved.` : mode === 'reupload' ? `${item.name} was asked to send their document again.` : `${item.name} not approved.`
+      await onDone(`${text} The image has been deleted.${result.filesRemoved === false ? ' (It could not be removed straight away; tonight\'s job will remove it.)' : ''}`)
     } catch (problem) { setError(problem instanceof Error ? problem.message : 'The decision was not saved.') }
     setBusy(false)
   }
-
-  const viewer = (kind: VerificationDocument, title: string, available: boolean) => (
-    <div className="flex min-h-0 flex-col rounded-xl border border-border bg-white">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <p className="text-sm font-semibold text-text">{title}</p>
-        {shown.includes(kind) && <a className="text-xs font-semibold text-primary underline" href={documentUrl(item.id, kind)} target="_blank" rel="noopener noreferrer">Open in new tab</a>}
-      </div>
-      {!available ? <p className="p-4 text-sm text-text-muted">No file.</p>
-        : shown.includes(kind)
-          ? <iframe title={title} src={documentUrl(item.id, kind)} className="h-[70vh] w-full rounded-b-xl" />
-          : <div className="p-4"><button className={quietButton} onClick={() => setShown([...shown, kind])}>Open document</button><p className="mt-2 text-xs text-text-muted">Each open is logged against your account.</p></div>}
-    </div>
-  )
 
   return (
     <div className="mx-auto max-w-6xl space-y-5 px-4 py-6">
@@ -221,103 +201,75 @@ function ReviewScreen({ item, documentUrl, onBack, onDone }: { item: Item; docum
         <p className="mt-1 text-sm text-text-light">Name on the JobLink profile. Chose: {item.rtw_group_claimed ? RTW_GROUPS[item.rtw_group_claimed].label : 'no group'}{item.submitted_at ? ` · submitted ${longDate(item.submitted_at)} (${hoursSince(item.submitted_at)} hours ago)` : ''}</p>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        {viewer('rtw', 'Right-to-work document', item.has_rtw_file)}
-        {viewer('police_record', 'Police record', item.has_police_record_file)}
-      </div>
-
-      <section className={card}>
-        <h2 className="font-display text-lg font-semibold text-text">Decision</h2>
-        <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Decision">
-          {([['approve', 'Approve'], ['reupload', 'Ask for re-upload'], ['not_approved', 'Not approved (refund)']] as const).map(([key, label]) => (
-            <button key={key} role="radio" aria-checked={mode === key} onClick={() => { setMode(key); setReason(''); setError('') }}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${mode === key ? 'bg-primary text-white' : 'border border-border bg-white text-text'}`}>{label}</button>
-          ))}
+      <div className="grid gap-4 lg:grid-cols-[3fr_2fr]">
+        <div className="flex min-h-0 flex-col rounded-xl border border-border bg-white">
+          <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+            <p className="text-sm font-semibold text-text">Right-to-work document</p>
+            {shown && <a className="text-xs font-semibold text-primary underline" href={documentUrl(item.id)} target="_blank" rel="noopener noreferrer">Open in new tab</a>}
+          </div>
+          {!item.has_file ? <p className="p-4 text-sm text-text-muted">No file.</p>
+            : shown ? <iframe title="Right-to-work document" src={documentUrl(item.id)} className="h-[70vh] w-full rounded-b-xl" />
+            : <div className="p-4"><button className={quietButton} onClick={() => setShown(true)}>Open document</button><p className="mt-2 text-xs text-text-muted">Each open is logged against your account.</p></div>}
         </div>
 
-        {mode === 'approve' && (
-          <div className="mt-5 space-y-5">
-            <fieldset>
-              <legend className="text-sm font-semibold text-text">Checklist</legend>
-              <div className="mt-2 space-y-2">
-                {REVIEW_CHECKLIST.map((entry) => (
-                  <label key={entry.id} className="flex items-start gap-3 text-sm text-text">
-                    <input type="checkbox" className="mt-1 h-4 w-4" checked={ticked.includes(entry.id)}
-                      onChange={(event) => setTicked(event.target.checked ? [...ticked, entry.id] : ticked.filter((id) => id !== entry.id))} />
-                    <span>{entry.label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-sm font-medium text-text">Right-to-work group
+        <section className={card}>
+          <h2 className="font-display text-lg font-semibold text-text">Decision</h2>
+          <div className="mt-3 flex flex-wrap gap-2" role="radiogroup" aria-label="Decision">
+            {([['approve', 'Approve'], ['reupload', 'Ask again'], ['not_approved', 'Not approved']] as const).map(([key, label]) => (
+              <button key={key} role="radio" aria-checked={mode === key} onClick={() => { setMode(key); setReason(''); setError('') }}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold ${mode === key ? 'bg-primary text-white' : 'border border-border bg-white text-text'}`}>{label}</button>
+            ))}
+          </div>
+
+          {mode === 'approve' && (
+            <div className="mt-5 space-y-4">
+              <fieldset>
+                <legend className="text-sm font-semibold text-text">Checklist</legend>
+                <div className="mt-2 space-y-2">
+                  {REVIEW_CHECKLIST.map((entry) => (
+                    <label key={entry.id} className="flex items-start gap-3 text-sm text-text">
+                      <input type="checkbox" className="mt-1 h-4 w-4" checked={ticked.includes(entry.id)}
+                        onChange={(event) => setTicked(event.target.checked ? [...ticked, entry.id] : ticked.filter((id) => id !== entry.id))} />
+                      <span>{entry.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <label className="block text-sm font-medium text-text">Right-to-work group
                 <select className={input} value={group} onChange={(event) => { setGroup(event.target.value as RtwGroup); setDocumentType('') }}>
                   <option value="">Choose</option>
                   {RTW_GROUP_KEYS.map((key) => <option key={key} value={key}>{RTW_GROUPS[key].label}</option>)}
                 </select>
               </label>
-              <label className="text-sm font-medium text-text">Document type
+              <label className="block text-sm font-medium text-text">Document type
                 <select className={input} value={documentType} onChange={(event) => setDocumentType(event.target.value as RtwDocumentType)} disabled={!group}>
                   <option value="">Choose</option>
                   {types.map((key) => <option key={key} value={key}>{RTW_DOCUMENT_TYPES[key]}</option>)}
                 </select>
               </label>
-              <label className="text-sm font-medium text-text">Document expiry date{group === 'work_permit' ? ' (required)' : ' (if it has one)'}
+              <label className="block text-sm font-medium text-text">Document expiry date{group === 'work_permit' ? ' (required)' : ' (if it has one)'}
                 <input type="date" className={input} value={expires} min={antiguaToday()} onChange={(event) => setExpires(event.target.value)} />
               </label>
-              <label className="text-sm font-medium text-text">Police record issue date
-                <input type="date" className={input} value={issued} max={antiguaToday()} onChange={(event) => setIssued(event.target.value)} />
-              </label>
+              <p className="text-sm text-text-light">Badge would run until <strong className="text-text">{longDate(until)}</strong> (the expiry date, at most two years).</p>
             </div>
-            <label className="flex items-start gap-3 rounded-xl border border-border bg-bg-alt p-3 text-sm text-text">
-              <input type="checkbox" className="mt-1 h-4 w-4" checked={notice} onChange={(event) => setNotice(event.target.checked)} />
-              <span><strong>Show the job seeker a notice before sharing.</strong> Use this when the record shows a conviction marked as spent. They are told before anything is shared; it does not affect approval. Nothing about the record&apos;s contents is saved.</span>
-            </label>
-            {until && <p className="text-sm text-text-light">Badge would run until <strong className="text-text">{longDate(until)}</strong>.</p>}
-          </div>
-        )}
+          )}
 
-        {mode === 'reupload' && (
-          <div className="mt-5 space-y-4">
-            <fieldset>
-              <legend className="text-sm font-semibold text-text">Which document?</legend>
-              {(['rtw', 'police_record'] as const).map((kind) => (
-                <label key={kind} className="mt-2 flex items-center gap-3 text-sm text-text">
-                  <input type="checkbox" className="h-4 w-4" checked={redo.includes(kind)} onChange={(event) => setRedo(event.target.checked ? [...redo, kind] : redo.filter((value) => value !== kind))} />
-                  {kind === 'rtw' ? 'Right-to-work document' : 'Police record'}
-                </label>
-              ))}
-            </fieldset>
-            <label className="block text-sm font-medium text-text">Reason (shown to the job seeker)
+          {mode !== 'approve' && (
+            <label className="mt-5 block text-sm font-medium text-text">Reason (shown to the job seeker)
               <select className={input} value={reason} onChange={(event) => setReason(event.target.value)}>
                 <option value="">Choose</option>
-                {Object.entries(REUPLOAD_REASONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+                {Object.entries(mode === 'reupload' ? REUPLOAD_REASONS : NOT_APPROVED_REASONS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
               </select>
             </label>
-            <p className="text-xs text-text-muted">The upload is free for them. The files being redone are deleted now.</p>
-          </div>
-        )}
+          )}
 
-        {mode === 'not_approved' && (
-          <div className="mt-5 space-y-4">
-            <label className="block text-sm font-medium text-text">Reason (shown to the job seeker)
-              <select className={input} value={reason} onChange={(event) => setReason(event.target.value)}>
-                <option value="">Choose</option>
-                {Object.entries(NOT_APPROVED_REASONS).filter(([key]) => key !== 'no_upload_received').map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-              </select>
-            </label>
-            <p className="rounded-xl border border-border bg-bg-alt p-3 text-sm text-text">This refunds the EC$40 through Stripe in the same step, deletes both files and emails the job seeker. Employers are told nothing. What a genuine police record says is never a reason.</p>
-          </div>
-        )}
-
-        {error && <p className="mt-4 text-sm text-red-700" role="alert">{error}</p>}
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <button className={primaryButton} disabled={!ready || busy} onClick={decide}>
-            {busy ? 'Saving…' : mode === 'approve' ? 'Approve' : mode === 'reupload' ? 'Ask for re-upload' : 'Not approved, refund EC$40'}
+          {error && <p className="mt-4 text-sm text-red-700" role="alert">{error}</p>}
+          <button className={`${primaryButton} mt-5`} disabled={!ready || busy} onClick={decide}>
+            {busy ? 'Saving…' : mode === 'approve' ? 'Approve' : mode === 'reupload' ? 'Ask again' : 'Not approved'}
           </button>
-          <p className="text-xs text-text-muted">The ID image is deleted straight away, whatever the decision.</p>
-        </div>
-      </section>
+          <p className="mt-2 text-xs text-text-muted">The image is deleted straight away, whatever the decision. Employers are never told about a refusal.</p>
+        </section>
+      </div>
     </div>
   )
 }

@@ -5,7 +5,6 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { handleResumeWritingStripeEvent } from '@/lib/resume-writing-payment'
 import { handleEmployerBillingEvent } from '@/lib/employer-billing/webhook'
-import { VERIFICATION_PURCHASE_TYPE, handleVerificationChargeEvent, handleVerificationPayment } from '@/lib/verification/payment'
 import { getResumeWritingStripe, getResumeWritingWebhookSecret, resumeWritingPolicy } from '@/lib/resume-writing-stripe'
 
 /** Helper: get current_period_end from the first subscription item */
@@ -154,13 +153,6 @@ export async function POST(req: NextRequest) {
         const purchaseType = session.metadata?.purchase_type
         const userId = session.metadata?.user_id
 
-        // JobLink Verified: one-off EC$40 verification fee. Never falls
-        // through to the employer subscription flow below.
-        if (purchaseType === VERIFICATION_PURCHASE_TYPE) {
-          await handleVerificationPayment(supabase, session)
-          break
-        }
-
         // Handle Smart Resume one-time purchase
         if (purchaseType === 'smart_resume' && userId) {
           await mustSucceed(
@@ -238,14 +230,6 @@ export async function POST(req: NextRequest) {
           )
         }
 
-        break
-      }
-
-      // JobLink Verified: refunds and disputes made in Stripe itself. Ignored
-      // for any charge that is not a verification fee.
-      case 'charge.refunded':
-      case 'charge.dispute.created': {
-        await handleVerificationChargeEvent(supabase, event)
         break
       }
 

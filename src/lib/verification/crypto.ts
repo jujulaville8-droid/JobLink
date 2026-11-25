@@ -53,7 +53,7 @@ export function fileKeyReady(): boolean {
 
 const associatedData = (verificationId: string, kind: string) => Buffer.from(`${verificationId}/${kind}`, 'utf8')
 
-export function encryptDocument(plain: Buffer, verificationId: string, kind: 'rtw' | 'police_record'): { blob: Buffer; keyVersion: number } {
+export function encryptDocument(plain: Buffer, verificationId: string, kind: 'rtw'): { blob: Buffer; keyVersion: number } {
   const keyVersion = currentKeyVersion()
   const nonce = randomBytes(12)
   const cipher = createCipheriv('aes-256-gcm', keyFor(keyVersion), nonce)
@@ -64,7 +64,7 @@ export function encryptDocument(plain: Buffer, verificationId: string, kind: 'rt
   return { blob: Buffer.concat([MAGIC, version, nonce, cipher.getAuthTag(), body]), keyVersion }
 }
 
-export function decryptDocument(blob: Buffer, verificationId: string, kind: 'rtw' | 'police_record'): Buffer {
+export function decryptDocument(blob: Buffer, verificationId: string, kind: 'rtw'): Buffer {
   if (blob.length <= HEADER || !blob.subarray(0, 4).equals(MAGIC)) throw new VerificationDecryptError('Not a JobLink encrypted document')
   const keyVersion = blob.readUInt16BE(4)
   const decipher = createDecipheriv('aes-256-gcm', keyFor(keyVersion), blob.subarray(6, 18))

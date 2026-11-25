@@ -4,7 +4,10 @@ import sharp from 'sharp'
 import { PDFArray, PDFDict, PDFDocument, PDFName, PDFStream } from 'pdf-lib'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { decryptDocument, encryptDocument, sha256Hex } from './crypto'
-import { VERIFICATION_FILE_LIMIT, VERIFICATION_FILES_PER_DOCUMENT, type VerificationDocument } from './shared'
+import { VERIFICATION_FILE_LIMIT, VERIFICATION_FILES_PER_DOCUMENT } from './shared'
+
+/** The only document type stored: a right-to-work image, until the decision. */
+export type VerificationDocument = 'rtw'
 
 export const verificationBucket = 'verification-private'
 const MAX_PAGES = 10
@@ -140,7 +143,7 @@ export async function privateVerificationStorage(db: SupabaseClient) {
   return db.storage.from(verificationBucket)
 }
 
-const prefixes: Record<VerificationDocument, string> = { rtw: 'rtw', police_record: 'police' }
+const prefixes: Record<VerificationDocument, string> = { rtw: 'rtw' }
 
 /** Random IDs only; no names in paths. */
 export const newDocumentPath = (verificationId: string, kind: VerificationDocument) =>

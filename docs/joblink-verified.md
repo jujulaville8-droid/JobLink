@@ -1,60 +1,36 @@
-# JobLink Verified
+# JobLink Verified (free right-to-work check)
 
-A job seeker pays a one-off EC$40 verification fee, has their police record and
-right to work checked once, and can send both with any application for 6 months.
-Applying stays free. Verified ships **switched off**.
+A job seeker uploads one right-to-work document. A JobLink reviewer checks it is
+genuine, current and theirs. Employers then see a badge on that person's
+applications, and can open a one-page confirmation when the job seeker chooses
+to send it. It is **free** and optional, and no police record is involved.
+
+| | |
+| --- | --- |
+| Badge | "Verified eligible to work in Antigua" (citizens, permanent residents, OECS citizens and spouses, CARICOM Skills Certificate holders) |
+| Permit holders | "Verified: holds an Antigua work permit" (a permit is tied to one employer and position) |
+| Lasts | Until the document checked expires, at most two years. Reminder 30 days before; renewing is free. |
+| Kept | The group, the type of document, its expiry date and when it was checked. The image is deleted at the decision. |
+| Employer sees | The badge, and (only when the job seeker ticks "Send my right-to-work confirmation") a confirmation with name, status, document type, date and a verification code. Never an ID number or photo. |
 
 ## What is where
 
 | Part | Location |
 | --- | --- |
-| Shared rules and wording (badge text, groups, reasons, dates) | `src/lib/verification/shared.ts` |
-| Switches, auth, audit log, owner alerts | `src/lib/verification/server.ts` |
-| Encryption (AES-256-GCM, versioned key) | `src/lib/verification/crypto.ts` |
-| File checks, cleaning, private storage | `src/lib/verification/files.ts` |
-| Stamp and right-to-work confirmation | `src/lib/verification/stamp.ts` |
-| Checkout, webhook branch, refunds | `src/lib/verification/payment.ts` |
-| Reviewer decisions | `src/lib/verification/review.ts` |
-| Shares, badges | `src/lib/verification/sharing.ts` |
+| Rules and wording | `src/lib/verification/shared.ts` |
+| Switch, auth, audit log | `src/lib/verification/server.ts` |
+| Encryption and file checks (image held only until the decision) | `src/lib/verification/crypto.ts`, `files.ts` |
+| Confirmation document | `src/lib/verification/stamp.ts` |
+| Review decisions | `src/lib/verification/review.ts` |
 | Routes | `src/app/api/verification/**`, `src/app/api/admin/verifications/**`, `src/app/api/cron/verification-expiry` |
-| Pages | `/verified`, `/verified/check/[code]`, `/guides/police-record`, `/verification`, `/admin/verifications`, `/two-step` |
-| Database | `supabase/migrations/20261113090000_security_hardening_4.sql`, `20261113100000_seeker_verifications.sql` |
-| Tests | `tests/verification-db.test.mjs`, `tests/verification-files.spec.tsx`, `tests/verification-api.spec.tsx`, `tests/admin-two-step.spec.tsx` |
+| Pages | `/verified`, `/verified/check/[code]`, `/verification`, `/admin/verifications`, `/two-step` |
+| Database | `supabase/migrations/20261113100000_seeker_verifications.sql` |
 
-## Switching on, in order
+## Switching on
 
-1. **Now, independent of Verified**
-   - Apply `20261113090000_security_hardening_4.sql`.
-   - Each admin signs in and enrols at `/two-step`. Then set `ADMIN_MFA_ENFORCED=true`.
-   - Supabase dashboard, Authentication: turn on leaked-password protection (needs the Pro plan).
-2. **Before any page is shown**
-   - Labour Department and lawyer checks from the launch plan.
-   - Confirm the facts on `/guides/police-record` (fee, hours, what to bring) with the Criminal Records Office.
-   - Apply `20261113100000_seeker_verifications.sql`.
-   - Stripe: product "JobLink Verified, 6 months", one-time price XCD 40.00. Put its id in `VERIFICATION_PRICE_ID`.
-   - Stripe webhook endpoint (`/api/webhooks/stripe`): add the events `charge.refunded` and `charge.dispute.created` alongside `checkout.session.completed`.
-   - Generate the file key privately (`openssl rand -base64 32`) and enter it in Vercel as `VERIFICATION_FILE_KEY`. Keep a copy somewhere safe: without it stored police records cannot be read.
-   - Check `CRON_SECRET` and `NTFY_SIGNUP_TOPIC` are set in Vercel.
-3. `VERIFICATION_ENABLED=true` with checkout off. Check the pages.
-4. Full run by hand in Stripe test mode with fake documents (test plan in the build plan).
-5. `VERIFICATION_CHECKOUT_ENABLED=true` for the soft launch.
-6. On the first payment (phone alert): upgrade Supabase to Pro, accept its data processing agreement, tick the box and press **Open uploads** in `/admin/verifications`. Everyone waiting is emailed.
-
-## Rules the code keeps
-
-- Browsers never write a verification record or touch the private folder; the database refuses both.
-- A check only moves along the allowed status path, and each move is logged.
-- The ID image is deleted at the decision. The police record is deleted when the badge ends, when the job seeker deletes it, or with the account.
-- No column or field holds what a police record says. Reasons are codes from a fixed list.
-- An employer can open documents only for an application to their own job, while sharing is on and the badge is valid. Every other case is the same 404.
-- No email carries a document. No storage link is ever handed out.
-
-## Refunds and disputes made in Stripe
-
-- A full refund from the Stripe dashboard deletes the files and ends the check (not approved if it was under review, withdrawn otherwise), with no email to the job seeker.
-- A partial refund or a dispute only sends you a phone alert; nothing changes until you decide.
-
-## Not built yet
-
-- A second way to pay for people without a bank card (still an open decision).
-- The employer-screening outbox email (off in production) does not carry the badge line; the standard new-applicant email does.
+1. Confirm the accepted documents with the Labour Department.
+2. Apply `20261113090000_security_hardening_4.sql` and `20261113100000_seeker_verifications.sql`.
+3. Generate the file key privately (`openssl rand -base64 32`) and set it in Vercel as `VERIFICATION_FILE_KEY`.
+4. Set `VERIFICATION_ENABLED=true`. The pages appear; uploads stay closed.
+5. Each admin who reviews enrols in two-step login at `/two-step`.
+6. In `/admin/verifications`, tick the confirmation and press **Open uploads**.

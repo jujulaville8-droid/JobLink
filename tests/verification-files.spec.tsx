@@ -7,9 +7,9 @@ import {
   VerificationDecryptError, VerificationKeyError, decryptDocument, encryptDocument, fileKeyReady, newConfirmationCode,
 } from '@/lib/verification/crypto'
 import { VerificationFileError, buildCleanPdf, cleanPhoto, newDocumentPath, sniffType } from '@/lib/verification/files'
-import { buildRtwConfirmation, latin1Safe, stampLine, stampPoliceRecord } from '@/lib/verification/stamp'
+import { buildRtwConfirmation, latin1Safe, stampLine } from '@/lib/verification/stamp'
 import {
-  CONFIRMATION_CODE_PATTERN, addMonths, badgeIsValid, badgeText, parseConfirmationCode, policeRecordIsRecent, verifiedUntil,
+  BADGE_ELIGIBLE, BADGE_PERMIT, CONFIRMATION_CODE_PATTERN, addMonths, badgeIsValid, badgeText, parseConfirmationCode, verifiedUntil,
 } from '@/lib/verification/shared'
 
 const ID = '0b0f6a0e-1111-4222-8333-444455556666'
@@ -34,11 +34,11 @@ const photo = (width = 600, height = 400) =>
 describe('JobLink\'s own encryption', () => {
   it('round-trips a document and stores nothing readable', () => {
     const plain = Buffer.from('%PDF-1.7 police record of Sam Seeker')
-    const { blob, keyVersion } = encryptDocument(plain, ID, 'police_record')
+    const { blob, keyVersion } = encryptDocument(plain, ID, 'rtw')
     expect(keyVersion).toBe(1)
     expect(blob.includes(Buffer.from('Sam Seeker'))).toBe(false)
     expect(blob.subarray(0, 4).toString()).toBe('JLV1')
-    expect(decryptDocument(blob, ID, 'police_record').equals(plain)).toBe(true)
+    expect(decryptDocument(blob, ID, 'rtw').equals(plain)).toBe(true)
   })
 
   it('uses a fresh nonce every time', () => {
@@ -47,9 +47,9 @@ describe('JobLink\'s own encryption', () => {
   })
 
   it('will not decrypt a file moved onto another person\'s record or another document slot', () => {
-    const { blob } = encryptDocument(Buffer.from('secret'), ID, 'police_record')
-    expect(() => decryptDocument(blob, OTHER_ID, 'police_record')).toThrow(VerificationDecryptError)
-    expect(() => decryptDocument(blob, ID, 'rtw')).toThrow(VerificationDecryptError)
+    const { blob } = encryptDocument(Buffer.from('secret'), ID, 'rtw')
+    expect(() => decryptDocument(blob, OTHER_ID, 'rtw')).toThrow(VerificationDecryptError)
+    expect(() => decryptDocument(blob, OTHER_ID, 'rtw')).toThrow(VerificationDecryptError)
   })
 
   it('detects tampering and refuses anything that is not an encrypted document', () => {
@@ -61,14 +61,14 @@ describe('JobLink\'s own encryption', () => {
 
   it('still reads files from before a key rotation', () => {
     const oldKey = process.env.VERIFICATION_FILE_KEY!
-    const { blob } = encryptDocument(Buffer.from('old file'), ID, 'police_record')
+    const { blob } = encryptDocument(Buffer.from('old file'), ID, 'rtw')
     process.env.VERIFICATION_FILE_KEY = key()
     process.env.VERIFICATION_FILE_KEY_VERSION = '2'
     process.env.VERIFICATION_FILE_KEY_V1 = oldKey
-    expect(decryptDocument(blob, ID, 'police_record').toString()).toBe('old file')
-    expect(encryptDocument(Buffer.from('new'), ID, 'police_record').keyVersion).toBe(2)
+    expect(decryptDocument(blob, ID, 'rtw').toString()).toBe('old file')
+    expect(encryptDocument(Buffer.from('new'), ID, 'rtw').keyVersion).toBe(2)
     delete process.env.VERIFICATION_FILE_KEY_V1
-    expect(() => decryptDocument(blob, ID, 'police_record')).toThrow(VerificationKeyError)
+    expect(() => decryptDocument(blob, ID, 'rtw')).toThrow(VerificationKeyError)
   })
 
   it.each([undefined, '', 'short', randomBytes(16).toString('base64'), 'not base64 !!!'])('refuses to run with a missing or weak key (%s)', (value) => {
@@ -156,9 +156,9 @@ describe('upload checks', () => {
   })
 
   it('stores under random names with no personal details in the path', () => {
-    const path = newDocumentPath(ID, 'police_record')
-    expect(path).toMatch(new RegExp(`^${ID}/police-[0-9a-f-]{36}\\.enc$`))
-    expect(newDocumentPath(ID, 'police_record')).not.toBe(path)
+    const path = newDocumentPath(ID, 'rtw')
+    expect(path).toMatch(new RegExp(`^${ID}/rtw-[0-9a-f-]{36}\\.enc$`))
+    expect(newDocumentPath(ID, 'rtw')).not.toBe(path)
     expect(newDocumentPath(ID, 'rtw')).toMatch(new RegExp(`^${ID}/rtw-[0-9a-f-]{36}\\.enc$`))
   })
 })
@@ -166,20 +166,14 @@ describe('upload checks', () => {
 describe('what an employer receives', () => {
   const details = { verifiedOn: '2026-11-14', sharedWith: 'Acme Security Ltd', sharedOn: '2026-11-20T15:00:00Z' }
 
-  it('stamps the police record with who it was shared with and when', () => {
+  it('says who the confirmation was shared with and when', () => {
     expect(stampLine(details)).toBe('Verified by JobLink on 14 November 2026 · Shared with Acme Security Ltd on 20 November 2026')
     expect(stampLine({ ...details, sharedWith: null })).toContain('Preview for the job seeker')
   })
 
-  it('adds the stamp in a band above each page without covering the record', async () => {
-    const stamped = await PDFDocument.load(await stampPoliceRecord(await plainPdf(2), details))
-    expect(stamped.getPageCount()).toBe(2)
-    expect(stamped.getPage(0).getSize()).toEqual({ width: 300, height: 430 })
-  })
-
   it('copes with company names the PDF font cannot draw', async () => {
     expect(latin1Safe('Café “Sunrise” ☃ 日本')).toBe('Café ?Sunrise? ? ??')
-    await expect(stampPoliceRecord(await plainPdf(), { ...details, sharedWith: '日本語 🌴 Ltd' })).resolves.toBeInstanceOf(Buffer)
+    await expect(buildRtwConfirmation({ ...details, sharedWith: '日本語 🌴 Ltd', name: 'Sam', group: 'citizen', documentType: 'passport', verifiedUntil: '2028-01-01', confirmationCode: 'ABCDEFGH23' })).resolves.toBeInstanceOf(Buffer)
   })
 
   it('writes a one-page right-to-work confirmation', async () => {
@@ -192,21 +186,11 @@ describe('what an employer receives', () => {
 })
 
 describe('badge rules', () => {
-  it('lasts 6 months from the date on the police record', () => {
-    expect(verifiedUntil('2026-11-10', null)).toBe('2027-05-10')
-    expect(addMonths('2026-08-31', 6)).toBe('2027-02-28')
-  })
-
-  it('ends sooner when a work permit expires first', () => {
+  it('lasts until the document expires, and never more than two years', () => {
     expect(verifiedUntil('2026-11-10', '2027-02-01')).toBe('2027-02-01')
-    expect(verifiedUntil('2026-11-10', '2031-04-02')).toBe('2027-05-10')
-  })
-
-  it('accepts a police record up to 30 days old, and never one dated in the future', () => {
-    expect(policeRecordIsRecent('2026-11-13', '2026-11-13')).toBe(true)
-    expect(policeRecordIsRecent('2026-10-14', '2026-11-13')).toBe(true)
-    expect(policeRecordIsRecent('2026-10-13', '2026-11-13')).toBe(false)
-    expect(policeRecordIsRecent('2026-11-14', '2026-11-13')).toBe(false)
+    expect(verifiedUntil('2026-11-10', '2031-04-02')).toBe('2028-11-10')
+    expect(verifiedUntil('2026-11-10', null)).toBe('2028-11-10')
+    expect(addMonths('2026-08-31', 6)).toBe('2027-02-28')
   })
 
   it('is valid through its last day and not after', () => {
@@ -217,12 +201,11 @@ describe('badge rules', () => {
     expect(badgeIsValid(null)).toBe(false)
   })
 
-  it('uses the agreed wording and never implies a permit holder can start anywhere', () => {
-    expect(badgeText({ holdsWorkPermit: false, checkedOn: '2026-11-14' })).toBe('Can work in Antigua without a permit · ID and police record checked · Nov 2026')
-    expect(badgeText({ holdsWorkPermit: true, checkedOn: '2026-11-14' })).toBe('Holds an Antigua work permit · police record checked · Nov 2026')
-    for (const word of ['safe', 'trusted', 'background']) {
-      expect(badgeText({ holdsWorkPermit: false, checkedOn: '2026-11-14' }).toLowerCase()).not.toContain(word)
-    }
+  it('uses the agreed wording, and never tells a permit holder they are eligible everywhere', () => {
+    expect(badgeText({ holdsWorkPermit: false })).toBe('Verified eligible to work in Antigua')
+    expect(badgeText({ holdsWorkPermit: true })).toBe('Verified: holds an Antigua work permit')
+    expect(BADGE_PERMIT).not.toMatch(/eligible/i)
+    for (const word of ['safe', 'trusted', 'background', 'police']) expect(BADGE_ELIGIBLE.toLowerCase()).not.toContain(word)
   })
 
   it('reads confirmation codes however they are typed', () => {

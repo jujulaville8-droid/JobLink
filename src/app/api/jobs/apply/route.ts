@@ -9,7 +9,7 @@ import { applicantCvPath, notifyNewApplicant } from '@/lib/applicant-notificatio
 import { applicationDependencies, screeningApplicationEnabled, ScreeningSubmissionError, submitScreeningApplication } from '@/lib/employer-screening/application'
 import { hasCurrentScreeningNotice } from '@/lib/employer-screening/notice'
 import { inlineDiagnostic } from '@/lib/employer-screening/inline-diagnostics'
-import { parseShareChoice, recordShare } from '@/lib/verification/sharing'
+import { recordShare } from '@/lib/verification/sharing'
 import { verificationEnabled } from '@/lib/verification/server'
 
 // Deployment must support after() and this timeout before any readiness gates are enabled.
@@ -141,14 +141,13 @@ export async function POST(request: NextRequest) {
     }
 
     // JobLink Verified: the application has gone through exactly as it would
-    // without Verified. If the applicant ticked "Send my verified documents",
-    // record what this application carries, from their own valid verification
-    // only. Recorded before the employer is notified so the email can say so.
+    // without Verified. If the applicant ticked "Send my right-to-work
+    // confirmation", record it, from their own valid verification only.
+    // Recorded before the employer is notified so the email can say so.
     let documentsShared = false
-    const shareChoice = verificationEnabled() ? parseShareChoice(body.verified_documents) : null
-    if (shareChoice) {
+    if (verificationEnabled() && body.send_verification === true) {
       const { createAdminClient } = await import('@/lib/supabase/admin')
-      documentsShared = await recordShare(createAdminClient(), application.id, seekerProfile.id, shareChoice)
+      documentsShared = await recordShare(createAdminClient(), application.id, seekerProfile.id, true)
     }
 
     if (deliveryPath === 'screening' && process.env.EMPLOYER_OUTBOX_WORKER_ENABLED === 'true') {

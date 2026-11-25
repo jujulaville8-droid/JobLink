@@ -44,25 +44,18 @@ function loadSql(path) {
 }
 
 /** Insert a check and walk it to the requested status as the server would. */
-async function createCheck(profile, user, status, { code = CODE, until = `current_date + 180`, group = 'citizen' } = {}) {
+async function createCheck(profile, user, status, { code = CODE, until = `current_date + 365`, group = 'citizen' } = {}) {
   await asServiceRole();
   const { id } = await one(
-    `INSERT INTO public.seeker_verifications (seeker_id, user_id) VALUES ('${profile}', '${user}') RETURNING id`
+    `INSERT INTO public.seeker_verifications (seeker_id, user_id, rtw_group_claimed) VALUES ('${profile}', '${user}', '${group}') RETURNING id`
   );
-  const steps = {
-    paid: `status = 'paid', stripe_checkout_session_id = 'cs_${id}', stripe_payment_intent_id = 'pi_${id}', paid_at = now()`,
-    submitted: `status = 'submitted', consent_at = now(), consent_version = 'v1', submitted_at = now(),
-      rtw_group_claimed = '${group}', rtw_file_path = '${id}/rtw-a.enc', police_record_file_path = '${id}/police-a.enc',
-      police_record_sha256 = '${'a'.repeat(64)}', key_version = 1`,
-    approved: `status = 'approved', rtw_group = '${group}', rtw_document_type = 'passport', rtw_file_path = NULL,
-      police_record_issued_on = current_date - 5, verified_until = ${until}, confirmation_code = '${code}',
-      reviewed_at = now(), reviewed_by = '${ADMIN}'`,
-  };
-  for (const step of ['paid', 'submitted', 'approved']) {
-    if (status === 'awaiting_payment') break;
-    await db.exec(`UPDATE public.seeker_verifications SET ${steps[step]} WHERE id = '${id}'`);
-    if (step === status) break;
-  }
+  if (status === 'draft') return id;
+  await db.exec(`UPDATE public.seeker_verifications SET status = 'submitted', consent_at = now(), consent_version = 'v2',
+    submitted_at = now(), rtw_file_path = '${id}/rtw-a.enc', rtw_file_sha256 = '${'a'.repeat(64)}', key_version = 1 WHERE id = '${id}'`);
+  if (status === 'submitted') return id;
+  await db.exec(`UPDATE public.seeker_verifications SET status = 'approved', rtw_group = '${group}', rtw_document_type = 'passport',
+    rtw_file_path = NULL, rtw_file_sha256 = NULL, verified_until = ${until}, confirmation_code = '${code}',
+    reviewed_at = now(), reviewed_by = '${ADMIN}' WHERE id = '${id}'`);
   return id;
 }
 
@@ -140,11 +133,6 @@ describe('the migrations', () => {
     assert.ok(!bucket.allowed_mime_types.includes('application/zip'));
   });
 
-  test('listings gain the police record flag, off by default', async () => {
-    const row = await one(`SELECT police_record_required FROM public.job_listings WHERE id = '${JOB}'`);
-    assert.equal(row.police_record_required, false);
-  });
-
   test('uploads start closed', async () => {
     const row = await one(`SELECT uploads_open FROM public.verification_settings`);
     assert.equal(row.uploads_open, false);
@@ -167,11 +155,10 @@ describe('a job seeker cannot verify themselves', () => {
   for (const [name, change] of [
     ['status', `status = 'approved'`],
     ['badge end date', `verified_until = current_date + 3650`],
-    ['police record date', `police_record_issued_on = current_date`],
-    ['file path', `police_record_file_path = 'someone-else/police.enc'`],
+    ['group', `rtw_group = 'citizen'`],
+    ['file path', `rtw_file_path = 'someone-else/rtw.enc'`],
     ['decision', `decision_reason = NULL, reviewed_at = now()`],
     ['confirmation code', `confirmation_code = 'ZZZZZZZZ99'`],
-    ['payment', `paid_at = now()`],
   ]) {
     test(`cannot change their own ${name}`, async () => {
       await asBrowser(SEEKER);
@@ -196,14 +183,13 @@ describe('a job seeker cannot verify themselves', () => {
       REVOKE UPDATE ON public.seeker_verifications FROM authenticated;`);
   });
 
-  test('can read the state of their own check, but not file paths or payment ids', async () => {
+  test('can read the state of their own check, but not file paths or who reviewed it', async () => {
     await asBrowser(SEEKER);
     const row = await one(`SELECT status, decision_reason FROM public.seeker_verifications WHERE id = '${id}'`);
     assert.equal(row.status, 'submitted');
-    await rejected(`SELECT police_record_file_path FROM public.seeker_verifications WHERE id = '${id}'`);
     await rejected(`SELECT rtw_file_path FROM public.seeker_verifications WHERE id = '${id}'`);
-    await rejected(`SELECT stripe_payment_intent_id FROM public.seeker_verifications WHERE id = '${id}'`);
-    await rejected(`SELECT police_record_sha256 FROM public.seeker_verifications WHERE id = '${id}'`);
+    await rejected(`SELECT rtw_file_sha256 FROM public.seeker_verifications WHERE id = '${id}'`);
+    await rejected(`SELECT reviewed_by FROM public.seeker_verifications WHERE id = '${id}'`);
   });
 
   test('nobody else can read it: another job seeker, an employer, or a signed-out visitor', async () => {
@@ -225,25 +211,24 @@ describe('a job seeker cannot verify themselves', () => {
 });
 
 describe('status path', () => {
-  test('a check cannot start anywhere but awaiting payment', async () => {
+  test('a check cannot start anywhere but draft', async () => {
     await asServiceRole();
-    await rejected(`INSERT INTO public.seeker_verifications (seeker_id, user_id, status, stripe_checkout_session_id, paid_at)
-      VALUES ('${OTHER_PROFILE}', '${OTHER}', 'paid', 'cs_x', now())`);
+    await rejected(`INSERT INTO public.seeker_verifications (seeker_id, user_id, status) VALUES ('${OTHER_PROFILE}', '${OTHER}', 'approved')`);
   });
 
-  test('even the server cannot skip review', async () => {
-    const id = await createCheck(OTHER_PROFILE, OTHER, 'paid');
+  test('even the server cannot skip review, and approval needs every result field', async () => {
+    const id = await createCheck(OTHER_PROFILE, OTHER, 'draft');
     await rejected(`UPDATE public.seeker_verifications SET status = 'approved' WHERE id = '${id}'`);
-    await db.exec(`DELETE FROM public.seeker_verifications WHERE id = '${id}'`);
-  });
-
-  test('a paid check needs a payment, an approved one needs every review field', async () => {
-    const id = await createCheck(OTHER_PROFILE, OTHER, 'awaiting_payment');
-    await rejected(`UPDATE public.seeker_verifications SET status = 'paid' WHERE id = '${id}'`);
     await db.exec(`DELETE FROM public.seeker_verifications WHERE id = '${id}'`);
     const submitted = await createCheck(OTHER_PROFILE, OTHER, 'submitted');
     await rejected(`UPDATE public.seeker_verifications SET status = 'approved', rtw_file_path = NULL WHERE id = '${submitted}'`);
     await db.exec(`DELETE FROM public.seeker_verifications WHERE id = '${submitted}'`);
+  });
+
+  test('a check cannot be submitted without consent or the image', async () => {
+    const id = await createCheck(OTHER_PROFILE, OTHER, 'draft');
+    await rejected(`UPDATE public.seeker_verifications SET status = 'submitted', submitted_at = now() WHERE id = '${id}'`);
+    await db.exec(`DELETE FROM public.seeker_verifications WHERE id = '${id}'`);
   });
 
   test('one open check per job seeker', async () => {
@@ -251,40 +236,32 @@ describe('status path', () => {
     await rejected(`INSERT INTO public.seeker_verifications (seeker_id, user_id) VALUES ('${PROFILE}', '${SEEKER}')`);
   });
 
-  test('the ID image cannot outlive the decision', async () => {
+  test('the image cannot outlive the decision, and a refusal needs a reason from the list', async () => {
     const id = await createCheck(OTHER_PROFILE, OTHER, 'submitted');
-    await rejected(`UPDATE public.seeker_verifications SET status = 'not_approved', decision_reason = 'name_mismatch',
-      police_record_file_path = NULL WHERE id = '${id}'`);
+    await rejected(`UPDATE public.seeker_verifications SET status = 'not_approved', decision_reason = 'name_mismatch' WHERE id = '${id}'`);
+    await rejected(`UPDATE public.seeker_verifications SET status = 'not_approved', rtw_file_path = NULL WHERE id = '${id}'`);
+    await rejected(`UPDATE public.seeker_verifications SET decision_reason = 'looks dodgy' WHERE id = '${id}'`);
     await db.exec(`UPDATE public.seeker_verifications SET status = 'not_approved', decision_reason = 'name_mismatch',
-      rtw_file_path = NULL, police_record_file_path = NULL, reviewed_at = now(), reviewed_by = '${ADMIN}' WHERE id = '${id}'`);
+      rtw_file_path = NULL, reviewed_at = now(), reviewed_by = '${ADMIN}' WHERE id = '${id}'`);
   });
 
-  test('a decision reason is a code from the list, never free text', async () => {
-    const id = await createCheck(OTHER_PROFILE, OTHER, 'submitted');
-    await rejected(`UPDATE public.seeker_verifications SET decision_reason = 'record shows a conviction' WHERE id = '${id}'`);
-    await db.exec(`DELETE FROM public.seeker_verifications WHERE id = '${id}'`);
-  });
-
-  test('a finished check is final and holds no police record', async () => {
+  test('a finished check is final', async () => {
     const id = await createCheck(OTHER_PROFILE, OTHER, 'approved', { code: 'BCDEFGHJ34' });
-    await rejected(`UPDATE public.seeker_verifications SET status = 'expired' WHERE id = '${id}'`);
-    await db.exec(`UPDATE public.seeker_verifications SET status = 'expired', police_record_file_path = NULL WHERE id = '${id}'`);
-    await rejected(`UPDATE public.seeker_verifications SET status = 'approved', police_record_file_path = 'x' WHERE id = '${id}'`);
-    await rejected(`UPDATE public.seeker_verifications SET police_record_file_path = '${id}/police-b.enc' WHERE id = '${id}'`);
+    await db.exec(`UPDATE public.seeker_verifications SET status = 'expired' WHERE id = '${id}'`);
+    await rejected(`UPDATE public.seeker_verifications SET status = 'approved' WHERE id = '${id}'`);
+    await rejected(`UPDATE public.seeker_verifications SET rtw_file_path = '${id}/rtw-b.enc' WHERE id = '${id}'`);
   });
 
   test('every move is in the audit log, attributed, and the log cannot be edited', async () => {
     await asServiceRole();
     const { id } = await one(`SELECT id FROM public.seeker_verifications WHERE seeker_id = '${OTHER_PROFILE}' AND status = 'expired'`);
     const { rows } = await db.query(
-      `SELECT from_status, to_status, actor_role, actor_id FROM public.verification_events
-       WHERE verification_id = '${id}' ORDER BY created_at, to_status`
+      `SELECT to_status, actor_role, actor_id FROM public.verification_events WHERE verification_id = '${id}'`
     );
-    assert.deepEqual(rows.map((row) => row.to_status).sort(), ['approved', 'awaiting_payment', 'expired', 'paid', 'submitted']);
+    assert.deepEqual(rows.map((row) => row.to_status).sort(), ['approved', 'draft', 'expired', 'submitted']);
     assert.equal(rows.find((row) => row.to_status === 'approved').actor_id, ADMIN);
-    assert.equal(rows.find((row) => row.to_status === 'approved').actor_role, 'admin');
     assert.equal(rows.find((row) => row.to_status === 'submitted').actor_id, OTHER);
-    assert.equal(rows.find((row) => row.to_status === 'paid').actor_role, 'system');
+    assert.equal(rows.find((row) => row.to_status === 'expired').actor_role, 'system');
     await rejected(`UPDATE public.verification_events SET actor_role = 'system' WHERE verification_id = '${id}'`);
   });
 });
@@ -298,12 +275,14 @@ describe('the upload switch', () => {
     await db.exec(`DELETE FROM public.seeker_verifications WHERE seeker_id = '${PROFILE}'`);
   });
 
-  test('cannot be closed again while documents are stored', async () => {
+  test('cannot be closed again while a document is waiting for review', async () => {
     await asServiceRole();
     await db.exec(`UPDATE public.verification_settings SET uploads_open = true, opened_at = now(), opened_by = '${ADMIN}'`);
-    await createCheck(PROFILE, SEEKER, 'approved');
+    const waiting = await createCheck(OTHER_PROFILE, OTHER, 'submitted');
     await rejected(`UPDATE public.verification_settings SET uploads_open = false, opened_at = NULL`);
     await rejected(`DELETE FROM public.verification_settings`);
+    await db.exec(`DELETE FROM public.seeker_verifications WHERE id = '${waiting}'`);
+    await createCheck(PROFILE, SEEKER, 'approved');
   });
 });
 
@@ -311,10 +290,10 @@ describe('badges and sharing', () => {
   test('one live badge per job seeker', async () => {
     const second = await createCheck(PROFILE, SEEKER, 'submitted');
     await rejected(`UPDATE public.seeker_verifications SET status = 'approved', rtw_group = 'citizen',
-      rtw_document_type = 'passport', rtw_file_path = NULL, police_record_issued_on = current_date,
-      verified_until = current_date + 180, confirmation_code = 'CDEFGHJK45', reviewed_at = now() WHERE id = '${second}'`);
+      rtw_document_type = 'passport', rtw_file_path = NULL, verified_until = current_date + 180,
+      confirmation_code = 'CDEFGHJK45', reviewed_at = now() WHERE id = '${second}'`);
     await db.exec(`UPDATE public.seeker_verifications SET status = 'not_approved', decision_reason = 'document_expired',
-      rtw_file_path = NULL, police_record_file_path = NULL, reviewed_at = now() WHERE id = '${second}'`);
+      rtw_file_path = NULL, reviewed_at = now() WHERE id = '${second}'`);
   });
 
   test('a signed-in user sees only that a badge exists', async () => {
@@ -336,30 +315,26 @@ describe('badges and sharing', () => {
     await asServiceRole();
     const { id } = await one(`SELECT id FROM public.seeker_verifications WHERE seeker_id = '${PROFILE}' AND status = 'approved'`);
     // Someone else's application cannot carry this person's documents.
-    await rejected(`INSERT INTO public.verification_shares (application_id, verification_id, share_police_record)
-      VALUES ('${OTHER_APPLICATION}', '${id}', true)`);
-    // A share must carry at least one document.
-    await rejected(`INSERT INTO public.verification_shares (application_id, verification_id) VALUES ('${APPLICATION}', '${id}')`);
-    await db.exec(`INSERT INTO public.verification_shares (application_id, verification_id, share_police_record, share_rtw)
-      VALUES ('${APPLICATION}', '${id}', true, true)`);
+    await rejected(`INSERT INTO public.verification_shares (application_id, verification_id) VALUES ('${OTHER_APPLICATION}', '${id}')`);
+    await db.exec(`INSERT INTO public.verification_shares (application_id, verification_id) VALUES ('${APPLICATION}', '${id}')`);
   });
 
-  test('a share can be stopped but not widened or restarted', async () => {
+  test('a share can be stopped but not moved or restarted', async () => {
     await asServiceRole();
-    await rejected(`UPDATE public.verification_shares SET share_rtw = false WHERE application_id = '${APPLICATION}'`);
+    await rejected(`UPDATE public.verification_shares SET application_id = '${OTHER_APPLICATION}' WHERE application_id = '${APPLICATION}'`);
     await db.exec(`UPDATE public.verification_shares SET revoked_at = now() WHERE application_id = '${APPLICATION}'`);
     await rejected(`UPDATE public.verification_shares SET revoked_at = NULL WHERE application_id = '${APPLICATION}'`);
   });
 
   test('the job seeker can read their shares and who opened them; the employer cannot', async () => {
     await asServiceRole();
-    await db.exec(`INSERT INTO public.verification_views (share_id, viewer_id, company_id, document)
-      SELECT id, '${EMPLOYER}', '${COMPANY}', 'police_record' FROM public.verification_shares`);
+    await db.exec(`INSERT INTO public.verification_views (share_id, viewer_id, company_id)
+      SELECT id, '${EMPLOYER}', '${COMPANY}' FROM public.verification_shares`);
     await asBrowser(SEEKER);
     assert.equal((await db.query(`SELECT id FROM public.verification_shares`)).rows.length, 1);
     assert.equal((await db.query(`SELECT id FROM public.verification_views`)).rows.length, 1);
     await rejected(`UPDATE public.verification_shares SET revoked_at = NULL`);
-    await rejected(`INSERT INTO public.verification_views (share_id, document) SELECT id, 'rtw' FROM public.verification_shares`);
+    await rejected(`INSERT INTO public.verification_views (share_id) SELECT id FROM public.verification_shares`);
     for (const uid of [EMPLOYER, OTHER]) {
       await asBrowser(uid);
       assert.equal((await db.query(`SELECT id FROM public.verification_shares`)).rows.length, 0);
@@ -372,8 +347,7 @@ describe('badges and sharing', () => {
     await db.exec(`DELETE FROM public.verification_shares`);
     await db.exec(`UPDATE public.seeker_verifications SET verified_until = current_date - 2 WHERE seeker_id = '${PROFILE}' AND status = 'approved'`);
     const { id } = await one(`SELECT id FROM public.seeker_verifications WHERE seeker_id = '${PROFILE}' AND status = 'approved'`);
-    await rejected(`INSERT INTO public.verification_shares (application_id, verification_id, share_police_record)
-      VALUES ('${APPLICATION}', '${id}', true)`);
+    await rejected(`INSERT INTO public.verification_shares (application_id, verification_id) VALUES ('${APPLICATION}', '${id}')`);
     await asBrowser(EMPLOYER);
     assert.equal((await db.query(`SELECT * FROM public.verified_badges(ARRAY['${PROFILE}']::uuid[])`)).rows.length, 0);
   });
@@ -389,7 +363,7 @@ describe('the private folder', () => {
 
   test('no browser can read, list or write it, even with a careless bucket-wide policy', async () => {
     await actAs(null, '');
-    await db.exec(`INSERT INTO storage.objects (bucket_id, name) VALUES ('verification-private', 'x/police-1.enc'), ('cvs', 'ok.pdf')`);
+    await db.exec(`INSERT INTO storage.objects (bucket_id, name) VALUES ('verification-private', 'x/rtw-1.enc'), ('cvs', 'ok.pdf')`);
     for (const role of ['anon', 'authenticated']) {
       await actAs(SEEKER, role);
       await db.exec(`SET ROLE ${role}`);

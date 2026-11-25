@@ -2,14 +2,13 @@ import 'server-only'
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib'
 import { BASE_URL } from '@/lib/email'
 import {
-  RTW_DOCUMENT_TYPES, RTW_GROUPS, formatConfirmationCode, longDate, rtwStatusText,
+  RTW_DOCUMENT_TYPES, RTW_GROUPS, badgeText, formatConfirmationCode, longDate, rtwStatusText,
   type RtwDocumentType, type RtwGroup,
 } from './shared'
 
 const TEAL = rgb(0.05, 0.45, 0.47)
 const INK = rgb(0.1, 0.12, 0.15)
 const MUTED = rgb(0.4, 0.43, 0.47)
-const BAND = 30
 
 /** The built-in PDF fonts cover Latin-1 only; anything else would throw. */
 export function latin1Safe(text: string, max = 120): string {
@@ -33,7 +32,7 @@ function fit(text: string, font: PDFFont, maxWidth: number, start: number, min =
 }
 
 export interface StampDetails {
-  /** ISO date or timestamp the documents were checked. */
+  /** ISO date or timestamp the document was checked. */
   verifiedOn: string
   /** Who this copy is for: a company name, or null for the job seeker's own preview. */
   sharedWith: string | null
@@ -43,35 +42,8 @@ export interface StampDetails {
 
 export const stampLine = (details: StampDetails): string =>
   details.sharedWith
-    ? `Verified by JobLink on ${longDate(details.verifiedOn)} · Shared with ${latin1Safe(details.sharedWith, 60)} on ${longDate(details.sharedOn)}`
-    : `Verified by JobLink on ${longDate(details.verifiedOn)} · Preview for the job seeker · ${longDate(details.sharedOn)}`
-
-/**
- * Put the stamp on every page of a police record.
- *
- * Each page is rebuilt slightly taller with the original placed underneath a
- * band, so the stamp never covers anything on the record itself.
- */
-export async function stampPoliceRecord(cleanPdf: Buffer, details: StampDetails): Promise<Buffer> {
-  const source = await PDFDocument.load(cleanPdf, { updateMetadata: false })
-  const output = await PDFDocument.create()
-  const font = await output.embedFont(StandardFonts.HelveticaBold)
-  const line = stampLine(details)
-  const embedded = await output.embedPages(source.getPages())
-  embedded.forEach((original) => {
-    const { width, height } = original
-    const page = output.addPage([width, height + BAND])
-    page.drawPage(original, { x: 0, y: 0, width, height })
-    page.drawRectangle({ x: 0, y: height, width, height: BAND, color: rgb(0.93, 0.97, 0.97) })
-    page.drawRectangle({ x: 0, y: height, width, height: 1, color: TEAL })
-    const size = fit(line, font, width - 24, 9.5)
-    page.drawText(line, { x: 12, y: height + (BAND - size) / 2 + 1, size, font, color: TEAL })
-  })
-  output.setTitle('Police record, verified by JobLink')
-  output.setProducer('JobLink')
-  output.setCreator('JobLink')
-  return Buffer.from(await output.save())
-}
+    ? `Verified by JobLink on ${longDate(details.verifiedOn)} \u00b7 Shared with ${latin1Safe(details.sharedWith, 60)} on ${longDate(details.sharedOn)}`
+    : `Verified by JobLink on ${longDate(details.verifiedOn)} \u00b7 Preview for the job seeker \u00b7 ${longDate(details.sharedOn)}`
 
 export interface RtwConfirmationDetails extends StampDetails {
   name: string
@@ -97,7 +69,7 @@ export async function buildRtwConfirmation(details: RtwConfirmationDetails): Pro
   page.drawRectangle({ x: 0, y: 842 - 12, width: 595, height: 12, color: TEAL })
   page.drawText('JobLink', { x: left, y, size: 22, font: bold, color: TEAL })
   y -= 34
-  page.drawText('Right-to-work confirmation', { x: left, y, size: 18, font: bold, color: INK })
+  page.drawText(latin1Safe(badgeText({ holdsWorkPermit: details.group === 'work_permit' })), { x: left, y, size: 18, font: bold, color: INK })
   y -= 18
   const line = stampLine(details)
   page.drawText(line, { x: left, y, size: fit(line, regular, width, 9.5), font: regular, color: MUTED })
@@ -137,7 +109,7 @@ export async function buildRtwConfirmation(details: RtwConfirmationDetails): Pro
 
   const notes = [
     'JobLink checked the document named above on the date shown. This page does not show ID numbers or photos.',
-    'It confirms documents were checked on a date. It is not a reference, a background check or a guarantee.',
+    'It confirms a right-to-work document was checked on a date. It is not a reference, a background check or a guarantee.',
     details.group === 'work_permit'
       ? 'A work permit is tied to one employer and position. A new employer would need to apply for a permit.'
       : '',

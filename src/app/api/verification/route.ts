@@ -1,7 +1,7 @@
 import { endBadge, loadShares, seekerView } from '@/lib/verification/seeker'
 import {
-  loadVerifications, sameOrigin, uploadsOpen, verificationCheckoutEnabled, verificationEnabled,
-  verificationJson, verificationLimit, verificationNotFound, verificationSeeker,
+  loadVerifications, sameOrigin, uploadsOpen, verificationEnabled, verificationJson, verificationLimit,
+  verificationNotFound, verificationSeeker, verificationUploadsReady,
 } from '@/lib/verification/server'
 
 /** The job seeker's current verification, shares and views. */
@@ -15,8 +15,7 @@ export async function GET() {
     const [current, open] = await Promise.all([loadVerifications(seeker.db, seeker.user.id), uploadsOpen(seeker.db)])
     const shares = current.badge ? await loadShares(seeker.db, current.badge.id) : []
     return verificationJson({
-      checkoutEnabled: verificationCheckoutEnabled(),
-      uploadsOpen: open,
+      uploadsOpen: open && verificationUploadsReady(),
       open: seekerView(current.open),
       badge: seekerView(current.badge),
       last: seekerView(current.last),
@@ -28,7 +27,7 @@ export async function GET() {
   }
 }
 
-/** Delete my documents: removes the stored police record and ends the badge. */
+/** Remove my badge: stops all sharing and ends the badge now. */
 export async function DELETE(request: Request) {
   if (!verificationEnabled()) return verificationNotFound()
   if (!sameOrigin(request)) return verificationJson({ error: 'Invalid request.' }, 400)
@@ -42,6 +41,6 @@ export async function DELETE(request: Request) {
     await endBadge(seeker.db, badge, 'withdrawn', { id: seeker.user.id, role: 'seeker' })
     return verificationJson({ success: true })
   } catch {
-    return verificationJson({ error: 'We could not delete your documents. Nothing was changed. Try again.' }, 503)
+    return verificationJson({ error: 'We could not remove your badge. Nothing was changed. Try again.' }, 503)
   }
 }

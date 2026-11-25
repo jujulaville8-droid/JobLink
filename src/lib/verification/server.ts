@@ -4,23 +4,17 @@ import { requireVerifiedUser } from '@/lib/api-auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { enforceRateLimit, type RateLimitRule } from '@/lib/rate-limit'
 import { fileKeyReady } from './crypto'
-import { badgeIsValid, type VerificationDocument, type VerificationStatus } from './shared'
+import { badgeIsValid, type VerificationStatus } from './shared'
 
 /**
- * Switches. Verified ships switched off and each part is turned on separately:
- *   VERIFICATION_ENABLED            shows Verified anywhere on the site
- *   VERIFICATION_CHECKOUT_ENABLED   allows new payments (off pauses sales
- *                                   without hiding existing badges)
+ * Switches. Verified ships switched off:
+ *   VERIFICATION_ENABLED               shows Verified anywhere on the site
  *   verification_settings.uploads_open (database) opened from the admin page
+ * It is free: there is no payment and no price.
  */
 export const verificationEnabled = (): boolean => process.env.VERIFICATION_ENABLED === 'true'
-export const verificationPriceId = (): string | null => {
-  const id = process.env.VERIFICATION_PRICE_ID?.trim()
-  return id && /^price_[A-Za-z0-9]+$/.test(id) ? id : null
-}
-/** Never sell a check we could not carry out: needs the price and the file key too. */
-export const verificationCheckoutEnabled = (): boolean =>
-  verificationEnabled() && process.env.VERIFICATION_CHECKOUT_ENABLED === 'true' && !!verificationPriceId() && fileKeyReady()
+/** New uploads need the file encryption key too. */
+export const verificationUploadsReady = (): boolean => verificationEnabled() && fileKeyReady()
 
 export const verificationJson = (body: unknown, status = 200, headers: HeadersInit = {}) =>
   Response.json(body, { status, headers: { 'Cache-Control': 'private, no-store', ...headers } })
@@ -30,7 +24,6 @@ export const verificationNotFound = () => verificationJson({ error: 'Not found' 
 
 export const VerificationLimits = {
   read: { limit: 240, windowSeconds: 3600 },
-  checkout: { limit: 10, windowSeconds: 3600 },
   upload: { limit: 12, windowSeconds: 3600 },
   manage: { limit: 30, windowSeconds: 3600 },
   /** Opening a document, per person. */
@@ -57,9 +50,6 @@ export interface VerificationRow {
   seeker_id: string
   user_id: string
   status: VerificationStatus
-  stripe_checkout_session_id: string | null
-  stripe_payment_intent_id: string | null
-  paid_at: string | null
   consent_at: string | null
   consent_version: string | null
   rtw_group_claimed: string | null
@@ -67,22 +57,15 @@ export interface VerificationRow {
   rtw_document_type: string | null
   rtw_document_expires_on: string | null
   rtw_file_path: string | null
-  police_record_issued_on: string | null
-  police_record_file_path: string | null
-  police_record_sha256: string | null
+  rtw_file_sha256: string | null
   key_version: number | null
-  sharing_notice: boolean
   verified_until: string | null
   confirmation_code: string | null
   submitted_at: string | null
   reviewed_at: string | null
   reviewed_by: string | null
   decision_reason: string | null
-  reupload_documents: VerificationDocument[]
-  refunded_at: string | null
-  stripe_refund_id: string | null
   expiry_reminder_sent_at: string | null
-  upload_reminder_sent_at: string | null
   created_at: string
   updated_at: string
 }
@@ -113,7 +96,7 @@ export async function verificationSeeker(): Promise<SeekerContext | { error: Res
   return { user: auth.user, db, profile: profile.data }
 }
 
-const OPEN: VerificationStatus[] = ['awaiting_payment', 'paid', 'submitted', 'reupload_needed']
+const OPEN: VerificationStatus[] = ['draft', 'submitted', 'reupload_needed']
 
 export interface SeekerVerifications {
   /** The check in progress, if any. */
@@ -154,9 +137,7 @@ export interface AuditEvent {
   verification_id: string
   actor_id: string | null
   actor_role: 'seeker' | 'admin' | 'employer' | 'system'
-  event: 'uploaded' | 'file_opened_by_reviewer' | 'file_opened_by_owner' | 'file_opened_by_employer'
-    | 'file_deleted' | 'refunded' | 'sharing_stopped' | 'reminder_sent'
-  document?: VerificationDocument | null
+  event: 'uploaded' | 'file_opened_by_reviewer' | 'file_deleted' | 'confirmation_opened_by_employer' | 'sharing_stopped' | 'reminder_sent'
 }
 
 /**

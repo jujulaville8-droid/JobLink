@@ -1,5 +1,4 @@
 import { requireAdminTwoStep } from '@/lib/api-auth'
-import { sendEmail } from '@/lib/email'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { fileKeyReady } from '@/lib/verification/crypto'
 import { privateVerificationStorage } from '@/lib/verification/files'
@@ -8,7 +7,7 @@ import { sameOrigin, verificationEnabled, verificationJson, verificationLimit, v
 export const maxDuration = 120
 
 /**
- * Opens uploads after the Supabase upgrade, and emails everyone waiting.
+ * Opens uploads after the Supabase upgrade.
  * One way: the database refuses to close them again while documents are stored.
  */
 export async function POST(request: Request) {
@@ -36,16 +35,9 @@ export async function POST(request: Request) {
       .update({ uploads_open: true, opened_at: new Date().toISOString(), opened_by: auth.user.id })
       .eq('uploads_open', false).select('uploads_open').maybeSingle()
     if (opened.error) throw new Error('update failed')
-    if (!opened.data) return verificationJson({ success: true, alreadyOpen: true, emailed: 0 })
+    if (!opened.data) return verificationJson({ success: true, alreadyOpen: true })
 
-    const waiting = await db.from('seeker_verifications').select('user_id, users!seeker_verifications_user_id_fkey(email)').eq('status', 'paid').limit(1000)
-    let emailed = 0
-    for (const row of waiting.data ?? []) {
-      const account = Array.isArray(row.users) ? row.users[0] : row.users
-      const email = (account as { email?: string } | null)?.email
-      if (email && (await sendEmail({ to: email, type: 'verification_upload_ready' })).success) emailed++
-    }
-    return verificationJson({ success: true, emailed, waiting: waiting.data?.length ?? 0 })
+    return verificationJson({ success: true })
   } catch {
     return verificationJson({ error: 'Uploads were not opened. Check that the private storage folder exists, then try again.' }, 503)
   }

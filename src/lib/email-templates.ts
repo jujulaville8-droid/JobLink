@@ -27,14 +27,11 @@ type EmailType =
   | 'signup_reminder_1'
   | 'signup_reminder_2'
   | 'signup_reminder_3'
-  | 'verification_upload_ready'
-  | 'verification_paid_waiting'
   | 'verification_approved'
   | 'verification_reupload'
   | 'verification_not_approved'
   | 'verification_expiring'
   | 'verification_expired'
-  | 'verification_upload_reminder'
   | 'spotlight_live'
   | 'spotlight_report'
   | 'spotlight_closed_early'
@@ -173,7 +170,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${d.applicant_phone ? `<p>Phone: ${esc(d.applicant_phone)}</p>` : ''}
           ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
           <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
-          ${d.verified_line ? `<p style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; color: #065f46; line-height: 1.6;"><strong>${esc(d.verified_line)}</strong><br>${d.verified_documents_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.verified_documents_path) ? `<a href="${SITE}${d.verified_documents_path}" style="color: #0d7377; font-weight: 600;">View documents</a> (you'll be asked to log in). ` : ''}For privacy, the police record is never sent by email.</p>` : ''}
+          ${d.verified_line ? `<p style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; color: #065f46; line-height: 1.6;"><strong>${esc(d.verified_line)}</strong><br>${d.verified_documents_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.verified_documents_path) ? `<a href="${SITE}${d.verified_documents_path}" style="color: #0d7377; font-weight: 600;">View the confirmation</a> (you'll be asked to log in). ` : ''}It never shows ID numbers or photos.</p>` : ''}
           ${d.employer_fit_verdict ? simpleFitEmailSection(d.employer_fit_verdict) : d.employer_resume_review_v2 ? resumeReviewV2EmailSection(d.employer_resume_review_v2) : d.employer_screening ? employerAdvisoryEmailSection(d.employer_screening, d.employer_resume_quality) : d.employer_not_screened ? `<p style="color: #6b7280; font-size: 14px; margin-top: 24px;">${esc(d.employer_not_screened)}</p>` : d.employer_resume_quality ? employerAdvisoryEmailSection(undefined, d.employer_resume_quality) : ''}
           ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
           ${!d.employer_not_screened && !d.employer_fit_verdict && !d.employer_resume_review_v2 && !d.employer_screening && !d.employer_resume_quality ? '<p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>' : ''}
@@ -616,101 +613,55 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
 
     // JobLink Verified. No email ever carries a document: each one links to
     // a page that needs login. "Applying is always free" stays in every one.
-    case 'verification_upload_ready':
-      return {
-        subject: 'Upload your documents to get verified',
-        html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Your upload is ready</h2>
-          <p style="color: #374151; line-height: 1.6;">We've received your EC$40 verification fee. Next, upload two things:</p>
-          <ul style="color: #374151; line-height: 1.8; padding-left: 18px;">
-            <li>A right-to-work document, such as your passport or national ID</li>
-            <li>A police record issued in the last 30 days</li>
-          </ul>
-          <p style="color: #374151; line-height: 1.6;">We review within 48 hours. If we can't verify you, we refund you in full.</p>
-          ${btn('Upload my documents', '/verification')}
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Your ID is deleted once checked and never shared. Your police record is stored privately, and only employers you choose can see it.</p>
-        `),
-      }
-    case 'verification_paid_waiting':
-      return {
-        subject: 'Payment received: we\'ll email you when your upload is ready',
-        html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Payment received</h2>
-          <p style="color: #374151; line-height: 1.6;">Thank you. We've received your EC$40 verification fee.</p>
-          <p style="color: #374151; line-height: 1.6;">We'll email you within 24 hours when your upload is ready. You don't need to do anything until then.</p>
-          <p style="color: #374151; line-height: 1.6;">While you wait, get your police record from the Criminal Records Office if you don't have one from the last 30 days.</p>
-          ${btn('How to get your police record', '/guides/police-record')}
-        `),
-      }
+    // JobLink Verified: free right-to-work check. No email carries a document.
     case 'verification_approved':
       return {
-        subject: `You're verified until ${d.verification_until || 'your badge end date'}`,
+        subject: 'You\'re verified on JobLink',
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">You're JobLink Verified</h2>
-          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your documents have been checked. Your badge is valid until <strong>${esc(d.verification_until)}</strong>.</p>
-          ${d.verification_notice ? `<p style="color: #374151; line-height: 1.6; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 12px;">Before you share your police record, there is a short note from our reviewer for you to read. You'll see it on your verification page.</p>` : ''}
-          <p style="color: #374151; line-height: 1.6;"><strong>How sharing works</strong></p>
-          <ul style="color: #374151; line-height: 1.8; padding-left: 18px;">
-            <li>When you apply, tick "Send my verified documents". Nothing is sent unless you tick it.</li>
-            <li>You can preview exactly what an employer will see first.</li>
-            <li>You can see which employers opened your documents, and stop sharing at any time.</li>
-          </ul>
-          ${btn('See my verification', '/verification')}
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Your ID image has been deleted. Applying on JobLink is always free.</p>
+          <h2 style="color: #0d7377; margin-top: 0;">You're verified</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we've checked your document. Your badge, <strong>${esc(d.verified_line)}</strong>, is valid until <strong>${esc(d.verification_until)}</strong>.</p>
+          <p style="color: #374151; line-height: 1.6;">When you apply for a job, tick "Send my right-to-work confirmation" and the employer can see it. Nothing is sent unless you tick it, and you can stop sharing at any time.</p>
+          ${btn('See my badge', '/verification')}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Your document image has been deleted.</p>
         `),
       }
     case 'verification_reupload':
       return {
-        subject: 'One more upload needed to finish your verification',
+        subject: 'Please send your document again',
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">We need a document again</h2>
-          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we couldn't finish checking your documents yet:</p>
+          <h2 style="color: #0d7377; margin-top: 0;">We need your document again</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we couldn't finish checking your document:</p>
           <ul style="color: #374151; line-height: 1.8; padding-left: 18px;">${(d.verification_reasons || []).map(reason => `<li>${esc(reason)}</li>`).join('')}</ul>
-          <p style="color: #374151; line-height: 1.6;">Uploading again is free. There is no new fee.</p>
-          ${btn('Upload again', '/verification')}
+          ${btn('Send it again', '/verification')}
         `),
       }
     case 'verification_not_approved':
       return {
-        subject: 'Your verification could not be completed: full refund sent',
+        subject: 'We couldn\'t verify your document',
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">We couldn't verify your documents</h2>
-          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we weren't able to complete your verification:</p>
+          <h2 style="color: #0d7377; margin-top: 0;">We couldn't verify your document</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we weren't able to verify the document you sent:</p>
           <ul style="color: #374151; line-height: 1.8; padding-left: 18px;">${(d.verification_reasons || []).map(reason => `<li>${esc(reason)}</li>`).join('')}</ul>
-          <p style="color: #374151; line-height: 1.6;">We've refunded your <strong>EC$40</strong> verification fee in full to the card you paid with. It usually arrives within 5 to 10 business days.</p>
-          <p style="color: #374151; line-height: 1.6;">The files you uploaded have been deleted. Employers are not told anything about this, and you can keep applying for jobs for free as usual.</p>
-          ${btn('Browse jobs', '/jobs')}
+          <p style="color: #374151; line-height: 1.6;">The image has been deleted. Employers are not told anything about this, and you can keep applying for jobs as usual. You can try again with another document at any time.</p>
+          ${btn('Try again', '/verification')}
         `),
       }
     case 'verification_expiring':
       return {
         subject: `Your verified badge ends on ${d.verification_until || 'soon'}`,
         html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Renew to keep your badge</h2>
-          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your JobLink Verified badge ends on <strong>${esc(d.verification_until)}</strong>. After that, the badge and your stored police record are removed.</p>
-          <p style="color: #374151; line-height: 1.6;">Renewing is a new EC$40 check with a new police record issued in the last 30 days. It is optional, and applying stays free either way.</p>
-          ${btn('Renew my verification', '/verification')}
+          <h2 style="color: #0d7377; margin-top: 0;">Keep your badge</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your JobLink Verified badge ends on <strong>${esc(d.verification_until)}</strong>. Upload your new or renewed document to keep it. It's free.</p>
+          ${btn('Renew my badge', '/verification')}
         `),
       }
     case 'verification_expired':
       return {
-        subject: 'Your verified badge and stored police record have been removed',
+        subject: 'Your verified badge has ended',
         html: wrapper(`
           <h2 style="color: #0d7377; margin-top: 0;">Your badge has ended</h2>
-          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your JobLink Verified badge has reached its end date. We've removed the badge and deleted your stored police record, as promised.</p>
-          <p style="color: #374151; line-height: 1.6;">You can renew any time with a new police record. Applying on JobLink is always free.</p>
-          ${btn('Renew, EC$40', '/verification')}
-        `),
-      }
-    case 'verification_upload_reminder':
-      return {
-        subject: 'Your verification is waiting for your documents',
-        html: wrapper(`
-          <h2 style="color: #0d7377; margin-top: 0;">Upload your documents</h2>
-          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, you paid the EC$40 verification fee but we haven't received your documents yet.</p>
-          <p style="color: #374151; line-height: 1.6;">If we don't receive them within 60 days of your payment, we'll refund you in full automatically.</p>
-          ${btn('Upload my documents', '/verification')}
-          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;"><a href="${SITE}/guides/police-record" style="color: #0d7377;">How to get your police record in Antigua</a></p>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your JobLink Verified badge has reached its end date. Upload a current document to get verified again. It's free.</p>
+          ${btn('Get verified again', '/verification')}
         `),
       }
 

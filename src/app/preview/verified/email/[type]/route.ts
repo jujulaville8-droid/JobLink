@@ -12,10 +12,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ typ
     applicant_name: type === 'new_applicant' ? 'Sam Seeker' : 'Sam',
     verification_until: until,
     verification_notice: false,
-    verification_reasons: type === 'verification_reupload' ? [`Police record: ${REUPLOAD_REASONS.photo_unreadable}`] : [NOT_APPROVED_REASONS.name_mismatch],
+    verification_reasons: type === 'verification_reupload' ? [REUPLOAD_REASONS.photo_unreadable] : [NOT_APPROVED_REASONS.name_mismatch],
+    verified_line: type === 'new_applicant' ? 'Verified eligible to work in Antigua (checked by JobLink ' + longDate(antiguaToday()) + ').' : 'Verified eligible to work in Antigua',
     job_title: 'Security Officer', company_name: 'Acme Security Ltd', applicant_email: 'sam@example.com', applicant_phone: '268 555 0100',
     cover_letter_excerpt: 'I have three years of experience in hotel security.', cv_attached: true,
-    verified_line: `This applicant is JobLink Verified: police record and right to work checked ${longDate(antiguaToday())}.`,
     verified_documents_path: '/my-listings/0b0f6a0e-1111-4222-8333-444455556666/applicants',
     review_path: '/my-listings/0b0f6a0e-1111-4222-8333-444455556666/applicants',
   })

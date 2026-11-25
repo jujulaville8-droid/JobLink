@@ -160,8 +160,7 @@ export async function requireAdmin(): Promise<AuthResult> {
 
 /**
  * An admin whose session has passed two-step login, regardless of the rollout
- * switch. Every route that can open or decide on identity documents and police
- * records uses this.
+ * switch. Every route that can open or decide on identity documents uses this.
  */
 export async function requireAdminTwoStep(): Promise<AuthResult> {
   const auth = await requireAdminFlag()

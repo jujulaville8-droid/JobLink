@@ -51,7 +51,7 @@ export async function updateSession(request: NextRequest, event?: NextFetchEvent
     '/forgot-password', '/reset-password', '/verify-email',
     '/claim/', '/auth/', '/about', '/privacy', '/terms', '/explore',
     '/api/', '/companies', '/employers/hiring-help', '/jobs', '/success-stories',
-    // JobLink Verified explainer, public code check and the police record guide.
+    // JobLink Verified explainer, public code check and guides.
     '/verified', '/guides/',
   ]
   // Members performs its own account checks and preserves its signup destination.

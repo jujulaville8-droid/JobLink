@@ -147,8 +147,7 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
     if (screening.employer_fit_verdict) await saveFitVerdict(db, application.id, screening.employer_fit_verdict)
     else await saveNotScreened(db, application.id, reason)
     outcomeRecorded = true
-    // A badge line and a link that needs login. The police record itself is
-    // never attached, unlike the CV.
+    // A badge line and a link to the confirmation, which needs login.
     const verifiedLine = await sharedEmailLine(db, application.id)
     const result = await sendEmail({
       to: recipient,
