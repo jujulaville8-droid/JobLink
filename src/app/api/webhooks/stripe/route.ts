@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { handleResumeWritingStripeEvent } from '@/lib/resume-writing-payment'
+import { handleEmployerBillingEvent } from '@/lib/employer-billing/webhook'
 import { VERIFICATION_PURCHASE_TYPE, handleVerificationChargeEvent, handleVerificationPayment } from '@/lib/verification/payment'
 import { getResumeWritingStripe, getResumeWritingWebhookSecret, resumeWritingPolicy } from '@/lib/resume-writing-stripe'
 
@@ -127,6 +128,18 @@ export async function POST(req: NextRequest) {
     }
   } catch {
     return NextResponse.json({ error: 'Resume payment reconciliation unavailable' }, { status: 503 })
+  }
+
+  // Employer pricing (Job Spotlight, Employer Pro). Recognised by price and
+  // Payment Link, and applied in one database transaction per event, before
+  // the legacy employer flow can see it. A failure returns 500 with nothing
+  // committed, so Stripe's retry is processed normally.
+  try {
+    const billing = await handleEmployerBillingEvent(stripe, supabase, event)
+    if (billing.handled) return NextResponse.json({ received: true, outcome: billing.outcome })
+  } catch (err) {
+    console.error('[stripe-webhook] Employer billing failed:', err instanceof Error ? err.message : 'unknown')
+    return NextResponse.json({ error: 'Employer billing unavailable' }, { status: 500 })
   }
 
   try {
