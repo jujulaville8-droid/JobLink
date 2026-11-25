@@ -34,6 +34,7 @@ class Query implements PromiseLike<Result> {
   in(key: string, values: unknown[]) { this.filters.push((row) => values.includes(path(row, key))); return this }
   is(key: string, value: unknown) { this.filters.push((row) => (path(row, key) ?? null) === value); return this }
   lt(key: string, value: string) { this.filters.push((row) => String(path(row, key) ?? '') < value && path(row, key) != null); return this }
+  gt(key: string, value: string) { this.filters.push((row) => path(row, key) != null && String(path(row, key)) > value); return this }
   lte(key: string, value: string) { this.filters.push((row) => path(row, key) != null && String(path(row, key)) <= value); return this }
   gte(key: string, value: string) { this.filters.push((row) => path(row, key) != null && String(path(row, key)) >= value); return this }
   order(key: string, options?: { ascending?: boolean }) { this.sort = { key, ascending: options?.ascending !== false }; return this }

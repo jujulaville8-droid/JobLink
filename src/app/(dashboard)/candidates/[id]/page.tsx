@@ -3,6 +3,10 @@ import { requireRole } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import InviteToApplyButton from "@/components/InviteToApplyButton";
+import ProUpgradePrompt from "@/components/employer-billing/ProUpgradePrompt";
+import { companyEntitlement, directoryAccess } from "@/lib/employer-billing/entitlement";
+import { employerBillingEnabled } from "@/lib/employer-billing/config";
+import { createAdminClient } from "@/lib/supabase/admin";
 import VerifiedBadge from "@/components/verification/VerifiedBadge";
 import { badgesFor } from "@/lib/verification/sharing";
 
@@ -31,13 +35,24 @@ export default async function CandidateProfilePage({ params }: PageProps) {
 
   const { data: company } = await supabase
     .from("companies")
-    .select("is_pro, pro_expires_at")
+    .select("id, is_pro, pro_expires_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const isProActive =
-    company?.is_pro === true &&
-    (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date());
+  // Once the directory is gated, a free employer may open a profile only for
+  // someone who applied to one of their own jobs.
+  const admin = employerBillingEnabled() ? createAdminClient() : null;
+  if (admin && !(await directoryAccess(admin, company?.id))) {
+    const { data: applied } = company
+      ? await admin.from("applications").select("id, job_listings!inner(company_id)")
+          .eq("seeker_id", profile.id).eq("job_listings.company_id", company.id).limit(1).maybeSingle()
+      : { data: null };
+    if (!applied) {
+      return <div className="mx-auto max-w-3xl px-4 py-8"><ProUpgradePrompt context="profile" /></div>;
+    }
+  }
+
+  const isProActive = (await companyEntitlement(admin ?? supabase, company?.id, company)).pro;
 
   const initial = (profile.first_name?.charAt(0) || "?").toUpperCase();
   const fullName = [profile.first_name, profile.last_name]

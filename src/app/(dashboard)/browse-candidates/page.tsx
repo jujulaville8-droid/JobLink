@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { badgesFor } from "@/lib/verification/sharing";
 import { requireRole } from "@/lib/auth";
+import ProUpgradePrompt from "@/components/employer-billing/ProUpgradePrompt";
+import { directoryAccess } from "@/lib/employer-billing/entitlement";
+import { employerBillingEnabled } from "@/lib/employer-billing/config";
 import CandidateFilters from "@/components/CandidateFilters";
 import CandidateProfileCard from "@/components/ui/info-card";
 import { Suspense } from "react";
@@ -203,8 +206,30 @@ async function CandidateResults({
 export default async function BrowseCandidatesPage({
   searchParams,
 }: PageProps) {
-  await requireRole("employer");
+  const user = await requireRole("employer");
   const params = await searchParams;
+
+  // Once the directory is gated, free employers see what Pro offers instead.
+  // Nothing extra is read while employer pricing is off.
+  let allowed = true;
+  if (employerBillingEnabled()) {
+    const admin = createAdminClient();
+    const [{ data: company }, { data: account }] = await Promise.all([
+      admin.from("companies").select("id").eq("user_id", user.id).maybeSingle(),
+      admin.from("users").select("is_admin").eq("id", user.id).maybeSingle(),
+    ]);
+    allowed = await directoryAccess(admin, company?.id, account?.is_admin === true);
+  }
+  if (!allowed) {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold font-display text-text">Browse Candidates</h1>
+        </div>
+        <ProUpgradePrompt />
+      </div>
+    );
+  }
 
   return (
     <div>

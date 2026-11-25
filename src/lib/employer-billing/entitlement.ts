@@ -18,12 +18,21 @@ export interface CompanyEntitlement {
  * While employer pricing is switched off, the legacy rule applies: the
  * company's is_pro flag and its expiry.
  */
-export async function companyEntitlement(db: SupabaseClient, companyId: string | null | undefined): Promise<CompanyEntitlement> {
+export async function companyEntitlement(
+  db: SupabaseClient,
+  companyId: string | null | undefined,
+  /** The company's is_pro and pro_expires_at, when the caller has already read them. */
+  known?: { is_pro?: boolean | null; pro_expires_at?: string | null } | null,
+): Promise<CompanyEntitlement> {
   const none: CompanyEntitlement = { pro: false, source: null, paidThrough: null }
   if (!companyId) return none
   try {
-    const { data: company, error } = await db.from('companies').select('is_pro, pro_expires_at').eq('id', companyId).maybeSingle()
-    if (error || !company) return none
+    let company = known ?? null
+    if (!company) {
+      const { data, error } = await db.from('companies').select('is_pro, pro_expires_at').eq('id', companyId).maybeSingle()
+      if (error || !data) return none
+      company = data
+    }
     const grant = company.is_pro === true && (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date())
     if (!employerBillingEnabled()) return grant ? { pro: true, source: 'grant', paidThrough: null } : none
 
