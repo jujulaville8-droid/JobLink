@@ -57,7 +57,7 @@ Live Stripe objects from the proposal:
 | | Spotlight | Employer Pro |
 | --- | --- | --- |
 | Payment Link ID | `plink_1UeUHuCucQcu2n8C6OXfOWYz` | `plink_1UeUI3CucQcu2n8CrzzGoCV9` |
-| Price ID | `price_1UeUHuCucQcu2n8CPYlFsOL5` | `price_1UeUI3CucQcu2n8CL9Aluevs` |
+| Price ID | `price_1UeUHuCucQcu2n8CPYlFsOL5` | `price_1UeUI3CucQcu2n8CL9AIuevs` |
 
 The Payment Link URLs (`https://buy.stripe.com/...`) are in the Stripe dashboard; they go in `EMPLOYER_SPOTLIGHT_LINK_URL` and `EMPLOYER_PRO_LINK_URL`.
 
