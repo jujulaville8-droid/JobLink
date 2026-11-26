@@ -71,14 +71,14 @@ describe('jobs index copy', () => {
   it('builds a live title and description without a hard-coded count', () => {
     const title = jobsIndexTitle(facts.openJobs);
     const description = jobsIndexDescription(facts.openJobs);
-    expect(title).toBe('Jobs in Antigua and Barbuda: 8 Open Vacancies');
+    expect(title).toBe('Jobs in Antigua: 8 Open Jobs, Apply Free');
     expect(`${title} | JobLink`.length).toBeGreaterThanOrEqual(50);
     expect(`${title} | JobLink`.length).toBeLessThanOrEqual(70);
-    expect(description).toBe('Browse 8 jobs in Antigua and Barbuda. Filter by industry, location, or job type and apply free on JobLink, the local job board. Employers can post free.');
+    expect(description).toBe('Find 8 jobs in Antigua right now. Apply free on JobLink, the local job board for Antigua and Barbuda. Filter by industry or job type. Employers can post free.');
     expect(description.length).toBeGreaterThanOrEqual(140);
     expect(description.length).toBeLessThanOrEqual(160);
-    expect(jobsIndexTitle(1)).toBe('Jobs in Antigua and Barbuda: 1 Open Vacancy');
-    expect(jobsIndexDescription(1)).toContain('Browse 1 job in Antigua and Barbuda.');
+    expect(jobsIndexTitle(1)).toBe('Jobs in Antigua: 1 Open Job, Apply Free');
+    expect(jobsIndexDescription(1)).toContain('Find 1 job in Antigua right now.');
     expect(jobsIndexTitle(null)).toBe('Jobs in Antigua and Barbuda');
     expect(jobsIndexDescription(null)).not.toMatch(/\d/);
   });
@@ -155,9 +155,9 @@ describe('jobs index page', () => {
 
   it('puts the live count in the index title and meta description', async () => {
     const metadata = await generateMetadata({ searchParams: Promise.resolve({}) });
-    expect(metadata.title).toBe('Jobs in Antigua and Barbuda: 8 Open Vacancies');
+    expect(metadata.title).toBe('Jobs in Antigua: 8 Open Jobs, Apply Free');
     expect(metadata.description).toBe(jobsIndexDescription(8));
-    expect(metadata.openGraph?.title).toBe('Jobs in Antigua and Barbuda: 8 Open Vacancies | JobLink');
+    expect(metadata.openGraph?.title).toBe('Jobs in Antigua: 8 Open Jobs, Apply Free | JobLink');
     expect(metadata.openGraph?.description).toBe(metadata.description);
     expect(metadata.alternates?.canonical).toBe('https://joblinkantigua.com/jobs');
   });

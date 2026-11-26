@@ -102,13 +102,12 @@ export const getJobsIndexFacts = cache(async (): Promise<JobsIndexFacts | null> 
 
 export function jobsIndexTitle(openJobs: number | null): string {
   if (openJobs === null) return JOBS_INDEX_H1;
-  const vacancies = openJobs === 1 ? "Vacancy" : "Vacancies";
-  return `${JOBS_INDEX_H1}: ${openJobs} Open ${vacancies}`;
+  return `Jobs in Antigua: ${openJobs} Open ${openJobs === 1 ? "Job" : "Jobs"}, Apply Free`;
 }
 
 export function jobsIndexDescription(openJobs: number | null): string {
   const count = openJobs === null ? "jobs" : `${openJobs} ${jobsWord(openJobs)}`;
-  return `Browse ${count} in Antigua and Barbuda. Filter by industry, location, or job type and apply free on JobLink, the local job board. Employers can post free.`;
+  return `Find ${count} in Antigua right now. Apply free on JobLink, the local job board for Antigua and Barbuda. Filter by industry or job type. Employers can post free.`;
 }
 
 export function jobsIndexIntro(facts: JobsIndexFacts | null): string[] {

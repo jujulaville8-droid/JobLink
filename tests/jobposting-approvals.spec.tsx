@@ -1809,7 +1809,7 @@ describe('98ab1673-6109-4e0f-af98-e3ce3a75482b November 13 Mount Joy allowlist',
     listing.is_confidential = false;
   });
 
-  it('emits JobPosting with the public organization name and no contact, pay, deadline, or employmentType', async () => {
+  it('emits JobPosting with the public organization name, the stored full-time type, and no contact, pay, or deadline', async () => {
     const before = structuredClone(db.job);
     expect(EMPLOYER_APPROVED_COMPANIES).not.toHaveProperty(companyId);
     expect(getEmployerApproval(companyId, jobId)).toMatchObject({
@@ -1836,7 +1836,7 @@ describe('98ab1673-6109-4e0f-af98-e3ce3a75482b November 13 Mount Joy allowlist',
       addressLocality: 'Mount Joy',
       addressCountry: 'AG',
     });
-    expect(schema).not.toHaveProperty('employmentType');
+    expect(schema.employmentType).toBe('FULL_TIME');
     expect(schema).not.toHaveProperty('validThrough');
     expect(schema).not.toHaveProperty('baseSalary');
     expect(schema).not.toHaveProperty('jobBenefits');
