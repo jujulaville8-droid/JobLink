@@ -7,11 +7,30 @@ const mocks = vi.hoisted(() => ({ auth: vi.fn() }))
 vi.mock('@/lib/api-auth', () => ({ requireUser: mocks.auth }))
 
 import {
+  CONFIDENTIAL_EMPLOYER_COMPANY_ID,
   CONFIDENTIAL_EMPLOYER_NAME,
   listingEmployerName,
   publicEmployerName,
+  publicListingLogo,
 } from '@/lib/confidential-employer'
 import { GET as context } from '@/app/api/applications/[id]/context/route'
+
+const standInLogo = 'https://cdn.example/confidential-employer-logo.png'
+const realLogo = 'https://cdn.example/hidden-employer-logo.png'
+
+it('shows the stand-in company logo on a confidential listing and the default otherwise', () => {
+  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: ` ${standInLogo} ` })).toBe(standInLogo)
+  expect(publicListingLogo(false, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: standInLogo, is_confidential: true })).toBe(standInLogo)
+  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: '  ' })).toBeNull()
+  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: null })).toBeNull()
+  expect(publicListingLogo(true, null)).toBeNull()
+  expect(publicListingLogo(false, { id: 'other', logo_url: realLogo })).toBe(realLogo)
+})
+
+it('does not use a real confidential employer logo', () => {
+  expect(publicListingLogo(true, { id: 'other', logo_url: realLogo })).toBeNull()
+  expect(publicListingLogo(false, { id: 'other', logo_url: realLogo, is_confidential: true })).toBeNull()
+})
 
 const employer = '11111111-1111-4111-8111-111111111111'
 const seeker = '22222222-2222-4222-8222-222222222222'

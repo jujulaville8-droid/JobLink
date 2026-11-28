@@ -1,7 +1,8 @@
 import JobCompanyCluster from "@/components/JobCompanyCluster";
 import { groupJobs, type GroupedJob } from "@/lib/job-grouping";
 import { closedJobIdFilter } from "@/lib/job-closures";
-import { listingEmployerName } from "@/lib/confidential-employer";
+import { CONFIDENTIAL_EMPLOYER_COMPANY_ID, listingEmployerName, publicListingLogo } from "@/lib/confidential-employer";
+import { loadConfidentialEmployerLogo } from "@/lib/confidential-employer-logo";
 import { jobCategoryFilter, knownJobCategory } from "@/lib/job-category";
 import JobCard, { Job } from "@/components/JobCard";
 import Pagination from "@/components/Pagination";
@@ -122,6 +123,14 @@ export default async function JobResults({
   const totalCount = count ?? 0;
   const totalPages = Math.ceil(totalCount / JOBS_PER_PAGE);
 
+  const needsStandInLogo = jobs.some((job) => {
+    const company = job.company as { id?: string; logo_url?: string | null; is_confidential?: boolean } | null;
+    const companyId = company?.id ?? job.company_id ?? null;
+    const confidential = job.is_confidential === true || company?.is_confidential === true;
+    return confidential && companyId === CONFIDENTIAL_EMPLOYER_COMPANY_ID && !company?.logo_url;
+  });
+  const standInLogo = needsStandInLogo ? await loadConfidentialEmployerLogo() : null;
+
   const mappedJobs: Job[] = jobs.map((job) => {
     const company = job.company as unknown as {
       id: string;
@@ -133,12 +142,18 @@ export default async function JobResults({
     } | null;
 
     const confidential = job.is_confidential === true || company?.is_confidential === true;
+    const companyId = company?.id ?? job.company_id ?? null;
+    const logoUrl = company?.logo_url || (companyId === CONFIDENTIAL_EMPLOYER_COMPANY_ID ? standInLogo : null);
     return {
       id: job.id,
       company_id: confidential ? null : company?.id ?? null,
       title: job.title,
       company_name: listingEmployerName(job.is_confidential, company, "Company"),
-      company_logo: confidential ? null : company?.logo_url || null,
+      company_logo: publicListingLogo(confidential, {
+        id: companyId,
+        logo_url: logoUrl,
+        is_confidential: company?.is_confidential,
+      }),
       is_confidential: confidential,
       location: job.location,
       company_location: confidential ? null : company?.location ?? null,

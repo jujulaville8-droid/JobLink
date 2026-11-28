@@ -1,3 +1,5 @@
+import { CONFIDENTIAL_EMPLOYER_COMPANY_ID, publicListingLogo } from "@/lib/confidential-employer";
+import { loadConfidentialEmployerLogo } from "@/lib/confidential-employer-logo";
 import { createClient } from "@/lib/supabase/server";
 
 export type ApplyState = "apply" | "login" | "not-seeker" | "applied" | "closed" | "profile-incomplete";
@@ -38,14 +40,25 @@ export async function loadJobDetail(id: string) {
 
   // A confidential employer is never named on the public listing, including
   // to its owner and to admins, whose sessions can read the company row.
+  // The stand-in company's uploaded logo is the one image that may be shown.
   const confidential = job?.is_confidential === true;
+  const rawCompany = (job?.company ?? null) as (JobDetailCompany & { logo_url?: string | null }) | null;
+  const companyId = rawCompany?.id ?? job?.company_id ?? null;
+  let confidentialLogo: string | null = null;
+  if (confidential) {
+    confidentialLogo = publicListingLogo(true, { id: companyId, logo_url: rawCompany?.logo_url });
+    if (!confidentialLogo && companyId === CONFIDENTIAL_EMPLOYER_COMPANY_ID) {
+      confidentialLogo = await loadConfidentialEmployerLogo();
+    }
+  }
 
   return {
     supabase,
     job,
     error,
     confidential,
-    company: (confidential ? null : job?.company ?? null) as unknown as JobDetailCompany | null,
+    confidentialLogo,
+    company: (confidential ? null : rawCompany) as unknown as JobDetailCompany | null,
   };
 }
 

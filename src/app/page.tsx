@@ -1,4 +1,4 @@
-import { listingEmployerName } from "@/lib/confidential-employer";
+import { listingEmployerName, publicListingLogo } from "@/lib/confidential-employer";
 import { closedJobIdFilter } from "@/lib/job-closures";
 import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
@@ -31,7 +31,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         `
         id, title, job_type, salary_min, salary_max, salary_type, salary_visible,
         location, is_featured, is_confidential, created_at,
-        company:companies ( company_name, logo_url, is_pro, location )
+        company:companies ( id, company_name, logo_url, is_pro, location )
       `
       )
       .eq("status", "active")
@@ -45,6 +45,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
 
     return jobs.map((job) => {
       const company = job.company as unknown as {
+        id?: string;
         company_name: string;
         logo_url: string | null;
         is_pro: boolean;
@@ -57,7 +58,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         // The admin client reads past row security, so a confidential
         // employer has to be masked here by hand.
         company_name: listingEmployerName(job.is_confidential, company, "Company"),
-        company_logo: job.is_confidential ? null : company?.logo_url || null,
+        company_logo: publicListingLogo(job.is_confidential, company),
         is_confidential: job.is_confidential === true,
         location: job.location,
         company_location: job.is_confidential ? null : company?.location ?? null,
