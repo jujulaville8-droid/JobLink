@@ -1,9 +1,6 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  CONFIDENTIAL_EMPLOYER_COMPANY_ID,
-  publicListingLogo,
-} from "@/lib/confidential-employer";
+import { CONFIDENTIAL_EMPLOYER_COMPANY_ID } from "@/lib/confidential-employer";
 
 /**
  * The stand-in company's logo, and nothing else. Row security hides that
@@ -19,10 +16,8 @@ export const loadConfidentialEmployerLogo = cache(async (): Promise<string | nul
       .eq("id", CONFIDENTIAL_EMPLOYER_COMPANY_ID)
       .maybeSingle();
     if (error) return null;
-    return publicListingLogo(true, {
-      id: CONFIDENTIAL_EMPLOYER_COMPANY_ID,
-      logo_url: data?.logo_url,
-    });
+    const logo = typeof data?.logo_url === "string" ? data.logo_url.trim() : "";
+    return logo || null;
   } catch {
     return null;
   }
