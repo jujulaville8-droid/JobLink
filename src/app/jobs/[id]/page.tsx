@@ -1,4 +1,5 @@
-import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE, listingEmployerName } from "@/lib/confidential-employer";
+import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_COMPANY_ID, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE, listingEmployerName, publicListingLogo } from "@/lib/confidential-employer";
+import { loadConfidentialEmployerLogo } from "@/lib/confidential-employer-logo";
 import JobViewTracker from "@/components/JobViewTracker";
 import { jobViewsLaunch } from "@/lib/job-views-config";
 import { createClient } from "@/lib/supabase/server";
@@ -75,9 +76,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: { absolute: "Job Not Found | JobLink" } };
   }
 
-  const company = job.is_confidential
-    ? null
-    : job.company as unknown as { company_name: string; logo_url: string | null } | null;
+  const rawCompany = job.company as unknown as { company_name: string; logo_url: string | null } | null;
+  const company = job.is_confidential ? null : rawCompany;
+  let shareLogo: string | null = null;
+  if (job.is_confidential) {
+    if (job.company_id === CONFIDENTIAL_EMPLOYER_COMPANY_ID) {
+      shareLogo = publicListingLogo(true, { id: job.company_id, logo_url: rawCompany?.logo_url })
+        || await loadConfidentialEmployerLogo();
+    }
+  } else {
+    shareLogo = rawCompany?.logo_url || null;
+  }
   const title = `${job.title} at ${listingEmployerName(job.is_confidential, company, "Company")} | JobLink`;
   const description = jobMetaDescription({
     ...job,
@@ -105,7 +114,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       siteName: "JobLink",
       type: "website",
       locale: "en_AG",
-      images: company?.logo_url ? [{ url: company.logo_url, width: 200, height: 200, alt: company.company_name }] : [],
+      images: shareLogo
+        ? [{
+            url: shareLogo,
+            width: 200,
+            height: 200,
+            alt: job.is_confidential ? CONFIDENTIAL_EMPLOYER_NAME : company?.company_name,
+          }]
+        : [],
     },
     twitter: {
       card: "summary",
@@ -171,7 +187,7 @@ function timeAgo(dateStr: string): string {
 
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const { supabase, job, error, company, confidential } = await loadJobDetail(id);
+  const { supabase, job, error, company, confidential, confidentialLogo } = await loadJobDetail(id);
 
   // Only manual status controls availability. A non-active or missing listing
   // must return a real 404. Rendering a
@@ -383,6 +399,8 @@ export default async function JobDetailPage({ params }: PageProps) {
     ],
   };
 
+  const logoUrl = company?.logo_url || confidentialLogo || null;
+
   return (
     <div className="min-h-screen bg-gray-50/60">
       {jobViewsLaunch() && !preview && <JobViewTracker jobId={job.id} surface="job_page" />}
@@ -443,11 +461,11 @@ export default async function JobDetailPage({ params }: PageProps) {
         {/* ─── Hero header card ─── */}
         <div className="rounded-2xl border border-border/60 bg-white shadow-sm p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
-            {/* Company logo */}
-            {company?.logo_url ? (
+            {/* Company logo. A confidential listing may show only the stand-in company's logo. */}
+            {logoUrl ? (
               <img
-                src={company.logo_url}
-                alt={company.company_name}
+                src={logoUrl}
+                alt={company?.company_name ?? ""}
                 className="shrink-0 h-16 w-16 rounded-xl object-cover border border-border/40"
               />
             ) : (

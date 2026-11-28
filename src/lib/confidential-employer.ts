@@ -10,6 +10,13 @@
 
 export const CONFIDENTIAL_EMPLOYER_NAME = "Confidential employer";
 
+/**
+ * The public stand-in company listings are attached to when the real employer
+ * must stay unnamed. Its uploaded logo may be shown. Any other confidential
+ * company's logo stays hidden, because that image identifies the employer.
+ */
+export const CONFIDENTIAL_EMPLOYER_COMPANY_ID = "72f7a8ad-9850-45db-aa34-71e853d833a8";
+
 export const CONFIDENTIAL_EMPLOYER_BADGE = "Verified by JobLink";
 
 export const CONFIDENTIAL_EMPLOYER_NOTE =
@@ -42,4 +49,26 @@ export function listingEmployerName(
 ): string {
   if (listingIsConfidential === true || company?.is_confidential === true) return CONFIDENTIAL_EMPLOYER_NAME;
   return nameOf(company) || fallback;
+}
+
+type LogoCompany = {
+  id?: unknown;
+  logo_url?: unknown;
+  is_confidential?: unknown;
+} | null | undefined;
+
+/**
+ * Logo for a public listing. A confidential listing uses the stand-in
+ * company's uploaded logo when it has one, and never a real employer's logo.
+ * Null means the caller should show /logo-icon.png.
+ */
+export function publicListingLogo(
+  listingIsConfidential: boolean | null | undefined,
+  company: LogoCompany,
+): string | null {
+  const logo = typeof company?.logo_url === "string" ? company.logo_url.trim() : "";
+  if (!logo) return null;
+  const confidential = listingIsConfidential === true || company?.is_confidential === true;
+  if (!confidential) return logo;
+  return company?.id === CONFIDENTIAL_EMPLOYER_COMPANY_ID ? logo : null;
 }

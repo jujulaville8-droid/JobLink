@@ -58,6 +58,7 @@ const loadJobResults = cache(async (
       status,
       is_featured,
       is_confidential,
+      company_id,
       expires_at,
       created_at,
       company_search:companies(),
