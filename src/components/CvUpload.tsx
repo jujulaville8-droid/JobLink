@@ -31,7 +31,7 @@ export function transferCv(url: string, file: File, contentType: string, progres
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) resolve();
       else reject(new CvUploadError(xhr.status === 413
-        ? 'Your resume is too large. Choose a file of 50 MB or less, or email it to support@joblinkantigua.com.'
+        ? 'Your resume is too large. Choose a file of 20 MB or less, or email it to support@joblinkantigua.com.'
         : xhr.status === 401 || xhr.status === 403
           ? 'Upload authorization expired or was refused. Sign in again and retry, or contact support@joblinkantigua.com.'
           : CV_NETWORK_ERROR));
@@ -84,7 +84,7 @@ export default function CvUpload({ onUploaded, onBusy, hasCv = false }: {
   return <div className="space-y-2">
     <label className="block rounded-lg border-2 border-dashed border-border p-6 text-center">
       <span className="block text-sm font-medium">{hasCv ? 'Upload a new CV' : 'Upload your CV'}</span>
-      <span className="block text-xs text-text-muted">PDF, DOC, DOCX, JPG, PNG, HEIC or HEIF up to 50 MB</span>
+      <span className="block text-xs text-text-muted">PDF, DOC, DOCX, JPG, PNG, HEIC or HEIF up to 20 MB</span>
       <input aria-label="Upload your CV" type="file" accept={CV_ACCEPT} disabled={busy} onChange={upload} className="mt-3 max-w-full text-sm" />
     </label>
     <p className="text-xs text-text-muted">{CV_FALLBACK}</p>

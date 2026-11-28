@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireVerifiedUser } from '@/lib/api-auth'
+import { employerBillingEnabled } from '@/lib/employer-billing/config'
 
 export async function GET(req: NextRequest) {
+  // With employer pricing on, Pro is sold only through the new flow.
+  if (employerBillingEnabled()) return NextResponse.redirect(new URL('/billing', req.nextUrl.origin))
   const origin = req.nextUrl.origin
 
   try {

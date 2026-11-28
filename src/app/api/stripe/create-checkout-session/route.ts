@@ -3,8 +3,11 @@ import { getStripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireVerifiedUser } from '@/lib/api-auth'
 import { enforceRateLimit, RateLimits } from '@/lib/rate-limit'
+import { employerBillingEnabled } from '@/lib/employer-billing/config'
 
 export async function POST() {
+  // With employer pricing on, Pro is sold only through the new flow.
+  if (employerBillingEnabled()) return NextResponse.json({ error: 'Employer Pro is now on the Billing page.', redirect: '/billing' }, { status: 410 })
   try {
     const auth = await requireVerifiedUser()
     if ('error' in auth) return auth.error

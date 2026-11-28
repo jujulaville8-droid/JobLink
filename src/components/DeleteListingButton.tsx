@@ -4,7 +4,7 @@ export default function DeleteListingButton({ action }: { action: () => Promise<
   return (
     <form
       action={async () => {
-        if (!confirm("Permanently delete this listing and all its applications? This cannot be undone.")) {
+        if (!confirm("Remove this listing? It will be closed and taken off your list. Applications you have received are kept.")) {
           return;
         }
         await action();
@@ -18,7 +18,7 @@ export default function DeleteListingButton({ action }: { action: () => Promise<
           <polyline points="3 6 5 6 21 6" />
           <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
         </svg>
-        Delete
+        Remove
       </button>
     </form>
   );

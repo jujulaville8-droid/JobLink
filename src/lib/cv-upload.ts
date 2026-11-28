@@ -1,5 +1,6 @@
 /** Shared browser/server policy for the private seeker CV bucket. */
-export const MAX_CV_BYTES = 50 * 1024 * 1024
+// Matches the bucket limit set in 20261113090000_security_hardening_4.sql.
+export const MAX_CV_BYTES = 20 * 1024 * 1024
 // Email providers reject oversized attachments; employer notifications only attach CVs up to this size.
 export const MAX_CV_EMAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024
 export const CV_TYPES = {
@@ -20,7 +21,7 @@ export function cvExtension(name: string): CvExtension | null {
 
 export function validateCvFile(file: { name: string; size: number; type?: string }) {
   if (!Number.isSafeInteger(file.size) || file.size <= 0) return { error: 'This file is empty or unreadable. Choose another resume file.' } as const
-  if (file.size > MAX_CV_BYTES) return { error: 'Your resume is too large. Choose a file of 50 MB or less, or email it to support@joblinkantigua.com.' } as const
+  if (file.size > MAX_CV_BYTES) return { error: 'Your resume is too large. Choose a file of 20 MB or less, or email it to support@joblinkantigua.com.' } as const
   // Phone document providers often supply empty, generic, or incorrect MIME types.
   // An allowed extension takes precedence; recognized MIME is the fallback for unknown extensions.
   const extension = cvExtension(file.name) || (Object.keys(CV_TYPES) as CvExtension[]).find(ext => CV_TYPES[ext] === file.type?.toLowerCase())

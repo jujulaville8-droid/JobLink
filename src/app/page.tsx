@@ -5,6 +5,7 @@ import { type Job } from "@/components/JobCard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { safeJsonLd } from "@/lib/safe-sql";
 import { JOB_TYPE_LABELS, JobType } from "@/lib/types";
+import { proCompanyFeatured } from "@/lib/featured";
 
 /**
  * The homepage shows three featured jobs and four counters -- all public data,
@@ -67,7 +68,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         salary_visible: job.salary_visible,
         created_at: job.created_at,
         is_featured: job.is_featured,
-        is_pro_company: company?.is_pro ?? false,
+        is_pro_company: proCompanyFeatured(company),
       };
     });
   } catch (err) {

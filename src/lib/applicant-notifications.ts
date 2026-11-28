@@ -1,3 +1,4 @@
+import { sharedEmailLine } from '@/lib/verification/sharing'
 import { NOT_SCREENED_TEXT, type NotScreenedReason } from './employer-screening/not-screened'
 import { saveFitVerdict, saveNotScreened } from './employer-screening/fit-verdict-store'
 import { applicantCvPath } from './applicant-cv-path'
@@ -146,6 +147,8 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
     if (screening.employer_fit_verdict) await saveFitVerdict(db, application.id, screening.employer_fit_verdict)
     else await saveNotScreened(db, application.id, reason)
     outcomeRecorded = true
+    // A badge line and a link to the confirmation, which needs login.
+    const verifiedLine = await sharedEmailLine(db, application.id)
     const result = await sendEmail({
       to: recipient,
       type: 'new_applicant',
@@ -163,6 +166,8 @@ async function forwardApplicationToEmployer(applicationId: string, applicantUser
         cover_letter_excerpt: typeof application.cover_letter_text === 'string'
           ? application.cover_letter_text.trim().slice(0, 1500) : '',
         cv_attached: attachments.length > 0,
+        verified_line: verifiedLine,
+        verified_documents_path: verifiedLine ? `/my-listings/${job.id}/applicants` : null,
         // Only the actual owner has this dashboard. External contacts can use
         // the attached CV and Reply-To without needing a placeholder account.
         review_path: account.valid && owner?.email_verified === true && account.email === recipient

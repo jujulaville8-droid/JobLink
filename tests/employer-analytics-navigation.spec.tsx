@@ -7,7 +7,9 @@ it('has exact employer order and preserves seeker/admin arrays and unread badges
   expect([...section(layout, 'seekerLinks').matchAll(/href: "([^"]+)"/g)].map(m => m[1])).toEqual(["/dashboard", "/profile", "/profile/cv", "/jobs", "/applications", "/messages", "/saved", "/alerts", "/settings"]);
   expect([...section(layout, 'adminLinks').matchAll(/href: "([^"]+)"/g)].map(m => m[1])).toEqual(["/dashboard", "/admin/inbox", "/admin/applications", "/admin/post-job", "/admin/jobs", "/admin/companies", "/admin/users", "/admin/approvals", "/admin/reports", "/admin/analytics", "/admin/featured", "/admin/emails", "/admin/testimonials", "/admin/employer-enquiries", "/admin/resume-writing"]);
   expect(layout).toContain('badge: <UnreadBadge />');
-  expect(layout).toContain('userData.is_admin === true ? adminLinks.map(decorateLink)');
+  // Admins get adminLinks plus the Verified review queue (when on) and two-step login.
+  expect(layout).toContain('userData.is_admin === true ? adminNav.map(decorateLink)');
+  expect(layout).toContain('...adminLinks,');
   expect(layout).toContain('label: "Analytics", icon: "bar-chart"');
 });
 it('keeps persistent top home actions and mobile Explore destinations', () => {

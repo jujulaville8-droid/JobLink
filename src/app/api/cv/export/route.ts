@@ -52,9 +52,13 @@ export async function GET(request: NextRequest) {
         // Premium employers can export any candidate CV from browse-candidates.
         // Non-premium (or expired) employers can only export resumes for
         // candidates related to one of their applications.
-        const isProActive =
-          company.is_pro === true &&
-          (!company.pro_expires_at || new Date(company.pro_expires_at) > new Date())
+        // One server-side Pro check (paid month or manual grant). With employer
+        // pricing on, Pro reaches only candidates who chose to be discoverable.
+        const { companyEntitlement } = await import('@/lib/employer-billing/entitlement')
+        const { employerBillingEnabled } = await import('@/lib/employer-billing/config')
+        const discoverable = !employerBillingEnabled() || ['actively_looking', 'open'].includes(
+          (await admin.from('seeker_profiles').select('visibility').eq('user_id', targetUserId).maybeSingle()).data?.visibility ?? '')
+        const isProActive = discoverable && (await companyEntitlement(admin, company.id, company)).pro
 
         if (!isProActive) {
           const { data: hasRelationship, error: relationshipError } = await admin

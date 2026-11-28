@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireAuth } from '@/lib/auth';
 import { JOB_TYPE_LABELS, type JobListing, type JobStatus, type JobType } from '@/lib/types';
 import DeleteListingButton from '@/components/DeleteListingButton';
+import { employerBillingEnabled } from '@/lib/employer-billing/config';
 
 export const maxDuration = 300;
 
@@ -73,8 +74,11 @@ async function getListings(
   const { data, error } = await query;
 
   if (error || !data) return [];
+  // Filtered here rather than in the query so the page keeps working if the
+  // employer_hidden_at column has not been migrated yet.
+  const visible = data.filter((listing) => !listing.employer_hidden_at);
 
-  return data.map((listing: Record<string, unknown>) => {
+  return visible.map((listing: Record<string, unknown>) => {
     const apps = listing.applications as { count: number }[] | undefined;
     return {
       ...listing,
@@ -90,6 +94,7 @@ export default async function MyListingsPage({
 }) {
   const user = await requireAuth();
   const supabase = await createClient();
+  const spotlightOn = employerBillingEnabled();
 
   const { data: company } = await supabase
     .from('companies')
@@ -291,6 +296,18 @@ export default async function MyListingsPage({
                   </Link>
                 )}
 
+                {listing.status === 'active' && spotlightOn && (
+                  <Link
+                    href={`/billing?spotlight=${listing.id}`}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-2.5 sm:py-2 text-xs font-semibold text-amber-900 transition-all duration-200 hover:bg-amber-100 hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <svg aria-hidden="true" className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    {listing.is_featured ? 'Featured' : 'Spotlight this job'}
+                  </Link>
+                )}
+
                 {listing.status === 'active' && (
                   <CloseListing listingId={listing.id} />
                 )}
@@ -364,15 +381,39 @@ function DeleteListing({ listingId }: { listingId: string }) {
       .single();
     if (!listing) return;
 
-    // Use admin client to bypass RLS (no DELETE policies exist)
-    // Ownership already verified above. CASCADE handles applications & conversations.
+    // Deleting a listing cascades to its applications, conversations and any
+    // documents shared with them. A listing nobody applied to can simply go;
+    // one with applications is closed and hidden from this list instead.
     const { createAdminClient } = await import('@/lib/supabase/admin');
     const adminDb = createAdminClient();
+    const { count, error: countError } = await adminDb
+      .from('applications')
+      .select('id', { count: 'exact', head: true })
+      .eq('job_id', listingId);
+    if (countError) return;
 
-    await adminDb
-      .from('job_listings')
-      .delete()
-      .eq('id', listingId);
+    // A listing with a Spotlight booked, running or finished is kept too, so the
+    // campaign record (and an unspent credit) is never deleted with it.
+    let hasSpotlight = false;
+    if (employerBillingEnabled()) {
+      const { count: campaigns, error: campaignError } = await adminDb
+        .from('spotlight_campaigns')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_id', listingId);
+      if (campaignError) return;
+      hasSpotlight = (campaigns ?? 0) > 0;
+    }
+
+    if (count === 0 && !hasSpotlight) {
+      await adminDb.from('job_listings').delete().eq('id', listingId);
+    } else {
+      await closeJobListing(supabase, listingId, company.id);
+      await adminDb
+        .from('job_listings')
+        .update({ employer_hidden_at: new Date().toISOString() })
+        .eq('id', listingId)
+        .eq('company_id', company.id);
+    }
 
     redirect('/my-listings');
   }

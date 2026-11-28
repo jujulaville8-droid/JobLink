@@ -27,6 +27,14 @@ type EmailType =
   | 'signup_reminder_1'
   | 'signup_reminder_2'
   | 'signup_reminder_3'
+  | 'verification_approved'
+  | 'verification_reupload'
+  | 'verification_not_approved'
+  | 'verification_expiring'
+  | 'verification_expired'
+  | 'spotlight_live'
+  | 'spotlight_report'
+  | 'spotlight_closed_early'
 
 interface EmailData {
   /** Employer-only screening output supplied by the forwarding path. */
@@ -61,6 +69,18 @@ interface EmailData {
   message_preview?: string
   admin_message?: string
   rejection_reason?: string
+  /** JobLink Verified. Dates arrive already formatted; reasons come from a fixed list. */
+  verification_until?: string
+  verification_reasons?: string[]
+  verification_notice?: boolean
+  verified_line?: string | null
+  verified_documents_path?: string | null
+  /** Employer pricing: Job Spotlight. Dates arrive formatted. */
+  spotlight_links?: { label: string; url: string }[]
+  spotlight_started?: string
+  spotlight_ends?: string
+  spotlight_views?: number | null
+  spotlight_applications?: number
 }
 
 /** Escape HTML entities to prevent XSS in email content */
@@ -150,6 +170,7 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           ${d.applicant_phone ? `<p>Phone: ${esc(d.applicant_phone)}</p>` : ''}
           ${d.cover_letter_excerpt ? `<h3>Cover letter excerpt</h3><p style="white-space:pre-wrap;line-height:1.6;">${esc(d.cover_letter_excerpt)}</p>` : ''}
           <p>${d.cv_attached ? 'The applicant’s CV is attached to this email.' : 'A CV attachment is unavailable. You can contact the applicant using the details above.'}</p>
+          ${d.verified_line ? `<p style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 12px; color: #065f46; line-height: 1.6;"><strong>${esc(d.verified_line)}</strong><br>${d.verified_documents_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.verified_documents_path) ? `<a href="${SITE}${d.verified_documents_path}" style="color: #0d7377; font-weight: 600;">View the confirmation</a> (you'll be asked to log in). ` : ''}It never shows ID numbers or photos.</p>` : ''}
           ${d.employer_fit_verdict ? simpleFitEmailSection(d.employer_fit_verdict) : d.employer_resume_review_v2 ? resumeReviewV2EmailSection(d.employer_resume_review_v2) : d.employer_screening ? employerAdvisoryEmailSection(d.employer_screening, d.employer_resume_quality) : d.employer_not_screened ? `<p style="color: #6b7280; font-size: 14px; margin-top: 24px;">${esc(d.employer_not_screened)}</p>` : d.employer_resume_quality ? employerAdvisoryEmailSection(undefined, d.employer_resume_quality) : ''}
           ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review Applicant', d.review_path) : ''}
           ${!d.employer_not_screened && !d.employer_fit_verdict && !d.employer_resume_review_v2 && !d.employer_screening && !d.employer_resume_quality ? '<p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Tip: Responding quickly helps you secure the best candidates before other employers do.</p>' : ''}
@@ -589,6 +610,92 @@ export function buildEmailHtml(type: string, data: Record<string, unknown>): { s
           <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">If you're no longer interested, no action is needed. We won't email you again.</p>
         `),
       }
+
+    // JobLink Verified. No email ever carries a document: each one links to
+    // a page that needs login. "Applying is always free" stays in every one.
+    // JobLink Verified: free right-to-work check. No email carries a document.
+    case 'verification_approved':
+      return {
+        subject: 'You\'re verified on JobLink',
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">You're verified</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we've checked your document. Your badge, <strong>${esc(d.verified_line)}</strong>, is valid until <strong>${esc(d.verification_until)}</strong>.</p>
+          <p style="color: #374151; line-height: 1.6;">When you apply for a job, tick "Send my right-to-work confirmation" and the employer can see it. Nothing is sent unless you tick it, and you can stop sharing at any time.</p>
+          ${btn('See my badge', '/verification')}
+          <p style="color: #9ca3af; font-size: 13px; margin-top: 24px;">Your document image has been deleted.</p>
+        `),
+      }
+    case 'verification_reupload':
+      return {
+        subject: 'Please send your document again',
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">We need your document again</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we couldn't finish checking your document:</p>
+          <ul style="color: #374151; line-height: 1.8; padding-left: 18px;">${(d.verification_reasons || []).map(reason => `<li>${esc(reason)}</li>`).join('')}</ul>
+          ${btn('Send it again', '/verification')}
+        `),
+      }
+    case 'verification_not_approved':
+      return {
+        subject: 'We couldn\'t verify your document',
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">We couldn't verify your document</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, we weren't able to verify the document you sent:</p>
+          <ul style="color: #374151; line-height: 1.8; padding-left: 18px;">${(d.verification_reasons || []).map(reason => `<li>${esc(reason)}</li>`).join('')}</ul>
+          <p style="color: #374151; line-height: 1.6;">The image has been deleted. Employers are not told anything about this, and you can keep applying for jobs as usual. You can try again with another document at any time.</p>
+          ${btn('Try again', '/verification')}
+        `),
+      }
+    case 'verification_expiring':
+      return {
+        subject: `Your verified badge ends on ${d.verification_until || 'soon'}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Keep your badge</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your JobLink Verified badge ends on <strong>${esc(d.verification_until)}</strong>. Upload your new or renewed document to keep it. It's free.</p>
+          ${btn('Renew my badge', '/verification')}
+        `),
+      }
+    case 'verification_expired':
+      return {
+        subject: 'Your verified badge has ended',
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Your badge has ended</h2>
+          <p style="color: #374151; line-height: 1.6;">Hi ${esc(d.applicant_name) || 'there'}, your JobLink Verified badge has reached its end date. Upload a current document to get verified again. It's free.</p>
+          ${btn('Get verified again', '/verification')}
+        `),
+      }
+
+    case 'spotlight_live':
+      return {
+        subject: `Your Job Spotlight is live: ${d.job_title || 'your vacancy'}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">Your Spotlight is live</h2>
+          <p style="color: #374151; line-height: 1.6;"><strong>${esc(d.job_title)}</strong> is now featured on JobLink until <strong>${esc(d.spotlight_ends)}</strong>, and has been posted on our Facebook and Instagram pages.</p>
+          <ul style="color: #374151; line-height: 1.9; padding-left: 18px;">${(d.spotlight_links || []).filter(link => /^https:\/\//.test(link.url)).map(link => `<li><a href="${esc(link.url)}" style="color: #0d7377; font-weight: 600;">${esc(link.label)}</a></li>`).join('')}</ul>
+          <p style="color: #374151; line-height: 1.6;">Screenshots of each placement are attached. We will check in on day three, and send you the results when the seven days end.</p>
+          ${btn('See your applicants', '/my-listings')}
+        `),
+      }
+    case 'spotlight_report':
+    case 'spotlight_closed_early': {
+      const early = emailType === 'spotlight_closed_early'
+      return {
+        subject: early ? `Your Job Spotlight ended when the vacancy closed: ${d.job_title || ''}` : `Your Job Spotlight results: ${d.job_title || 'your vacancy'}`,
+        html: wrapper(`
+          <h2 style="color: #0d7377; margin-top: 0;">${early ? 'Your Spotlight has ended' : 'Your Spotlight results'}</h2>
+          <p style="color: #374151; line-height: 1.6;">${early
+            ? `<strong>${esc(d.job_title)}</strong> was closed, so we stopped directing applicants to it and ended the Spotlight.`
+            : `The seven-day Spotlight for <strong>${esc(d.job_title)}</strong> ran from ${esc(d.spotlight_started)} to ${esc(d.spotlight_ends)}. The vacancy stays open until its usual closing date.`}</p>
+          <table style="border-collapse: collapse; margin: 16px 0; color: #374151;">
+            ${typeof d.spotlight_views === 'number' ? `<tr><td style="padding: 6px 16px 6px 0;">Views of the vacancy on JobLink</td><td style="padding: 6px 0; font-weight: 700;">${d.spotlight_views}</td></tr>` : ''}
+            <tr><td style="padding: 6px 16px 6px 0;">Applications received on JobLink</td><td style="padding: 6px 0; font-weight: 700;">${d.spotlight_applications ?? 0}</td></tr>
+          </table>
+          <p style="color: #6b7280; font-size: 13px; line-height: 1.6;">Totals recorded for this vacancy during the Spotlight, in Antigua time. Views and applications are counted separately; a person can view more than once.</p>
+          <p style="color: #374151; line-height: 1.6;">How many of these applicants would you like to interview? Reply to this email and let us know.</p>
+          ${d.review_path && /^\/my-listings\/[0-9a-f-]{36}\/applicants$/.test(d.review_path) ? btn('Review applicants', d.review_path) : ''}
+        `),
+      }
+    }
 
     default:
       return {

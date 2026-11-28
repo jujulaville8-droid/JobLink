@@ -26,7 +26,7 @@ beforeEach(() => {
   state.sign.mockResolvedValue({ data: { signedUrl: 'https://storage.test/signed' }, error: null })
   state.info.mockResolvedValue({ data: { size: MAX_CV_BYTES }, error: null })
 })
-it.each(['pdf', 'doc', 'docx', 'jpg', 'png', 'heic', 'heif'])('authorizes a 50 MB %s using an owned unique path and no overwrite', async extension => {
+it.each(['pdf', 'doc', 'docx', 'jpg', 'png', 'heic', 'heif'])('authorizes a 20 MB %s using an owned unique path and no overwrite', async extension => {
   const response = await authorize(req({ name: `cv.${extension}`, size: MAX_CV_BYTES, type: '' }))
   expect(response.status).toBe(200)
   const data = await response.json()

@@ -48,6 +48,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Employer profile not found' }, { status: 404 })
     }
 
+    // Inviting a candidate who has not applied is a Pro feature once the
+    // candidate directory is gated. Until then every employer can, as today.
+    {
+      const { directoryAccess } = await import('@/lib/employer-billing/entitlement')
+      if (!(await directoryAccess(createAdminClient(), company.id, auth.isAdmin))) {
+        return NextResponse.json({ error: 'Inviting candidates is part of Employer Pro.', code: 'PRO_REQUIRED', upgrade_path: '/billing' }, { status: 403 })
+      }
+    }
+
     // Shown to the invited seeker, so a confidential employer stays unnamed.
     const companyName = publicEmployerName(company, 'An employer')
 
@@ -75,6 +84,18 @@ export async function POST(request: NextRequest) {
 
     if (recipientUser?.role !== 'seeker') {
       return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+    }
+
+    // With employer pricing on, only candidates who chose to be discoverable
+    // can be invited; a hidden candidate looks the same as one who does not exist.
+    {
+      const { employerBillingEnabled } = await import('@/lib/employer-billing/config')
+      if (employerBillingEnabled()) {
+        const { data: candidate } = await createAdminClient().from('seeker_profiles').select('visibility').eq('user_id', recipient_user_id).maybeSingle()
+        if (!['actively_looking', 'open'].includes(candidate?.visibility ?? '')) {
+          return NextResponse.json({ error: 'Candidate not found' }, { status: 404 })
+        }
+      }
     }
 
     const recipientEmail = recipientUser?.email
