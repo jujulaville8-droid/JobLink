@@ -1,4 +1,5 @@
 import { listingEmployerName, publicListingLogo } from "@/lib/confidential-employer";
+import { loadConfidentialEmployerLogo } from "@/lib/confidential-employer-logo";
 import { closedJobIdFilter } from "@/lib/job-closures";
 import HomePage, { type HomepageStats } from "@/components/home/HomePage";
 import { type Job } from "@/components/JobCard";
@@ -43,6 +44,10 @@ async function getFeaturedJobs(): Promise<Job[]> {
     if (error) throw error;
     if (!jobs || jobs.length === 0) return [];
 
+    const standInLogo = jobs.some((job) => job.is_confidential)
+      ? await loadConfidentialEmployerLogo()
+      : null;
+
     return jobs.map((job) => {
       const company = job.company as unknown as {
         id?: string;
@@ -58,7 +63,7 @@ async function getFeaturedJobs(): Promise<Job[]> {
         // The admin client reads past row security, so a confidential
         // employer has to be masked here by hand.
         company_name: listingEmployerName(job.is_confidential, company, "Company"),
-        company_logo: publicListingLogo(job.is_confidential, company),
+        company_logo: publicListingLogo(job.is_confidential, company, standInLogo),
         is_confidential: job.is_confidential === true,
         location: job.location,
         company_location: job.is_confidential ? null : company?.location ?? null,

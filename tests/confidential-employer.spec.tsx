@@ -18,13 +18,15 @@ import { GET as context } from '@/app/api/applications/[id]/context/route'
 const standInLogo = 'https://cdn.example/confidential-employer-logo.png'
 const realLogo = 'https://cdn.example/hidden-employer-logo.png'
 
-it('shows the stand-in company logo on a confidential listing and the default otherwise', () => {
-  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: ` ${standInLogo} ` })).toBe(standInLogo)
-  expect(publicListingLogo(false, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: standInLogo, is_confidential: true })).toBe(standInLogo)
-  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: '  ' })).toBeNull()
-  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: null })).toBeNull()
+it('uses the Confidential Employer logo for every confidential listing', () => {
+  const realCompany = { id: 'b2c41f29-5d70-4d4e-b978-38e46f20cbce', logo_url: realLogo }
+  expect(publicListingLogo(true, realCompany, ` ${standInLogo} `)).toBe(standInLogo)
+  expect(publicListingLogo(true, { id: CONFIDENTIAL_EMPLOYER_COMPANY_ID, logo_url: realLogo }, standInLogo)).toBe(standInLogo)
+  expect(publicListingLogo(false, { ...realCompany, is_confidential: true }, standInLogo)).toBe(standInLogo)
+  expect(publicListingLogo(true, realCompany, '  ')).toBeNull()
+  expect(publicListingLogo(true, realCompany, null)).toBeNull()
   expect(publicListingLogo(true, null)).toBeNull()
-  expect(publicListingLogo(false, { id: 'other', logo_url: realLogo })).toBe(realLogo)
+  expect(publicListingLogo(false, { id: 'other', logo_url: realLogo }, standInLogo)).toBe(realLogo)
 })
 
 it('does not use a real confidential employer logo', () => {

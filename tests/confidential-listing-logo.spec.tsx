@@ -113,24 +113,29 @@ it('keeps the default icon when the stand-in company has no logo', async () => {
   expect(metadata.openGraph?.images).toEqual([])
 })
 
-it('does not show a real employer logo or name when that company row is visible', async () => {
+it('shows the Confidential Employer logo for a listing still attached to its real company', async () => {
+  loadLogo.mockResolvedValue(LOGO)
   db.job = {
     ...shellJob,
+    id: '45b8e81c-d9b2-4604-867f-cd10835cf3a3',
+    title: 'Clinical Medical Assistant',
     company_id: 'b2c41f29-5d70-4d4e-b978-38e46f20cbce',
     company: { id: 'b2c41f29-5d70-4d4e-b978-38e46f20cbce', company_name: REAL_NAME, logo_url: REAL_LOGO },
   }
-  const html = renderToStaticMarkup(await JobDetailPage({ params: Promise.resolve({ id: shellJob.id }) }))
-  expect(html).toContain('src="/logo-icon.png"')
+  const html = renderToStaticMarkup(await JobDetailPage({ params: Promise.resolve({ id: '45b8e81c-d9b2-4604-867f-cd10835cf3a3' }) }))
+  expect(html).toContain(`src="${LOGO}"`)
   expect(html).toContain('Confidential employer')
+  expect(html).not.toContain('src="/logo-icon.png"')
   expect(html).not.toContain(REAL_NAME)
   expect(html).not.toContain(REAL_LOGO)
-  expect(loadLogo).not.toHaveBeenCalled()
-  const metadata = await generateMetadata({ params: Promise.resolve({ id: shellJob.id }) })
+  expect(loadLogo).toHaveBeenCalled()
+  const metadata = await generateMetadata({ params: Promise.resolve({ id: '45b8e81c-d9b2-4604-867f-cd10835cf3a3' }) })
+  expect(metadata.openGraph?.images).toEqual([{ url: LOGO, width: 200, height: 200, alt: 'Confidential employer' }])
   expect(JSON.stringify(metadata)).not.toContain(REAL_LOGO)
   expect(JSON.stringify(metadata)).not.toContain(REAL_NAME)
 })
 
-it('uses the stand-in logo on listing cards and the icon when that logo or employer is someone else', async () => {
+it('uses the Confidential Employer logo on every confidential card, including a real employer', async () => {
   loadLogo.mockResolvedValue(LOGO)
   const masked = listing('masked', CONFIDENTIAL_EMPLOYER_COMPANY_ID, REAL_NAME, null)
   masked.company = null as unknown as typeof masked.company
@@ -142,9 +147,9 @@ it('uses the stand-in logo on listing cards and the icon when that logo or emplo
   ])
   expect(loadLogo).toHaveBeenCalled()
   const sources = [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'))
-  expect(sources).toContain(LOGO)
+  expect(sources.filter((src) => src === LOGO).length).toBeGreaterThan(1)
   expect(sources).toContain('https://cdn.example/acme.png')
-  expect(sources).toContain('/logo-icon.png')
+  expect(sources).not.toContain('/logo-icon.png')
   expect(sources).not.toContain(REAL_LOGO)
   expect(container.textContent).not.toContain(REAL_NAME)
   expect(container.textContent).toContain('Confidential employer')

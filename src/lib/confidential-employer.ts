@@ -11,9 +11,8 @@
 export const CONFIDENTIAL_EMPLOYER_NAME = "Confidential employer";
 
 /**
- * The public stand-in company listings are attached to when the real employer
- * must stay unnamed. Its uploaded logo may be shown. Any other confidential
- * company's logo stays hidden, because that image identifies the employer.
+ * The public stand-in company. Every confidential listing shows this company's
+ * uploaded logo, including listings still attached to a real employer.
  */
 export const CONFIDENTIAL_EMPLOYER_COMPANY_ID = "72f7a8ad-9850-45db-aa34-71e853d833a8";
 
@@ -58,17 +57,17 @@ type LogoCompany = {
 } | null | undefined;
 
 /**
- * Logo for a public listing. A confidential listing uses the stand-in
- * company's uploaded logo when it has one, and never a real employer's logo.
- * Null means the caller should show /logo-icon.png.
+ * Logo for a public listing. A confidential listing uses only the Confidential
+ * Employer logo passed in, never the attached company's logo. Null means the
+ * caller should show /logo-icon.png.
  */
 export function publicListingLogo(
   listingIsConfidential: boolean | null | undefined,
   company: LogoCompany,
+  confidentialLogo?: string | null,
 ): string | null {
-  const logo = typeof company?.logo_url === "string" ? company.logo_url.trim() : "";
-  if (!logo) return null;
   const confidential = listingIsConfidential === true || company?.is_confidential === true;
-  if (!confidential) return logo;
-  return company?.id === CONFIDENTIAL_EMPLOYER_COMPANY_ID ? logo : null;
+  const raw = confidential ? confidentialLogo : company?.logo_url;
+  const logo = typeof raw === "string" ? raw.trim() : "";
+  return logo || null;
 }

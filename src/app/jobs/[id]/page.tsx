@@ -1,4 +1,4 @@
-import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_COMPANY_ID, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE, listingEmployerName, publicListingLogo } from "@/lib/confidential-employer";
+import { CONFIDENTIAL_EMPLOYER_BADGE, CONFIDENTIAL_EMPLOYER_NAME, CONFIDENTIAL_EMPLOYER_NOTE, listingEmployerName } from "@/lib/confidential-employer";
 import { loadConfidentialEmployerLogo } from "@/lib/confidential-employer-logo";
 import JobViewTracker from "@/components/JobViewTracker";
 import { jobViewsLaunch } from "@/lib/job-views-config";
@@ -78,15 +78,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const rawCompany = job.company as unknown as { company_name: string; logo_url: string | null } | null;
   const company = job.is_confidential ? null : rawCompany;
-  let shareLogo: string | null = null;
-  if (job.is_confidential) {
-    if (job.company_id === CONFIDENTIAL_EMPLOYER_COMPANY_ID) {
-      shareLogo = publicListingLogo(true, { id: job.company_id, logo_url: rawCompany?.logo_url })
-        || await loadConfidentialEmployerLogo();
-    }
-  } else {
-    shareLogo = rawCompany?.logo_url || null;
-  }
+  const shareLogo = job.is_confidential
+    ? await loadConfidentialEmployerLogo()
+    : rawCompany?.logo_url || null;
   const title = `${job.title} at ${listingEmployerName(job.is_confidential, company, "Company")} | JobLink`;
   const description = jobMetaDescription({
     ...job,
