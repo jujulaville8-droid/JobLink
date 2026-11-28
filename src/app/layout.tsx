@@ -53,7 +53,7 @@ export const metadata: Metadata = {
     url: "https://joblinkantigua.com",
     images: [
       {
-        url: "/images/colorful-buildings.jpg",
+        url: "/images/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Find work in Antigua with JobLink",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     title: "JobLink | Jobs in Antigua and Barbuda",
     description:
       "Antigua and Barbuda's #1 job platform. Browse jobs, apply in minutes, and build your resume for free.",
-    images: ["/images/colorful-buildings.jpg"],
+    images: ["/images/og-image.jpg"],
   },
   alternates: {
     canonical: "https://joblinkantigua.com",

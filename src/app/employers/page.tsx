@@ -67,13 +67,13 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: PAGE_URL,
-    images: [{ url: '/images/colorful-buildings.jpg', width: 1200, height: 630, alt: 'JobLink for employers in Antigua and Barbuda' }],
+    images: [{ url: '/images/og-image.jpg', width: 1200, height: 630, alt: 'JobLink for employers in Antigua and Barbuda' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
-    images: ['/images/colorful-buildings.jpg'],
+    images: ['/images/og-image.jpg'],
   },
 };
 
