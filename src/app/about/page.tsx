@@ -9,7 +9,7 @@ export const metadata = {
     description: 'JobLink is Antigua and Barbuda\'s first dedicated job platform. Learn how we connect job seekers with employers across every industry on the island.',
     url: 'https://joblinkantigua.com/about',
     siteName: 'JobLink',
-    images: [{ url: '/images/colorful-buildings.jpg', width: 1200, height: 630, alt: 'About JobLink' }],
+    images: [{ url: '/images/og-image.jpg', width: 1200, height: 630, alt: 'About JobLink' }],
   },
 }
 

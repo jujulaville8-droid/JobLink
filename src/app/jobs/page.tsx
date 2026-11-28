@@ -33,7 +33,7 @@ const baseMetadata: Metadata = {
       "Find the latest job opportunities in Antigua and Barbuda. Filter by industry, location, and job type.",
     url: JOBS_URL,
     siteName: "JobLink",
-    images: [{ url: "/images/colorful-buildings.jpg", width: 1200, height: 630, alt: "JobLink — Browse Jobs" }],
+    images: [{ url: "/images/og-image.jpg", width: 1200, height: 630, alt: "JobLink — Browse Jobs" }],
   },
 };
 
